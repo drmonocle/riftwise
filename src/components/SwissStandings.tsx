@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useState } from "react";
 import type { Match } from "../types";
-import { tl } from "../i18n";
+import { tl, locale } from "../i18n";
 import { navigateHub } from "../hub/route";
 import { swissNow, type SwissNow } from "../hub/swissNow";
 import { SectionCard } from "./hub/BroadcastCard";
@@ -121,7 +121,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
       </div>
       <p className="px-3 pb-2 text-[10px] text-rw-muted">
         {tl("Chance to make the top 8: the rest of the stage played {n} times, each match rolled by the power ratings (3 wins go through, 3 losses go home).", {
-          n: d.runs.toLocaleString(),
+          n: d.runs.toLocaleString(locale()),
         })}
       </p>
     </section>

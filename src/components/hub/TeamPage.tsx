@@ -8,7 +8,7 @@ import { Trophy } from "lucide-react";
 import { tl, tk, roleName, regionName, eventTitle, tc, tn, fmtDec } from "../../i18n";
 import { winRate } from "../../stats";
 import { loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, prettySlug } from "../../hub/data";
-import { currentHubRoute, navigateHub, type HubRoute } from "../../hub/route";
+import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import { PageTabs, type PageTab } from "./PageTabs";
 import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
@@ -1827,7 +1827,7 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
 };
 
 const CopyTeamPost: React.FC<{ t: HubTeam }> = ({ t }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [
       `${t.name}${t.region ? ` (${regionName(t.region, t.region)})` : ""}`,
@@ -1842,18 +1842,21 @@ const CopyTeamPost: React.FC<{ t: HubTeam }> = ({ t }) => {
     if (t.roster[0]?.p.length) {
       lines.push(`${tl("Roster")} (${t.roster[0].y}): ${t.roster[0].p.slice(0, 5).map((p) => p.n).join(" · ")}`);
     }
-    lines.push(`https://riftwise.gg/team/${t.u}`);
+    lines.push(hubShareUrl({ kind: "team", slug: t.u }));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button type="button" onClick={copy} className={heroBtn()} title={tl("Copy post")}>
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };
@@ -1866,7 +1869,7 @@ const CopyTeamChampPost: React.FC<{
   avgGd15: number | null;
   players: { n: string; r: string; g: number; w: number }[];
 }> = ({ team, champ, totalG, totalW, avgGd15, players }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [
       `${team.name} · ${champName(champ)}`,
@@ -1875,14 +1878,17 @@ const CopyTeamChampPost: React.FC<{
     for (const pl of players.slice(0, 4)) {
       lines.push(`• ${pl.n}${pl.r ? ` (${roleName(pl.r)})` : ""}: ${pl.w}–${pl.g - pl.w} (${winRate(pl.w, pl.g)})`);
     }
-    lines.push(`https://riftwise.gg/team/${team.u}/champions?champ=${encodeURIComponent(champ)}`);
+    lines.push(hubShareUrl({ kind: "team", slug: team.u, tab: "champions", query: `champ=${encodeURIComponent(champ)}` }));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -1891,7 +1897,7 @@ const CopyTeamChampPost: React.FC<{
       className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

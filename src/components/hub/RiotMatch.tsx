@@ -14,18 +14,24 @@ import { findSeriesSlug } from "../../hub/seriesLookup";
 import { navigateHub } from "../../hub/route";
 import { prettySlug } from "../../hub/data";
 import type { HubSeries } from "../../hub/types";
-import { card, fmtDate, HubLink, Loading, RevealButton, TeamLogo, useHidden, usePageTitle } from "./ui";
+import { card, fmtDate, HubLink, hubShareUrl, Loading, RevealButton, TeamLogo, useHidden, usePageTitle } from "./ui";
 
 const CopyRiotMatchPost: React.FC<{ match: Match }> = ({ match }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
-    const url = typeof window !== "undefined" ? window.location.href : "https://riftwise.gg";
+    const url = hubShareUrl({ kind: "match", slug: `riot-${match.matchId}` });
     const head = `${match.team1Name} ${match.team1Score}–${match.team2Score} ${match.team2Name} (${match.leagueName}${match.blockName ? ` · ${stageLabel(match.blockName)}` : ""} · ${fmtDate(match.startTimeUtc.slice(0, 10))})`;
     const text = `${head}\n${url}`;
-    navigator.clipboard?.writeText(text).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    });
+    navigator.clipboard
+      ?.writeText(text)
+      .then(() => {
+        setState("copied");
+        window.setTimeout(() => setState("idle"), 1800);
+      })
+      .catch(() => {
+        setState("failed");
+        window.setTimeout(() => setState("idle"), 2200);
+      });
   };
   return (
     <button
@@ -34,7 +40,7 @@ const CopyRiotMatchPost: React.FC<{ match: Match }> = ({ match }) => {
       onClick={copy}
       className="px-2 py-1 rounded border border-rw-border bg-rw-surface text-[11px] font-semibold text-rw-sub hover:text-rw-text hover:border-rw-accent/60 transition-colors"
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

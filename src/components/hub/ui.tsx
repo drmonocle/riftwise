@@ -13,6 +13,7 @@ import { IS_WEB, SITE_URL } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
 import { usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
 export { useTeamLogo };
+export { hubShareUrl } from "../../hub/route";
 export { STable } from "../STable";
 import { ddragonThumb, riotThumb } from "../../riotImage";
 import { allRevealed, setRevealed, useRevealedVersion } from "../../revealed";

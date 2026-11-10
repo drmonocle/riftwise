@@ -271,6 +271,7 @@ export const StoryList: React.FC<{
                   rows={() =>
                     plainLines.slice(0, 10).map((l) => ({
                       champ: l.champ,
+                      team: !l.champ && l.who?.to.kind === "team" ? l.who.name : undefined,
                       label: l.who ? l.who.name : l.plain!,
                       sub: l.who ? l.plain : undefined,
                     }))

@@ -4,6 +4,7 @@ import { tl, tc, roleName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubChamp, prettySlug } from "../../hub/data";
+import { hubShareUrl } from "../../hub/route";
 import type { HubChamp } from "../../hub/types";
 import { isFinishedItem, useDDragon } from "../../hub/ddragon";
 import {
@@ -1127,7 +1128,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
 };
 
 const CopyChampPost: React.FC<{ c: HubChamp }> = ({ c }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const label = champName(c.name);
     const totalRoles = c.roles.reduce((s, r) => s + r.p, 0) || 1;
@@ -1147,18 +1148,21 @@ const CopyChampPost: React.FC<{ c: HubChamp }> = ({ c }) => {
           .join(", ")}`,
       );
     }
-    lines.push(`https://riftwise.gg/champion/${c.u}`);
+    lines.push(hubShareUrl({ kind: "champ", slug: c.u }));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button type="button" onClick={copy} className={heroBtn()} title={tl("Copy post")}>
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

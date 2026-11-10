@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn, tc, roleName, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
 import { loadPlayerGames, loadPlayerItems, loadTeamSeries, prettySlug } from "../../hub/data";
+import { hubShareUrl } from "../../hub/route";
 import { inPeriod, playerRowRef, type PeriodKey } from "../../hub/period";
 import type { PlayerGameRow, TeamSeriesRow } from "../../hub/types";
 import { isFinishedItem } from "../../hub/ddragon";
@@ -208,7 +209,7 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string }> = ({ slug, te
               title={`${tl("Every series")} · ${teamName}${year !== "all" ? ` (${year})` : ""}`}
               sub={`${tn("{n} series", "{n} series", rows.length)} · ${tl("{w} won", { w: won })}`}
               rows={shown.slice(0, 5).map((r) => `${r[3] > r[4] ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]} vs ${r[1]} · ${r[5]} (${fmtDate(r[0])})`)}
-              url={`https://riftwise.gg/team/${slug}/matches`}
+              url={hubShareUrl({ kind: "team", slug, tab: "matches" })}
             />
             <SectionCard
               section={`${tl("Every series")} · ${teamName}`}
@@ -282,7 +283,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               title={`${aName} vs ${bName}`}
               sub={`${aName} ${wa} – ${rows.length - wa} ${bName} · ${tl("Games {a}–{b}", { a: ga, b: gb })}`}
               rows={rows.slice(0, 5).map((r) => `${aName} ${r[3]}–${r[4]} ${bName} · ${r[5]} (${fmtDate(r[0])})`)}
-              url={`https://riftwise.gg/stats/compare?teams=${encodeURIComponent(a)},${encodeURIComponent(b)}`}
+              url={hubShareUrl({ kind: "compare", mode: "team", a, b })}
             />
             <SectionCard
               section={tl("Every series between them")}
@@ -547,7 +548,12 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
               title={`${tl("Every game")} · ${slug}${champ !== "all" ? ` · ${champName(champ)}` : ""}${year !== "all" ? ` (${year})` : ""}`}
               sub={`${tn("{n} game", "{n} games", rows.length)} · ${Math.round((won / rows.length) * 100)}% · KDA ${fmtDec((k + a) / Math.max(d, 1), 2)}`}
               rows={shown.slice(0, 5).map((r) => `${r[6] ? tc("short result", "W") : tc("short result", "L")} ${champName(r[2])} (${r[3]}/${r[4]}/${r[5]}) vs ${r[8]} · ${r[9]} (${fmtDate(r[0])})`)}
-              url={`https://riftwise.gg/player/${slug}/${champ !== "all" ? `champions?champ=${encodeURIComponent(champ)}` : "matches"}`}
+              url={hubShareUrl({
+                kind: "player",
+                slug,
+                tab: champ !== "all" ? "champions" : "matches",
+                query: champ !== "all" ? `champ=${encodeURIComponent(champ)}` : undefined,
+              })}
             />
             <SectionCard
               section={`${tl("Every game")} · ${slug}`}
@@ -718,7 +724,7 @@ const CopyArchivePost: React.FC<{
   rows: string[];
   url: string;
 }> = ({ title, sub, rows, url }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [`${title} (${sub})`];
     for (const r of rows) {
@@ -728,10 +734,13 @@ const CopyArchivePost: React.FC<{
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -740,7 +749,7 @@ const CopyArchivePost: React.FC<{
       className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

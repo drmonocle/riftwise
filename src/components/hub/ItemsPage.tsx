@@ -14,7 +14,7 @@ import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, normText, prettySlug } from "../../hub/data";
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
-import { navigateHub } from "../../hub/route";
+import { navigateHub, hubShareUrl } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
 import { card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, ratingTextClass, Section, Stat, td, TeamLink, TeamLogo, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
@@ -1264,7 +1264,7 @@ const CopyItemsPost: React.FC<{
   rows: string[];
   picks: Picks;
 }> = ({ title, sub, rows, picks }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [`${title}${sub ? ` (${sub})` : ""}`];
     for (const r of rows) {
@@ -1275,14 +1275,17 @@ const CopyItemsPost: React.FC<{
     if (picks.item) qs.set("item", picks.item);
     if (picks.champ) qs.set("champ", picks.champ);
     if (picks.year) qs.set("year", picks.year);
-    lines.push(`https://riftwise.gg/stats/items${qs.toString() ? `?${qs.toString()}` : ""}`);
+    lines.push(hubShareUrl({ kind: "items", query: qs.toString() || undefined }));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -1291,7 +1294,7 @@ const CopyItemsPost: React.FC<{
       className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

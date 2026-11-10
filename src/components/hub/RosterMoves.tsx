@@ -8,7 +8,7 @@ import React, { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { loadLeagues, loadMoves } from "../../hub/data";
-import { fmtDate, HubLink, PlayerLink, PlayerPhoto, TeamLink, TeamLogo, useLoad } from "./ui";
+import { fmtDate, HubLink, hubShareUrl, PlayerLink, PlayerPhoto, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 
 export const RosterMoves: React.FC = () => {
@@ -50,6 +50,7 @@ export const RosterMoves: React.FC = () => {
                 sub={fmtDate(moves.data.since)}
                 rows={() =>
                   list.slice(0, 12).map((m) => ({
+                    team: m.to.n,
                     label: `${m.n}${m.r ? ` (${roleName(m.r)})` : ""}`,
                     sub: `${m.from.n} → ${m.to.n}${m.lu && name.get(m.lu) ? ` · ${name.get(m.lu)}` : ""}`,
                     value: fmtDate(m.d, false),
@@ -127,20 +128,23 @@ export const RosterMoves: React.FC = () => {
 };
 
 const CopyMovesPost: React.FC<{ sub: string; rows: string[] }> = ({ sub, rows }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [`${tl("Roster moves")} · ${sub}`];
     for (const r of rows) {
       lines.push(`• ${r}`);
     }
-    lines.push("https://riftwise.gg");
+    lines.push(hubShareUrl({ kind: "home" }));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -149,7 +153,7 @@ const CopyMovesPost: React.FC<{ sub: string; rows: string[] }> = ({ sub, rows })
       className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

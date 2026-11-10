@@ -6,14 +6,14 @@
  * build's lines/<event>.json, plus today's games from Riot on the Worlds / MSI / First Stand pages); a list whose data
  * an older file doesn't have is left out. Every list says how many games it counts.
  */
-import { tl, roleName } from "../i18n";
+import { tl, locale, roleName } from "../i18n";
 import { champName } from "../champions";
 import type { Fact, FactRow, Game, Side } from "./worldsFacts";
 
 const f1 = (v: number) => (Math.round(v * 10) / 10).toFixed(1);
 const pctOf = (n: number, of: number) => `${Math.round((n / Math.max(1, of)) * 100)}%`;
 const mmss = (m: number) => `${Math.floor(m)}:${String(Math.round((m % 1) * 60)).padStart(2, "0")}`;
-const num = (v: number) => v.toLocaleString();
+const num = (v: number) => v.toLocaleString(locale());
 const top = <T,>(xs: T[], by: (x: T) => number, n = 5) => xs.slice().sort((x, y) => by(y) - by(x)).slice(0, n);
 
 export function moreEventFacts(games: Game[], event: string): Fact[] {

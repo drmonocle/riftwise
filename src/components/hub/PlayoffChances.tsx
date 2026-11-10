@@ -6,11 +6,12 @@
 import React, { useMemo, useState } from "react";
 import { tl } from "../../i18n";
 import { loadRatings } from "../../hub/data";
+import { hubShareUrl } from "../../hub/route";
 import type { HubEvent } from "../../hub/types";
 import { playoffOdds } from "../../hub/playoffOdds";
 import { chanceShade } from "../SwissStandings";
 import { SectionCard } from "./BroadcastCard";
-import { HubLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
+import { fmtNum, HubLink, RevealButton, Section, TeamLink, TeamLogo, useHidden, useLoad } from "./ui";
 import { STable } from "../STable";
 
 const pctText = (p: number) => (p === 0 ? "0%" : p < 0.005 ? "<1%" : p > 0.995 && p < 1 ? ">99%" : `${Math.round(p * 100)}%`);
@@ -165,7 +166,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
           <p className="text-[10px] text-rw-muted">
             {tl(
               "The {n} series still to play, each played out {runs} times with the power ratings (best of 3 and 5 from the one-game chance). Ties on series wins go to game difference, then by lot: the league's own tiebreakers aren't modelled. Pick the cut line the league uses; as of the last stats update.",
-              { n: odds.open, runs: odds.runs.toLocaleString() },
+              { n: odds.open, runs: fmtNum(odds.runs) },
             )}
             {` ${tl("Records come from the series list below; the standings table can differ for a while as results come in.")}`}
             {unrated > 0 && ` ${tl("* No power rating yet: played at the table's median rating")}`}
@@ -182,20 +183,23 @@ const CopyPlayoffOddsPost: React.FC<{
   cut: number;
   rows: string[];
 }> = ({ eventName, slug, cut, rows }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [`${tl("Playoff chances")} · ${eventName} (${tl("Top {n}", { n: cut })})`];
     for (const r of rows) {
       lines.push(r);
     }
-    lines.push(`https://riftwise.gg/tournament/${slug}`);
+    lines.push(hubShareUrl({ kind: "event", slug }));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -205,7 +209,7 @@ const CopyPlayoffOddsPost: React.FC<{
       className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

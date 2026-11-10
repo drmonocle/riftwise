@@ -84,4 +84,19 @@ describe("listCard", () => {
     expect(html).toContain("#2");
     expect(html).toContain("T1: Chovy (Orianna)");
   });
+
+  it("normalizes download-slug names into human-readable card headings and renders team logos", () => {
+    const card = listCard({
+      section: "Final standings",
+      name: "lck-2026-spring-final-standings",
+      sub: "LCK 2026 Spring",
+      rows: [{ rank: 1, team: "Gen.G", label: "Gen.G", value: "$200,000" }],
+    });
+    const html = renderToStaticMarkup(card.body as any);
+    expect(card.title).toContain("Final standings");
+    expect(card.a.name).toBe("LCK 2026 Spring");
+    expect(html).toContain("LCK 2026 Spring");
+    expect(html).not.toContain("lck-2026-spring-final-standings");
+    expect(html).toContain("Gen.G");
+  });
 });

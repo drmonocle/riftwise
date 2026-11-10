@@ -9,7 +9,7 @@ import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubChamp, loadHubPlayer, loadPlayerGames, prettySlug } from "../../hub/data";
-import { currentHubRoute, type HubRoute } from "../../hub/route";
+import { currentHubRoute, hubShareUrl, type HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
 import { type PeriodKey, inPeriod, periodOptions, playerAgg, playerRowRef } from "../../hub/period";
 import { PageTabs, type PageTab } from "./PageTabs";
@@ -1228,7 +1228,7 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
 };
 
 const CopyPlayerPost: React.FC<{ p: HubPlayer }> = ({ p }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const sub = [p.role ? roleName(p.role) : null, p.club].filter(Boolean).join(" · ");
     const lines: string[] = [
@@ -1246,18 +1246,21 @@ const CopyPlayerPost: React.FC<{ p: HubPlayer }> = ({ p }) => {
           .join(", ")}`,
       );
     }
-    lines.push(`https://riftwise.gg/player/${p.u}`);
+    lines.push(hubShareUrl({ kind: "player", slug: p.u }));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button type="button" onClick={copy} className={heroBtn()} title={tl("Copy post")}>
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

@@ -221,8 +221,19 @@ try {
   $step = 'live check'
   Start-Sleep -Seconds 35 # the page service re-reads index.html every 30 seconds
   foreach ($path in @("/?release=$target", "/stats?release=$target")) {
-    $page = (Invoke-WebRequest -UseBasicParsing -Uri "https://riftwise.gg$path" -TimeoutSec 30).Content
-    if ($page -notmatch [regex]::Escape($bundle)) { throw "https://riftwise.gg$path doesn't serve the new app ($bundle)" }
+    $page = $null
+    $lastErr = $null
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+      try {
+        $page = (Invoke-WebRequest -UseBasicParsing -Uri "https://riftwise.gg$path" -TimeoutSec 35).Content
+        if ($page -match [regex]::Escape($bundle)) { break }
+        $lastErr = "https://riftwise.gg$path doesn't serve the new app ($bundle)"
+      } catch {
+        $lastErr = $_.Exception.Message
+      }
+      if ($attempt -lt 3) { Start-Sleep -Seconds 6 }
+    }
+    if ($page -notmatch [regex]::Escape($bundle)) { throw $lastErr }
   }
   Log 'live check passed'
 

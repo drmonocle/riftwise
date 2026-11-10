@@ -1828,22 +1828,52 @@ export interface ListRow {
   rank?: number | string;
   /** a champion icon before the label */
   champ?: string;
+  /** a team logo before the label (used when champ is absent) */
+  team?: string;
   /** a won / lost mark before the label */
   win?: boolean | null;
+}
+
+/** True when a SectionCard caller passed a file-slug identifier in `name` instead of a human-readable heading. */
+function isSlugHeading(name: string): boolean {
+  if (!name) return false;
+  if (!/\s/.test(name) && (/^[a-z0-9]+(-[a-z0-9_.]+)+$/i.test(name) || name === "storylines")) return true;
+  return /(?:-(?:picks|champs|shared-champs|draft-lanes|player-pools|priorities|win-when|form|calculated|draft-scouting|h2h|preview|regions|final-standings|teams|champions|team-stats|player-stats|most-titles|glance)|\b(?:teams-directory|players-directory|h2h-series)-|^h2h-|^standings-|^compare-)/i.test(
+    name,
+  );
 }
 
 /** One section of a page (titles, by year, champion pool...) as a card: who it is about, then the list. */
 export function listCard(d: { section: string; name: string; sub?: string; rows: ListRow[] }): CardData {
   const two = d.rows.length > 6;
   const rows = d.rows.slice(0, two ? 12 : 6);
+  let title = d.section;
+  let heading = d.name;
+  let subtitle = d.sub;
+  if (isSlugHeading(d.name)) {
+    if (d.section.includes(" · ")) {
+      const [first, ...rest] = d.section.split(" · ");
+      title = first;
+      heading = rest.join(" · ");
+    } else if (d.section.includes(": ")) {
+      const [first, ...rest] = d.section.split(": ");
+      title = first;
+      heading = rest.join(": ");
+    } else if (d.sub) {
+      heading = d.sub;
+      subtitle = undefined;
+    } else {
+      heading = d.section;
+    }
+  }
   return {
-    title: d.section,
-    subtitle: d.sub,
-    a: { name: d.name },
+    title,
+    subtitle,
+    a: { name: heading },
     rows: [],
     body: (
       <>
-        <div style={{ fontSize: 50, fontWeight: 800, lineHeight: 1.05, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.name}</div>
+        <div style={{ fontSize: 50, fontWeight: 800, lineHeight: 1.05, marginTop: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{heading}</div>
         <div
           style={{
             marginTop: 18,
@@ -1909,7 +1939,7 @@ export function listCard(d: { section: string; name: string; sub?: string; rows:
                     {r.win ? tc("short result", "W") : tc("short result", "L")}
                   </span>
                 )}
-                {r.champ && <ChampIcon name={r.champ} size={46} />}
+                {r.champ ? <ChampIcon name={r.champ} size={46} /> : r.team ? <CardLogo name={r.team} size={42} /> : null}
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 26, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
                   {subLine && <div style={{ fontSize: 18, color: "var(--rw-sub)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subLine}</div>}

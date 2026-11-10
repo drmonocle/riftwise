@@ -6,7 +6,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, roleName, regionName } from "../../i18n";
 import { loadHubIndex, loadHubIndexQuick, normText, prettySlug } from "../../hub/data";
-import { navigateHub, type HubSection } from "../../hub/route";
+import { navigateHub, hubShareUrl, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
 import { SortTable, type Column } from "./SortTable";
 import { SectionCard } from "./BroadcastCard";
@@ -259,7 +259,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                 .sort((a, b) => b[2] - a[2])
                 .slice(0, 5)
                 .map((t, idx) => `#${idx + 1} ${t[0]}${t[6] ? ` (${regionName(t[6], t[6])})` : ""} · ${fmtNum(t[2])} ${tl("Games")}`)}
-              url={`https://riftwise.gg/stats/teams${query ? `?${query}` : ""}`}
+              url={hubShareUrl({ kind: "teams", query: query || undefined })}
             />
             <SectionCard
               section={tl("Every team")}
@@ -467,7 +467,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                 .sort((a, b) => b[3] - a[3])
                 .slice(0, 5)
                 .map((p, idx) => `#${idx + 1} ${p[0]}${p[2] ? ` (${p[2]})` : ""} · ${fmtNum(p[3])} ${tl("Games")}`)}
-              url={`https://riftwise.gg/stats/players${query ? `?${query}` : ""}`}
+              url={hubShareUrl({ kind: "players", query: query || undefined })}
             />
             <SectionCard
               section={tl("Every player")}
@@ -507,7 +507,7 @@ const CopyDirectoryPost: React.FC<{
   rows: string[];
   url: string;
 }> = ({ title, sub, rows, url }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [`${title} · ${sub}`];
     for (const r of rows) {
@@ -517,10 +517,13 @@ const CopyDirectoryPost: React.FC<{
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -529,7 +532,7 @@ const CopyDirectoryPost: React.FC<{
       className="px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-xs text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };

@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { prettySlug } from "../../hub/data";
+import { hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
 import { ChampIcon, HubLink, OeCredit, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, fmtNum } from "./ui";
@@ -240,7 +241,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
               .sort((a, b) => (per(b.k + b.a, Math.max(b.d, 1), 2) || 0) - (per(a.k + a.a, Math.max(a.d, 1), 2) || 0))
               .slice(0, 6)
               .map((p, idx) => `#${idx + 1} ${p.n} (${p.t}, ${roleName(p.r)}): ${per(p.k + p.a, Math.max(p.d, 1), 2) ?? "–"} KDA · ${pct(per(p.w, p.g, 3))}`)}
-            url={`https://riftwise.gg/tournament/${e.u}/stats`}
+            url={hubShareUrl({ kind: "event", slug: e.u, tab: "stats" })}
           />
           <SectionCard
             section={tl("Player stats")}
@@ -478,7 +479,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
               .sort((a, b) => (per(b.w, b.g, 3) || 0) - (per(a.w, a.g, 3) || 0))
               .slice(0, 6)
               .map((t, idx) => `#${idx + 1} ${t.t}: ${t.w}-${t.g - t.w} (${pct(per(t.w, t.g, 3))}) · ${per(t.min, t.g) ?? "–"}m`)}
-            url={`https://riftwise.gg/tournament/${e.u}/stats`}
+            url={hubShareUrl({ kind: "event", slug: e.u, tab: "stats" })}
           />
           <SectionCard
             section={tl("Team stats")}
@@ -542,7 +543,7 @@ const CopyEventTablePost: React.FC<{
   rows: string[];
   url: string;
 }> = ({ title, rows, url }) => {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines: string[] = [title];
     for (const r of rows) {
@@ -552,10 +553,13 @@ const CopyEventTablePost: React.FC<{
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setState("copied");
+        setTimeout(() => setState("idle"), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2400);
+      });
   };
   return (
     <button
@@ -565,7 +569,7 @@ const CopyEventTablePost: React.FC<{
       className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
       title={tl("Copy post")}
     >
-      {copied ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };
