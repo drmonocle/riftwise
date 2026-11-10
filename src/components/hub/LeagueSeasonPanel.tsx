@@ -228,6 +228,15 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     >
                       {tl("Pro tier list")} →
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "rankings",
+                        query: `league=${encodeURIComponent(league)}`,
+                      }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")} →
+                    </HubLink>
                   </>
                 )}
                 <SectionCard

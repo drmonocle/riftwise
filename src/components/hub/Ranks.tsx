@@ -781,6 +781,12 @@ export const PlayerRanks: React.FC<{
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "rankings", ...(lu ? { query: `league=${encodeURIComponent(lu)}` } : {}) }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Power rankings")} →
+              </HubLink>
               <CopyRanksPost
                 title={`${name || me?.n || slug} · ${leagueLabel} ${year}${me?.r ? ` (${roleName(me.r)})` : ""}`}
                 rows={cardRows}
@@ -969,6 +975,18 @@ export const TeamRanks: React.FC<{
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "best",
+                  query: new URLSearchParams({
+                    ...(lu ? { league: lu } : {}),
+                    ...(year ? { year } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Best games")} →
               </HubLink>
               <CopyRanksPost
                 title={`${name || me?.t || slug} · ${leagueLabel} ${year}`}

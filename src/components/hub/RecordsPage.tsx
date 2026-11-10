@@ -186,6 +186,12 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
             >
               {tl("Pro tier list")} →
             </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Power rankings")} →
+            </HubLink>
             <SectionCard
               section={tl("Most pentakills")}
               name={tl("Records")}
@@ -300,6 +306,12 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
                   {tl("Counters")} →
                 </HubLink>
               )}
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
               <SectionCard
                 section={tl("Latest pentakills")}
                 name={tl("Records")}
@@ -521,6 +533,12 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "best", query: `year=${encodeURIComponent(label)}` }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Best games")} →
           </HubLink>
           <SectionCard
             section={tl("Closest to falling")}
@@ -1234,6 +1252,18 @@ export const RecordsPanel: React.FC = () => {
                       >
                         {tl("Game finder")} →
                       </HubLink>
+                      <HubLink
+                        to={{ kind: "tiers" }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Pro tier list")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "best" }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Best games")} →
+                      </HubLink>
                       <SectionCard
                         section={tl("Longest win streaks")}
                         name={tl("Records")}
@@ -1349,6 +1379,12 @@ export const RecordsPanel: React.FC = () => {
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Power rankings")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "tiers" }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Pro tier list")} →
                       </HubLink>
                       <SectionCard
                         section={tl("Most international titles (Worlds, MSI, First Stand)")}

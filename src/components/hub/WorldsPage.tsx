@@ -501,6 +501,12 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                   >
                     {tl("Power rankings")} →
                   </HubLink>
+                  <HubLink
+                    to={{ kind: "tiers", query: `league=world-championship&key=y${encodeURIComponent(d.year)}` }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
                   <BroadcastCardButton data={() => bracketPicksCard(ko, byU, d.name)} name={`worlds-${d.year}-knockouts`} label={tl("Overview card")} />
                 </span>
               ) : undefined
@@ -667,6 +673,12 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 >
                   {tl("Game finder")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "rankings" }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
+                </HubLink>
               </span>
             );
           })()}
@@ -820,6 +832,12 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", query: `key=y${encodeURIComponent(d.year)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
               <BroadcastCardButton data={() => msiBracketCard(res, byU, d.name, kind)} name={`${kind}-${d.year}-bracket`} label={tl("Overview card")} />
             </span>
@@ -1073,6 +1091,12 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "tiers", query: `key=y${encodeURIComponent(shown[0].y)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
               </HubLink>
             </>
           )}
@@ -1487,6 +1511,12 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Game finder")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "rankings" }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")} →
                     </HubLink>
                   </>
                 ) : null;
@@ -1939,6 +1969,12 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Game finder")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "rankings" }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")} →
                     </HubLink>
                   </>
                 ) : null;

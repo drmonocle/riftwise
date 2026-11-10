@@ -324,6 +324,12 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         >
           {tl("Game finder")} →
         </HubLink>
+        <HubLink
+          to={{ kind: "best" }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Best games")} →
+        </HubLink>
         {list.length > 0 && (
           <>
             <CopyDirectoryPost
@@ -611,6 +617,12 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Game finder")} →
+        </HubLink>
+        <HubLink
+          to={{ kind: "rankings" }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Power rankings")} →
         </HubLink>
         {list.length > 0 && (
           <>

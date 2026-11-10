@@ -92,6 +92,20 @@ export const PickemBoard: React.FC<{
           >
             {tl("Power rankings")} →
           </HubLink>
+          <HubLink
+            to={{ kind: "tournaments" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Tournaments")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "best" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Best games")} →
+          </HubLink>
           {rows.length > 8 && (
             <input
               type="search"

@@ -91,6 +91,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Game finder")} →
             </HubLink>
+            <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Records")} →
+            </HubLink>
             <CopyInsightPost
               title={`${tl("Biggest upsets")} · ${name}`}
               rows={up.games.slice(0, 5).map((u) => `${u.winner} ${tl("beat")} ${u.loser} (${u.chance}%) · ${all ? yearOnly(u.year) + " · " : ""}${u.stage}`)}
@@ -186,6 +189,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             </HubLink>
             <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Power rankings")} →
             </HubLink>
             <CopyInsightPost
               title={`${tl("Biggest comebacks")} · ${name}`}
@@ -297,6 +303,20 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               data-nocapture="1"
             >
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Power rankings")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers", ...(!all && sorted[0] ? { query: `key=y${encodeURIComponent(yearOnly(sorted[0].year))}` } : {}) }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Pro tier list")} →
             </HubLink>
             <SectionCard
               section={tl("Swiss stage")}
@@ -434,6 +454,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Game finder")} →
             </HubLink>
+            <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Best games")} →
+            </HubLink>
             <SectionCard
               section={tl("Cinderella runs")}
               name={name}
@@ -503,6 +526,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             </HubLink>
             <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Power rankings")} →
             </HubLink>
             <CopyInsightPost
               title={`${tl("Most finals")} · ${name}`}
@@ -701,6 +727,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             >
               {tl("Game finder")} →
             </HubLink>
+            <HubLink
+              to={{ kind: "tiers" }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Pro tier list")} →
+            </HubLink>
             <CopyInsightPost
               title={`${tl("Players with the most titles")} · ${name}`}
               rows={titles.slice(0, 6).map((p) => `${p.name}: ${tl("{n} titles", { n: p.titles.length })} (${p.titles.map(yearOnly).sort().join(", ")})`)}
@@ -776,6 +809,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             </HubLink>
             <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Power rankings")} →
             </HubLink>
             <SectionCard
               section={tl("Home region")}
@@ -857,6 +893,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               </HubLink>
               <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Power rankings")} →
               </HubLink>
               <CopyInsightPost
                 title={`${tl("Year by year")} · ${name}`}

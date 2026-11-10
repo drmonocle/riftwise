@@ -615,15 +615,29 @@ const SeriesGames: React.FC<{
             </button>
           ))}
           {s.a.u && s.b.u && (
-            <HubLink
-              to={{
-                kind: "draft",
-                query: `teams=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}`,
-              }}
-              className="ml-auto text-rw-accent hover:underline font-semibold"
-            >
-              {tl("Draft board")} →
-            </HubLink>
+            <span className="ml-auto flex items-center gap-2">
+              <HubLink
+                to={{ kind: "prep", a: s.a.u, b: s.b.u }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}`,
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </span>
           )}
         </div>
       )}
@@ -1424,6 +1438,15 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   >
                     {tl("Power rankings")} →
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "tiers",
+                      ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
                 </>
               )}
               <SectionCard
@@ -1514,6 +1537,15 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "tiers",
+                      ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
                   </HubLink>
                 </>
               )}
@@ -1821,6 +1853,15 @@ const Scoreboard: React.FC<{
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Power rankings")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "tiers",
+                ...(period && /^y\d{4}$/.test(period) ? { query: `key=${encodeURIComponent(period)}` } : {}),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Pro tier list")} →
             </HubLink>
           </span>
         )}

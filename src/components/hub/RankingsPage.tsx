@@ -774,6 +774,18 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "leaders" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Player leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "best" }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Best games")} →
+              </HubLink>
               <SectionCard
                 section={tl("League strength")}
                 name={tl("Power rankings")}
@@ -920,6 +932,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               </HubLink>
               <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Pro tier list")} →
               </HubLink>
               <HubLink to={{ kind: "about" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("About")} →

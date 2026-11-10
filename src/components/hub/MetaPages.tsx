@@ -124,6 +124,9 @@ export const PatchesPanel: React.FC = () => {
               <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink to={{ kind: "rankings" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Power rankings")} →
+              </HubLink>
               <input
                 type="search"
                 value={q}
@@ -486,6 +489,9 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
             <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Game finder")} →
             </HubLink>
+            <HubLink to={{ kind: "best" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Best games")} →
+            </HubLink>
             <SectionCard
               section={title || tl("Leagues")}
               name={tl("Leagues")}
@@ -796,6 +802,12 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 >
                   {tl("Game finder")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "tiers", query: `league=${encodeURIComponent(l.u)}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Most titles")}
                   sub={l.l}
@@ -982,6 +994,12 @@ const LeagueEventsSection: React.FC<{
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "best", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Best games")} →
             </HubLink>
             {events.length > 10 && (
               <input

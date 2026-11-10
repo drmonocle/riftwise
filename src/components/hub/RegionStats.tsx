@@ -179,6 +179,12 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
           <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Game finder")} →
           </HubLink>
+          <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            {tl("Pro tier list")} →
+          </HubLink>
+          <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            {tl("Best games")} →
+          </HubLink>
           <CopyRegionStatsPost
             title={`${tl("Region strength over time")} · ${name}`}
             rows={t.rows.slice(0, 6).map((c) => {
@@ -310,6 +316,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             </HubLink>
             <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Best games")} →
             </HubLink>
             <CopyRegionStatsPost
               title={`${tl("Regions")} · ${name}`}
@@ -468,6 +480,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               </HubLink>
               <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink to={{ kind: "best" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+                {tl("Best games")} →
               </HubLink>
               {pairs.length > 6 && (
                 <input

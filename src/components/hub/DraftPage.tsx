@@ -2348,6 +2348,12 @@ const PlayerPools: React.FC<{
             {tl("Compare")} →
           </HubLink>
           <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Power rankings")} →
+          </HubLink>
+          <HubLink
             to={{
               kind: "finder",
               query: `team=${encodeURIComponent(side.team.u)}${
@@ -2657,6 +2663,9 @@ const ChampInfo: React.FC<{
         </HubLink>
         <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
           {tl("Player leaderboards")} →
+        </HubLink>
+        <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+          {tl("Power rankings")} →
         </HubLink>
         <HubLink
           to={{

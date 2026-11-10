@@ -293,6 +293,12 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
           >
             {tl("Game finder")} →
           </HubLink>
+          <HubLink
+            to={{ kind: "tiers" }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
+          </HubLink>
           {overview && <BroadcastCardButton data={overview} name={`${a.name}-vs-${b.name}-match-prep`} label={tl("Overview card")} />}
         </span>
       }
@@ -851,6 +857,15 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
           </HubLink>
           <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Power rankings")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "tiers",
+              ...(period.startsWith("y") && period.length === 5 ? { query: `key=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")} →
           </HubLink>
           <SectionCard
             section={tl("Calculated")}
@@ -1478,6 +1493,9 @@ const Form: React.FC<{ a: Side; b: Side }> = ({ a, b }) => {
             <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Power rankings")} →
             </HubLink>
+            <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Pro tier list")} →
+            </HubLink>
             <SectionCard
               section={tl("Form: last 10 series")}
               sub={`${a.team.name} vs ${b.team.name}`}
@@ -1759,6 +1777,13 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
             data-nocapture="1"
           >
             {tl("Player leaderboards")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "rankings" }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Power rankings")} →
           </HubLink>
           <BroadcastCardButton
             data={() =>
@@ -2501,6 +2526,19 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "leaders",
+              ...(period && period.startsWith("y") && period.length === 5
+                ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                : period && period.startsWith("e:")
+                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                  : {}),
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
           </HubLink>
           <HubLink
             to={{

@@ -370,6 +370,19 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               >
                 {tl("Game finder")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "tiers",
+                  query: new URLSearchParams({
+                    ...(league ? { scope: league } : {}),
+                    ...(year ? { key: `y${year}` } : {}),
+                    ...(role ? { role } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
               {shownRows.length === 2 && shownRows[0].tu && shownRows[1].tu && shownRows[0].tu !== shownRows[1].tu && (
                 <>
                   <HubLink
