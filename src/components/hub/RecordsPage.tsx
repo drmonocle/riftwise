@@ -997,7 +997,14 @@ export const TitlesPanel: React.FC = () => {
                         {x.as !== x.w && (
                           <span className="text-rw-muted text-[10px]">
                             {" "}
-                            ({tl("now {team}", { team: x.w })})
+                            (
+                            <HubLink
+                              to={{ kind: "team", slug: x.u || prettySlug(x.w) }}
+                              className="hover:text-rw-accent hover:underline"
+                            >
+                              {tl("now {team}", { team: x.w })}
+                            </HubLink>
+                            )
                           </span>
                         )}
                       </td>

@@ -1160,7 +1160,17 @@ const MatchBox: React.FC<{ m: WMatch; byU: Map<string, WTeam>; onPick: (u: strin
     <div className={`rounded-lg border ${m.from === "pick" ? "border-rw-accent/50" : "border-rw-border"} bg-rw-deep/40 p-1 space-y-0.5`}>
       <div className="flex items-center justify-between px-1 text-[10px] text-rw-muted">
         <span className="inline-flex items-center gap-1">
-          <span>{tl("Best of {n}", { n: m.bo })}</span>
+          {m.a && m.b ? (
+            <HubLink
+              to={{ kind: "compare", mode: "team", a: m.a, b: m.b }}
+              className="hover:text-rw-accent hover:underline"
+              title={tl("Compare")}
+            >
+              {tl("Best of {n}", { n: m.bo })}
+            </HubLink>
+          ) : (
+            <span>{tl("Best of {n}", { n: m.bo })}</span>
+          )}
           {m.a && m.b && (
             <>
               <span aria-hidden="true">·</span>

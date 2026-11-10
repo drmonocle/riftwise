@@ -564,7 +564,16 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                     const barW = Math.max(10, Math.min(100, Math.round(((r - minLr + 80) / Math.max(1, maxLr - minLr + 80)) * 100)));
                     return (
                       <tr key={l} className="border-t border-rw-border">
-                        <td className={`${td} text-rw-muted`} data-sort={i + 1}>{i + 1}</td>
+                        <td className={`${td} text-rw-muted`} data-sort={i + 1}>
+                          <button
+                            type="button"
+                            onClick={() => setLeague(league === l ? "" : l)}
+                            className="hover:text-rw-accent hover:underline tabular-nums"
+                            title={tl("Teams")}
+                          >
+                            {i + 1}
+                          </button>
+                        </td>
                         <td className={td} data-sort={l}>
                           {u ? (
                             <HubLink
@@ -653,7 +662,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                       className={`${td} text-right tabular-nums text-rw-sub`}
                       data-sort={n}
                     >
-                      {fmtNum(n)}
+                      <HubLink to={{ kind: "finder" }} className="hover:text-rw-accent hover:underline" title={tl("Game finder")}>
+                        {fmtNum(n)}
+                      </HubLink>
                     </td>
                     {saidCol && (
                       <td className={`${td} text-right tabular-nums text-rw-sub`} data-sort={said ?? -1}>

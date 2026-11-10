@@ -149,7 +149,10 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
       <div className={`rw-span ${card}`}>
         <h1 className="text-lg font-bold text-rw-text">{tl("The week in pro League")}</h1>
         <p className="text-[11px] text-rw-sub">
-          {range} ·{" "}
+          <HubLink to={{ kind: "finder" }} className="hover:text-rw-accent hover:underline">
+            {range}
+          </HubLink>{" "}
+          ·{" "}
           <HubLink to={{ kind: "finder" }} className="hover:text-rw-accent hover:underline">
             {tn("{n} series", "{n} series", w.series)}
           </HubLink>{" "}
@@ -345,7 +348,23 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       >
                         {recordValue(r.k, Number(r.r.v))}
                       </HubLink>{" "}
-                      · {recordWho(r.r)}
+                      ·{" "}
+                      {r.r.pl ? (
+                        <>
+                          <PlayerLink name={String(r.r.pl)} className="text-rw-sub hover:text-rw-accent hover:underline" />
+                          {r.r.team ? (
+                            <>
+                              {" ("}
+                              <TeamLink name={String(r.r.team)} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                              {")"}
+                            </>
+                          ) : null}
+                        </>
+                      ) : r.r.w || r.r.team ? (
+                        <TeamLink name={String(r.r.w || r.r.team)} className="text-rw-sub hover:text-rw-accent hover:underline" />
+                      ) : (
+                        recordWho(r.r)
+                      )}
                       {r.r.g ? (
                         <>
                           {" · "}
@@ -603,7 +622,11 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   })}
                 </tbody>
               </STable>
-              <p className="text-[10px] text-rw-muted">{tn("Picked or banned in the week's {n} game.", "Picked or banned in the week's {n} games.", w.champGames || 0)}</p>
+              <p className="text-[10px] text-rw-muted">
+                <HubLink to={{ kind: "champions" }} className="hover:text-rw-accent hover:underline">
+                  {tn("Picked or banned in the week's {n} game.", "Picked or banned in the week's {n} games.", w.champGames || 0)}
+                </HubLink>
+              </p>
             </Section>
           )}
           <div className="md:col-span-2">

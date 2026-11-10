@@ -580,8 +580,16 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             </button>{" "}
                             {x.gd != null && (
                               <span className="text-[11px] font-mono text-rw-sub font-normal">
-                                · {x.gd > 0 ? "+" : ""}
-                                {x.gd} GD@15{" "}
+                                ·{" "}
+                                <button
+                                  type="button"
+                                  onClick={() => set({ vs: x.c })}
+                                  className="hover:text-rw-accent hover:underline"
+                                  title={`${cName} ${tl("vs")} ${champName(x.c)}`}
+                                >
+                                  {x.gd > 0 ? "+" : ""}
+                                  {x.gd} GD@15
+                                </button>{" "}
                               </span>
                             )}
                             <span className="text-rw-muted font-normal">({finderLink(x.c, x.g, x.role)})</span>
@@ -642,8 +650,16 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             </button>{" "}
                             {x.gd != null && (
                               <span className="text-[11px] font-mono text-rw-sub font-normal">
-                                · {x.gd > 0 ? "+" : ""}
-                                {x.gd} GD@15{" "}
+                                ·{" "}
+                                <button
+                                  type="button"
+                                  onClick={() => set({ vs: x.c })}
+                                  className="hover:text-rw-accent hover:underline"
+                                  title={`${cName} ${tl("vs")} ${champName(x.c)}`}
+                                >
+                                  {x.gd > 0 ? "+" : ""}
+                                  {x.gd} GD@15
+                                </button>{" "}
                               </span>
                             )}
                             <span className="text-rw-muted font-normal">({finderLink(x.c, x.g, x.role)})</span>
@@ -689,9 +705,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               share={`riftwise-counters-${slug}`}
             >
               <p className="text-[11px] text-rw-muted">
-                {span === "12m"
-                  ? `${tl("Last 12 months")} · ${tl("{n} games with a lane opponent in pro play", { n: rows.reduce((s, r) => s + r.g, 0) })}`
-                  : tl("{n} games with a lane opponent in pro play", { n: data.data.m.g })}
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `champ=${encodeURIComponent(cName)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                  title={tl("Game finder")}
+                >
+                  {span === "12m"
+                    ? `${tl("Last 12 months")} · ${tl("{n} games with a lane opponent in pro play", { n: rows.reduce((s, r) => s + r.g, 0) })}`
+                    : tl("{n} games with a lane opponent in pro play", { n: data.data.m.g })}
+                </HubLink>
               </p>
               <SortTable rows={rows} columns={columns} initial={{ key: "g", desc: true }} rowKey={(x) => `${x.c}-${x.role}`} copyName={`riftwise-counters-${slug}`} />
               <OeCredit />

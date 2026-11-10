@@ -181,7 +181,21 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       ),
       className: "tabular-nums",
     },
-    { key: "o", label: tl("Also played as"), value: (t) => t[4] || null, render: (t) => <span className="text-rw-muted">{(t[4] || "").split(" | ").slice(0, 2).join(", ")}</span>, className: "max-w-[16rem] truncate" },
+    {
+      key: "o",
+      label: tl("Also played as"),
+      value: (t) => t[4] || null,
+      render: (t) =>
+        t[4] ? (
+          <HubLink
+            to={{ kind: "team", slug: t[1] || prettySlug(t[0]), tab: "history" }}
+            className="text-rw-muted hover:text-rw-accent hover:underline"
+          >
+            {t[4].split(" | ").slice(0, 2).join(", ")}
+          </HubLink>
+        ) : null,
+      className: "max-w-[16rem] truncate",
+    },
     {
       key: "act",
       label: "",

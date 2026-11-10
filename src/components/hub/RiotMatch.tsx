@@ -123,8 +123,29 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             <HubLink to={{ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) }} className="text-rw-accent hover:underline">
               {m.leagueName}
             </HubLink>
-            {m.blockName && <span>· {stageLabel(m.blockName)}</span>}
-            <span>· {fmtDate(m.startTimeUtc.slice(0, 10))}</span>
+            {m.blockName && (
+              <span>
+                ·{" "}
+                <HubLink
+                  to={{ kind: "league", slug: prettySlug(m.leagueSlug || m.leagueName) }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {stageLabel(m.blockName)}
+                </HubLink>
+              </span>
+            )}
+            <span>
+              ·{" "}
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(prettySlug(m.team1Name))}&vs=${encodeURIComponent(prettySlug(m.team2Name))}`,
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {fmtDate(m.startTimeUtc.slice(0, 10))}
+              </HubLink>
+            </span>
             <span>· {tc("series length", "Best of {n}", { n: m.bestOf })}</span>
             {live && <span className="text-rw-red font-bold">· {tl("LIVE")}</span>}
           </span>
@@ -162,7 +183,19 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
           </div>
           <div className="flex flex-col items-center gap-1 min-w-[4.5rem]">
             <div className="text-2xl font-black text-rw-text tabular-nums text-center leading-none">
-              {hidden ? "?" : m.team1Score} <span className="text-rw-muted/60">–</span> {hidden ? "?" : m.team2Score}
+              {hidden ? (
+                <>
+                  ? <span className="text-rw-muted/60">–</span> ?
+                </>
+              ) : (
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: prettySlug(m.team1Name), b: prettySlug(m.team2Name) }}
+                  className="hover:text-rw-accent hover:underline"
+                  title={tl("Compare")}
+                >
+                  {m.team1Score} <span className="text-rw-muted/60">–</span> {m.team2Score}
+                </HubLink>
+              )}
             </div>
             {!hidden && (m.team1Score ?? 0) + (m.team2Score ?? 0) > 0 && (
               <span className="w-12 h-1 rounded-full bg-rw-border/70 overflow-hidden flex gap-[1px]" aria-hidden="true">

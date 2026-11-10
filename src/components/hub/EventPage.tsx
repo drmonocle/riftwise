@@ -115,11 +115,15 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
         lines={
           <div className="flex flex-wrap gap-x-3 gap-y-1">
             {(e.start || e.end) && (
-              <span className="flex items-center gap-1">
+              <HubLink
+                to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
+                className="flex items-center gap-1 hover:text-rw-accent hover:underline"
+                title={tl("Game finder")}
+              >
                 <CalendarDays className="w-3.5 h-3.5" />
                 {fmtDate(e.start)}
                 {e.end && e.end !== e.start ? ` – ${fmtDate(e.end)}` : ""}
-              </span>
+              </HubLink>
             )}
             {e.league &&
               (e.lu ? (
@@ -129,7 +133,11 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
               ) : (
                 <span>{e.league}</span>
               ))}
-            {e.region && <span>{regionName(e.region, e.region)}</span>}
+            {e.region && (
+              <HubLink to={{ kind: "leagues" }} className="hover:text-rw-accent hover:underline">
+                {regionName(e.region, e.region)}
+              </HubLink>
+            )}
             {(e.country || e.type) && (
               <span className="flex items-center gap-1">
                 {countryCode(e.country) ? <CountryFlag cc={countryCode(e.country)} /> : <MapPin className="w-3.5 h-3.5" />}
@@ -137,10 +145,13 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
               </span>
             )}
             {e.prize && (
-              <span className="flex items-center gap-1">
+              <HubLink
+                to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
+                className="flex items-center gap-1 hover:text-rw-accent hover:underline"
+              >
                 <Coins className="w-3.5 h-3.5" />
                 {tl("Prize pool {amount}", { amount: e.prize })}
-              </span>
+              </HubLink>
             )}
           </div>
         }

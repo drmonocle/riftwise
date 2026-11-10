@@ -258,9 +258,18 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                 )}
                 <PlayerPhoto name={o.farm.n} slug={o.farm.u ?? undefined} size={15} />
                 <PlayerLink name={o.farm.n} u={o.farm.u} />
-                <span className="text-rw-muted">
-                  ({o.farm.cs} CS, {mmss(o.farm.min)})
-                </span>
+                {o.farm.g ? (
+                  <HubLink
+                    to={{ kind: "match", slug: o.farm.g, game: o.farm.gn }}
+                    className="text-rw-muted hover:text-rw-accent hover:underline"
+                  >
+                    ({o.farm.cs} CS, {mmss(o.farm.min)})
+                  </HubLink>
+                ) : (
+                  <span className="text-rw-muted">
+                    ({o.farm.cs} CS, {mmss(o.farm.min)})
+                  </span>
+                )}
                 {o.farm.g && (
                   <HubLink
                     to={{ kind: "match", slug: o.farm.g, game: o.farm.gn }}
@@ -281,7 +290,17 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               <Flame className="w-3 h-3 text-rw-accent" />
               {tl("Dragons taken:")}
             </span>
-            <span className="font-mono text-rw-sub tabular-nums">{fmtNum(totalDrakes)}</span>
+            {slug ? (
+              <HubLink
+                to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }}
+                className="font-mono text-rw-sub tabular-nums hover:text-rw-accent hover:underline"
+                title={tl("Game finder")}
+              >
+                {fmtNum(totalDrakes)}
+              </HubLink>
+            ) : (
+              <span className="font-mono text-rw-sub tabular-nums">{fmtNum(totalDrakes)}</span>
+            )}
           </div>
           <div className="h-2 rounded-full bg-rw-raised overflow-hidden flex gap-px">
             {drakes.map(([k, n]) => (
@@ -335,7 +354,14 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                 </HubLink>
                 <PlayerPhoto name={p.n} slug={p.u ?? undefined} size={16} />
                 <PlayerLink name={p.n} u={p.u} />
-                {p.x > 1 && <span className="text-rw-accent">×{p.x}</span>}
+                {p.x > 1 &&
+                  (p.g ? (
+                    <HubLink to={{ kind: "match", slug: p.g, game: p.gn }} className="text-rw-accent hover:underline">
+                      ×{p.x}
+                    </HubLink>
+                  ) : (
+                    <span className="text-rw-accent">×{p.x}</span>
+                  ))}
                 {p.g && (
                   <HubLink
                     to={{ kind: "match", slug: p.g, game: p.gn }}

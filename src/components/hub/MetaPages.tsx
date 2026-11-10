@@ -466,14 +466,32 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
           </>
         }
         lines={
-          <p>
-            {[
-              l.region ? regionName(l.region, l.region) : null,
-              tn("{n} tournament", "{n} tournaments", l.events.length),
-              years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] || null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
+          <p className="flex flex-wrap items-center gap-x-2">
+            {l.region && (
+              <>
+                <HubLink to={{ kind: "leagues" }} className="hover:text-rw-accent hover:underline">
+                  {regionName(l.region, l.region)}
+                </HubLink>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
+            <HubLink
+              to={{ kind: "tournaments", ...(season || years[0] ? { year: season || years[0] } : {}) }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {tn("{n} tournament", "{n} tournaments", l.events.length)}
+            </HubLink>
+            {(years.length > 1 || years[0]) && (
+              <>
+                <span aria-hidden="true">·</span>
+                <HubLink
+                  to={{ kind: "league", slug: l.u, ...(years[0] ? { year: years[0] } : {}) }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0]}
+                </HubLink>
+              </>
+            )}
           </p>
         }
         extra={
