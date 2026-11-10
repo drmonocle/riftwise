@@ -531,11 +531,17 @@ const FinderBody: React.FC<{
             <span className="text-rw-sub inline-flex items-center gap-1.5">
               <span>
                 {" · "}
-                {tl("won {w}, lost {l} ({pct})", {
-                  w: won,
-                  l: found.length - won,
-                  pct: `${Math.round((won / found.length) * 100)}%`,
-                })}
+                <button
+                  type="button"
+                  onClick={() => setQ({ result: q.get("result") === "w" ? "l" : q.get("result") === "l" ? undefined : "w" })}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("won {w}, lost {l} ({pct})", {
+                    w: won,
+                    l: found.length - won,
+                    pct: `${Math.round((won / found.length) * 100)}%`,
+                  })}
+                </button>
               </span>
               <span className="inline-flex w-10 h-1.5 rounded-full bg-rw-raised overflow-hidden shrink-0" aria-hidden="true">
                 <span className="h-full bg-rw-teal/85" style={{ width: `${Math.round((won / found.length) * 100)}%` }} />

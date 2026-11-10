@@ -806,7 +806,7 @@ export const TeamRows: React.FC<{
     { key: "k", group: gPace, label: tl("Kills / game"), a: tStat(x.u, d(A.kills)), b: tStat(y.u, d(B.kills)), va: A.kills, vb: B.kills, ...pc("k") },
     { key: "d", group: gPace, label: tl("Deaths / game"), a: tStat(x.u, d(A.deaths)), b: tStat(y.u, d(B.deaths)), va: A.deaths, vb: B.deaths, better: "low" },
     { key: "ckpm", group: gPace, label: "CKPM", a: tStat(x.u, d(A.ckpm)), b: tStat(y.u, d(B.ckpm)), va: A.ckpm, vb: B.ckpm },
-    { key: "min", group: gPace, label: tl("Avg game (min)"), a: tStat(x.u, d(A.min)), b: tStat(y.u, d(B.min)) },
+    { key: "min", group: gPace, label: tl("Avg game (min)"), a: tStat(x.u, d(A.min)), b: tStat(y.u, d(B.min)), va: A.min, vb: B.min },
     { key: "gd", group: gPace, label: tl("Gold diff / game"), a: tStat(x.u, sgn(A.gd)), b: tStat(y.u, sgn(B.gd)), va: A.gd, vb: B.gd },
     { key: "gdm", group: gPace, label: tl("GD/m"), a: tStat(x.u, sgn(A.gdm)), b: tStat(y.u, sgn(B.gdm)), va: A.gdm, vb: B.gdm, ...pc("gdm") },
     { key: "gpm", group: gPace, label: tl("GPM"), a: tStat(x.u, A.gpm != null ? fmtNum(A.gpm) : "–"), b: tStat(y.u, B.gpm != null ? fmtNum(B.gpm) : "–"), va: A.gpm, vb: B.gpm, ...pc("gpm") },
@@ -1549,7 +1549,13 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
         <div className={`${card} py-2 space-y-1`}>
           <div className="text-[10px] text-rw-muted">{tl("Series")}</div>
           <div className="font-bold text-rw-text tabular-nums">
-            {s.sw} – {s.sl}
+            <HubLink to={{ kind: "player", slug: prettySlug(aName), tab: "matches" }} className="hover:text-rw-accent hover:underline">
+              {s.sw}
+            </HubLink>{" "}
+            –{" "}
+            <HubLink to={{ kind: "player", slug: prettySlug(bName), tab: "matches" }} className="hover:text-rw-accent hover:underline">
+              {s.sl}
+            </HubLink>
           </div>
           {s.sw + s.sl > 0 && (
             <div className="h-1.5 rounded-full bg-rw-raised overflow-hidden flex gap-[2px]">
@@ -1561,10 +1567,13 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
         {s.gd15 != null && (
           <div className={`${card} py-2`} title={tl("{name}'s gold lead over the other at 15 minutes, in the {n} games they faced each other in lane", { name: aName, n: s.lane })}>
             <div className="text-[10px] text-rw-muted">{tl("Gold lead at 15 in lane")}</div>
-            <div className={`font-bold tabular-nums ${s.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
+            <HubLink
+              to={{ kind: "player", slug: prettySlug(aName), tab: "stats" }}
+              className={`font-bold tabular-nums hover:underline ${s.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}
+            >
               {s.gd15 >= 0 ? "+" : ""}
               {fmtNum(Math.round(s.gd15))}
-            </div>
+            </HubLink>
           </div>
         )}
       </div>

@@ -557,7 +557,11 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                   <span className="inline-flex items-center gap-1.5 min-w-0">
                     <PlayerPhoto name={n} team={teamBySlug.get(u)} slug={u} size={16} />
                     <PlayerLink name={n} u={u} />
-                    {teamBySlug.get(u) && <TeamLogo name={teamBySlug.get(u)!} size={13} />}
+                    {teamBySlug.get(u) && (
+                      <HubLink to={{ kind: "team", slug: prettySlug(teamBySlug.get(u)!) }} title={teamBySlug.get(u)!}>
+                        <TeamLogo name={teamBySlug.get(u)!} size={13} />
+                      </HubLink>
+                    )}
                   </span>
                 </td>
                 <td className={`${td} tabular-nums text-rw-sub w-28`} data-sort={g}>
@@ -647,7 +651,13 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
       ) : (
         <>
           <p className="text-sm text-rw-text">
-            <span className="font-bold text-rw-teal">{tl("Yes.")}</span> {tl("{g} pro games by {p} players ended with it.", { g: fmtNum(total), p: fmtNum(rows.length) })}
+            <span className="font-bold text-rw-teal">{tl("Yes.")}</span>{" "}
+            <HubLink
+              to={{ kind: "finder", query: new URLSearchParams({ champ, ...(year ? { year } : {}) }).toString() }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {tl("{g} pro games by {p} players ended with it.", { g: fmtNum(total), p: fmtNum(rows.length) })}
+            </HubLink>
           </p>
           <STable className="w-full text-xs">
             <thead>

@@ -402,7 +402,15 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; teamSlu
           <tbody>
             {d.firsts.map((x) => (
               <tr key={x.key} className="border-t border-rw-border/60">
-                <td className="px-2 py-1 text-rw-sub" data-sort={label[x.key]}>{label[x.key]}</td>
+                <td className="px-2 py-1 text-rw-sub" data-sort={label[x.key]}>
+                  {finderQuery ? (
+                    <HubLink to={{ kind: "finder", query: finderQuery }} className="hover:text-rw-accent hover:underline">
+                      {label[x.key]}
+                    </HubLink>
+                  ) : (
+                    label[x.key]
+                  )}
+                </td>
                 <td className="px-2 py-1 text-right" data-sort={x.got[0] ? x.got[1] / x.got[0] : -1}>{wrCell(x.got)}</td>
                 <td className="px-2 py-1 text-right" data-sort={x.lost[0] ? x.lost[1] / x.lost[0] : -1}>{wrCell(x.lost)}</td>
               </tr>
@@ -419,7 +427,15 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; teamSlu
           <tbody>
             {d.gold.map((x) => (
               <tr key={x.key} className="border-t border-rw-border/60">
-                <td className="px-2 py-1 text-rw-sub" data-sort={label[x.key]}>{label[x.key]}</td>
+                <td className="px-2 py-1 text-rw-sub" data-sort={label[x.key]}>
+                  {finderQuery ? (
+                    <HubLink to={{ kind: "finder", query: finderQuery }} className="hover:text-rw-accent hover:underline">
+                      {label[x.key]}
+                    </HubLink>
+                  ) : (
+                    label[x.key]
+                  )}
+                </td>
                 <td className="px-2 py-1 text-right" data-sort={x.g ? x.w / x.g : -1}>{wrCell([x.g, x.w])}</td>
               </tr>
             ))}

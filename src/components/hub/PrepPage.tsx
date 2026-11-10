@@ -311,7 +311,11 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; card?: () => CardData }> = 
                   })
                 : tl("#{lrank} in {league} · rating {r}", { lrank: t.rating!.lrank, league: t.rating!.league || "–", r: Math.round(liveRating(ratings.data!, t.u, t.rating!.r)) })}
             </HubLink>{" "}
-            (<Change v={t.rating!.chg30} /> {tl("in 30 days")})
+            (
+            <HubLink to={{ kind: "team", slug: t.u, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+              <Change v={t.rating!.chg30} /> {tl("in 30 days")}
+            </HubLink>
+            )
           </p>
         ))}
       </div>
@@ -1121,7 +1125,19 @@ export function prepLines(a: Side, b: Side): StoryLine[] {
     }
     if (n >= 2) {
       const stTxt = tl("{team} have won the last {n} meetings", { team: aWonFirst ? a.team.name : b.team.name, n });
-      lines.push({ key: "h2hstreak", text: stTxt, plain: stTxt, asOf: date });
+      lines.push({
+        key: "h2hstreak",
+        text: (
+          <HubLink
+            to={{ kind: "finder", query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}` }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {stTxt}
+          </HubLink>
+        ),
+        plain: stTxt,
+        asOf: date,
+      });
     }
     const wa = meetings.filter((m) => m[3] > m[4]).length;
     const h2hTxt = tl("Series between them: {a} {wa}-{wb} {b}", { a: a.team.name, b: b.team.name, wa, wb: meetings.length - wa });
@@ -1361,7 +1377,22 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
               </HubLink>
             );
           })}
-          {x.list.length > 10 && <span className="text-[10px] text-rw-muted self-center">+{x.list.length - 10}</span>}
+          {x.list.length > 10 &&
+            (x.slug ? (
+              <HubLink
+                to={{
+                  kind: "player",
+                  slug: x.slug,
+                  tab: "champions",
+                  ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                }}
+                className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline self-center"
+              >
+                +{x.list.length - 10}
+              </HubLink>
+            ) : (
+              <span className="text-[10px] text-rw-muted self-center">+{x.list.length - 10}</span>
+            ))}
         </div>
       </div>
     );

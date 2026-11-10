@@ -322,7 +322,13 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
         </div>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
           <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
-          {stage ? ` · ${stageLabel(stage)}` : ""} ·{" "}
+          {stage ? (
+            <>
+              {" · "}
+              {eslug ? <EventLink name={stageLabel(stage)} u={eslug} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
+            </>
+          ) : null}{" "}
+          ·{" "}
           <HubLink to={{ kind: "match", slug, game: n }} className="hover:text-rw-accent hover:underline">
             {fmtDate(date)}
           </HubLink>
@@ -357,6 +363,12 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
             <>
               <HubLink to={{ kind: "prep", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                 {tl("Match prep")}
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(aSlug)},${encodeURIComponent(bSlug)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")}
               </HubLink>
               <HubLink to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug, period }} className="hover:text-rw-accent hover:underline">
                 {tl("Compare")}
@@ -416,7 +428,13 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
         </div>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
           <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
-          {stage ? ` · ${stageLabel(stage)}` : ""} ·{" "}
+          {stage ? (
+            <>
+              {" · "}
+              {eslug ? <EventLink name={stageLabel(stage)} u={eslug} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
+            </>
+          ) : null}{" "}
+          ·{" "}
           <HubLink to={{ kind: "match", slug }} className="hover:text-rw-accent hover:underline">
             {fmtDate(date)}
           </HubLink>

@@ -566,7 +566,27 @@ const LeagueTable: React.FC<{
           >
             {tl("{n} games", { n: fmtNum(result.games) })}
           </HubLink>
-          {vs && result.thenGames > 0 && ` · ${tl("{n} games on {patch}", { n: fmtNum(result.thenGames), patch: vs })}`}
+          {vs && result.thenGames > 0 && (
+            <>
+              {" · "}
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: new URLSearchParams({
+                    league,
+                    ...(year ? { year } : {}),
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                    patch: vs,
+                    ...(side ? { side } : {}),
+                    ...(roleQ ? { role: roleQ } : {}),
+                  }).toString(),
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("{n} games on {patch}", { n: fmtNum(result.thenGames), patch: vs })}
+              </HubLink>
+            </>
+          )}
           {eventName && eventSlug && (
             <>
               {" · "}
@@ -576,6 +596,12 @@ const LeagueTable: React.FC<{
         </span>
         {result.rows.length > 0 && (
           <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+            <HubLink
+              to={{ kind: "counters", query: roleQ ? `role=${encodeURIComponent(roleQ)}` : "" }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Counter-pick finder")} →
+            </HubLink>
             <HubLink
               to={{ kind: "tiers", query: `scope=${encodeURIComponent(league)}${q.get("patch") ? `&key=p${encodeURIComponent(q.get("patch")!)}` : year ? `&key=y${encodeURIComponent(year)}` : ""}` }}
               className="text-rw-accent hover:underline font-semibold"
@@ -811,6 +837,12 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         )}
         {block && rows.length > 0 && (
           <span className="ml-auto flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+            <HubLink
+              to={{ kind: "counters", query: roleQ ? `role=${encodeURIComponent(roleQ)}` : "" }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Counter-pick finder")} →
+            </HubLink>
             <HubLink
               to={{ kind: "tiers", query: `key=${encodeURIComponent(key)}${scope === "all" ? "&scope=all" : ""}${roleQ ? `&role=${encodeURIComponent(roleQ)}` : ""}` }}
               className="text-rw-accent hover:underline font-semibold"
