@@ -499,7 +499,23 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             <span className="text-rw-sub font-medium">{tl("VS")}</span>
                           )}
                         </div>
-                        <span className="@min-[36rem]:hidden text-[10px] text-rw-muted">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
+                        {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigateHub({
+                                kind: "prep",
+                                a: prettySlug(m.team1Name || m.team1Code),
+                                b: prettySlug(m.team2Name || m.team2Code),
+                              })
+                            }
+                            className="@min-[36rem]:hidden text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                          >
+                            {tc("short best of", "Bo{n}", { n: m.bestOf })}
+                          </button>
+                        ) : (
+                          <span className="@min-[36rem]:hidden text-[10px] text-rw-muted">{tc("short best of", "Bo{n}", { n: m.bestOf })}</span>
+                        )}
                         {/* Swiss: what this match decides */}
                         {swissStakes(m) && (
                           <span className={`text-[9px] font-bold uppercase tracking-wide leading-tight ${swissStakes(m) === "advance" ? "text-rw-teal" : "text-rw-red"}`}>
@@ -553,9 +569,25 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       <span className="@max-[36rem]:hidden">
                         <ShareMatchButton match={m} />
                       </span>
-                      <span className="@max-[36rem]:hidden text-[10px] text-rw-sub bg-rw-bg px-2 py-0.5 rounded border border-rw-border font-medium">
-                        {tc("short best of", "Bo{n}", { n: m.bestOf })}
-                      </span>
+                      {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigateHub({
+                              kind: "prep",
+                              a: prettySlug(m.team1Name || m.team1Code),
+                              b: prettySlug(m.team2Name || m.team2Code),
+                            })
+                          }
+                          className="@max-[36rem]:hidden text-[10px] text-rw-sub hover:text-rw-accent bg-rw-bg px-2 py-0.5 rounded border border-rw-border hover:border-rw-accent/60 font-medium transition-colors"
+                        >
+                          {tc("short best of", "Bo{n}", { n: m.bestOf })}
+                        </button>
+                      ) : (
+                        <span className="@max-[36rem]:hidden text-[10px] text-rw-sub bg-rw-bg px-2 py-0.5 rounded border border-rw-border font-medium">
+                          {tc("short best of", "Bo{n}", { n: m.bestOf })}
+                        </span>
+                      )}
                       {m.state === "completed" ? (
                         <button
                           type="button"
@@ -572,6 +604,21 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           <span className="w-1.5 h-1.5 rounded-full bg-rw-red animate-pulse" />
                           {tl("LIVE")}
                         </span>
+                      ) : m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigateHub({
+                              kind: "prep",
+                              a: prettySlug(m.team1Name || m.team1Code),
+                              b: prettySlug(m.team2Name || m.team2Code),
+                            })
+                          }
+                          className="text-[10px] text-rw-accent hover:underline font-semibold whitespace-nowrap truncate min-w-0"
+                          title={m.blockName || undefined}
+                        >
+                          {untilText(m.startTimeUtc) || m.blockName || tl("UPCOMING")}
+                        </button>
                       ) : (
                         <span className="text-[10px] text-rw-accent font-semibold whitespace-nowrap truncate min-w-0" title={m.blockName || undefined}>
                           {untilText(m.startTimeUtc) || m.blockName || tl("UPCOMING")}

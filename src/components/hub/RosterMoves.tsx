@@ -91,7 +91,13 @@ export const RosterMoves: React.FC = () => {
                 <TeamLogo name={m.from.n} sizeClass="w-3.5 h-3.5" />
                 <TeamLink name={m.from.n} u={m.from.u} className="hover:text-rw-accent truncate" />
               </span>
-              <ArrowRight className="w-3 h-3 shrink-0 text-rw-accent" />
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: m.from.u, b: m.to.u }}
+                className="text-rw-accent hover:opacity-80 shrink-0"
+                title={tl("Compare")}
+              >
+                <ArrowRight className="w-3 h-3" />
+              </HubLink>
               <span className="inline-flex items-center gap-1 min-w-0">
                 <TeamLogo name={m.to.n} sizeClass="w-3.5 h-3.5" />
                 <TeamLink name={m.to.n} u={m.to.u} className="text-rw-text hover:text-rw-accent truncate" />

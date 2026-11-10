@@ -187,9 +187,19 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
             <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-rw-muted pointer-events-none" />
           </label>
           {tournamentInfo && (
-            <span className="text-[11px] text-rw-muted">
-              {tournamentStatus(tournamentInfo)}
-            </span>
+            activeLeague ? (
+              <button
+                type="button"
+                onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(activeLeague) })}
+                className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+              >
+                {tournamentStatus(tournamentInfo)}
+              </button>
+            ) : (
+              <span className="text-[11px] text-rw-muted">
+                {tournamentStatus(tournamentInfo)}
+              </span>
+            )
           )}
           {activeLeague && (
             <button
@@ -322,7 +332,13 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                     <Star className={`w-3.5 h-3.5 ${isFollowed ? "fill-rw-accent" : ""}`} />
                                   </button>
                                 )}
-                                <span className="hidden sm:inline text-[11px] font-mono text-rw-sub">{team.code}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => navigateHub({ kind: "team", slug: prettySlug(team.name || team.code) })}
+                                  className="hidden sm:inline text-[11px] font-mono text-rw-sub hover:text-rw-accent hover:underline"
+                                >
+                                  {team.code}
+                                </button>
                               </div>
                             </td>
                             <td className="py-2.5 px-3 text-center font-mono font-bold text-sm whitespace-nowrap" data-sort={hideResults ? 0 : team.wins * 1000 - team.losses}>
@@ -537,9 +553,24 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
         );
       })}
       <div className="flex items-center justify-between gap-2 text-[9px] text-rw-muted pt-0.5">
-        <span>
-          {match.state === "inProgress" ? <span className="text-rw-red">{tl("Live")}</span> : match.state === "completed" ? (masked ? tl("Final · hidden") : tl("Final")) : tl("Upcoming")}
-        </span>
+        {match.teams.length === 2 && match.teams.every((t) => t.code && t.code !== "TBD") ? (
+          <button
+            type="button"
+            onClick={() =>
+              navigateHub({
+                kind: "finder",
+                query: `teams=${encodeURIComponent(prettySlug(match.teams[0].name || match.teams[0].code))},${encodeURIComponent(prettySlug(match.teams[1].name || match.teams[1].code))}`,
+              })
+            }
+            className="hover:text-rw-accent hover:underline"
+          >
+            {match.state === "inProgress" ? <span className="text-rw-red">{tl("Live")}</span> : match.state === "completed" ? (masked ? tl("Final · hidden") : tl("Final")) : tl("Upcoming")}
+          </button>
+        ) : (
+          <span>
+            {match.state === "inProgress" ? <span className="text-rw-red">{tl("Live")}</span> : match.state === "completed" ? (masked ? tl("Final · hidden") : tl("Final")) : tl("Upcoming")}
+          </span>
+        )}
         <span className="inline-flex items-center gap-1.5">
           {match.teams.length === 2 && match.teams.every((t) => t.code && t.code !== "TBD") && (
             <>

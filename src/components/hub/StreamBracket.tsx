@@ -140,7 +140,11 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text flex items-center gap-2">
-          {tl("{event}: bracket and standings", { event: streamEventTitle({ event: which.event, season: which.season } as StreamEvent) })}
+          <EventLink
+            name={tl("{event}: bracket and standings", { event: streamEventTitle({ event: which.event, season: which.season } as StreamEvent) })}
+            u={ev.u}
+            className="hover:text-rw-accent hover:underline"
+          />
         </h3>
         {!airing.streamDone && (
           <button

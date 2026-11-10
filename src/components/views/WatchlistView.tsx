@@ -316,9 +316,22 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           )}
 
           {settings.followedRegions.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-muted/40 text-rw-text text-[10px]">
+            <button
+              type="button"
+              onClick={() => setTab("regions")}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-muted/40 text-rw-text hover:border-rw-accent text-[10px] transition-colors"
+            >
               <span>🌐 {tl("{n} Regions", { n: settings.followedRegions.length })}</span>
-            </span>
+            </button>
+          )}
+          {settings.followedLeagues.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setTab("leagues")}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-muted/40 text-rw-text hover:border-rw-accent text-[10px] transition-colors"
+            >
+              <span>🏆 {tl("Leagues ({n})", { n: settings.followedLeagues.length })}</span>
+            </button>
           )}
         </div>
       </div>
@@ -450,7 +463,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                               {" · "}
                             </>
                           ) : null}
-                          {team.code}
+                          <button
+                            type="button"
+                            onClick={() => navigateHub({ kind: "team", slug: prettySlug(team.name) })}
+                            className="hover:text-rw-accent hover:underline"
+                          >
+                            {team.code}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -510,9 +529,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   {/* Expanded Registered Roster */}
                   {isExpanded && roster.length > 0 && (
                     <div className="mt-2.5 pt-2.5 border-t border-rw-border space-y-1">
-                      <div className="text-[10px] text-rw-muted mb-1">
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "team", slug: prettySlug(team.name), tab: "history" })}
+                        className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline mb-1 block text-left"
+                      >
                         {tn("Active roster ({n} player)", "Active roster ({n} players)", roster.length)}
-                      </div>
+                      </button>
                       {roster.map((p) => {
                         const isPlayerFollowed = settings.followedPlayers.includes(p.name);
                         return (

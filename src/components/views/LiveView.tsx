@@ -548,7 +548,24 @@ const LiveMatchBlock: React.FC<{
               >
                 {m.leagueName}
               </button>
-              {m.blockName ? ` · ${m.blockName}` : ""} · {tl("Best of {n}", { n: m.bestOf })}
+              {m.blockName ? ` · ${m.blockName}` : ""} ·{" "}
+              {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "prep",
+                      a: prettySlug(m.team1Name || m.team1Code),
+                      b: prettySlug(m.team2Name || m.team2Code),
+                    })
+                  }
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Best of {n}", { n: m.bestOf })}
+                </button>
+              ) : (
+                tl("Best of {n}", { n: m.bestOf })
+              )}
             </span>
           </span>
           <ShareMatchButton match={m} />
@@ -875,7 +892,15 @@ const NextMatchCard: React.FC<{
     <section className="bg-rw-panel border border-rw-border rounded-xl rw-lit min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 pt-3 pb-1">
         <h2 className={HEAD}>{tag}</h2>
-        {m.blockName && <span className="text-xs text-rw-sub font-medium">{m.blockName}</span>}
+        {m.blockName && (
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) })}
+            className="text-xs text-rw-sub hover:text-rw-accent hover:underline font-medium"
+          >
+            {m.blockName}
+          </button>
+        )}
       </div>
       <div className={`flex flex-col items-center text-center ${compact ? "p-3" : "p-4 sm:p-6"}`}>
         {/* League & Format Badge */}
@@ -888,7 +913,23 @@ const NextMatchCard: React.FC<{
             {m.leagueName}
           </button>
           <span>·</span>
-          <span className="font-mono bg-rw-bg px-2 py-0.5 rounded border border-rw-border">{tl("Best of {n}", { n: m.bestOf })}</span>
+          {m.team1Code && m.team1Code !== "TBD" && m.team2Code && m.team2Code !== "TBD" ? (
+            <button
+              type="button"
+              onClick={() =>
+                navigateHub({
+                  kind: "prep",
+                  a: prettySlug(m.team1Name || m.team1Code),
+                  b: prettySlug(m.team2Name || m.team2Code),
+                })
+              }
+              className="font-mono bg-rw-bg px-2 py-0.5 rounded border border-rw-border hover:border-rw-accent/60 hover:text-rw-accent transition-colors"
+            >
+              {tl("Best of {n}", { n: m.bestOf })}
+            </button>
+          ) : (
+            <span className="font-mono bg-rw-bg px-2 py-0.5 rounded border border-rw-border">{tl("Best of {n}", { n: m.bestOf })}</span>
+          )}
         </div>
 
         {/* Matchup */}

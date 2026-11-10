@@ -439,9 +439,19 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               <Matchup e={next} />
               {next.isBanger && <Flame className="w-3.5 h-3.5 text-[#ff4655] fill-current shrink-0" aria-label={tl("Banger")} />}
             </div>
-            <span className="font-mono text-rw-sub shrink-0 ml-auto">
-              {clock(next.utcIso)} · {relTime(next.utcIso, now)}
-            </span>
+            {next.team1 && next.team2 ? (
+              <button
+                type="button"
+                onClick={() => navigateHub({ kind: "prep", a: teamSlug(next.team1!), b: teamSlug(next.team2!) })}
+                className="font-mono text-rw-sub hover:text-rw-accent hover:underline shrink-0 ml-auto"
+              >
+                {clock(next.utcIso)} · {relTime(next.utcIso, now)}
+              </button>
+            ) : (
+              <span className="font-mono text-rw-sub shrink-0 ml-auto">
+                {clock(next.utcIso)} · {relTime(next.utcIso, now)}
+              </span>
+            )}
           </div>
         )}
       </section>
@@ -455,7 +465,17 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             <Matchup e={nextBanger} />
             <EventTitleLink e={nextBanger} className="text-rw-muted truncate hidden sm:inline hover:text-rw-accent" />
           </div>
-          <span className="font-mono text-[#ff4655] light:text-[#c8102e] shrink-0">{relTime(nextBanger.utcIso, now)}</span>
+          {nextBanger.team1 && nextBanger.team2 ? (
+            <button
+              type="button"
+              onClick={() => navigateHub({ kind: "prep", a: teamSlug(nextBanger.team1!), b: teamSlug(nextBanger.team2!) })}
+              className="font-mono text-[#ff4655] light:text-[#c8102e] hover:underline shrink-0"
+            >
+              {relTime(nextBanger.utcIso, now)}
+            </button>
+          ) : (
+            <span className="font-mono text-[#ff4655] light:text-[#c8102e] shrink-0">{relTime(nextBanger.utcIso, now)}</span>
+          )}
         </div>
       )}
 
