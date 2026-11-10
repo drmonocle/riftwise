@@ -69,19 +69,16 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               query: new URLSearchParams({
                 league,
                 year,
-                ...(terms.length > 0
-                  ? {
-                      q:
-                        regular.length === 1
-                          ? regular[0].n
-                          : teams.length >= 1
-                            ? teams
-                                .slice(0, 2)
-                                .map((t) => t.t)
-                                .join(",")
-                            : search.trim(),
-                    }
-                  : {}),
+                ...(terms.length > 0 && regular.length === 1
+                  ? { q: regular[0].n }
+                  : headerTeams.length >= 1
+                    ? {
+                        q: headerTeams
+                          .slice(0, 2)
+                          .map((t) => t.t)
+                          .join(","),
+                      }
+                    : {}),
               }).toString(),
             }}
             className="text-rw-accent hover:underline"
@@ -99,9 +96,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               kind: "rankings",
               query: new URLSearchParams({
                 league,
-                ...(terms.length > 0 && teams.length >= 1
+                ...(headerTeams.length >= 1
                   ? {
-                      q: teams
+                      q: headerTeams
                         .slice(0, 2)
                         .map((t) => t.u || prettySlug(t.t))
                         .join(","),
@@ -119,9 +116,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               query: new URLSearchParams({
                 league,
                 year,
-                ...(terms.length > 0 && teams.length >= 1
+                ...(headerTeams.length >= 1
                   ? {
-                      q: teams
+                      q: headerTeams
                         .slice(0, 2)
                         .map((t) => t.t)
                         .join(","),
@@ -137,9 +134,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
             to={{
               kind: "finder",
               query: `league=${league}&year=${year}${
-                terms.length && teams.length >= 1
-                  ? `&team=${encodeURIComponent(teams[0].u || prettySlug(teams[0].t))}${
-                      teams[1] ? `&vs=${encodeURIComponent(teams[1].u || prettySlug(teams[1].t))}` : ""
+                headerTeams.length >= 1
+                  ? `&team=${encodeURIComponent(headerTeams[0].u || prettySlug(headerTeams[0].t))}${
+                      terms.length && headerTeams[1] ? `&vs=${encodeURIComponent(headerTeams[1].u || prettySlug(headerTeams[1].t))}` : ""
                     }`
                   : ""
               }`,
@@ -283,7 +280,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(regular[0].u || prettySlug(regular[0].n))}&year=${encodeURIComponent(year)}${terms.length > 0 && regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
+                        query: `player=${encodeURIComponent(regular[0].u || prettySlug(regular[0].n))}&year=${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
@@ -322,7 +319,11 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(regular[0].u || prettySlug(regular[0].n))}`,
+                        query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(regular[0].u || prettySlug(regular[0].n))}${
+                          terms.length > 0 && regular[1] && (regular[1].u || prettySlug(regular[1].n)) !== (regular[0].u || prettySlug(regular[0].n))
+                            ? `&vsplayer=${encodeURIComponent(regular[1].u || prettySlug(regular[1].n))}`
+                            : ""
+                        }`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
@@ -331,7 +332,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <HubLink
                       to={{
                         kind: "tiers",
-                        query: `league=${encodeURIComponent(league)}&key=y${encodeURIComponent(year)}${terms.length > 0 && regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
+                        query: `league=${encodeURIComponent(league)}&key=y${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
@@ -343,8 +344,8 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                         query: new URLSearchParams({
                           league,
                           year,
-                          ...(terms.length > 0 && regular[0].r ? { role: regular[0].r } : {}),
-                          ...(terms.length > 0 && regular[0]
+                          ...(regular[0].r ? { role: regular[0].r } : {}),
+                          ...(regular[0]
                             ? {
                                 q:
                                   regular.length === 1

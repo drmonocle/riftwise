@@ -306,10 +306,10 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             query:
               new URLSearchParams({
                 ...(region ? { league: region } : {}),
-                ...((words.trim() || list.length === 1) && list[0]
+                ...(list[0]
                   ? {
                       q: `${list[0][1] || prettySlug(list[0][0])}${
-                        words.trim() && list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                        list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
                       }`,
                     }
                   : {}),
@@ -334,14 +334,13 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         <HubLink
           to={{
             kind: "titles",
-            query:
-              (words.trim() || list.length === 1) && list[0]
-                ? `q=${encodeURIComponent(
-                    `${list[0][1] || prettySlug(list[0][0])}${
-                      words.trim() && list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
-                    }`,
-                  )}`
-                : undefined,
+            query: list[0]
+              ? `q=${encodeURIComponent(
+                  `${list[0][1] || prettySlug(list[0][0])}${
+                    list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                  }`,
+                )}`
+              : undefined,
           }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
@@ -353,10 +352,10 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             query:
               new URLSearchParams({
                 ...(since !== "all" ? { year: since } : {}),
-                ...((words.trim() || list.length === 1) && list[0]
+                ...(list[0]
                   ? {
                       q: `${list[0][1] || prettySlug(list[0][0])}${
-                        words.trim() && list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                        list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
                       }`,
                     }
                   : {}),
@@ -394,10 +393,10 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             query:
               new URLSearchParams({
                 ...(since !== "all" ? { year: since } : {}),
-                ...((words.trim() || list.length === 1) && list[0]
+                ...(list[0]
                   ? {
                       q: `${list[0][1] || prettySlug(list[0][0])}${
-                        words.trim() && list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                        list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
                       }`,
                     }
                   : {}),
@@ -710,10 +709,10 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
               new URLSearchParams({
                 ...(role ? { role } : {}),
                 ...(since !== "all" ? { year: since } : {}),
-                ...((words.trim() || list.length === 1) && list[0]
+                ...(list[0]
                   ? {
                       q: `${list[0][1] || prettySlug(list[0][0])}${
-                        words.trim() && list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                        list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
                       }`,
                     }
                   : {}),
@@ -737,12 +736,6 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
           {tl("Pro tier list")} →
         </HubLink>
         <HubLink
-          to={{ kind: "items", ...(since !== "all" ? { query: `year=${encodeURIComponent(since)}` } : {}) }}
-          className="text-rw-sub hover:text-rw-accent hover:underline"
-        >
-          {tl("Item history")} →
-        </HubLink>
-        <HubLink
           to={{ kind: "counters", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
@@ -751,14 +744,13 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
         <HubLink
           to={{
             kind: "records",
-            query:
-              (words.trim() || list.length === 1) && list[0]
-                ? `q=${encodeURIComponent(
-                    `${list[0][1] || prettySlug(list[0][0])}${
-                      words.trim() && list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
-                    }`,
-                  )}`
-                : undefined,
+            query: list[0]
+              ? `q=${encodeURIComponent(
+                  `${list[0][1] || prettySlug(list[0][0])}${
+                    list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                  }`,
+                )}`
+              : undefined,
           }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
@@ -770,7 +762,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             query:
               new URLSearchParams({
                 ...(role ? { role } : {}),
-                ...((words.trim() || list.length === 1) && list[0]
+                ...(list[0]
                   ? {
                       player: list[0][1] || prettySlug(list[0][0]),
                       ...(words.trim() && list[1] && (list[1][1] || prettySlug(list[1][0])) !== (list[0][1] || prettySlug(list[0][0]))
@@ -789,7 +781,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
           to={{
             kind: "rankings",
             query:
-              (words.trim() || list.length === 1) && (list[0]?.[2] || list[1]?.[2])
+              list[0]?.[2] || list[1]?.[2]
                 ? `q=${encodeURIComponent(
                     Array.from(new Set([list[0]?.[2], list[1]?.[2]].filter(Boolean).map((t) => prettySlug(t!)))).join(","),
                   )}`
