@@ -369,6 +369,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     >
                       {tl("Compare")} →
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}` })}
+                      className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                    >
+                      {tl("Game finder")} →
+                    </button>
                   </div>
                 );
               })()}

@@ -746,6 +746,15 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                   <Swords className="w-3.5 h-3.5" />
                   {tl("Draft board")}
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}`,
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")}
+                </HubLink>
                 {blue[0]?.c && red[0]?.c && (
                   <HubLink
                     to={{

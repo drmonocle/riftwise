@@ -702,10 +702,35 @@ export const PlayerOpponents: React.FC<{
                 {tl("Match prep")} →
               </HubLink>
               <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(filteredOpps[0].u || prettySlug(filteredOpps[0].opp))},${encodeURIComponent(filteredOpps[1].u || prettySlug(filteredOpps[1].opp))}${period || scope !== "all" ? `&p=${encodeURIComponent(period || scope)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "compare", mode: "team", a: filteredOpps[0].u || prettySlug(filteredOpps[0].opp), b: filteredOpps[1].u || prettySlug(filteredOpps[1].opp), period: period || (scope !== "all" ? scope : undefined) }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
+          {search.trim() && filteredOpps.length === 1 && (
+            <>
+              <HubLink
+                to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(filteredOpps[0].u || filteredOpps[0].opp)}${periodQuerySuffix(period || scope)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(filteredOpps[0].u || filteredOpps[0].opp)}${periodQuerySuffix(period || scope)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
               </HubLink>
             </>
           )}
@@ -824,6 +849,21 @@ export const PlayerOpponents: React.FC<{
               </HubLink>
             </span>
             <span className="flex items-center gap-2">
+              <HubLink
+                to={{ kind: "prep", a: expanded.u || prettySlug(expanded.opp), period: period || (scope !== "all" ? scope : undefined) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")}
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(expanded.u || prettySlug(expanded.opp))}${period || scope !== "all" ? `&p=${encodeURIComponent(period || scope)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")}
+              </HubLink>
               <HubLink
                 to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}${periodQuerySuffix(period || scope)}` }}
                 className="text-[11px] text-rw-accent hover:underline"

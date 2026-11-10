@@ -221,6 +221,12 @@ export const HubHome: React.FC<{
                     <HubLink to={{ kind: "prep", a: top2[0][0], b: top2[1][0] }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                       {tl("Match prep")}
                     </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(top2[0][0])},${encodeURIComponent(top2[1][0])}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")}
+                    </HubLink>
                     <HubLink to={{ kind: "compare", mode: "team", a: top2[0][0], b: top2[1][0] }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
                       {tl("Compare")}
                     </HubLink>
@@ -791,6 +797,14 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                 {tl("Compare")}
               </HubLink>
             )}
+            {rows.length >= 1 && (
+              <HubLink
+                to={{ kind: "items", query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].n))}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Item history")}
+              </HubLink>
+            )}
             <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-accent hover:underline">
               {tl("Player leaderboards")}
             </HubLink>
@@ -1030,25 +1044,59 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
   const maxG = Math.max(1, ...rows.map((e) => e.g || 0));
   return (
     <div className={`${card} space-y-2 overflow-x-auto`}>
-      <div className="flex items-center justify-between gap-2" data-nocapture="1">
+      <div className="flex flex-wrap items-center justify-between gap-2" data-nocapture="1">
         <span className="text-[11px] text-rw-muted tabular-nums">
           {tn("{n} tournament", "{n} tournaments", rows.length)}
         </span>
-        <SectionCard
-          section={tl("Tournaments")}
-          name={scope === "main" ? tl("Main leagues & internationals") : tl("Everything")}
-          sub={`${rows.length}`}
-          rows={() =>
-            rows.slice(0, 12).map((e, idx) => ({
-              rank: idx + 1,
-              team: e.w || undefined,
-              label: e.n,
-              sub: [e.r ? regionName(e.r, e.r) : null, fmtDate(e.st, false)].filter(Boolean).join(" · "),
-              value: e.w || (e.g ? `${e.g}G` : "–"),
-              win: !!e.w,
-            }))
-          }
-        />
+        <span className="flex items-center gap-2">
+          {q.trim() && rows.length === 1 && (
+            <>
+              <HubLink
+                to={{ kind: "leaders", query: `event=${encodeURIComponent(rows[0].u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Leaderboards")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `event=${encodeURIComponent(rows[0].u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+            </>
+          )}
+          {q.trim() && rows.length >= 2 && rows[0].w && rows[1].w && rows[0].w !== rows[1].w && (
+            <>
+              <HubLink
+                to={{ kind: "prep", a: rows[0].wu || prettySlug(rows[0].w), b: rows[1].wu || prettySlug(rows[1].w) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: rows[0].wu || prettySlug(rows[0].w), b: rows[1].wu || prettySlug(rows[1].w) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
+          <SectionCard
+            section={tl("Tournaments")}
+            name={scope === "main" ? tl("Main leagues & internationals") : tl("Everything")}
+            sub={`${rows.length}`}
+            rows={() =>
+              rows.slice(0, 12).map((e, idx) => ({
+                rank: idx + 1,
+                team: e.w || undefined,
+                label: e.n,
+                sub: [e.r ? regionName(e.r, e.r) : null, fmtDate(e.st, false)].filter(Boolean).join(" · "),
+                value: e.w || (e.g ? `${e.g}G` : "–"),
+                win: !!e.w,
+              }))
+            }
+          />
+        </span>
       </div>
       <STable className="w-full text-xs">
         <thead>

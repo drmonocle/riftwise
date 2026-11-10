@@ -297,10 +297,50 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       />
                     )}
                     {(() => {
+                      const yr = tournamentInfo?.startDate?.slice(0, 4);
+                      if (groupTeams.length === 1 && groupTerms.length > 0) {
+                        const a = prettySlug(groupTeams[0].name || groupTeams[0].code);
+                        return (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => navigateHub({ kind: "prep", a, period: yr ? `y${yr}` : undefined })}
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Match prep")} →
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigateHub({
+                                  kind: "draft",
+                                  query: `teams=${encodeURIComponent(a)}${yr ? `&p=${encodeURIComponent(`y${yr}`)}` : ""}`,
+                                })
+                              }
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Draft board")} →
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => navigateHub({ kind: "compare", mode: "team", a, period: yr ? `y${yr}` : undefined })}
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Compare")} →
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` })}
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Game finder")} →
+                            </button>
+                          </>
+                        );
+                      }
                       if (groupTeams.length < 2) return null;
                       const a = prettySlug(groupTeams[0].name || groupTeams[0].code);
                       const b = prettySlug(groupTeams[1].name || groupTeams[1].code);
-                      const yr = tournamentInfo?.startDate?.slice(0, 4);
                       return (
                         <>
                           <button

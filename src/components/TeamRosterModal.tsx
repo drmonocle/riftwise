@@ -315,6 +315,23 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 </button>
               </h3>
               <span className="inline-flex items-center gap-2 text-[11px] text-rw-sub">
+                {players.length >= 2 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigateHub({
+                        kind: "compare",
+                        mode: "player",
+                        a: prettySlug(players[0].name),
+                        b: prettySlug(players[1].name),
+                      });
+                      onClose();
+                    }}
+                    className="text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </button>
+                )}
                 {players.length > 0 && (
                   <SectionCard
                     section={tl("Active Roster ({n})", { n: players.length })}
@@ -400,6 +417,17 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0 ml-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigateHub({ kind: "items", query: `player=${encodeURIComponent(prettySlug(p.name))}` });
+                              onClose();
+                            }}
+                            className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-surface text-[10px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 transition-colors hidden sm:inline-block"
+                            title={tl("Item history")}
+                          >
+                            {tl("Item history")}
+                          </button>
                           <button
                             type="button"
                             onClick={() => {

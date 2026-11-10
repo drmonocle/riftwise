@@ -326,6 +326,33 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
           {paused && <span className="ml-2 text-rw-red">{tl("Paused")}</span>}
         </span>
         <span className="flex items-center gap-2 ml-auto">
+          <button
+            type="button"
+            onClick={() =>
+              navigateHub({
+                kind: "prep",
+                a: prettySlug(left.name || left.code),
+                b: prettySlug(right.name || right.code),
+              })
+            }
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Match prep")}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              navigateHub({
+                kind: "compare",
+                mode: "team",
+                a: prettySlug(left.name || left.code),
+                b: prettySlug(right.name || right.code),
+              })
+            }
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Compare")}
+          </button>
           <SectionCard
             section={finished ? tl("Game {n} · final", { n: game.number }) : tl("Game {n} · live", { n: game.number })}
             name={`${left.code} vs ${right.code}`}

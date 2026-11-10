@@ -419,6 +419,41 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 ? tl("Showing major pro teams ({shown} of {total}) · type above to search all teams", { shown: filteredTeams.length, total: catalog.teams.length })
                 : tl('Found {n} teams matching "{q}"', { n: filteredTeams.length, q }) + (filteredTeams.length === 0 && isNonLatin(search) ? " · " + tl("Names here use English letters. Try the in-game name, like Faker or T1.") : "")}
             </span>
+            {q && filteredTeams.length === 1 && (() => {
+              const a = prettySlug(filteredTeams[0].name || filteredTeams[0].code);
+              return (
+                <span className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "prep", a })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(a)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "compare", mode: "team", a })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </button>
+                </span>
+              );
+            })()}
             {(q ? filteredTeams.length >= 2 : settings.followedTeams.length >= 2 && filteredTeams.length >= 2) && (() => {
               const a = prettySlug(filteredTeams[0].name || filteredTeams[0].code);
               const b = prettySlug(filteredTeams[1].name || filteredTeams[1].code);
@@ -660,18 +695,68 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 ? tl("Showing top pro players ({shown} of {total}) · type above to search all registered pros", { shown: filteredPlayers.length, total: catalog.players.length })
                 : tl('Found {n} players matching "{q}"', { n: filteredPlayers.length, q }) + (filteredPlayers.length === 0 && isNonLatin(search) ? " · " + tl("Names here use English letters. Try the in-game name, like Faker or T1.") : "")}
             </span>
+            {q && filteredPlayers.length === 1 && (() => {
+              const a = prettySlug(filteredPlayers[0].name);
+              return (
+                <span className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "compare", mode: "player", a })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "items", query: `player=${encodeURIComponent(a)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "finder", query: `player=${encodeURIComponent(a)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </button>
+                </span>
+              );
+            })()}
             {(q ? filteredPlayers.length >= 2 : settings.followedPlayers.length >= 2 && filteredPlayers.length >= 2) && (() => {
               const a = prettySlug(filteredPlayers[0].name);
               const b = prettySlug(filteredPlayers[1].name);
               if (a === b) return null;
+              const tA = prettySlug(filteredPlayers[0].teamName || filteredPlayers[0].teamCode);
+              const tB = prettySlug(filteredPlayers[1].teamName || filteredPlayers[1].teamCode);
               return (
-                <button
-                  type="button"
-                  onClick={() => navigateHub({ kind: "compare", mode: "player", a, b })}
-                  className="text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Compare")} →
-                </button>
+                <span className="flex items-center gap-2">
+                  {tA && tB && tA !== tB && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "prep", a: tA, b: tB })}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Match prep")} →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(tA)},${encodeURIComponent(tB)}` })}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Draft board")} →
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "compare", mode: "player", a, b })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </button>
+                </span>
               );
             })()}
           </div>

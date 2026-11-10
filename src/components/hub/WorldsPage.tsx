@@ -486,28 +486,34 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
             aria-label={tl("Filter by name or team…")}
             className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-40"
           />
-          {terms.length > 0 && rows.length >= 2 && (
-            <span className="flex items-center gap-2">
-              <HubLink
-                to={{ kind: "prep", a: rows[0], b: rows[1], period: eventSlug ? `e:${eventSlug}` : undefined }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Match prep")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "draft", query: `teams=${encodeURIComponent(rows[0])},${encodeURIComponent(rows[1])}${eventSlug ? `&p=${encodeURIComponent(`e:${eventSlug}`)}` : ""}` }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Draft board")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "compare", mode: "team", a: rows[0], b: rows[1], period: eventSlug ? `e:${eventSlug}` : undefined }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Compare")} →
-              </HubLink>
-            </span>
-          )}
+          {terms.length > 0 && rows.length >= 1 && (() => {
+            const opp = rows.length >= 2 ? rows[1] : next.get(rows[0]) || undefined;
+            return (
+              <span className="flex items-center gap-2">
+                <HubLink
+                  to={{ kind: "prep", a: rows[0], b: opp, period: eventSlug ? `e:${eventSlug}` : undefined }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(rows[0])}${opp ? `,${encodeURIComponent(opp)}` : ""}${eventSlug ? `&p=${encodeURIComponent(`e:${eventSlug}`)}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: rows[0], b: opp, period: eventSlug ? `e:${eventSlug}` : undefined }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </span>
+            );
+          })()}
         </div>
       )}
       <STable className="w-full text-xs">
@@ -814,20 +820,58 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
       title={tl("Champions")}
       share={`${kind}-champions`}
       right={
-        <SectionCard
-          section={tl("Champions")}
-          name={name}
-          rows={() =>
-            shown.map((x, idx) => ({
-              rank: idx + 1,
-              team: x.as,
-              label: `${x.y} · ${x.as}`,
-              sub: tl("{score} vs {team}", { score: x.score, team: x.l }),
-              value: x.score,
-              win: true,
-            }))
-          }
-        />
+        <span className="flex items-center gap-2" data-nocapture="1">
+          {shown.length >= 1 && shown[0].l && (
+            <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: shown[0].u || prettySlug(shown[0].as),
+                  b: prettySlug(shown[0].l),
+                  period: shown[0].e ? `e:${shown[0].e}` : `y${shown[0].y}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(shown[0].u || prettySlug(shown[0].as))},${encodeURIComponent(prettySlug(shown[0].l))}&p=${encodeURIComponent(shown[0].e ? `e:${shown[0].e}` : `y${shown[0].y}`)}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: shown[0].u || prettySlug(shown[0].as),
+                  b: prettySlug(shown[0].l),
+                  period: shown[0].e ? `e:${shown[0].e}` : `y${shown[0].y}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
+          <SectionCard
+            section={tl("Champions")}
+            name={name}
+            rows={() =>
+              shown.map((x, idx) => ({
+                rank: idx + 1,
+                team: x.as,
+                label: `${x.y} · ${x.as}`,
+                sub: tl("{score} vs {team}", { score: x.score, team: x.l }),
+                value: x.score,
+                win: true,
+              }))
+            }
+          />
+        </span>
       }
     >
       {hidden && (
