@@ -429,7 +429,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
               </div>
             )}
             <div className="max-sm:order-first">
-              <SwissTable rec={swiss.rec} byU={byU} next={next} />
+              <SwissTable rec={swiss.rec} byU={byU} next={next} eventSlug={main.u} />
             </div>
           </div>
         </Section>
@@ -439,7 +439,12 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
 };
 
 /** Every Swiss team by its record: through (3 wins), out (3 losses) or still in, with its next opponent. */
-const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string, WTeam>; next: Map<string, string> }> = ({ rec, byU, next }) => {
+const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string, WTeam>; next: Map<string, string>; eventSlug?: string }> = ({
+  rec,
+  byU,
+  next,
+  eventSlug,
+}) => {
   const rows = Object.keys(rec).sort((a, b) => rec[b][0] - rec[a][0] || rec[a][1] - rec[b][1] || (byU.get(a)?.n || a).localeCompare(byU.get(b)?.n || b));
   return (
     <div className="overflow-x-auto max-w-full">
@@ -469,9 +474,19 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 </td>
                 <td className="px-2 py-1 text-center tabular-nums font-bold" data-sort={w * 10 - l}>
                   <span className="inline-flex items-center gap-1.5">
-                    <span>
-                      {w}-{l}
-                    </span>
+                    {eventSlug ? (
+                      <HubLink
+                        to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}&team=${encodeURIComponent(u)}` }}
+                        className="hover:text-rw-accent hover:underline"
+                        title={tl("Game finder")}
+                      >
+                        {w}-{l}
+                      </HubLink>
+                    ) : (
+                      <span>
+                        {w}-{l}
+                      </span>
+                    )}
                     <span className="hidden sm:inline-flex items-center gap-0.5">
                       {Array.from({ length: w }).map((_, idx) => (
                         <span key={`w-${idx}`} className="w-1.5 h-1.5 rounded-full bg-rw-teal" />
@@ -755,7 +770,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                     <span className="sm:hidden block pl-[18px] text-[10px] text-rw-sub tabular-nums">
                       {x.score}{" "}
                       <HubLink
-                        to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l) }}
+                        to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l), period: `y${x.y}` }}
                         className="text-rw-muted hover:text-rw-accent hover:underline"
                         title={tl("Compare")}
                       >
@@ -802,7 +817,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                   {x.l ? (
                     <span className="inline-flex items-center gap-1.5">
                       <HubLink
-                        to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l) }}
+                        to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l), period: `y${x.y}` }}
                         className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                         title={tl("Compare")}
                       >
@@ -831,7 +846,13 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 {idx > 0 && <span className="text-rw-muted mr-1">·</span>}
                 <TeamLogo name={r.team} size={13} className="shrink-0" />
                 <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />
-                <span>({r.from}–{r.to}, {r.n})</span>
+                {r.u ? (
+                  <HubLink to={{ kind: "team", slug: r.u, tab: "tournaments" }} className="hover:text-rw-accent hover:underline">
+                    ({r.from}–{r.to}, {r.n})
+                  </HubLink>
+                ) : (
+                  <span>({r.from}–{r.to}, {r.n})</span>
+                )}
               </span>
             ))}
         </p>

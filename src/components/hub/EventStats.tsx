@@ -169,6 +169,18 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string }> = ({
                   >
                     {r.value}
                   </HubLink>
+                ) : r.player ? (
+                  <HubLink to={{ kind: "player", slug: r.player }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
+                    {r.value}
+                  </HubLink>
+                ) : r.team ? (
+                  <HubLink to={{ kind: "team", slug: r.team }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
+                    {r.value}
+                  </HubLink>
+                ) : r.champ ? (
+                  <HubLink to={{ kind: "champ", slug: prettySlug(r.champ) }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
+                    {r.value}
+                  </HubLink>
                 ) : (
                   <span className="relative font-bold text-rw-accent shrink-0 tabular-nums">{r.value}</span>
                 )}

@@ -387,7 +387,16 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           </div>
           <p className="text-[10px] text-rw-muted">
             {tl("Click an item, keystone or spell pair to see the latest pro games that used it.")}{" "}
-            <HubLink to={{ kind: "items", ...(usedOnly?.kind === "item" ? { query: `item=${prettySlug(usedOnly.v)}` } : {}) }} className="text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "items",
+                query: new URLSearchParams({
+                  champ: prettySlug(c.name),
+                  ...(usedOnly?.kind === "item" ? { item: prettySlug(usedOnly.v) } : {}),
+                }).toString(),
+              }}
+              className="text-rw-accent hover:underline"
+            >
               {tl("Has a pro ever built it? Item history")}
             </HubLink>
           </p>
@@ -728,7 +737,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       <HubLink
                         to={
                           p.u
-                            ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}` }
+                            ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}${playersRecent ? "&p=12m" : ""}` }
                             : { kind: "finder", query: `player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c.name)}` }
                         }
                         className="hover:text-rw-accent hover:underline"
@@ -742,7 +751,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <HubLink
                       to={
                         p.u
-                          ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}` }
+                          ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}${playersRecent ? "&p=12m" : ""}` }
                           : { kind: "finder", query: `player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c.name)}` }
                       }
                       className="hover:opacity-90"
@@ -828,7 +837,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     )}
                     {r.team && r.opp ? (
                       <HubLink
-                        to={{ kind: "compare", mode: "team", a: prettySlug(r.team), b: prettySlug(r.opp) }}
+                        to={{
+                          kind: "compare",
+                          mode: "team",
+                          a: prettySlug(r.team),
+                          b: prettySlug(r.opp),
+                          period: /^\d{4}$/.test((r.date || "").slice(0, 4)) ? `y${(r.date || "").slice(0, 4)}` : undefined,
+                        }}
                         className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
                         title={tl("Compare")}
                       >

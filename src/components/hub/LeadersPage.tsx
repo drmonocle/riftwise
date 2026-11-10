@@ -303,6 +303,20 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
             aria-label={tl("Filter by name or team…")}
             className={`${sel} w-44`}
           />
+          {shownRows.length === 2 && shownRows[0].u && shownRows[1].u && (
+            <HubLink
+              to={{
+                kind: "compare",
+                mode: "player",
+                a: shownRows[0].u,
+                b: shownRows[1].u,
+                period: event ? `e:${event}` : `y${year}`,
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Compare")} →
+            </HubLink>
+          )}
         </div>
       </div>
       {loading && <Loading />}
@@ -428,7 +442,17 @@ const LeaderSpotlight: React.FC<{
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="font-mono font-bold tabular-nums text-rw-teal">{c.val}</div>
+            {onPickStat ? (
+              <button
+                type="button"
+                onClick={() => onPickStat(c.key)}
+                className="font-mono font-bold tabular-nums text-rw-teal hover:text-rw-accent hover:underline block ml-auto"
+              >
+                {c.val}
+              </button>
+            ) : (
+              <div className="font-mono font-bold tabular-nums text-rw-teal">{c.val}</div>
+            )}
             <HubLink
               to={{
                 kind: "finder",

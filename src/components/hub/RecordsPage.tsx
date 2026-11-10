@@ -655,11 +655,15 @@ export const RecordsPanel: React.FC = () => {
                         <PlayerLink name={p.pl} u={p.u} />
                       </span>
                       <HubLink
-                        to={{
-                          kind: "player",
-                          slug: p.u || prettySlug(p.pl),
-                          ...(title === tl("Biggest champion pools") ? { tab: "champions" } : {}),
-                        }}
+                        to={
+                          title === tl("Most pro games")
+                            ? { kind: "finder", query: `player=${encodeURIComponent(p.u || p.pl)}` }
+                            : {
+                                kind: "player",
+                                slug: p.u || prettySlug(p.pl),
+                                ...(title === tl("Biggest champion pools") ? { tab: "champions" } : { tab: "stats" }),
+                              }
+                        }
                         className="text-rw-accent font-bold tabular-nums hover:underline"
                       >
                         {fmtNum(p.v)}
@@ -798,9 +802,17 @@ export const RecordsPanel: React.FC = () => {
                             <TeamLink name={t.team} u={t.u} />
                           </span>
                           <span className="text-rw-muted shrink-0">
-                            {t.worlds
-                              ? tl("{n} Worlds", { n: t.worlds }) + " · "
-                              : ""}
+                            {t.worlds ? (
+                              <>
+                                <HubLink
+                                  to={{ kind: "titles", query: `kind=Worlds&q=${encodeURIComponent(t.team)}` }}
+                                  className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums"
+                                >
+                                  {tl("{n} Worlds", { n: t.worlds })}
+                                </HubLink>{" "}
+                                ·{" "}
+                              </>
+                            ) : null}
                             <HubLink
                               to={{ kind: "titles", query: `q=${encodeURIComponent(t.team)}` }}
                               className="text-rw-accent font-bold tabular-nums hover:underline"
@@ -993,7 +1005,13 @@ export const TitlesPanel: React.FC = () => {
                                   )}{" "}
                                   {x.l ? (
                                     <HubLink
-                                      to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l) }}
+                                      to={{
+                                        kind: "compare",
+                                        mode: "team",
+                                        a: x.u || prettySlug(x.as),
+                                        b: prettySlug(x.l),
+                                        ...(/^\d{4}$/.test((x.date || "").slice(0, 4)) ? { period: `y${(x.date || "").slice(0, 4)}` } : {}),
+                                      }}
                                       className="text-rw-muted hover:text-rw-accent hover:underline"
                                       title={tl("Compare")}
                                     >

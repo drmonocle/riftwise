@@ -505,7 +505,14 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
         <Stat label={tl("Games")} value={fmtNum(it.g)} sub={tl("ended with it")} />
         <Stat label={tl("Players")} value={fmtNum(it.np)} />
         {it.w != null && <Stat label={tl("Win %")} value={winRate(it.w, it.g)} sub={tl("{n} won", { n: fmtNum(it.w) })} />}
-        {top && <Stat label={tl("Most built on")} value={<ChampLink name={top[0]} size={18} />} sub={tl("{n} games", { n: fmtNum(top[1]) })} />}
+        {top && (
+          <Stat
+            label={tl("Most built on")}
+            value={<ChampLink name={top[0]} size={18} />}
+            sub={tl("{n} games", { n: fmtNum(top[1]) })}
+            to={{ kind: "items", query: new URLSearchParams({ item: slug, champ: prettySlug(top[0]) }).toString() }}
+          />
+        )}
       </div>
       {it.y && it.y.length > 1 && <YearBars years={it.y} onYear={onYear} />}
       <PickChips label={tl("Champions")} rows={(it.c || []).slice(0, 24).map(([c, g]) => ({ key: c, champ: c, text: champName(c), n: g, pick: () => onChamp(c) }))} />
@@ -1092,9 +1099,18 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
           return (
             <li key={i} className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1.5 min-w-0">
-                <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[6] ? "text-rw-teal" : "text-rw-red"}`}>
-                  {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
-                </span>
+                {!hide && r[1] ? (
+                  <HubLink
+                    to={{ kind: "match", slug: r[1], ...(r[22] ? { game: r[22] } : {}) }}
+                    className={`w-3.5 shrink-0 font-bold hover:underline ${r[6] ? "text-rw-teal" : "text-rw-red"}`}
+                  >
+                    {r[6] ? tc("short result", "W") : tc("short result", "L")}
+                  </HubLink>
+                ) : (
+                  <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[6] ? "text-rw-teal" : "text-rw-red"}`}>
+                    {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
+                  </span>
+                )}
                 <HubLink to={{ kind: "champ", slug: prettySlug(r[2]) }} className="shrink-0">
                   <ChampIcon name={r[2]} size={18} />
                 </HubLink>
@@ -1109,7 +1125,23 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                   ) : (
                     <span className="text-rw-text tabular-nums shrink-0">{hide ? "–" : `${r[3]}/${r[4]}/${r[5]}`}</span>
                   )}
-                  <span className="text-rw-muted shrink-0">{tl("vs")}</span>
+                  {r[7] && r[8] ? (
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a: prettySlug(r[7]),
+                        b: prettySlug(r[8]),
+                        period: /^\d{4}$/.test((r[0] || "").slice(0, 4)) ? `y${(r[0] || "").slice(0, 4)}` : undefined,
+                      }}
+                      className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
+                      title={tl("Compare")}
+                    >
+                      {tl("vs")}
+                    </HubLink>
+                  ) : (
+                    <span className="text-rw-muted shrink-0">{tl("vs")}</span>
+                  )}
                   <TeamLogo name={r[8]} size={13} />
                   <TeamLink name={r[8]} className="truncate" />
                   <span className="text-rw-muted truncate">

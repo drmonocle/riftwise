@@ -273,8 +273,14 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                   return shown.map((r, i) => (
                     <tr key={i} className="border-t border-rw-border first:border-0">
                       <td className={`${td} w-12 font-bold ${r.p === "1" ? "text-rw-accent" : "text-rw-sub"}`} data-sort={Number(r.p.replace(/\D.*$/, "")) || i + 1}>
-                        {r.p === "1" && <Trophy className="w-3 h-3 inline mr-1" />}
-                        {r.p}
+                        <HubLink
+                          to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(r.u || r.t)}` }}
+                          className="hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          {r.p === "1" && <Trophy className="w-3 h-3 inline mr-1" />}
+                          {r.p}
+                        </HubLink>
                       </td>
                       <td className={td} data-sort={r.t}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
@@ -502,6 +508,21 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
         <span className="truncate">{note ?? fmtDate(r.date, false)}</span>
         <span className="flex items-center gap-1.5 shrink-0">
           {hiddenBySpoiler && !hideResult && played && <RevealButton onReveal={reveal} small />}
+          {r.au && r.bu && (
+            <HubLink
+              to={{
+                kind: "compare",
+                mode: "team",
+                a: r.au,
+                b: r.bu,
+                period: /^\d{4}$/.test((r.date || "").slice(0, 4)) ? `y${(r.date || "").slice(0, 4)}` : undefined,
+              }}
+              className="hover:text-rw-accent hover:underline"
+              title={tl("Compare")}
+            >
+              {tl("vs")}
+            </HubLink>
+          )}
           {!hidden && r.r != null &&
             (r.g && !hideResult ? (
               <HubLink
@@ -920,7 +941,17 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
                 <TeamLink name={r.t} u={e.teams?.find((tm) => tm.t === r.t)?.u} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
               </span>
               <span className="relative shrink-0 text-rw-sub tabular-nums">
-                <span className="text-rw-accent font-bold">{fmtNum(r.v)}</span> ·{" "}
+                <HubLink
+                  to={
+                    k === "pool" && r.u
+                      ? { kind: "player", slug: r.u, tab: "champions", query: `p=e:${encodeURIComponent(e.u)}` }
+                      : { kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(r.u || r.n)}` }
+                  }
+                  className="text-rw-accent font-bold hover:underline"
+                >
+                  {fmtNum(r.v)}
+                </HubLink>{" "}
+                ·{" "}
                 <HubLink
                   to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(r.u || r.n)}` }}
                   className="hover:text-rw-accent hover:underline"

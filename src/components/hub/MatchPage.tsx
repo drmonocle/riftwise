@@ -1273,7 +1273,7 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
             key={i}
             to={
               teamSlug
-                ? { kind: "team", slug: teamSlug, tab: "champions", query: `ban=${encodeURIComponent(c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
+                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
                 : { kind: "champ", slug: prettySlug(c) }
             }
             className={`opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-opacity ${i === 3 ? "ml-2" : ""}`}
@@ -1436,6 +1436,7 @@ const PlayerRow: React.FC<{
                   query: new URLSearchParams({
                     item: prettySlug(it),
                     ...(p.u ? { player: p.u } : {}),
+                    ...(p.c ? { champ: prettySlug(p.c) } : {}),
                   }).toString(),
                 }}
                 className="hover:opacity-80"
@@ -1450,6 +1451,7 @@ const PlayerRow: React.FC<{
                   query: new URLSearchParams({
                     item: prettySlug(p.tr),
                     ...(p.u ? { player: p.u } : {}),
+                    ...(p.c ? { champ: prettySlug(p.c) } : {}),
                   }).toString(),
                 }}
                 className="hover:opacity-80"

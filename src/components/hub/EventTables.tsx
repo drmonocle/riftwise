@@ -177,7 +177,24 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       ),
     },
   ];
-  if (players.some((p) => p.mvp)) cols.splice(5, 0, { key: "mvp", label: tl("POG"), title: tl("Player of the Game awards"), value: (p) => p.mvp || 0 });
+  if (players.some((p) => p.mvp))
+    cols.splice(5, 0, {
+      key: "mvp",
+      label: tl("POG"),
+      title: tl("Player of the Game awards"),
+      value: (p) => p.mvp || 0,
+      render: (p) =>
+        p.mvp ? (
+          <HubLink
+            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(p.u || p.n)}` }}
+            className="hover:text-rw-accent hover:underline font-semibold"
+          >
+            {p.mvp}
+          </HubLink>
+        ) : (
+          0
+        ),
+    });
   const early = players.some((p) => p.tn || p.fbn);
   if (early) cols.splice(cols.length - 1, 0, ...playerEarlyCols());
   return (
