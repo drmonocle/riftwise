@@ -275,6 +275,18 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               {tl("Match prep")} →
             </HubLink>
             <HubLink
+              to={{
+                kind: "compare",
+                mode: "team",
+                a,
+                b,
+                period: event !== "all" ? `e:${event}` : year !== "all" ? `y${year}` : undefined,
+              }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
+            <HubLink
               to={{ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}` }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -284,7 +296,13 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               title={`${aName} vs ${bName}`}
               sub={`${aName} ${wa} – ${rows.length - wa} ${bName} · ${tl("Games {a}–{b}", { a: ga, b: gb })}`}
               rows={rows.slice(0, 5).map((r) => `${aName} ${r[3]}–${r[4]} ${bName} · ${r[5]} (${fmtDate(r[0])})`)}
-              url={hubShareUrl({ kind: "compare", mode: "team", a, b })}
+              url={hubShareUrl({
+                kind: "compare",
+                mode: "team",
+                a,
+                b,
+                ...(event !== "all" ? { period: `e:${event}` } : year !== "all" ? { period: `y${year}` } : {}),
+              })}
             />
             <SectionCard
               section={tl("Every series between them")}
@@ -561,7 +579,13 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                 kind: "player",
                 slug,
                 tab: champ !== "all" ? "champions" : "matches",
-                query: champ !== "all" ? `champ=${encodeURIComponent(champ)}` : undefined,
+                query:
+                  [
+                    champ !== "all" ? `champ=${encodeURIComponent(champ)}` : "",
+                    year !== "all" ? `p=y${encodeURIComponent(year)}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join("&") || undefined,
               })}
             />
             <SectionCard

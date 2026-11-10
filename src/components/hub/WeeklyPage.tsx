@@ -153,8 +153,13 @@ export const WeeklyPage: React.FC = () => {
 };
 
 const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({ w, hidden, reveal }) => {
+  const [resultFilter, setResultFilter] = useState("");
   const range = `${fmtDate(w.from, false)} – ${fmtDate(w.to)}`;
   const pct = (p: number) => `${Math.round(p * 100)}%`;
+  const rq = resultFilter.trim().toLowerCase();
+  const shownResults = rq
+    ? w.results.filter((r) => `${r.a} ${r.b} ${r.t} ${r.e || ""}`.toLowerCase().includes(rq))
+    : w.results;
   return (
     <div className="rw-page">
       <div className={`rw-span ${card}`}>
@@ -676,26 +681,38 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               title={tl("Every result")}
               right={
                 w.results.length > 0 ? (
-                  <SectionCard
-                    section={tl("Every result")}
-                    name={range}
-                    rows={() =>
-                      w.results.slice(0, 12).map((r, idx) => ({
-                        rank: idx + 1,
-                        team: r.sa >= r.sb ? r.a : r.b,
-                        label: `${r.a} vs ${r.b}`,
-                        sub: `${r.t} · ${fmtDate(r.date, false)}`,
-                        value: `${r.sa}–${r.sb}`,
-                        win: true,
-                      }))
-                    }
-                  />
+                  <span className="flex flex-wrap items-center gap-2">
+                    {w.results.length > 8 && (
+                      <input
+                        type="search"
+                        value={resultFilter}
+                        onChange={(e) => setResultFilter(e.target.value)}
+                        placeholder={tl("Filter by opponent or tournament…")}
+                        aria-label={tl("Filter by opponent or tournament…")}
+                        className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-48 focus:border-rw-accent focus:outline-none"
+                      />
+                    )}
+                    <SectionCard
+                      section={tl("Every result")}
+                      name={range}
+                      rows={() =>
+                        shownResults.slice(0, 12).map((r, idx) => ({
+                          rank: idx + 1,
+                          team: r.sa >= r.sb ? r.a : r.b,
+                          label: `${r.a} vs ${r.b}`,
+                          sub: `${r.t} · ${fmtDate(r.date, false)}`,
+                          value: `${r.sa}–${r.sb}`,
+                          win: true,
+                        }))
+                      }
+                    />
+                  </span>
                 ) : undefined
               }
               share="weekly-results"
             >
               <ul className="text-xs divide-y divide-rw-border/60">
-                {w.results.map((r) => (
+                {shownResults.map((r) => (
                   <li key={r.g} className="flex items-center gap-2 py-1 min-w-0">
                     <HubLink to={{ kind: "match", slug: r.g }} className="w-14 shrink-0 text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
                       {fmtDate(r.date, false)}

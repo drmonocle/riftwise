@@ -1544,7 +1544,19 @@ const PlayerHeadToHead: React.FC<{
   const meetings = useMemo(() => playerMeetings(a, b), [a, b]);
   const [hidden, reveal] = useHidden(spoilerKey, meetings.find((m) => isFresh(m.a[0]))?.a[0]);
   const [n, setN] = useState(10);
+  const [champFilter, setChampFilter] = useState("");
   const shown = hidden ? meetings.filter((m) => !isFresh(m.a[0])) : meetings;
+  const filteredGames = useMemo(() => {
+    const q = champFilter.trim().toLowerCase();
+    if (!q) return shown;
+    return shown.filter(
+      (m) =>
+        champName(m.a[2]).toLowerCase().includes(q) ||
+        m.a[2].toLowerCase().includes(q) ||
+        champName(m.b[2]).toLowerCase().includes(q) ||
+        m.b[2].toLowerCase().includes(q),
+    );
+  }, [shown, champFilter]);
   const s = useMemo(() => {
     const w = shown.filter((m) => m.a[6]).length;
     // lane leads only when they played the same role (then each one's lead is over the other)
@@ -1574,22 +1586,34 @@ const PlayerHeadToHead: React.FC<{
         hidden ? (
           <RevealButton onReveal={reveal} small />
         ) : (
-          <SectionCard
-            section={`${tl("Head to head")} · ${aName} vs ${bName}`}
-            sub={`${aName} ${s.w} – ${s.l} ${bName}`}
-            name={`h2h-${aName}-vs-${bName}`}
-            rows={() =>
-              shown.slice(0, 10).map((m, idx) => ({
-                rank: idx + 1,
-                champ: m.a[2],
-                team: m.a[6] ? m.a[7] : m.b[7],
-                label: `${champName(m.a[2])} (${m.a[3]}/${m.a[4]}/${m.a[5]}) vs ${champName(m.b[2])} (${m.b[3]}/${m.b[4]}/${m.b[5]})`,
-                sub: `${m.a[9]} · ${fmtDate(m.a[0])}`,
-                value: m.a[6] ? aName : bName,
-                win: Boolean(m.a[6]),
-              }))
-            }
-          />
+          <span className="flex flex-wrap items-center gap-2">
+            {shown.length > 8 && (
+              <input
+                type="search"
+                value={champFilter}
+                onChange={(e) => setChampFilter(e.target.value)}
+                placeholder={tl("Search champions…")}
+                aria-label={tl("Search champions…")}
+                className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
+              />
+            )}
+            <SectionCard
+              section={`${tl("Head to head")} · ${aName} vs ${bName}`}
+              sub={`${aName} ${s.w} – ${s.l} ${bName}`}
+              name={`h2h-${aName}-vs-${bName}`}
+              rows={() =>
+                filteredGames.slice(0, 10).map((m, idx) => ({
+                  rank: idx + 1,
+                  champ: m.a[2],
+                  team: m.a[6] ? m.a[7] : m.b[7],
+                  label: `${champName(m.a[2])} (${m.a[3]}/${m.a[4]}/${m.a[5]}) vs ${champName(m.b[2])} (${m.b[3]}/${m.b[4]}/${m.b[5]})`,
+                  sub: `${m.a[9]} · ${fmtDate(m.a[0])}`,
+                  value: m.a[6] ? aName : bName,
+                  win: Boolean(m.a[6]),
+                }))
+              }
+            />
+          </span>
         )
       }
     >
@@ -1692,7 +1716,7 @@ const PlayerHeadToHead: React.FC<{
         </div>
       )}
       <ul className="text-xs space-y-1">
-        {shown.slice(0, n).map((m, i) => (
+        {(champFilter.trim() ? filteredGames : filteredGames.slice(0, n)).map((m, i) => (
           <li key={i} className="flex items-center justify-between gap-2 min-w-0">
             <span className="flex items-center gap-1.5 min-w-0">
               <HubLink
@@ -1744,9 +1768,9 @@ const PlayerHeadToHead: React.FC<{
           </li>
         ))}
       </ul>
-      {shown.length > n && (
+      {!champFilter.trim() && filteredGames.length > n && (
         <button type="button" onClick={() => setN((x) => x + 20)} className="text-[11px] text-rw-accent hover:underline">
-          {tl("Show more ({n} left)", { n: shown.length - n })}
+          {tl("Show more ({n} left)", { n: filteredGames.length - n })}
         </button>
       )}
     </Section>
@@ -1912,24 +1936,43 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
         title={`${tl("Compare")} · ${periodLabel}`}
         share={`riftwise-compare-${slugs.join("-")}`}
         right={
-          <SectionCard
-            section={`${tl("Compare")} · ${periodLabel}`}
-            sub={rows.map((r) => r.info.name).join(" · ")}
-            name={`compare-${slugs.join("-")}`}
-            rows={() =>
-              rows.map((r, idx) => {
+          <span className="flex flex-wrap items-center gap-2">
+            <SectionCard
+              section={`${tl("Compare")} · ${periodLabel}`}
+              sub={rows.map((r) => r.info.name).join(" · ")}
+              name={`compare-${slugs.join("-")}`}
+              rows={() =>
+                rows.map((r, idx) => {
+                  const agg = aggs[idx];
+                  return {
+                    rank: idx + 1,
+                    team: mode === "team" ? r.info.name : (r.info as HubPlayer).club || undefined,
+                    label: r.info.name,
+                    sub: mode === "team" ? `${agg.w}-${agg.g - agg.w} · GD@15 ${sgn(agg.tl?.gd15 ?? null)}` : `${agg.w}-${agg.g - agg.w} · ${fmtN((agg as PlayerAgg).kda)} KDA`,
+                    value: winRate(agg.w, agg.g),
+                    win: agg.g > 0 ? agg.w / agg.g >= 0.5 : undefined,
+                  };
+                })
+              }
+            />
+            <CopyComparePost
+              title={`${rows.map((r) => r.info.name).join(" vs ")} (${periodLabel})`}
+              lines={rows.map((r, idx) => {
                 const agg = aggs[idx];
-                return {
-                  rank: idx + 1,
-                  team: mode === "team" ? r.info.name : (r.info as HubPlayer).club || undefined,
-                  label: r.info.name,
-                  sub: mode === "team" ? `${agg.w}-${agg.g - agg.w} · GD@15 ${sgn(agg.tl?.gd15 ?? null)}` : `${agg.w}-${agg.g - agg.w} · ${fmtN((agg as PlayerAgg).kda)} KDA`,
-                  value: winRate(agg.w, agg.g),
-                  win: agg.g > 0 ? agg.w / agg.g >= 0.5 : undefined,
-                };
-              })
-            }
-          />
+                return mode === "team"
+                  ? `${r.info.name}: ${agg.w}-${agg.g - agg.w} (${winRate(agg.w, agg.g)})${agg.tl?.gd15 != null ? ` · GD@15 ${sgn(agg.tl.gd15)}` : ""}`
+                  : `${r.info.name}: ${agg.w}-${agg.g - agg.w} (${winRate(agg.w, agg.g)}) · ${fmtN((agg as PlayerAgg).kda)} KDA`;
+              })}
+              url={hubShareUrl({
+                kind: "compare",
+                mode,
+                a: slugs[0],
+                b: slugs[1],
+                more: slugs.slice(2).length ? slugs.slice(2) : undefined,
+                ...(period !== "all" ? { period } : {}),
+              })}
+            />
+          </span>
         }
       >
         <div className="overflow-x-auto">

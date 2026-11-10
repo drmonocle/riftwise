@@ -498,6 +498,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
   onYear,
 }) => {
   const st = useLoad(() => loadHubItem(slug), [slug]);
+  const [search, setSearch] = useState("");
   const teamBySlug = useMemo(() => {
     const m = new Map<string, string>();
     for (const r of players || []) {
@@ -509,15 +510,29 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
   if (!st.data) return <p className="text-xs text-rw-sub rw-span">{tl("No pro game in the stats ended with this item.")}</p>;
   const it = st.data;
   const top = it.c?.[0];
+  const sq = search.trim().toLowerCase();
+  const filteredPlayers = sq
+    ? it.players.filter(([n, u]) => n.toLowerCase().includes(sq) || u.toLowerCase().includes(sq) || (teamBySlug.get(u) || "").toLowerCase().includes(sq))
+    : it.players;
   return (
     <Section
       title={tl("Who built {item} most", { item: itemName(it.n) })}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          {it.players.length > 8 && (
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
+            />
+          )}
           <CopyItemsPost
             title={tl("Who built {item} most", { item: itemName(it.n) })}
             sub={`${fmtNum(it.g)}G · ${fmtNum(it.np)} ${tl("Players")}`}
-            rows={it.players.slice(0, 5).map(([n, , g, last], i) => `#${i + 1} ${n}: ${fmtNum(g)}G (${fmtDate(last, false)})`)}
+            rows={filteredPlayers.slice(0, 5).map(([n, , g, last], i) => `#${i + 1} ${n}: ${fmtNum(g)}G (${fmtDate(last, false)})`)}
             picks={{ player: "", item: slug, champ: "", year: "" }}
           />
           <SectionCard
@@ -525,7 +540,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
             name={itemName(it.n)}
             sub={`${fmtNum(it.g)}G · ${fmtNum(it.np)} ${tl("Players")}`}
             rows={() =>
-              it.players.slice(0, 12).map(([n, u, g, last], i) => ({
+              filteredPlayers.slice(0, 12).map(([n, u, g, last], i) => ({
                 rank: i + 1,
                 team: teamBySlug.get(u),
                 label: n,
@@ -568,7 +583,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
         <tbody>
           {(() => {
             const maxG = Math.max(1, it.players[0]?.[2] || 1);
-            return it.players.map(([n, u, g, last]) => (
+            return filteredPlayers.map(([n, u, g, last]) => (
               <tr key={u} className="border-t border-rw-border">
                 <td className={td} data-sort={n}>
                   <span className="inline-flex items-center gap-1.5 min-w-0">
@@ -612,6 +627,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
   const st = useLoad(() => loadHubItemChamp(item, champ), [item, champ]);
   const head = useLoad(() => loadHubItem(item), [item]);
   const [all, setAll] = useState(false);
+  const [search, setSearch] = useState("");
   if (st.loading || head.loading) return <Loading />;
   const label = itemName(head.data?.n || item);
   const title = year ? tl("Who built {item} on {champ} in {year}", { item: label, champ: champLabel, year }) : tl("Who built {item} on {champ}", { item: label, champ: champLabel });
@@ -630,18 +646,35 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
     .filter((r) => r.g > 0)
     .sort((a, b) => b.g - a.g || a.k - b.k);
   const total = rows.reduce((s, r) => s + r.g, 0);
-  const shown = all ? rows : rows.slice(0, 100);
+  const sq = search.trim().toLowerCase();
+  const filteredRows = sq
+    ? rows.filter((r) => {
+        const p = players?.[r.k];
+        return p && (p[0].toLowerCase().includes(sq) || (p[2] || "").toLowerCase().includes(sq) || playerSlug(p).toLowerCase().includes(sq));
+      })
+    : rows;
+  const shown = all || sq ? filteredRows : filteredRows.slice(0, 100);
   return (
     <Section
       title={title}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          {rows.length > 8 && (
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
+            />
+          )}
           {rows.length > 0 && (
             <>
               <CopyItemsPost
                 title={title}
                 sub={`${fmtNum(total)}G · ${fmtNum(rows.length)} ${tl("Players")}`}
-                rows={rows.slice(0, 5).map((r, i) => `#${i + 1} ${players?.[r.k]?.[0] || "–"}: ${fmtNum(r.g)}G (${yearSpan(r.ys)})`)}
+                rows={filteredRows.slice(0, 5).map((r, i) => `#${i + 1} ${players?.[r.k]?.[0] || "–"}: ${fmtNum(r.g)}G (${yearSpan(r.ys)})`)}
                 picks={picks}
               />
               <SectionCard
@@ -649,7 +682,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                 name={`${label} · ${champLabel}`}
                 sub={`${fmtNum(total)}G · ${fmtNum(rows.length)} ${tl("Players")}`}
                 rows={() =>
-                  rows.slice(0, 12).map((r, i) => ({
+                  filteredRows.slice(0, 12).map((r, i) => ({
                     rank: i + 1,
                     champ: head.data?.c?.find(([c]) => prettySlug(c) === champ)?.[0] || champLabel || champ,
                     team: players?.[r.k]?.[2] || undefined,
@@ -741,9 +774,9 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
               })()}
             </tbody>
           </STable>
-          {rows.length > shown.length && (
+          {filteredRows.length > shown.length && (
             <button type="button" onClick={() => setAll(true)} className="text-[11px] text-rw-accent hover:underline">
-              {tl("Show all {n}", { n: rows.length })}
+              {tl("Show all {n}", { n: filteredRows.length })}
             </button>
           )}
         </>
@@ -762,20 +795,40 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
   const { item, year } = picks;
   const st = useLoad(() => loadHubItemYear(item, year), [item, year]);
   const head = useLoad(() => loadHubItem(item), [item]);
+  const [search, setSearch] = useState("");
   if (st.loading || head.loading) return <Loading />;
   const label = itemName(head.data?.n || item);
   const y = st.data;
+  const sq = search.trim().toLowerCase();
+  const filteredP = y
+    ? sq
+      ? y.p.filter(([k]) => {
+          const p = players?.[k];
+          return p && (p[0].toLowerCase().includes(sq) || (p[2] || "").toLowerCase().includes(sq) || playerSlug(p).toLowerCase().includes(sq));
+        })
+      : y.p
+    : [];
   return (
     <Section
       title={tl("Who built {item} in {year}", { item: label, year })}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
+          {y && y.p.length > 8 && (
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
+            />
+          )}
           {y && y.p.length > 0 && (
             <>
               <CopyItemsPost
                 title={tl("Who built {item} in {year}", { item: label, year })}
                 sub={`${fmtNum(y.g)}G · ${fmtNum(y.np)} ${tl("Players")}`}
-                rows={y.p.slice(0, 5).map(([k, g], i) => `#${i + 1} ${players?.[k]?.[0] || "–"}: ${fmtNum(g)}G`)}
+                rows={filteredP.slice(0, 5).map(([k, g], i) => `#${i + 1} ${players?.[k]?.[0] || "–"}: ${fmtNum(g)}G`)}
                 picks={picks}
               />
               <SectionCard
@@ -783,7 +836,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                 name={`${label} · ${year}`}
                 sub={`${fmtNum(y.g)}G · ${fmtNum(y.np)} ${tl("Players")}`}
                 rows={() =>
-                  y.p.slice(0, 12).map(([k, g], i) => ({
+                  filteredP.slice(0, 12).map(([k, g], i) => ({
                     rank: i + 1,
                     champ: y.c[0]?.[0],
                     team: players?.[k]?.[2] || undefined,
@@ -823,7 +876,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
             <tbody>
               {(() => {
                 const maxG = Math.max(1, y.p[0]?.[1] || 1);
-                return y.p.map(([k, g]) => {
+                return filteredP.map(([k, g]) => {
                   const p = players?.[k];
                   const u = p ? playerSlug(p) : "";
                   return (

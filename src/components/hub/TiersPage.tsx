@@ -100,20 +100,25 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
     [isLeague, rawScope, key, leagues.length],
   );
   const block = isLeague ? lgBlock.data : state.data?.[scope] || state.data?.all;
+  const [champFilter, setChampFilter] = useState("");
 
   const byRole = useMemo(() => {
     const out = new Map<string, Ranked[]>(ROLES.map((r) => [r, []]));
     if (!block) return out;
+    const cf = champFilter.trim().toLowerCase();
     for (const c of block.champs) {
       if (!c.role || !out.has(c.role) || c.p + c.b < 2) continue;
+      if (cf && !champName(c.c).toLowerCase().includes(cf) && !c.c.toLowerCase().includes(cf)) continue;
       out.get(c.role)!.push({ ...c, presence: block.games ? (c.p + c.b) / block.games : 0, wr: c.p ? c.w / c.p : null, score: tierScore(c, block.games) });
     }
     for (const list of out.values()) list.sort((a, b) => b.score - a.score);
     return out;
-  }, [block]);
+  }, [block, champFilter]);
 
   const label = (k: string) =>
     k === "all" ? tl("All time (2011 to today)") : k.startsWith("p") ? tl("Patch {patch}", { patch: k.slice(1) }) : tl("Year {year}", { year: k.slice(1) });
+  const leagueName = isLeague ? leagues.find((l) => l.u === rawScope)?.l || rawScope.toUpperCase() : "";
+  const fullLabel = isLeague ? `${leagueName} · ${label(key)}` : label(key);
   const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text";
   const shown = role ? [role] : ROLES;
   return (
@@ -151,7 +156,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               </HubLink>
               <SectionCard
                 section={tl("Pro tier list")}
-                name={label(key)}
+                name={fullLabel}
                 sub={`${block.games}G`}
                 rows={() =>
                   shown
@@ -170,7 +175,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     .map((row, idx) => ({ rank: idx + 1, ...row }))
                 }
               />
-              <CopyTiersPost title={`${tl("Pro tier list")} · ${label(key)} (${block.games}G)`} byRole={byRole} shown={shown} query={query} />
+              <CopyTiersPost title={`${tl("Pro tier list")} · ${fullLabel} (${block.games}G)`} byRole={byRole} shown={shown} query={query} />
             </span>
           )}
         </div>
@@ -180,6 +185,14 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
           )}
         </p>
         <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            value={champFilter}
+            onChange={(e) => setChampFilter(e.target.value)}
+            placeholder={tl("Search champions…")}
+            aria-label={tl("Search champions…")}
+            className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
+          />
           <select value={key} onChange={(e) => set({ key: e.target.value })} aria-label={tl("Patch or year")} className={sel}>
             {meta.champions.map((k) => (
               <option key={k} value={k}>
@@ -281,7 +294,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     </HubLink>
                     <SectionCard
                       section={`${tl("Pro tier list")} · ${roleName(r)}`}
-                      name={label(key)}
+                      name={fullLabel}
                       sub={`${block.games}G`}
                       rows={() =>
                         (byRole.get(r) || []).slice(0, 12).map((c, idx) => ({

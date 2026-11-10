@@ -35,6 +35,41 @@ import { champName } from "../../champions";
 
 // ── Patches ───────────────────────────────────────────────────────────────
 
+const CopyPatchPost: React.FC<{ p: PatchRow }> = ({ p }) => {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copy = () => {
+    const lines = [
+      `${tl("Patch {patch}", { patch: p.p })} (${fmtDate(p.from)} – ${fmtDate(p.to)} · ${tn("{n} game", "{n} games", p.g)})`,
+      ...p.c.slice(0, 5).map(([c, pk, b, w, pr], i) => {
+        const presPct = Math.round(((pr ?? pk + b) / Math.max(p.g, 1)) * 100);
+        const wr = pk ? ` · ${Math.round((w / pk) * 100)}% WR` : "";
+        return `#${i + 1} ${champName(c)}: ${presPct}% (${pk}P/${b}B${wr})`;
+      }),
+      hubShareUrl({ kind: "champions", query: `key=p${p.p}` }),
+    ];
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => {
+        setState("copied");
+        setTimeout(() => setState("idle"), 1600);
+      },
+      () => {
+        setState("failed");
+        setTimeout(() => setState("idle"), 2000);
+      },
+    );
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={tl("Copy a ready-to-post summary with the link, for X or Discord")}
+      className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+    >
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
+    </button>
+  );
+};
+
 export const PatchesPanel: React.FC = () => {
   usePageTitle(tl("Patches"));
   useDDragon();
@@ -126,6 +161,7 @@ export const PatchesPanel: React.FC = () => {
                       })),
                     ]}
                   />
+                  <CopyPatchPost p={p} />
                 </span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-2 text-xs">

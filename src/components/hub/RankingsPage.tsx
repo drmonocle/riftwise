@@ -73,6 +73,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   };
   const [limit, setLimit] = useState(50);
   const [asOf, setAsOf] = useState("");
+  const [search, setSearch] = useState("");
   const hist = useLoad(loadRatingsHistory, []);
   const histDates = useMemo(() => {
     if (!hist.data) return [];
@@ -143,6 +144,22 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   const maxRowRating = useMemo(() => Math.max(1500, ...rows.map((x) => x.r[5])), [rows]);
   const minRowRating = useMemo(() => Math.min(1100, ...rows.map((x) => x.r[5])) - 40, [rows]);
   const maxRowGames = useMemo(() => Math.max(1, ...rows.map((x) => x.r[7] || 0)), [rows]);
+  const shownRows = useMemo(() => {
+    const sq = search.trim().toLowerCase();
+    if (!sq) return rows;
+    const terms = sq
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return rows.filter(({ r }) => {
+      const hay = `${r[1]} ${r[2] || ""} ${r[3] || ""} ${r[10] || ""}`.toLowerCase();
+      return terms.some((t) => hay.includes(t));
+    });
+  }, [rows, search]);
+  const pair =
+    search.trim() && shownRows.length === 2
+      ? [shownRows[0].r[0] || prettySlug(shownRows[0].r[1]), shownRows[1].r[0] || prettySlug(shownRows[1].r[1])]
+      : null;
   const columns: Column<Row>[] = [
     {
       key: "rank",
@@ -422,6 +439,30 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
             className="flex flex-wrap items-center gap-2 text-xs"
             data-nocapture="1"
           >
+            {pair && (
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: pair[0], b: pair[1] }}
+                  className="text-rw-accent hover:underline font-medium"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: pair[0], b: pair[1] }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text placeholder:text-rw-muted w-40 focus:border-rw-accent focus:outline-none"
+            />
             {histDates.length > 1 && (
               <select
                 value={asOf}
@@ -464,7 +505,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   ))}
               </optgroup>
             </select>
-            {!oneLeague && (
+            {!oneLeague && !search.trim() && (
               <select
                 value={limit}
                 onChange={(e) => setLimit(Number(e.target.value))}
@@ -489,7 +530,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   subtitle: [oneLeague ? league : league === "*" ? tl("All leagues") : tl("Top leagues, all regions"), asOf ? fmtDate(asOf) : null]
                     .filter(Boolean)
                     .join(" · "),
-                  rows: rows.slice(0, 10).map(({ r }) => ({ name: r[1], league: r[10] || r[3], r: r[5], chg: r[6] })),
+                  rows: shownRows.slice(0, 10).map(({ r }) => ({ name: r[1], league: r[10] || r[3], r: r[5], chg: asOf ? null : change(r) })),
                 })
               }
               name={`riftwise-power-rankings${oneLeague ? "-" + league : ""}${asOf ? "-" + asOf : ""}`}
@@ -499,7 +540,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               subtitle={[oneLeague ? league : league === "*" ? tl("All leagues") : tl("Top leagues, all regions"), asOf ? fmtDate(asOf) : fmtDate(d.asof)]
                 .filter(Boolean)
                 .join(" · ")}
-              rows={rows}
+              rows={shownRows.map(({ r, rank }) => ({ r, rank, chg: asOf ? null : change(r) }))}
               query={q.toString()}
             />
           </span>
@@ -516,11 +557,11 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           </p>
         )}
         <SortTable
-          rows={rows}
+          rows={shownRows}
           columns={columns}
           initial={{ key: "rank", desc: false }}
           rowKey={(x) => x.r[0]}
-          limit={oneLeague ? undefined : limit}
+          limit={oneLeague || search.trim() ? undefined : limit}
           copyName={`riftwise-power-rankings${oneLeague ? "-" + league : league === "*" ? "-all" : ""}`}
         />
         {!league && (
@@ -790,13 +831,14 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   );
 };
 
-const CopyRankingsPost: React.FC<{ subtitle: string; rows: { r: RatingRow; rank: number }[]; query?: string }> = ({ subtitle, rows, query }) => {
+const CopyRankingsPost: React.FC<{ subtitle: string; rows: { r: RatingRow; rank: number; chg?: number | null }[]; query?: string }> = ({ subtitle, rows, query }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const lines = [
       `${tl("Power rankings")} · ${subtitle}`,
-      ...rows.slice(0, 5).map(({ r, rank }) => {
-        const chg = r[6] != null && r[6] !== 0 ? ` (${r[6] > 0 ? `+${r[6]}` : r[6]})` : "";
+      ...rows.slice(0, 5).map(({ r, rank, chg: rowChg }) => {
+        const c = rowChg !== undefined ? rowChg : r[6];
+        const chg = c != null && c !== 0 ? ` (${c > 0 ? `+${c}` : c})` : "";
         return `#${rank} ${r[1]} (${r[10] || r[3]}) — ${r[5]}${chg}`;
       }),
       hubShareUrl({ kind: "rankings", ...(query ? { query } : {}) }),
