@@ -106,6 +106,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const roleKeys = mainRoles.filter((r) => (c.matchups?.[r]?.length || 0) > 0 || (c.matchups12?.[r]?.length || 0) > 0);
   const [muRole, setMuRole] = useState(roleKeys[0] || "");
   const [muSearch, setMuSearch] = useState("");
+  const [duoSearch, setDuoSearch] = useState("");
   const [playerSearch, setPlayerSearch] = useState("");
   // this meta (last 12 months) first when there is one
   const [muRecentPick, setMuRecent] = useState(() => Object.keys(c.matchups12 || {}).length > 0);
@@ -576,8 +577,16 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             <tbody>
               {(() => {
                 const maxMuG = Math.max(1, ...muRows.map((x) => x[1]));
-                const nq = normText(muSearch);
-                const shownMu = nq ? muRows.filter(([oc]) => normText(champName(oc)).includes(nq) || normText(oc).includes(nq)) : muRows;
+                const terms = muSearch
+                  .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                  .map((t) => normText(t))
+                  .filter(Boolean);
+                const shownMu = terms.length
+                  ? muRows.filter(([oc]) => {
+                      const hay = `${normText(champName(oc))} ${normText(oc)}`;
+                      return terms.some((t) => hay.includes(t));
+                    })
+                  : muRows;
                 return shownMu.map(([oc, g, w, tn, gd, cs, xp, ahead]) => (
                   <tr key={oc} className="border-t border-rw-border">
                     <td className={`${td} max-w-[10rem]`} data-sort={champName(oc)}>
@@ -682,20 +691,32 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         <Section
           title={tl("Bot lane partners")}
           right={
-            <SectionCard
-              section={tl("Bot lane partners")}
-              name={champName(c.name)}
-              rows={() =>
-                (c.duos || []).slice(0, 12).map(([pc, g, w], idx) => ({
-                  rank: idx + 1,
-                  champ: pc,
-                  label: champName(pc),
-                  sub: `${g}G`,
-                  value: pctOf(w, g),
-                  win: w / g >= 0.5,
-                }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              {(c.duos || []).length > 10 && (
+                <input
+                  type="search"
+                  value={duoSearch}
+                  onChange={(e) => setDuoSearch(e.target.value)}
+                  placeholder={tl("Search champions…")}
+                  aria-label={tl("Search champions…")}
+                  className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
+                />
+              )}
+              <SectionCard
+                section={tl("Bot lane partners")}
+                name={champName(c.name)}
+                rows={() =>
+                  (c.duos || []).slice(0, 12).map(([pc, g, w], idx) => ({
+                    rank: idx + 1,
+                    champ: pc,
+                    label: champName(pc),
+                    sub: `${g}G`,
+                    value: pctOf(w, g),
+                    win: w / g >= 0.5,
+                  }))
+                }
+              />
+            </span>
           }
           share={`${c.u}-bot-duos`}
         >
@@ -709,7 +730,17 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             </thead>
             <tbody>
               {(() => {
-                const duos = (c.duos || []).slice(0, 15);
+                const terms = duoSearch
+                  .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                  .map((t) => normText(t))
+                  .filter(Boolean);
+                const allDuos = c.duos || [];
+                const duos = terms.length
+                  ? allDuos.filter(([pc]) => {
+                      const hay = `${normText(champName(pc))} ${normText(pc)}`;
+                      return terms.some((t) => hay.includes(t));
+                    })
+                  : allDuos.slice(0, 15);
                 const maxDuoG = Math.max(1, ...duos.map((x) => x[1]));
                 return duos.map(([pc, g, w]) => (
                   <tr key={pc} className="border-t border-rw-border">
@@ -777,6 +808,28 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 ))}
               </span>
             )}
+            {(() => {
+              const allPlayers = playersRecent ? recentPlayersList : c.players;
+              const terms = playerSearch
+                .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                .map((t) => normText(t))
+                .filter(Boolean);
+              const pList = terms.length
+                ? allPlayers.filter((p) => {
+                    const pTeam = teamByPlayer.get(p.u || p.n) || "";
+                    const hay = `${normText(p.n)} ${normText(p.u || "")} ${normText(pTeam)}`;
+                    return terms.some((t) => hay.includes(t));
+                  })
+                : allPlayers.slice(0, 25);
+              return pList.length >= 2 && pList[0].u && pList[1].u ? (
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: pList[0].u, b: pList[1].u, period: playersRecent ? "12m" : undefined }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              ) : null;
+            })()}
             <SectionCard
               section={tl("Most games on {champion}", { champion: champName(c.name) })}
               name={champName(c.name)}
@@ -808,11 +861,15 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           <tbody>
             {(() => {
               const allPlayers = playersRecent ? recentPlayersList : c.players;
-              const nq = normText(playerSearch);
-              const pList = nq
+              const terms = playerSearch
+                .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                .map((t) => normText(t))
+                .filter(Boolean);
+              const pList = terms.length
                 ? allPlayers.filter((p) => {
                     const pTeam = teamByPlayer.get(p.u || p.n) || "";
-                    return normText(p.n).includes(nq) || normText(p.u || "").includes(nq) || normText(pTeam).includes(nq);
+                    const hay = `${normText(p.n)} ${normText(p.u || "")} ${normText(pTeam)}`;
+                    return terms.some((t) => hay.includes(t));
                   })
                 : allPlayers.slice(0, 25);
               const maxPG = Math.max(1, ...pList.map((x) => x.g));

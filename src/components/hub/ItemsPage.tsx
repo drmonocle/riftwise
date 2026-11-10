@@ -510,9 +510,15 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
   if (!st.data) return <p className="text-xs text-rw-sub rw-span">{tl("No pro game in the stats ended with this item.")}</p>;
   const it = st.data;
   const top = it.c?.[0];
-  const sq = search.trim().toLowerCase();
-  const filteredPlayers = sq
-    ? it.players.filter(([n, u]) => n.toLowerCase().includes(sq) || u.toLowerCase().includes(sq) || (teamBySlug.get(u) || "").toLowerCase().includes(sq))
+  const terms = search
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+  const filteredPlayers = terms.length
+    ? it.players.filter(([n, u]) => {
+        const hay = `${n} ${u} ${teamBySlug.get(u) || ""}`.toLowerCase();
+        return terms.some((t) => hay.includes(t));
+      })
     : it.players;
   return (
     <Section
@@ -528,6 +534,14 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
               aria-label={tl("Filter by name or team…")}
               className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
             />
+          )}
+          {filteredPlayers.length >= 2 && (
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: filteredPlayers[0][1], b: filteredPlayers[1][1] }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
           )}
           <CopyItemsPost
             title={tl("Who built {item} most", { item: itemName(it.n) })}
@@ -646,14 +660,21 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
     .filter((r) => r.g > 0)
     .sort((a, b) => b.g - a.g || a.k - b.k);
   const total = rows.reduce((s, r) => s + r.g, 0);
-  const sq = search.trim().toLowerCase();
-  const filteredRows = sq
+  const terms = search
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+  const filteredRows = terms.length
     ? rows.filter((r) => {
         const p = players?.[r.k];
-        return p && (p[0].toLowerCase().includes(sq) || (p[2] || "").toLowerCase().includes(sq) || playerSlug(p).toLowerCase().includes(sq));
+        if (!p) return false;
+        const hay = `${p[0]} ${p[2] || ""} ${playerSlug(p)}`.toLowerCase();
+        return terms.some((t) => hay.includes(t));
       })
     : rows;
-  const shown = all || sq ? filteredRows : filteredRows.slice(0, 100);
+  const shown = all || terms.length ? filteredRows : filteredRows.slice(0, 100);
+  const topA = filteredRows[0] && players?.[filteredRows[0].k] ? playerSlug(players[filteredRows[0].k]) : "";
+  const topB = filteredRows[1] && players?.[filteredRows[1].k] ? playerSlug(players[filteredRows[1].k]) : "";
   return (
     <Section
       title={title}
@@ -668,6 +689,14 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
               aria-label={tl("Filter by name or team…")}
               className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
             />
+          )}
+          {topA && topB && (
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: topA, b: topB, period: year ? `y${year}` : undefined }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
           )}
           {rows.length > 0 && (
             <>
@@ -799,15 +828,22 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
   if (st.loading || head.loading) return <Loading />;
   const label = itemName(head.data?.n || item);
   const y = st.data;
-  const sq = search.trim().toLowerCase();
+  const terms = search
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
   const filteredP = y
-    ? sq
+    ? terms.length
       ? y.p.filter(([k]) => {
           const p = players?.[k];
-          return p && (p[0].toLowerCase().includes(sq) || (p[2] || "").toLowerCase().includes(sq) || playerSlug(p).toLowerCase().includes(sq));
+          if (!p) return false;
+          const hay = `${p[0]} ${p[2] || ""} ${playerSlug(p)}`.toLowerCase();
+          return terms.some((t) => hay.includes(t));
         })
       : y.p
     : [];
+  const topA = filteredP[0] && players?.[filteredP[0][0]] ? playerSlug(players[filteredP[0][0]]) : "";
+  const topB = filteredP[1] && players?.[filteredP[1][0]] ? playerSlug(players[filteredP[1][0]]) : "";
   return (
     <Section
       title={tl("Who built {item} in {year}", { item: label, year })}
@@ -822,6 +858,14 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
               aria-label={tl("Filter by name or team…")}
               className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-36 focus:border-rw-accent focus:outline-none"
             />
+          )}
+          {topA && topB && (
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: topA, b: topB, period: year ? `y${year}` : undefined }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
           )}
           {y && y.p.length > 0 && (
             <>
@@ -930,10 +974,17 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
   const [filter, setFilter] = useState("");
   const [finishedOnly, setFinishedOnly] = useState(true);
   const [all, setAll] = useState(false);
-  const f = normText(filter.trim());
-  const list = (rows || []).filter((r) => (!finishedOnly || isFinishedItem(r[0])) && (!f || normText(itemName(r[0])).includes(f) || normText(r[0]).includes(f)));
+  const terms = filter
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((t) => normText(t))
+    .filter(Boolean);
+  const list = (rows || []).filter(
+    (r) =>
+      (!finishedOnly || isFinishedItem(r[0])) &&
+      (!terms.length || terms.some((t) => normText(itemName(r[0])).includes(t) || normText(r[0]).includes(t))),
+  );
   const max = Math.max(1, ...list.map((r) => r[2]));
-  const shown = all || f ? list : list.slice(0, 60);
+  const shown = all || terms.length ? list : list.slice(0, 60);
   return (
     <Section
       title={tl("Item stats")}

@@ -173,7 +173,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
             <HubLink
               to={
                 s.a.u && s.b.u
-                  ? { kind: "finder", query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}` }
+                  ? { kind: "finder", query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}` }
                   : { kind: "finder", ...(seriesYear ? { query: `year=${encodeURIComponent(seriesYear)}` } : {}) }
               }
               className="hover:text-rw-accent hover:underline"
@@ -253,7 +253,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}`,
+                    query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
                   }}
                   className={heroBtn()}
                 >
@@ -683,7 +683,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
             {g.date &&
               (s.a.u && s.b.u ? (
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}` }}
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}` }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {new Date(`${g.date.replace(" ", "T")}Z`).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })}
@@ -726,13 +726,27 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
           </span>
           <span className="flex flex-wrap items-center gap-2 ml-auto">
             {s.a.u && s.b.u && (
-              <HubLink
-                to={{ kind: "draft", query: seriesGameDraftQuery(s, g) }}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-accent hover:underline"
-              >
-                <Swords className="w-3.5 h-3.5" />
-                {tl("Draft board")}
-              </HubLink>
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: s.a.u, b: s.b.u, period: gamePeriod }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")}
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u, period: gamePeriod }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Compare")}
+                </HubLink>
+                <HubLink
+                  to={{ kind: "draft", query: seriesGameDraftQuery(s, g) }}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  <Swords className="w-3.5 h-3.5" />
+                  {tl("Draft board")}
+                </HubLink>
+              </>
             )}
             {!hidden && g.t && (
               <BroadcastCardButton data={() => gameCardData(s, g)} name={`${s.a.n}-vs-${s.b.n}-game-${g.n}`} label={tl("Game card")} />
@@ -764,8 +778,8 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
         </div>
         <div className="grid grid-cols-2 gap-3">
           {/* spoiler mode: the draft only (kills, gold and objectives give the result away) */}
-          <SideHeader name={blueTeam.n} u={blueTeam.u} side="blue" won={!hidden && blueWon} st={hidden ? undefined : g.t?.blue} />
-          <SideHeader name={redTeam.n} u={redTeam.u} side="red" won={!hidden && redWon} st={hidden ? undefined : g.t?.red} right />
+          <SideHeader name={blueTeam.n} u={blueTeam.u} side="blue" won={!hidden && blueWon} st={hidden ? undefined : g.t?.blue} period={gamePeriod} />
+          <SideHeader name={redTeam.n} u={redTeam.u} side="red" won={!hidden && redWon} st={hidden ? undefined : g.t?.red} right period={gamePeriod} />
         </div>
         {(g.t?.blue?.picks?.length || g.t?.blue?.bans?.length) && (
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-rw-border">
@@ -1099,7 +1113,7 @@ const PlayerBars: React.FC<{
                 <div key={it.label} className="rounded-lg border border-rw-border/70 bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
                   <div className="flex items-center justify-between text-[10px] font-mono tabular-nums">
                     {blueU ? (
-                      <HubLink to={{ kind: "team", slug: blueU, tab: "stats" }} className="font-bold hover:underline" style={{ color: BLUE }}>
+                      <HubLink to={{ kind: "team", slug: blueU, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="font-bold hover:underline" style={{ color: BLUE }}>
                         {it.fmt(it.b)}
                       </HubLink>
                     ) : (
@@ -1118,7 +1132,7 @@ const PlayerBars: React.FC<{
                       <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted">{it.label}</span>
                     )}
                     {redU ? (
-                      <HubLink to={{ kind: "team", slug: redU, tab: "stats" }} className="font-bold hover:underline" style={{ color: RED }}>
+                      <HubLink to={{ kind: "team", slug: redU, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="font-bold hover:underline" style={{ color: RED }}>
                         {it.fmt(it.r)}
                       </HubLink>
                     ) : (
@@ -1350,13 +1364,14 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
   );
 };
 
-const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red"; won: boolean; st?: SideStats; right?: boolean }> = ({
+const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red"; won: boolean; st?: SideStats; right?: boolean; period?: string }> = ({
   name,
   u,
   side,
   won,
   st,
   right,
+  period,
 }) => {
   const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
   const obj: [string, React.ReactNode][] = [];
@@ -1373,12 +1388,13 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
   if (st?.g15 != null) obj.push(["GD@15", sgn(st.g15)]);
   const firsts = [st?.fb === 1 ? tl("First blood") : null, st?.ft === 1 ? tl("First tower") : null].filter((x): x is string => !!x);
   const drakes = st?.drakes ? Object.entries(st.drakes).map(([k, n]) => `${tl(DRAKE_LABEL[k] || k)}${n && n > 1 ? ` ×${n}` : ""}`) : [];
+  const yr = period && /^y\d{4}$/.test(period) ? period.slice(1) : undefined;
   return (
     <div className={`min-w-0 ${right ? "text-right" : ""}`}>
       <div className={`flex items-center gap-2 ${right ? "justify-end" : ""}`}>
         {u ? (
           <HubLink
-            to={{ kind: "finder", query: `team=${encodeURIComponent(u)}&side=${side === "blue" ? "b" : "r"}` }}
+            to={{ kind: "finder", query: `team=${encodeURIComponent(u)}&side=${side === "blue" ? "b" : "r"}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
             className="text-[10px] uppercase font-bold tracking-wider hover:underline"
             style={{ color }}
             title={tl("Game finder")}
@@ -1404,7 +1420,7 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
             <span key={l} className="text-rw-muted">
               {l}{" "}
               {u ? (
-                <HubLink to={{ kind: "team", slug: u, tab: "stats" }} className="text-rw-text font-semibold hover:text-rw-accent hover:underline" title={tl("Stats")}>
+                <HubLink to={{ kind: "team", slug: u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="text-rw-text font-semibold hover:text-rw-accent hover:underline" title={tl("Stats")}>
                   {v}
                 </HubLink>
               ) : (
@@ -1421,7 +1437,7 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
             u ? (
               <HubLink
                 key={f}
-                to={{ kind: "team", slug: u, tab: "stats" }}
+                to={{ kind: "team", slug: u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
                 className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rw-accent/15 border border-rw-accent/40 text-rw-text hover:border-rw-accent"
                 title={tl("Stats")}
               >

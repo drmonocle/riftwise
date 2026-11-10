@@ -211,6 +211,22 @@ export const HubHome: React.FC<{
           <div className="flex items-center justify-between gap-2 mb-2">
             <h2 className="font-head text-lg font-bold text-rw-text flex items-center gap-2"><TrendingUp className="w-4 h-4 text-rw-accent" />{tl("Power rankings")}</h2>
             <span className="flex items-center gap-2">
+              {(() => {
+                const top2 = (ratings.data?.teams || [])
+                  .filter((t) => t[9] === 1)
+                  .sort((a, b) => b[5] - a[5])
+                  .slice(0, 2);
+                return top2.length >= 2 ? (
+                  <>
+                    <HubLink to={{ kind: "prep", a: top2[0][0], b: top2[1][0] }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Match prep")}
+                    </HubLink>
+                    <HubLink to={{ kind: "compare", mode: "team", a: top2[0][0], b: top2[1][0] }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Compare")}
+                    </HubLink>
+                  </>
+                ) : null;
+              })()}
               <span className="text-[10px] text-rw-muted">{tl("30-day change")}</span>
               {ratings.data && ratings.data.teams.length > 0 && (
                 <BroadcastCardButton
@@ -378,6 +394,7 @@ const FeaturedMatch: React.FC<{
                 kind: "prep",
                 a: prettySlug(m.team1Name || m.team1Code),
                 b: prettySlug(m.team2Name || m.team2Code),
+                period: m.startTimeUtc ? `y${m.startTimeUtc.slice(0, 4)}` : undefined,
               }}
               className="hover:text-rw-accent hover:underline"
             >
@@ -410,7 +427,8 @@ const FeaturedMatch: React.FC<{
               onClick={() => {
                 const a = prettySlug(m.team1Name || m.team1Code);
                 const b = prettySlug(m.team2Name || m.team2Code);
-                if (a && b) navigateHub({ kind: "compare", mode: "team", a, b });
+                const yr = m.startTimeUtc?.slice(0, 4);
+                if (a && b) navigateHub({ kind: "compare", mode: "team", a, b, period: yr ? `y${yr}` : undefined });
               }}
               title={tl("Compare")}
               className="text-xs font-bold text-rw-sub hover:text-rw-accent bg-rw-bg border border-rw-border hover:border-rw-accent/60 px-2.5 py-1 rounded-full uppercase tracking-widest font-num transition-colors"
@@ -435,7 +453,8 @@ const FeaturedMatch: React.FC<{
             onClick={() => {
               const a = prettySlug(m.team1Name || m.team1Code);
               const b = prettySlug(m.team2Name || m.team2Code);
-              if (a && b) navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}` });
+              const yr = m.startTimeUtc?.slice(0, 4);
+              if (a && b) navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${yr ? `&p=y${yr}` : ""}` });
             }}
             className="inline-flex items-center gap-1.5 rounded-lg border border-rw-border bg-rw-bg hover:border-rw-accent text-rw-text font-semibold transition-colors px-2.5 py-1 text-[11px]"
           >
@@ -759,6 +778,19 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
           <RevealButton onReveal={reveal} small />
         ) : (
           <span className="flex items-center gap-2" data-nocapture="1">
+            {rows.length >= 2 && (
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "player",
+                  a: rows[0].u || prettySlug(rows[0].n),
+                  b: rows[1].u || prettySlug(rows[1].n),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Compare")}
+              </HubLink>
+            )}
             <HubLink to={{ kind: "leaders" }} className="text-[11px] text-rw-accent hover:underline">
               {tl("Player leaderboards")}
             </HubLink>
@@ -984,8 +1016,12 @@ export const EventsBrowse: React.FC<{ year?: string; meta: HubMeta | null; onYea
 const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: string; onSetQ?: (q: string) => void }> = ({ list, scope, q, onSetQ }) => {
   const rows = useMemo(() => {
     const qq = q.trim().toLowerCase();
+    const terms = qq ? qq.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
     return list.filter((e) => {
-      if (qq) return `${e.n} ${e.l || ""} ${e.r || ""}`.toLowerCase().includes(qq);
+      if (terms.length) {
+        const hay = `${e.n} ${e.l || ""} ${e.r || ""} ${e.w || ""}`.toLowerCase();
+        return terms.some((t) => hay.includes(t));
+      }
       if (e.p) return false; // stages are listed on their event's page
       return scope === "all" || (e.lv === "Primary" && !e.q);
     });

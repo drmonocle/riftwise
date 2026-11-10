@@ -524,7 +524,11 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 <td className="px-2 py-1 text-rw-sub whitespace-nowrap" data-sort={opp ? byU.get(opp)?.c || opp : ""}>
                   {opp ? (
                     <span className="inline-flex items-center gap-1.5">
-                      <HubLink to={{ kind: "prep", a: u, b: opp }} className="text-rw-muted hover:text-rw-accent hover:underline" title={tl("Match prep")}>
+                      <HubLink
+                        to={{ kind: "prep", a: u, b: opp, period: eventSlug ? `e:${eventSlug}` : undefined }}
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                        title={tl("Match prep")}
+                      >
                         {tl("vs")}
                       </HubLink>
                       <HubLink to={{ kind: "team", slug: opp }} className="inline-flex items-center gap-1.5 hover:text-rw-accent">
@@ -872,6 +876,13 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                         <TeamLogo name={x.l} size={15} className="shrink-0" />
                       </HubLink>
                       <TeamLink name={x.l} u={prettySlug(x.l)} className="hover:text-rw-accent" />
+                      <HubLink
+                        to={{ kind: "prep", a: x.u || prettySlug(x.as), b: prettySlug(x.l), period: `y${x.y}` }}
+                        className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                        title={tl("Match prep")}
+                      >
+                        · {tl("Match prep")}
+                      </HubLink>
                     </span>
                   ) : (
                     ""
@@ -1117,22 +1128,40 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
         share={`worlds-${year}-chances`}
         right={
           odds ? (
-            <BroadcastCardButton
-              data={() =>
-                chancesCard({
-                  title: tl("Chances from here"),
-                  subtitle: d.name,
-                  cols: ["3-0", tl("Through"), tl("Semifinal"), tl("Final"), tl("Wins Worlds")],
-                  rows: teams
-                    .slice()
-                    .sort((a, b) => odds[b.u].win - odds[a.u].win || odds[b.u].adv - odds[a.u].adv)
-                    .map((t) => ({ name: t.n, v: [odds[t.u].r30, odds[t.u].adv, odds[t.u].sf, odds[t.u].final, odds[t.u].win].map(pctText) })),
-                  note: tl("10,000 runs"),
-                })
-              }
-              name={`worlds-${year}-chances`}
-              label={tl("Overview card")}
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              {(() => {
+                const top2 = teams
+                  .slice()
+                  .sort((a, b) => odds[b.u].win - odds[a.u].win || odds[b.u].adv - odds[a.u].adv)
+                  .slice(0, 2);
+                return top2.length >= 2 ? (
+                  <>
+                    <HubLink to={{ kind: "prep", a: top2[0].u, b: top2[1].u, period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "compare", mode: "team", a: top2[0].u, b: top2[1].u, period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                ) : null;
+              })()}
+              <BroadcastCardButton
+                data={() =>
+                  chancesCard({
+                    title: tl("Chances from here"),
+                    subtitle: d.name,
+                    cols: ["3-0", tl("Through"), tl("Semifinal"), tl("Final"), tl("Wins Worlds")],
+                    rows: teams
+                      .slice()
+                      .sort((a, b) => odds[b.u].win - odds[a.u].win || odds[b.u].adv - odds[a.u].adv)
+                      .map((t) => ({ name: t.n, v: [odds[t.u].r30, odds[t.u].adv, odds[t.u].sf, odds[t.u].final, odds[t.u].win].map(pctText) })),
+                    note: tl("10,000 runs"),
+                  })
+                }
+                name={`worlds-${year}-chances`}
+                label={tl("Overview card")}
+              />
+            </span>
           ) : undefined
         }
       >
@@ -1531,22 +1560,40 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
         share={`${kind}-${d.year}-chances`}
         right={
           odds ? (
-            <BroadcastCardButton
-              data={() =>
-                chancesCard({
-                  title: tl("Chances from here"),
-                  subtitle: d.name,
-                  cols: [...br.reach.map(([l]) => tl(COL_LABELS[l] || l)), tl("Wins")],
-                  rows: teams
-                    .filter((t) => odds[t.u] && odds[t.u].some((x) => x > 0))
-                    .sort((a, b) => odds[b.u][br.reach.length] - odds[a.u][br.reach.length])
-                    .map((t) => ({ name: t.n, v: odds[t.u].map(pctText) })),
-                  note: tl("10,000 runs"),
-                })
-              }
-              name={`${kind}-${d.year}-chances`}
-              label={tl("Overview card")}
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              {(() => {
+                const top2 = teams
+                  .filter((t) => odds[t.u] && odds[t.u].some((x) => x > 0))
+                  .sort((a, b) => odds[b.u][br.reach.length] - odds[a.u][br.reach.length])
+                  .slice(0, 2);
+                return top2.length >= 2 ? (
+                  <>
+                    <HubLink to={{ kind: "prep", a: top2[0].u, b: top2[1].u, period: `y${d.year}` }} className="text-[11px] text-rw-accent hover:underline">
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink to={{ kind: "compare", mode: "team", a: top2[0].u, b: top2[1].u, period: `y${d.year}` }} className="text-[11px] text-rw-accent hover:underline">
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                ) : null;
+              })()}
+              <BroadcastCardButton
+                data={() =>
+                  chancesCard({
+                    title: tl("Chances from here"),
+                    subtitle: d.name,
+                    cols: [...br.reach.map(([l]) => tl(COL_LABELS[l] || l)), tl("Wins")],
+                    rows: teams
+                      .filter((t) => odds[t.u] && odds[t.u].some((x) => x > 0))
+                      .sort((a, b) => odds[b.u][br.reach.length] - odds[a.u][br.reach.length])
+                      .map((t) => ({ name: t.n, v: odds[t.u].map(pctText) })),
+                    note: tl("10,000 runs"),
+                  })
+                }
+                name={`${kind}-${d.year}-chances`}
+                label={tl("Overview card")}
+              />
+            </span>
           ) : undefined
         }
       >

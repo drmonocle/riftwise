@@ -85,6 +85,7 @@ const INTL_PAGE: Record<string, "worlds" | "msi" | "first-stand"> = {
 
 const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) => void }> = ({ e, tab: asked, onOpenUrl }) => {
   const [resultsHidden, revealResults] = useHidden(`event:${e.u}`, e.end);
+  const [teamSearch, setTeamSearch] = useState("");
   const lists = (e.stages || []).filter((s) => s.kind === "list");
   // the tabs this tournament has something for; one with two parts or fewer stays one page
   const tabs: PageTab[] = [
@@ -252,20 +253,49 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
             resultsHidden ? (
               <RevealButton onReveal={revealResults} small />
             ) : (
-              <SectionCard
-                section={e.resultsFrom === "event" ? tl("Final standings (whole event)") : tl("Final standings")}
-                sub={eventTitle(e.n)}
-                name={`${e.u}-final-standings`}
-                rows={() =>
-                  e.results!.slice(0, 10).map((r, idx) => ({
-                    rank: Number(r.p.replace(/\D.*$/, "")) || idx + 1,
-                    team: r.t,
-                    label: `${r.p}. ${r.t}`,
-                    value: r.usd ? fmtUsd(r.usd) : r.p,
-                    win: r.p === "1",
-                  }))
-                }
-              />
+              <span className="flex flex-wrap items-center gap-2">
+                {e.results.length >= 2 && (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: e.results[0].u || prettySlug(e.results[0].t),
+                        b: e.results[1].u || prettySlug(e.results[1].t),
+                        period: `e:${e.u}`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a: e.results[0].u || prettySlug(e.results[0].t),
+                        b: e.results[1].u || prettySlug(e.results[1].t),
+                        period: `e:${e.u}`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                )}
+                <SectionCard
+                  section={e.resultsFrom === "event" ? tl("Final standings (whole event)") : tl("Final standings")}
+                  sub={eventTitle(e.n)}
+                  name={`${e.u}-final-standings`}
+                  rows={() =>
+                    e.results!.slice(0, 10).map((r, idx) => ({
+                      rank: Number(r.p.replace(/\D.*$/, "")) || idx + 1,
+                      team: r.t,
+                      label: `${r.p}. ${r.t}`,
+                      value: r.usd ? fmtUsd(r.usd) : r.p,
+                      win: r.p === "1",
+                    }))
+                  }
+                />
+              </span>
             )
           }
         >
@@ -411,39 +441,88 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
       {((on("champions") && e.champs && e.champs.length > 0) || (on("teams") && e.teams && e.teams.length > 0)) && (
         <div className={tabbed ? "rw-span" : "grid gap-3 md:grid-cols-2"}>
           {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} full={tabbed} />}
-          {on("teams") && e.teams && e.teams.length > 0 && (
-            <Section
-              title={tl("Teams")}
-              right={
-                !resultsHidden ? (
-                  <SectionCard
-                    section={tl("Teams")}
-                    sub={eventTitle(e.n)}
-                    name={`${e.u}-teams`}
-                    rows={() =>
-                      e.teams!.slice(0, 12).map((t, idx) => ({
-                        rank: idx + 1,
-                        team: t.t,
-                        label: t.t,
-                        sub: `${t.w}-${t.g - t.w} ${tl("Games")}`,
-                        value: `${t.sw}-${t.sg - t.sw}`,
-                        win: t.sg ? t.sw / t.sg >= 0.5 : undefined,
-                      }))
-                    }
-                  />
-                ) : undefined
-              }
-            >
-              <STable className="w-full text-xs">
-                <thead>
-                  <tr>
-                    <th className={th}>{tl("Team")}</th>
-                    <th className={th}>{tl("Series")}</th>
-                    <th className={th}>{tl("Games")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {e.teams.map((t) => (
+          {on("teams") && e.teams && e.teams.length > 0 && (() => {
+            const tq = teamSearch.trim().toLowerCase();
+            const tTerms = tq ? tq.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean) : [];
+            const filteredTeams = tTerms.length
+              ? e.teams.filter((t) => {
+                  const hay = `${t.t} ${t.u || ""}`.toLowerCase();
+                  return tTerms.some((term) => hay.includes(term));
+                })
+              : e.teams;
+            return (
+              <Section
+                title={tl("Teams")}
+                right={
+                  <span className="flex flex-wrap items-center gap-2">
+                    {e.teams.length > 8 && (
+                      <input
+                        type="search"
+                        value={teamSearch}
+                        onChange={(ev) => setTeamSearch(ev.target.value)}
+                        placeholder={tl("Filter by name or team…")}
+                        aria-label={tl("Filter by name or team…")}
+                        data-nocapture="1"
+                        className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
+                      />
+                    )}
+                    {!resultsHidden && filteredTeams.length >= 2 && (
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: filteredTeams[0].u || prettySlug(filteredTeams[0].t),
+                            b: filteredTeams[1].u || prettySlug(filteredTeams[1].t),
+                            period: `e:${e.u}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "compare",
+                            mode: "team",
+                            a: filteredTeams[0].u || prettySlug(filteredTeams[0].t),
+                            b: filteredTeams[1].u || prettySlug(filteredTeams[1].t),
+                            period: `e:${e.u}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Compare")} →
+                        </HubLink>
+                      </>
+                    )}
+                    {!resultsHidden && (
+                      <SectionCard
+                        section={tl("Teams")}
+                        sub={eventTitle(e.n)}
+                        name={`${e.u}-teams`}
+                        rows={() =>
+                          filteredTeams.slice(0, 12).map((t, idx) => ({
+                            rank: idx + 1,
+                            team: t.t,
+                            label: t.t,
+                            sub: `${t.w}-${t.g - t.w} ${tl("Games")}`,
+                            value: `${t.sw}-${t.sg - t.sw}`,
+                            win: t.sg ? t.sw / t.sg >= 0.5 : undefined,
+                          }))
+                        }
+                      />
+                    )}
+                  </span>
+                }
+              >
+                <STable className="w-full text-xs">
+                  <thead>
+                    <tr>
+                      <th className={th}>{tl("Team")}</th>
+                      <th className={th}>{tl("Series")}</th>
+                      <th className={th}>{tl("Games")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTeams.map((t) => (
                     <tr key={t.t} className="border-t border-rw-border">
                       <td className={`${td} max-w-[12rem]`} data-sort={t.t}>
                         <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
@@ -481,10 +560,11 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </STable>
-            </Section>
-          )}
+                  </tbody>
+                </STable>
+              </Section>
+            );
+          })()}
         </div>
       )}
       {on("teams") && e.rosters && e.rosters.length > 0 && <EventRosters rosters={e.rosters} eventSlug={e.u} />}
@@ -712,11 +792,12 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
         .sort((a, b) => (b.r || 0) - (a.r || 0)),
     [stages, isHidden],
   );
+  const isVsMatchup = useMemo(() => /\s+vs\.?\s+|\s+v\s+/i.test(search), [search]);
   const terms = useMemo(
     () =>
       search
         .toLowerCase()
-        .split(",")
+        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
         .map((s) => s.trim())
         .filter(Boolean),
     [search],
@@ -724,13 +805,41 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
   const shown = useMemo(() => {
     const base = byRating ? rated : terms.length > 0 ? stages.flatMap((s) => s.series) : st.series;
     if (!terms.length) return base;
-    return base.filter((r) => terms.some((t) => r.a.toLowerCase().includes(t) || r.b.toLowerCase().includes(t)));
-  }, [byRating, rated, terms, stages, st.series]);
+    if (isVsMatchup && terms.length >= 2) {
+      const [ta, tb] = terms;
+      return base.filter((r) => {
+        const a = `${r.a} ${r.au || ""}`.toLowerCase();
+        const b = `${r.b} ${r.bu || ""}`.toLowerCase();
+        return (a.includes(ta) && b.includes(tb)) || (a.includes(tb) && b.includes(ta));
+      });
+    }
+    return base.filter((r) => {
+      const a = `${r.a} ${r.au || ""}`.toLowerCase();
+      const b = `${r.b} ${r.bu || ""}`.toLowerCase();
+      return terms.some((t) => a.includes(t) || b.includes(t));
+    });
+  }, [byRating, rated, terms, isVsMatchup, stages, st.series]);
   return (
     <Section
       title={tl("Matches")}
       right={
         <span className="flex flex-wrap items-center gap-1.5" data-nocapture="1">
+          {isVsMatchup && shown[0]?.au && shown[0]?.bu && (
+            <>
+              <HubLink
+                to={{ kind: "prep", a: shown[0].au, b: shown[0].bu }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: shown[0].au, b: shown[0].bu }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
           <input
             type="search"
             value={search}
@@ -810,20 +919,49 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
         hidden && !hideAll ? (
           <RevealButton onReveal={reveal} small />
         ) : !hide ? (
-          <SectionCard
-            section={name}
-            name={`standings-${name}`}
-            rows={() =>
-              rows.slice(0, 10).map((r, idx) => ({
-                rank: r.pl && r.pl > 0 ? r.pl : idx + 1,
-                team: r.t,
-                label: r.t,
-                sub: r.gw != null ? `${r.gw}-${r.gl ?? 0}` : undefined,
-                value: `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`,
-                win: (r.sw ?? 0) + (r.sl ?? 0) > 0 ? (r.sw ?? 0) >= (r.sl ?? 0) : undefined,
-              }))
-            }
-          />
+          <span className="flex flex-wrap items-center gap-2">
+            {rows.length >= 2 && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: rows[0].u || prettySlug(rows[0].t),
+                    b: rows[1].u || prettySlug(rows[1].t),
+                    period: eventSlug ? `e:${eventSlug}` : undefined,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: rows[0].u || prettySlug(rows[0].t),
+                    b: rows[1].u || prettySlug(rows[1].t),
+                    period: eventSlug ? `e:${eventSlug}` : undefined,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
+            <SectionCard
+              section={name}
+              name={`standings-${name}`}
+              rows={() =>
+                rows.slice(0, 10).map((r, idx) => ({
+                  rank: r.pl && r.pl > 0 ? r.pl : idx + 1,
+                  team: r.t,
+                  label: r.t,
+                  sub: r.gw != null ? `${r.gw}-${r.gl ?? 0}` : undefined,
+                  value: `${r.sw ?? 0}-${r.sl ?? 0}${ties ? `-${r.st ?? 0}` : ""}`,
+                  win: (r.sw ?? 0) + (r.sl ?? 0) > 0 ? (r.sw ?? 0) >= (r.sl ?? 0) : undefined,
+                }))
+              }
+            />
+          </span>
         ) : undefined
       }
     >
@@ -934,6 +1072,20 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
       title={tl("Player leaders")}
       right={
         <span className="flex flex-wrap items-center gap-2">
+          {rows.length >= 2 && (
+            <HubLink
+              to={{
+                kind: "compare",
+                mode: "player",
+                a: rows[0].u || prettySlug(rows[0].n),
+                b: rows[1].u || prettySlug(rows[1].n),
+                period: `e:${e.u}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
+          )}
           <HubLink
             to={{
               kind: "leaders",
@@ -1076,8 +1228,15 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(false);
   const rows = useMemo(() => {
-    const nq = normText(search);
-    if (nq) return allChamps.filter((c) => normText(champName(c.c)).includes(nq) || normText(c.c).includes(nq));
+    const terms = search
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s))
+      .filter(Boolean);
+    if (terms.length)
+      return allChamps.filter((c) => {
+        const hay = `${normText(champName(c.c))} ${normText(c.c)}`;
+        return terms.some((t) => hay.includes(t));
+      });
     return full || showAll ? allChamps : allChamps.slice(0, 20);
   }, [allChamps, search, full, showAll]);
   // the Champions page with this tournament picked: every champion, by patch / side / role, blind picks
@@ -1110,6 +1269,17 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
             <button type="button" onClick={() => setShowAll((v) => !v)} className="text-[11px] text-rw-accent hover:underline">
               {showAll ? tl("Show fewer") : tl("Show all {n}", { n: allChamps.length })}
             </button>
+          )}
+          {rows.length >= 2 && (
+            <HubLink
+              to={{
+                kind: "counters",
+                query: `champ=${encodeURIComponent(prettySlug(rows[0].c))}&vs=${encodeURIComponent(prettySlug(rows[1].c))}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Counters")} →
+            </HubLink>
           )}
           {more}
           <SectionCard
