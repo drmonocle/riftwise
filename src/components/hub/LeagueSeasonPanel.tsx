@@ -180,7 +180,21 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
           <div className="min-w-0">
             <div className="flex items-center justify-between gap-2 mb-1">
               <div className="text-[10px] font-semibold text-rw-muted">{tl("Standout players")}</div>
-              <span data-nocapture="1">
+              <span className="flex items-center gap-2" data-nocapture="1">
+                {regular.length >= 2 && (
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "player",
+                      a: regular[0].u || prettySlug(regular[0].n),
+                      b: regular[1].u || prettySlug(regular[1].n),
+                      period: `y${year}`,
+                    }}
+                    className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                )}
                 <SectionCard
                   section={tl("Standout players")}
                   name={`${name} ${year}`}

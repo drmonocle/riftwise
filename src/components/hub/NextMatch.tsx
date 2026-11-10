@@ -65,23 +65,61 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
       title={tl("Next match")}
       share={`${t.u}-next-match`}
       right={
-        <SectionCard
-          section={tl("Next match")}
-          name={t.name}
-          sub={first.m.leagueName}
-          rows={() =>
-            list.map((c, idx) => {
-              const [, them] = sides(c);
-              return {
-                rank: idx + 1,
-                team: them.name || them.code,
-                label: `${tl("vs")} ${them.name || them.code}`,
-                sub: [c.m.leagueName, c.m.blockName, tc("short best of", "Bo{n}", { n: c.m.bestOf || 1 })].filter(Boolean).join(" · "),
-                value: c.m.state === "inProgress" ? tl("On now") : formatMatchTime(c.m.startTimeUtc),
-              };
-            })
-          }
-        />
+        <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+          {first.opp && (
+            <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: t.u,
+                  b: first.opp,
+                  ...(first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4)) ? { period: `y${first.m.startTimeUtc.slice(0, 4)}` } : {}),
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(t.u)},${encodeURIComponent(first.opp)}${first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4)) ? `&p=y${first.m.startTimeUtc.slice(0, 4)}` : ""}`,
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: t.u,
+                  b: first.opp,
+                  ...(first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4)) ? { period: `y${first.m.startTimeUtc.slice(0, 4)}` } : {}),
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
+          <SectionCard
+            section={tl("Next match")}
+            name={t.name}
+            sub={first.m.leagueName}
+            rows={() =>
+              list.map((c, idx) => {
+                const [, them] = sides(c);
+                return {
+                  rank: idx + 1,
+                  team: them.name || them.code,
+                  label: `${tl("vs")} ${them.name || them.code}`,
+                  sub: [c.m.leagueName, c.m.blockName, tc("short best of", "Bo{n}", { n: c.m.bestOf || 1 })].filter(Boolean).join(" · "),
+                  value: c.m.state === "inProgress" ? tl("On now") : formatMatchTime(c.m.startTimeUtc),
+                };
+              })
+            }
+          />
+        </span>
       }
     >
       <FirstMatch c={first} t={t} />
@@ -119,6 +157,14 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                 </span>
                 <span className="inline-flex items-center gap-1.5 shrink-0">
                   <MatchPrepButton match={c.m} compact />
+                  {c.opp && (
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)},${encodeURIComponent(c.opp)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                      className="text-[11px] font-medium text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")}
+                    </HubLink>
+                  )}
                   <MatchOverviewButton match={c.m} compact />
                   <HubLink to={{ kind: "match", slug: RIOT_PREFIX + c.m.matchId }} className="text-rw-muted hover:text-rw-accent hover:underline">
                     {formatMatchTime(c.m.startTimeUtc)}

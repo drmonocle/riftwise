@@ -356,17 +356,28 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 {tl("Compare")} →
               </HubLink>
               {shownRows.length === 2 && shownRows[0].tu && shownRows[1].tu && shownRows[0].tu !== shownRows[1].tu && (
-                <HubLink
-                  to={{
-                    kind: "prep",
-                    a: shownRows[0].tu,
-                    b: shownRows[1].tu,
-                    period: event ? `e:${event}` : `y${year}`,
-                  }}
-                  className="text-rw-accent hover:underline font-semibold"
-                >
-                  {tl("Match prep")} →
-                </HubLink>
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: shownRows[0].tu,
+                      b: shownRows[1].tu,
+                      period: event ? `e:${event}` : `y${year}`,
+                    }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(shownRows[0].tu)},${encodeURIComponent(shownRows[1].tu)}&p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+                    }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                </>
               )}
             </>
           )}
@@ -564,6 +575,12 @@ const LeaderSpotlight: React.FC<{
               title={tl("Game finder")}
             >
               {c.top.g}G
+            </HubLink>
+            <HubLink
+              to={{ kind: "items", query: `player=${encodeURIComponent(c.top.u || c.top.n)}` }}
+              className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline block"
+            >
+              {tl("Item history")}
             </HubLink>
           </div>
         </div>

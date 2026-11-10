@@ -369,21 +369,37 @@ export const DraftTendencies: React.FC<{
           )}
         </div>
         {teamName && (
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
             {resolvedSlug && (
-              <HubLink
-                to={{
-                  kind: "draft",
-                  query: new URLSearchParams({
-                    teams: resolvedSlug,
-                    ...(period && period !== "all" ? { p: period } : {}),
-                  }).toString(),
-                }}
-                className="text-[11px] font-semibold text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Draft board")} →
-              </HubLink>
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: resolvedSlug, ...(period && period !== "all" ? { period } : {}) }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: resolvedSlug, ...(period && period !== "all" ? { period } : {}) }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: new URLSearchParams({
+                      teams: resolvedSlug,
+                      ...(period && period !== "all" ? { p: period } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+              </>
             )}
             <CopyDraftTendenciesPost
               teamName={teamName}

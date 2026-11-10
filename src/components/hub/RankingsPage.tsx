@@ -476,12 +476,26 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               </>
             )}
             {search.trim() && shownRows.length === 1 && (shownRows[0].r[0] || shownRows[0].r[1]) && (
-              <HubLink
-                to={{ kind: "compare", mode: "team", a: shownRows[0].r[0] || prettySlug(shownRows[0].r[1]) }}
-                className="text-rw-accent hover:underline font-medium"
-              >
-                {tl("Compare")} →
-              </HubLink>
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: shownRows[0].r[0] || prettySlug(shownRows[0].r[1]) }}
+                  className="text-rw-accent hover:underline font-medium"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(shownRows[0].r[0] || prettySlug(shownRows[0].r[1]))}` }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: shownRows[0].r[0] || prettySlug(shownRows[0].r[1]) }}
+                  className="text-rw-accent hover:underline font-medium"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
             )}
             <input
               type="search"
@@ -606,23 +620,50 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           title={tl("League strength")}
           share="riftwise-league-strength"
           right={
-            <SectionCard
-              section={tl("League strength")}
-              name={tl("Power rankings")}
-              sub={fmtDate(d.asof)}
-              rows={() =>
-                d.leagues.slice(0, 10).map(([l, , r, n], i) => {
-                  const best = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0];
-                  return {
-                    rank: i + 1,
-                    team: best?.[1],
-                    label: l,
-                    sub: best ? `#1 ${best[1]} (${best[5]}) · ${n} ${tl("Teams")}` : `${n} ${tl("Teams")}`,
-                    value: String(r),
-                  };
-                })
-              }
-            />
+            <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+              {(() => {
+                const topTwo = d.leagues
+                  .slice(0, 4)
+                  .map(([l]) => d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0])
+                  .filter(Boolean);
+                if (topTwo.length < 2) return null;
+                const aSlug = topTwo[0][0] || prettySlug(topTwo[0][1]);
+                const bSlug = topTwo[1][0] || prettySlug(topTwo[1][1]);
+                return (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: aSlug, b: bSlug }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: aSlug, b: bSlug }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                );
+              })()}
+              <SectionCard
+                section={tl("League strength")}
+                name={tl("Power rankings")}
+                sub={fmtDate(d.asof)}
+                rows={() =>
+                  d.leagues.slice(0, 10).map(([l, , r, n], i) => {
+                    const best = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0];
+                    return {
+                      rank: i + 1,
+                      team: best?.[1],
+                      label: l,
+                      sub: best ? `#1 ${best[1]} (${best[5]}) · ${n} ${tl("Teams")}` : `${n} ${tl("Teams")}`,
+                      value: String(r),
+                    };
+                  })
+                }
+              />
+            </span>
           }
         >
           <p className="text-[11px] text-rw-muted">

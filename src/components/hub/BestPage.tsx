@@ -271,6 +271,12 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                   {tl("Match prep")} →
                 </HubLink>
                 <HubLink
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(sa)},${encodeURIComponent(sb)}${year ? `&p=${encodeURIComponent(`y${year}`)}` : ""}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "compare", mode: "team", a: sa, b: sb, period: year ? `y${year}` : undefined }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >

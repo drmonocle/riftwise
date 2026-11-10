@@ -217,20 +217,34 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             title={tl("Biggest upsets")}
             right={
               w.upsets.length > 0 ? (
-                <SectionCard
-                  section={tl("Biggest upsets")}
-                  name={range}
-                  rows={() =>
-                    w.upsets.map((u, idx) => ({
-                      rank: idx + 1,
-                      team: u.w,
-                      label: `${tl("{w} beat {l}", { w: u.w, l: u.l })} (${u.s})`,
-                      sub: `${u.t} · ${fmtDate(u.date)}`,
-                      value: pct(u.p),
-                      win: true,
-                    }))
-                  }
-                />
+                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                  <HubLink
+                    to={{ kind: "prep", a: prettySlug(w.upsets[0].w), b: prettySlug(w.upsets[0].l) }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "compare", mode: "team", a: prettySlug(w.upsets[0].w), b: prettySlug(w.upsets[0].l) }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <SectionCard
+                    section={tl("Biggest upsets")}
+                    name={range}
+                    rows={() =>
+                      w.upsets.map((u, idx) => ({
+                        rank: idx + 1,
+                        team: u.w,
+                        label: `${tl("{w} beat {l}", { w: u.w, l: u.l })} (${u.s})`,
+                        sub: `${u.t} · ${fmtDate(u.date)}`,
+                        value: pct(u.p),
+                        win: true,
+                      }))
+                    }
+                  />
+                </span>
               ) : undefined
             }
             share="weekly-upsets"
@@ -263,6 +277,14 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <HubLink to={{ kind: "match", slug: u.g }} className="hover:text-rw-accent hover:underline">
                           {fmtDate(u.date)}
                         </HubLink>
+                        {" · "}
+                        <HubLink to={{ kind: "prep", a: prettySlug(u.w), b: prettySlug(u.l) }} className="hover:text-rw-accent hover:underline">
+                          {tl("Match prep")}
+                        </HubLink>
+                        {" · "}
+                        <HubLink to={{ kind: "compare", mode: "team", a: prettySlug(u.w), b: prettySlug(u.l) }} className="hover:text-rw-accent hover:underline">
+                          {tl("Compare")}
+                        </HubLink>
                       </div>
                       <div className="h-1 rounded-full bg-rw-raised overflow-hidden flex" aria-hidden="true">
                         <div className="h-full bg-rw-accent/85" style={{ width: `${winPct}%` }} />
@@ -281,20 +303,38 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             title={tl("Power rankings movers")}
             right={
               w.movers.length > 0 ? (
-                <SectionCard
-                  section={tl("Power rankings movers")}
-                  name={range}
-                  rows={() =>
-                    w.movers.map((m, idx) => ({
-                      rank: idx + 1,
-                      team: m.n,
-                      label: m.n,
-                      sub: `${m.lg} · ${m.r.toLocaleString(locale())}`,
-                      value: `${m.chg > 0 ? "▲" : "▼"}${Math.abs(m.chg)}`,
-                      win: m.chg > 0,
-                    }))
-                  }
-                />
+                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                  {w.movers.length >= 2 && (
+                    <>
+                      <HubLink
+                        to={{ kind: "prep", a: w.movers[0].u, b: w.movers[1].u }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: w.movers[0].u, b: w.movers[1].u }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  )}
+                  <SectionCard
+                    section={tl("Power rankings movers")}
+                    name={range}
+                    rows={() =>
+                      w.movers.map((m, idx) => ({
+                        rank: idx + 1,
+                        team: m.n,
+                        label: m.n,
+                        sub: `${m.lg} · ${m.r.toLocaleString(locale())}`,
+                        value: `${m.chg > 0 ? "▲" : "▼"}${Math.abs(m.chg)}`,
+                        win: m.chg > 0,
+                      }))
+                    }
+                  />
+                </span>
               ) : undefined
             }
             share="weekly-movers"
@@ -417,20 +457,34 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             title={tl("Best games")}
             right={
               w.best.length > 0 ? (
-                <SectionCard
-                  section={tl("Best games")}
-                  name={range}
-                  rows={() =>
-                    w.best.map((b, idx) => ({
-                      rank: idx + 1,
-                      team: b.a,
-                      label: tl("{a} vs {b}, game {n}", { a: b.a, b: b.b, n: b.gn }),
-                      sub: `${b.t} · ${fmtDate(b.date)}`,
-                      value: String(b.r),
-                      win: true,
-                    }))
-                  }
-                />
+                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                  <HubLink
+                    to={{ kind: "prep", a: prettySlug(w.best[0].a), b: prettySlug(w.best[0].b) }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "compare", mode: "team", a: prettySlug(w.best[0].a), b: prettySlug(w.best[0].b) }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <SectionCard
+                    section={tl("Best games")}
+                    name={range}
+                    rows={() =>
+                      w.best.map((b, idx) => ({
+                        rank: idx + 1,
+                        team: b.a,
+                        label: tl("{a} vs {b}, game {n}", { a: b.a, b: b.b, n: b.gn }),
+                        sub: `${b.t} · ${fmtDate(b.date)}`,
+                        value: String(b.r),
+                        win: true,
+                      }))
+                    }
+                  />
+                </span>
               ) : undefined
             }
             share="weekly-best"
@@ -457,6 +511,14 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       <EventLink name={b.t} u={b.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> ·{" "}
                       <HubLink to={{ kind: "match", slug: b.g, game: b.gn }} className="hover:text-rw-accent hover:underline">
                         {fmtDate(b.date)}
+                      </HubLink>
+                      {" · "}
+                      <HubLink to={{ kind: "prep", a: prettySlug(b.a), b: prettySlug(b.b) }} className="hover:text-rw-accent hover:underline">
+                        {tl("Match prep")}
+                      </HubLink>
+                      {" · "}
+                      <HubLink to={{ kind: "compare", mode: "team", a: prettySlug(b.a), b: prettySlug(b.b) }} className="hover:text-rw-accent hover:underline">
+                        {tl("Compare")}
                       </HubLink>
                     </div>
                     <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
@@ -726,6 +788,15 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
                           {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "draft",
+                            query: `teams=${encodeURIComponent(shownResults[0].au)},${encodeURIComponent(shownResults[0].bu)}${/^\d{4}$/.test((shownResults[0].date || "").slice(0, 4)) ? `&p=y${(shownResults[0].date || "").slice(0, 4)}` : ""}`,
+                          }}
+                          className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")} →
                         </HubLink>
                         <HubLink
                           to={{
