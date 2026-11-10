@@ -223,15 +223,18 @@ try {
   foreach ($path in @("/?release=$target", "/stats?release=$target")) {
     $page = $null
     $lastErr = $null
-    for ($attempt = 1; $attempt -le 3; $attempt++) {
-      try {
-        $page = (Invoke-WebRequest -UseBasicParsing -Uri "https://riftwise.gg$path" -TimeoutSec 35).Content
-        if ($page -match [regex]::Escape($bundle)) { break }
-        $lastErr = "https://riftwise.gg$path doesn't serve the new app ($bundle)"
-      } catch {
-        $lastErr = $_.Exception.Message
+    foreach ($base in @("https://riftwise.gg", "http://127.0.0.1:8093/riftwise")) {
+      for ($attempt = 1; $attempt -le 2; $attempt++) {
+        try {
+          $page = (Invoke-WebRequest -UseBasicParsing -Uri "$base$path" -TimeoutSec 20).Content
+          if ($page -match [regex]::Escape($bundle)) { break }
+          $lastErr = "$base$path doesn't serve the new app ($bundle)"
+        } catch {
+          $lastErr = $_.Exception.Message
+        }
+        if ($attempt -lt 2) { Start-Sleep -Seconds 5 }
       }
-      if ($attempt -lt 3) { Start-Sleep -Seconds 6 }
+      if ($page -match [regex]::Escape($bundle)) { break }
     }
     if ($page -notmatch [regex]::Escape($bundle)) { throw $lastErr }
   }

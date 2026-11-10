@@ -384,7 +384,9 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                         const dpm = dpmM.value(p);
                         const wr = wrM.value(p);
                         return {
-                          label: `#${i + 1} · ${p.n} (${p.t})`,
+                          rank: i + 1,
+                          team: p.t,
+                          label: `${p.n} (${p.t})`,
                           sub: [roleName(p.r), `${p.g}G`, dpm != null ? `${dpmM.fmt(dpm)} DPM` : null, wr != null ? wrM.fmt(wr) : null]
                             .filter(Boolean)
                             .join(" · "),

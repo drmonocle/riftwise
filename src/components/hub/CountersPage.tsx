@@ -403,12 +403,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
                       rows={() => [
                         {
+                          champ: vsMatch.oppCanon,
                           label: `${cName} vs ${champName(vsMatch.oppCanon)}`,
                           sub: `${vsMatch.totalG}G · ${vsMatch.totalW}W–${vsMatch.totalG - vsMatch.totalW}L${vsMatch.avgGd != null ? ` · ${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15` : ""}`,
                           value: `${Math.round((vsMatch.totalW / vsMatch.totalG) * 100)}%`,
                           win: vsMatch.totalW / vsMatch.totalG >= 0.5,
                         },
                         ...vsMatch.roles.map((r) => ({
+                          champ: rawChamp || undefined,
                           label: r.role >= 0 ? roleName(ROLES[r.role]) : tl("Every role"),
                           sub: `${r.g}G · ${r.w}W–${r.g - r.w}L${r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}`,
                           value: `${Math.round((r.w / r.g) * 100)}%`,
@@ -542,6 +544,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
                     rows={() =>
                       good.map((x) => ({
+                        champ: x.c,
                         label: champName(x.c),
                         sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
                         value: `${Math.round((x.w / x.g) * 100)}%`,
@@ -612,6 +615,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
                     rows={() =>
                       bad.map((x) => ({
+                        champ: x.c,
                         label: champName(x.c),
                         sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
                         value: `${Math.round((x.w / x.g) * 100)}%`,
@@ -686,6 +690,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
                     rows={() =>
                       rows.slice(0, 14).map((x) => ({
+                        champ: x.c,
                         label: champName(x.c),
                         sub: `${x.role >= 0 ? `${roleName(ROLES[x.role])} · ` : ""}${x.g}G${x.gd != null ? ` · ${x.gd > 0 ? "+" : ""}${x.gd} GD@15` : ""}`,
                         value: `${Math.round((x.w / x.g) * 100)}%`,
@@ -732,6 +737,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     name={cName}
                     rows={() =>
                       data.data!.ch!.duos!.slice(0, 12).map(([pc, g, w]) => ({
+                        champ: pc,
                         label: champName(pc),
                         sub: `${g}G`,
                         value: `${Math.round((w / g) * 100)}%`,

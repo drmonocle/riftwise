@@ -111,7 +111,7 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
           <SectionCard
             section={tl("Most pentakills")}
             name={tl("Records")}
-            rows={() => p.most.slice(0, 12).map((x, i) => ({ label: `#${i + 1} · ${x.n}`, value: String(x.v), win: true }))}
+            rows={() => p.most.slice(0, 12).map((x, i) => ({ rank: i + 1, label: x.n, value: String(x.v), win: true }))}
           />
         }
         share="records-most-pentakills"
@@ -157,6 +157,7 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
               name={tl("Records")}
               rows={() =>
                 p.recent.slice(0, 10).map((x) => ({
+                  champ: x.c,
                   label: `${x.n} (${champName(x.c)})`,
                   sub: `${x.a} vs ${x.b} · ${x.t} · ${fmtDate(x.date)}`,
                   value: x.x > 1 ? `×${x.x}` : "5K",
@@ -454,7 +455,9 @@ export const RecordsPanel: React.FC = () => {
                     name={recScopeLabel}
                     rows={() =>
                       rows.slice(0, 10).map((g, i) => ({
-                        label: `#${i + 1} · ${tl("{w} beat {l}", { w: g.w, l: g.w === g.a ? g.b : g.a })}`,
+                        rank: i + 1,
+                        team: g.w,
+                        label: tl("{w} beat {l}", { w: g.w, l: g.w === g.a ? g.b : g.a }),
                         sub: `${g.t} · ${fmtDate(g.date)}`,
                         value: fmt(g.v),
                         win: true,
@@ -553,7 +556,9 @@ export const RecordsPanel: React.FC = () => {
                     name={recScopeLabel}
                     rows={() =>
                       rows.slice(0, 10).map((p, i) => ({
-                        label: `#${i + 1} · ${p.pl} (${champName(p.c)})`,
+                        rank: i + 1,
+                        champ: p.c,
+                        label: `${p.pl} (${champName(p.c)})`,
                         sub: `${p.kda} vs ${p.opp} · ${p.t} · ${fmtDate(p.date)}`,
                         value: fmt(p.v),
                         win: true,
@@ -669,7 +674,7 @@ export const RecordsPanel: React.FC = () => {
                   <SectionCard
                     section={title}
                     name={tl("Career totals")}
-                    rows={() => rows.slice(0, 12).map((p, i) => ({ label: `#${i + 1} · ${p.pl}`, value: fmtNum(p.v), win: true }))}
+                    rows={() => rows.slice(0, 12).map((p, i) => ({ rank: i + 1, label: p.pl, value: fmtNum(p.v), win: true }))}
                   />
                 ) : undefined
               }
@@ -759,7 +764,9 @@ export const RecordsPanel: React.FC = () => {
                       name={tl("Records")}
                       rows={() =>
                         r.team.streaks.slice(0, 10).map((t, i) => ({
-                          label: `#${i + 1} · ${t.team}`,
+                          rank: i + 1,
+                          team: t.team,
+                          label: t.team,
                           sub: tl("ended {date}", { date: fmtDate(t.date) }),
                           value: tl("{n} games", { n: t.v }),
                           win: true,
@@ -819,7 +826,9 @@ export const RecordsPanel: React.FC = () => {
                       name={tl("Records")}
                       rows={() =>
                         r.team.titles.slice(0, 10).map((t, i) => ({
-                          label: `#${i + 1} · ${t.team}`,
+                          rank: i + 1,
+                          team: t.team,
+                          label: t.team,
                           sub: t.worlds ? tl("{n} Worlds", { n: t.worlds }) : undefined,
                           value: tl("{n} total", { n: t.v }),
                           win: true,
@@ -975,6 +984,7 @@ export const TitlesPanel: React.FC = () => {
                     sub={search.trim() || undefined}
                     rows={() =>
                       rows.slice(0, 12).map((x) => ({
+                        team: x.as,
                         label: `${x.as} · ${eventTitle(x.t)}`,
                         sub: `${x.score} vs ${x.l} · ${fmtDate(x.date)}`,
                         value: x.score,

@@ -613,7 +613,9 @@ const LeagueTable: React.FC<{
               name={[league.toUpperCase(), year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
               sub={tl("{n} games", { n: fmtNum(result.games) })}
               rows={() =>
-                result.rows.slice(0, 12).map((c) => ({
+                result.rows.slice(0, 12).map((c, i) => ({
+                  rank: i + 1,
+                  champ: c.c,
                   label: champName(c.c),
                   sub: `${c.p} ${tl("Picks")} · ${c.b} ${tl("Bans")}`,
                   value: `${pct(c.presence)}${c.p >= 3 && c.wr != null ? ` · ${pct(c.wr)}` : ""}`,
@@ -854,7 +856,9 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
               name={label(key)}
               sub={tl("{n} games", { n: fmtNum(block.games) })}
               rows={() =>
-                rows.slice(0, 12).map((c) => ({
+                rows.slice(0, 12).map((c, i) => ({
+                  rank: i + 1,
+                  champ: c.c,
                   label: champName(c.c),
                   sub: `${c.p} ${tl("Picks")} · ${c.b} ${tl("Bans")}`,
                   value: `${pct(c.presence)}${c.p >= 10 && c.wr != null ? ` · ${pct(c.wr)}` : ""}`,

@@ -11,7 +11,7 @@ import { champName } from "../../champions";
 import { loadWeekly, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { HubWeekly } from "../../hub/types";
 import { SITE_URL } from "../../platform";
-import { card, ChampIcon, ChampLink, EventLink, fmtDate, HubLink, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, ChampLink, EventLink, fmtDate, HubLink, hubShareUrl, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { BroadcastCardButton, listCard, SectionCard } from "./BroadcastCard";
 import { fmtRating, RatingBadge } from "./PlayerRating";
@@ -66,32 +66,38 @@ function markdown(w: HubWeekly): string {
     for (const [c, pk, bn, wn] of w.champs.slice(0, 5)) L.push(`- ${c}: ${pk} picks (${pk ? Math.round((wn / pk) * 100) : 0}% wins), ${bn} bans`);
     L.push("");
   }
-  L.push(`Every result, chance and record: ${SITE_URL}stats/weekly`);
+  L.push(`Every result, chance and record: ${hubShareUrl({ kind: "weekly" })}`);
   return L.join("\n");
 }
 
 const CopyMarkdown: React.FC<{ w: HubWeekly }> = ({ w }) => {
-  const [done, setDone] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   return (
     <button
       type="button"
       onClick={() =>
-        navigator.clipboard?.writeText(markdown(w)).then(() => {
-          setDone(true);
-          window.setTimeout(() => setDone(false), 1800);
-        })
+        navigator.clipboard
+          ?.writeText(markdown(w))
+          .then(() => {
+            setState("copied");
+            window.setTimeout(() => setState("idle"), 1800);
+          })
+          .catch(() => {
+            setState("failed");
+            window.setTimeout(() => setState("idle"), 2200);
+          })
       }
       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
     >
-      {done ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
-      {done ? tl("Copied") : tl("Copy for Reddit")}
+      {state === "copied" ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy for Reddit")}
     </button>
   );
 };
 
 /** Short summary for X / Discord (with canonical link). */
 const CopyWeeklyPost: React.FC<{ w: HubWeekly; range: string }> = ({ w, range }) => {
-  const [done, setDone] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const text = () => {
     const lines = [
       `${tl("The week in pro League")} (${range}) — ${tn("{n} series", "{n} series", w.series)}, ${tn("{n} game", "{n} games", w.games)}`,
@@ -112,23 +118,29 @@ const CopyWeeklyPost: React.FC<{ w: HubWeekly; range: string }> = ({ w, range })
       const p = w.players[0];
       lines.push(`${tl("Players of the week")}: ${p.n} (${p.rt.toFixed(1)})`);
     }
-    lines.push(`${SITE_URL}stats/weekly`);
+    lines.push(hubShareUrl({ kind: "weekly" }));
     return lines.join("\n");
   };
   return (
     <button
       type="button"
       onClick={() =>
-        navigator.clipboard?.writeText(text()).then(() => {
-          setDone(true);
-          window.setTimeout(() => setDone(false), 1800);
-        })
+        navigator.clipboard
+          ?.writeText(text())
+          .then(() => {
+            setState("copied");
+            window.setTimeout(() => setState("idle"), 1800);
+          })
+          .catch(() => {
+            setState("failed");
+            window.setTimeout(() => setState("idle"), 2200);
+          })
       }
       title={`${tl("Copy post")}: ${tl("Copy a ready-to-post summary with the link, for X or Discord")}`}
       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
     >
-      {done ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
-      {done ? tl("Copied") : tl("Copy post")}
+      {state === "copied" ? <Check className="w-3.5 h-3.5 text-rw-teal" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
+      {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
   );
 };
@@ -170,9 +182,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 name: range,
                 sub: tn("{n} series", "{n} series", w.series),
                 rows: [
-                  ...w.upsets.slice(0, 3).map((u) => ({ label: tl("{w} beat {l}", { w: u.w, l: u.l }), sub: `${u.s} · ${u.t}`, value: pct(u.p) })),
-                  ...w.movers.slice(0, 3).map((m) => ({ label: m.n, sub: m.lg, value: `${m.chg > 0 ? "+" : ""}${m.chg}` })),
-                  ...w.best.slice(0, 3).map((b) => ({ label: `${b.a} vs ${b.b}`, sub: b.t, value: String(b.r) })),
+                  ...w.upsets.slice(0, 3).map((u) => ({ team: u.w, label: tl("{w} beat {l}", { w: u.w, l: u.l }), sub: `${u.s} · ${u.t}`, value: pct(u.p) })),
+                  ...w.movers.slice(0, 3).map((m) => ({ team: m.n, label: m.n, sub: m.lg, value: `${m.chg > 0 ? "+" : ""}${m.chg}` })),
+                  ...w.best.slice(0, 3).map((b) => ({ team: b.a, label: `${b.a} vs ${b.b}`, sub: b.t, value: String(b.r) })),
                 ],
               })
             }
@@ -199,6 +211,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   name={range}
                   rows={() =>
                     w.upsets.map((u) => ({
+                      team: u.w,
                       label: `${tl("{w} beat {l}", { w: u.w, l: u.l })} (${u.s})`,
                       sub: `${u.t} · ${fmtDate(u.date)}`,
                       value: pct(u.p),
@@ -261,6 +274,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   name={range}
                   rows={() =>
                     w.movers.map((m) => ({
+                      team: m.n,
                       label: m.n,
                       sub: `${m.lg} · ${m.r.toLocaleString(locale())}`,
                       value: `${m.chg > 0 ? "▲" : "▼"}${Math.abs(m.chg)}`,
@@ -392,6 +406,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   name={range}
                   rows={() =>
                     w.best.map((b) => ({
+                      team: b.a,
                       label: tl("{a} vs {b}, game {n}", { a: b.a, b: b.b, n: b.gn }),
                       sub: `${b.t} · ${fmtDate(b.date)}`,
                       value: String(b.r),
@@ -446,7 +461,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   name={range}
                   rows={() =>
                     w.players!.map((p, i) => ({
-                      label: `#${i + 1} · ${p.n}`,
+                      rank: i + 1,
+                      team: p.t,
+                      label: p.n,
                       sub: [p.r ? roleName(p.r) : "", p.t, `${p.g}G`].filter(Boolean).join(" · "),
                       value: fmtRating(p.rt),
                       win: true,
@@ -540,7 +557,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   section={tl("Picks and bans this week")}
                   name={range}
                   rows={() =>
-                    w.champs!.slice(0, 12).map(([c, pk, bn, wn]) => ({
+                    w.champs!.slice(0, 12).map(([c, pk, bn, wn], i) => ({
+                      rank: i + 1,
+                      champ: c,
                       label: champName(c),
                       sub: `${pk} ${tl("Picks")} · ${bn} ${tl("Bans")}`,
                       value: `${w.champGames ? `${Math.round(((pk + bn) / w.champGames) * 100)}%` : "–"}${pk ? ` · ${Math.round((wn / pk) * 100)}%` : ""}`,

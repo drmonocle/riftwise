@@ -121,15 +121,19 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                     if (view === "series") {
                       const [rating, , date, en, , stage, a, , b, , wa, wb] = r as BestSeries;
                       return {
-                        label: `#${i + 1} · ${a} ${wa}–${wb} ${b}`,
+                        rank: i + 1,
+                        team: wa >= wb ? a : b,
+                        label: `${a} ${wa}–${wb} ${b}`,
                         sub: [en, stage && stageLabel(stage), fmtDate(date)].filter(Boolean).join(" · "),
                         value: `${fmtDec(rating)} (${ratingTier(rating)})`,
                         win: true,
                       };
                     }
-                    const [rating, , n, date, en, , stage, a, , b, , , min] = r as BestGame;
+                    const [rating, , n, date, en, , stage, a, , b, , w, min] = r as BestGame;
                     return {
-                      label: `#${i + 1} · ${a} vs ${b} (${tl("Game {n}", { n })})`,
+                      rank: i + 1,
+                      team: w === 2 ? b : a,
+                      label: `${a} vs ${b} (${tl("Game {n}", { n })})`,
                       sub: [en, stage && stageLabel(stage), min ? `${Math.round(min)}m` : null, fmtDate(date)].filter(Boolean).join(" · "),
                       value: `${fmtDec(rating)} (${ratingTier(rating)})`,
                       win: true,

@@ -533,9 +533,11 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               name={tl("Power rankings")}
               sub={fmtDate(d.asof)}
               rows={() =>
-                d.leagues.slice(0, 10).map(([l, , r, n]) => {
+                d.leagues.slice(0, 10).map(([l, , r, n], i) => {
                   const best = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0];
                   return {
+                    rank: i + 1,
+                    team: best?.[1],
                     label: l,
                     sub: best ? `#1 ${best[1]} (${best[5]}) · ${n} ${tl("Teams")}` : `${n} ${tl("Teams")}`,
                     value: String(r),

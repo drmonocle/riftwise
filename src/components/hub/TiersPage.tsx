@@ -159,6 +159,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                       .filter((c) => tierOf(c.score).t === "S" || tierOf(c.score).t === "A")
                       .slice(0, role ? 12 : 3)
                       .map((c) => ({
+                        champ: c.c,
                         label: `${champName(c.c)} (${roleName(r)})`,
                         sub: `${tierOf(c.score).t} · ${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p}G`,
                         value: c.wr != null && c.p >= 5 ? `${Math.round(c.wr * 100)}%` : `${fmtDec(c.presence * 100)}%`,
@@ -282,6 +283,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                       sub={`${block.games}G`}
                       rows={() =>
                         (byRole.get(r) || []).slice(0, 12).map((c) => ({
+                          champ: c.c,
                           label: `${tierOf(c.score).t} · ${champName(c.c)}`,
                           sub: `${fmtDec(c.presence * 100)}% ${tl("Presence")} · ${c.p} ${tl("Picks")}`,
                           value: c.wr != null && c.p >= 5 ? `${Math.round(c.wr * 100)}%` : `${fmtDec(c.presence * 100)}%`,

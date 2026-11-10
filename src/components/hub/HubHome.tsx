@@ -748,7 +748,9 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
               sub={from ? fmtDate(from) : undefined}
               rows={() =>
                 rows.slice(0, 10).map((p, i) => ({
-                  label: `#${i + 1} · ${p.n}`,
+                  rank: i + 1,
+                  team: p.t,
+                  label: p.n,
                   sub: [p.r ? roleName(p.r) : "", p.t, `${p.g}G`].filter(Boolean).join(" · "),
                   value: String(Math.round(p.rt)),
                   win: true,
@@ -982,6 +984,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
           sub={`${rows.length}`}
           rows={() =>
             rows.slice(0, 12).map((e) => ({
+              team: e.w || undefined,
               label: e.n,
               sub: [e.r ? regionName(e.r, e.r) : null, fmtDate(e.st, false)].filter(Boolean).join(" · "),
               value: e.w || (e.g ? `${e.g}G` : "–"),
