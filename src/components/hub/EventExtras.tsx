@@ -396,10 +396,20 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
       )}
       {!hidden && o.mvp.length > 0 && (
         <div className="text-xs">
-          <span className="text-rw-muted flex items-center gap-1 mb-1">
-            <Crown className="w-3 h-3" />
-            {tl("Most Player of the Game awards")}
-          </span>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-rw-muted flex items-center gap-1">
+              <Crown className="w-3 h-3" />
+              {tl("Most Player of the Game awards")}
+            </span>
+            {o.mvp.length >= 2 && o.mvp[0].u && o.mvp[1].u && (
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: o.mvp[0].u, b: o.mvp[1].u, period: slug ? `e:${slug}` : undefined }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            )}
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {(() => {
               const maxM = Math.max(1, ...o.mvp.map((m) => m.v));
@@ -468,6 +478,33 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               aria-label={tl("Filter by name or team…")}
               className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-40"
             />
+          )}
+          {filteredRosters.length >= 2 && (
+            <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: filteredRosters[0].u || prettySlug(filteredRosters[0].t),
+                  b: filteredRosters[1].u || prettySlug(filteredRosters[1].t),
+                  period: eventSlug ? `e:${eventSlug}` : undefined,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: filteredRosters[0].u || prettySlug(filteredRosters[0].t),
+                  b: filteredRosters[1].u || prettySlug(filteredRosters[1].t),
+                  period: eventSlug ? `e:${eventSlug}` : undefined,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
           )}
           {filteredRosters.length > 0 && (
             <>

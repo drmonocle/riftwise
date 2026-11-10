@@ -746,6 +746,17 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                   <Swords className="w-3.5 h-3.5" />
                   {tl("Draft board")}
                 </HubLink>
+                {blue[0]?.c && red[0]?.c && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: `champ=${encodeURIComponent(prettySlug(blue[0].c))}&vs=${encodeURIComponent(prettySlug(red[0].c))}${blue[0].r ? `&role=${encodeURIComponent(blue[0].r)}` : ""}`,
+                    }}
+                    className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")}
+                  </HubLink>
+                )}
               </>
             )}
             {!hidden && g.t && (

@@ -269,6 +269,15 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                     </HubLink>
                     <HubLink
                       to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(e.results[0].u || prettySlug(e.results[0].t))},${encodeURIComponent(e.results[1].u || prettySlug(e.results[1].t))}&p=e:${encodeURIComponent(e.u)}`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
                         kind: "compare",
                         mode: "team",
                         a: e.results[0].u || prettySlug(e.results[0].t),
@@ -478,6 +487,15 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                           className="text-[11px] text-rw-accent hover:underline"
                         >
                           {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "draft",
+                            query: `teams=${encodeURIComponent(filteredTeams[0].u || prettySlug(filteredTeams[0].t))},${encodeURIComponent(filteredTeams[1].u || prettySlug(filteredTeams[1].t))}&p=e:${encodeURIComponent(e.u)}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")} →
                         </HubLink>
                         <HubLink
                           to={{
@@ -932,6 +950,15 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(rows[0].u || prettySlug(rows[0].t))},${encodeURIComponent(rows[1].u || prettySlug(rows[1].t))}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
                 </HubLink>
                 <HubLink
                   to={{

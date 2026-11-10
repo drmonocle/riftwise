@@ -94,13 +94,17 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
   }, [rows]);
   const years = useMemo(() => yearChoices(rows.map((t) => t[3])), [rows]);
   const list = useMemo(() => {
-    const w = normText(words.trim());
-    return rows.filter(
-      (t) =>
-        (!region || t[6] === region) &&
-        (since === "all" || (t[3] || "") >= since) &&
-        (!w || normText(`${t[0]} | ${t[4]} | ${t[5]}`).includes(w)),
-    );
+    const terms = words
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s.trim()))
+      .filter(Boolean);
+    return rows.filter((t) => {
+      if (region && t[6] !== region) return false;
+      if (since !== "all" && (t[3] || "") < since) return false;
+      if (!terms.length) return true;
+      const hay = normText(`${t[0]} | ${t[1] || ""} | ${t[4]} | ${t[5]}`);
+      return terms.some((term) => hay.includes(term));
+    });
   }, [rows, region, since, words]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((t) => t[2] || 0)), [list]);
   const columns: Column<SearchTeamRow>[] = [
@@ -234,13 +238,22 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         </select>
         <SinceSelect years={years} value={since} onChange={(v) => set("since", v === THIS_YEAR ? null : v)} />
         <NameFilter value={words} onChange={(v) => set("q", v)} placeholder={tl("Filter by name or short name…")} />
-        {list.length === 2 && (
+        {(list.length === 2 || (words.trim() && list.length >= 2 && list.length <= 4)) && (
           <>
             <HubLink
               to={{ kind: "prep", a: list[0][1] || prettySlug(list[0][0]), b: list[1][1] || prettySlug(list[1][0]) }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Match prep")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "draft",
+                query: `teams=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))},${encodeURIComponent(list[1][1] || prettySlug(list[1][0]))}`,
+              }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Draft board")} →
             </HubLink>
             <HubLink
               to={{ kind: "compare", mode: "team", a: list[0][1] || prettySlug(list[0][0]), b: list[1][1] || prettySlug(list[1][0]) }}
@@ -312,13 +325,17 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
   const shown = Number(q.get("n")) || STEP;
   const years = useMemo(() => yearChoices(rows.map((p) => p[4])), [rows]);
   const list = useMemo(() => {
-    const w = normText(words.trim());
-    return rows.filter(
-      (p) =>
-        (!role || ROLE_OF[p[5]] === role) &&
-        (since === "all" || (p[4] || "") >= since) &&
-        (!w || normText(`${p[0]} | ${p[2]} | ${p[6]}`).includes(w)),
-    );
+    const terms = words
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s.trim()))
+      .filter(Boolean);
+    return rows.filter((p) => {
+      if (role && ROLE_OF[p[5]] !== role) return false;
+      if (since !== "all" && (p[4] || "") < since) return false;
+      if (!terms.length) return true;
+      const hay = normText(`${p[0]} | ${p[1] || ""} | ${p[2]} | ${p[6]}`);
+      return terms.some((term) => hay.includes(term));
+    });
   }, [rows, role, since, words]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((p) => p[3] || 0)), [list]);
   const columns: Column<SearchPlayerRow>[] = [
@@ -450,7 +467,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
         </select>
         <SinceSelect years={years} value={since} onChange={(v) => set("since", v === THIS_YEAR ? null : v)} />
         <NameFilter value={words} onChange={(v) => set("q", v)} placeholder={tl("Filter by name or team…")} />
-        {list.length === 2 && (
+        {(list.length === 2 || (words.trim() && list.length >= 2 && list.length <= 4)) && (
           <HubLink
             to={{ kind: "compare", mode: "player", a: list[0][1] || prettySlug(list[0][0]), b: list[1][1] || prettySlug(list[1][0]) }}
             className="text-rw-accent hover:underline font-semibold"

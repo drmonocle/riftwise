@@ -108,6 +108,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const [muSearch, setMuSearch] = useState("");
   const [duoSearch, setDuoSearch] = useState("");
   const [playerSearch, setPlayerSearch] = useState("");
+  const [recentSearch, setRecentSearch] = useState("");
   // this meta (last 12 months) first when there is one
   const [muRecentPick, setMuRecent] = useState(() => Object.keys(c.matchups12 || {}).length > 0);
   // the last 12 months have no matchups in this role: show all time
@@ -459,21 +460,53 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   ))}
                 </span>
               )}
-              <CountersLink slug={c.u} className="text-[11px] text-rw-accent hover:underline" />
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: `champ=${encodeURIComponent(c.u)}${
+                    muSearch.trim()
+                      ? (() => {
+                          const terms = muSearch
+                            .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                            .map((t) => normText(t))
+                            .filter(Boolean);
+                          const hit = muRows.find(([oc]) => {
+                            const hay = `${normText(champName(oc))} ${normText(oc)}`;
+                            return terms.some((t) => hay.includes(t));
+                          });
+                          return hit ? `&vs=${encodeURIComponent(hit[0])}` : "";
+                        })()
+                      : ""
+                  }${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Counter-pick finder")} →
+              </HubLink>
               <SectionCard
                 section={`${tl("Matchups")} · ${roleName(muRole)}`}
                 name={champName(c.name)}
                 sub={muRecent ? tl("Last 12 months") : tl("All time")}
-                rows={() =>
-                  muRows.slice(0, 8).map(([oc, g, w, , gd], idx) => ({
+                rows={() => {
+                  const terms = muSearch
+                    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                    .map((t) => normText(t))
+                    .filter(Boolean);
+                  const shownMu = terms.length
+                    ? muRows.filter(([oc]) => {
+                        const hay = `${normText(champName(oc))} ${normText(oc)}`;
+                        return terms.some((t) => hay.includes(t));
+                      })
+                    : muRows;
+                  return shownMu.slice(0, 8).map(([oc, g, w, , gd], idx) => ({
                     rank: idx + 1,
                     champ: oc,
                     label: `vs ${champName(oc)}`,
                     sub: gd != null ? `${tl("Games")}: ${g} · GD@15 ${signedText(gd)}` : `${tl("Games")}: ${g}`,
                     value: pctOf(w, g),
                     tone: w / g >= 0.5 ? ("good" as const) : ("bad" as const),
-                  }))
-                }
+                  }));
+                }}
               />
             </span>
           }
@@ -705,16 +738,27 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               <SectionCard
                 section={tl("Bot lane partners")}
                 name={champName(c.name)}
-                rows={() =>
-                  (c.duos || []).slice(0, 12).map(([pc, g, w], idx) => ({
+                rows={() => {
+                  const terms = duoSearch
+                    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                    .map((t) => normText(t))
+                    .filter(Boolean);
+                  const allDuos = c.duos || [];
+                  const duos = terms.length
+                    ? allDuos.filter(([pc]) => {
+                        const hay = `${normText(champName(pc))} ${normText(pc)}`;
+                        return terms.some((t) => hay.includes(t));
+                      })
+                    : allDuos;
+                  return duos.slice(0, 12).map(([pc, g, w], idx) => ({
                     rank: idx + 1,
                     champ: pc,
                     label: champName(pc),
                     sub: `${g}G`,
                     value: pctOf(w, g),
                     win: w / g >= 0.5,
-                  }))
-                }
+                  }));
+                }}
               />
             </span>
           }
@@ -948,6 +992,16 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             <RevealButton onReveal={revealRecent} small />
           ) : (
             <span className="flex flex-wrap items-center gap-2">
+              {c.recent.length >= 8 && (
+                <input
+                  type="search"
+                  value={recentSearch}
+                  onChange={(e) => setRecentSearch(e.target.value)}
+                  placeholder={tl("Filter by name or team…")}
+                  aria-label={tl("Filter by name or team…")}
+                  className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
+                />
+              )}
               {usedOnly && (
                 <button type="button" onClick={() => setUsed(null)} className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-rw-accent text-rw-accent text-[11px]" title={tl("Show every game")}>
                   {tl("With {name}", { name: usedName })} ✕
@@ -957,9 +1011,18 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 section={tl("Latest pro games")}
                 name={champName(c.name)}
                 sub={usedOnly ? tl("With {name}", { name: usedName }) : undefined}
-                rows={() =>
-                  c.recent
+                rows={() => {
+                  const rTerms = recentSearch
+                    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                    .map((t) => normText(t))
+                    .filter(Boolean);
+                  return c.recent
                     .filter(usedIn)
+                    .filter((r) => {
+                      if (!rTerms.length) return true;
+                      const hay = normText(`${r.n} ${r.u || ""} ${r.team || ""} ${r.opp || ""} ${r.en || ""}`);
+                      return rTerms.some((t) => hay.includes(t));
+                    })
                     .slice(0, 10)
                     .map((r, idx) => ({
                       rank: idx + 1,
@@ -969,8 +1032,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       label: `${r.n} (${r.k}/${r.d}/${r.a}) vs ${r.opp}`,
                       sub: r.en,
                       value: fmtDate(r.date, false),
-                    }))
-                }
+                    }));
+                }}
               />
             </span>
           )
@@ -982,7 +1045,19 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         ) : (
           <ul className="text-xs space-y-2">
             {usedOnly && !c.recent.some(usedIn) && <li className="text-rw-muted">{tl("None of the latest games used it.")}</li>}
-            {c.recent.filter(usedIn).map((r, i) => (
+            {(() => {
+              const rTerms = recentSearch
+                .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                .map((t) => normText(t))
+                .filter(Boolean);
+              return c.recent
+                .filter(usedIn)
+                .filter((r) => {
+                  if (!rTerms.length) return true;
+                  const hay = normText(`${r.n} ${r.u || ""} ${r.team || ""} ${r.opp || ""} ${r.en || ""}`);
+                  return rTerms.some((t) => hay.includes(t));
+                })
+                .map((r, i) => (
               <li key={i} className="min-w-0">
                 <div className="flex items-center justify-between gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1.5 truncate min-w-0">
@@ -1070,7 +1145,8 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   <EventLink name={r.en} className="text-rw-muted hover:text-rw-accent hover:underline" />
                 </div>
               </li>
-            ))}
+            ));
+            })()}
           </ul>
         )}
       </Section>

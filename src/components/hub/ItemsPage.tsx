@@ -331,9 +331,16 @@ const PlayerItemsView: React.FC<{
       </Section>
     );
   }
-  const f = normText(filter.trim());
+  const fTerms = filter
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((t) => normText(t.trim()))
+    .filter(Boolean);
   const list = mine.data
-    .filter(([it]) => (!finishedOnly || isFinishedItem(it)) && (!f || normText(itemName(it)).includes(f) || normText(it).includes(f)))
+    .filter(
+      ([it]) =>
+        (!finishedOnly || isFinishedItem(it)) &&
+        (!fTerms.length || fTerms.some((f) => normText(itemName(it)).includes(f) || normText(it).includes(f))),
+    )
     .map(([it, pos]) => [it, games(pos)] as const)
     .filter(([, g]) => g.length > 0)
     .sort((a, b) => b[1].length - a[1].length);
@@ -1277,9 +1284,32 @@ const ChampSpread: React.FC<{ games: PlayerGameRow[]; picks?: Picks }> = ({ game
 const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ games, spoilerKey }) => {
   const hiddenNow = useHiddenCheck();
   const [all, setAll] = useState(false);
-  const shown = all ? games : games.slice(0, 50);
+  const [gameFilter, setGameFilter] = useState("");
+  const gTerms = gameFilter
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((t) => normText(t.trim()))
+    .filter(Boolean);
+  const filteredGames = gTerms.length
+    ? games.filter((r) => {
+        const hay = normText(`${champName(r[2])} ${r[2]} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""}`);
+        return gTerms.some((t) => hay.includes(t));
+      })
+    : games;
+  const shown = all || gTerms.length ? filteredGames : filteredGames.slice(0, 50);
   return (
     <>
+      {games.length >= 10 && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <input
+            type="search"
+            value={gameFilter}
+            onChange={(e) => setGameFilter(e.target.value)}
+            placeholder={tl("Filter by name or team…")}
+            aria-label={tl("Filter by name or team…")}
+            className="bg-rw-bg border border-rw-border rounded-lg px-2 py-0.5 text-xs text-rw-text placeholder:text-rw-muted w-44 focus:border-rw-accent focus:outline-none"
+          />
+        </div>
+      )}
       <ul className="text-xs space-y-1">
         {shown.map((r, i) => {
           const hide = hiddenNow(spoilerKey, r[0]);
@@ -1374,9 +1404,9 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
           );
         })}
       </ul>
-      {games.length > shown.length && (
+      {filteredGames.length > shown.length && (
         <button type="button" onClick={() => setAll(true)} className="text-[11px] text-rw-accent hover:underline">
-          {tl("Show all {n}", { n: games.length })}
+          {tl("Show all {n}", { n: filteredGames.length })}
         </button>
       )}
     </>

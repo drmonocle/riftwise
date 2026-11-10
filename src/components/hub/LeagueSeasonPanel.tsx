@@ -16,17 +16,41 @@ const STANDOUT = ["kda", "dpm", "g15", "csm", "vsm", "kp"];
 
 export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: string }> = ({ league, year, name }) => {
   const state = useLoad(() => loadLeagueSeason(league, year), [league, year]);
+  const [search, setSearch] = useState("");
   const s = state.data;
   if (!s || (!s.players.length && !s.teamStats.length)) return null;
   const maxG = Math.max(1, ...s.players.map((p) => p.g));
   const minG = Math.max(3, Math.ceil(maxG * 0.3));
-  const regular = s.players.filter((p) => p.g >= minG);
-  const teams = [...s.teamStats].sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g);
+  const terms = search
+    .toLowerCase()
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  const allRegular = s.players.filter((p) => p.g >= minG);
+  const regular = terms.length
+    ? allRegular.filter((p) => terms.some((term) => `${p.n} ${p.u || ""} ${p.t} ${p.tu || ""}`.toLowerCase().includes(term)))
+    : allRegular;
+  const allTeams = [...s.teamStats].sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g);
+  const teams = terms.length
+    ? allTeams.filter((t) => terms.some((term) => `${t.t} ${t.u || ""}`.toLowerCase().includes(term)))
+    : allTeams;
+  const headerTeams = teams.length >= 2 ? teams : allTeams;
   return (
     <Section
       title={tl("{name} {year} at a glance", { name, year })}
       right={
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold">
+          {(allTeams.length > 6 || allRegular.length > 10) && (
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              data-nocapture="1"
+              className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] font-normal text-rw-text w-36"
+            />
+          )}
           <HubLink to={{ kind: "leaders", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Full leaderboard")}
           </HubLink>
@@ -39,13 +63,13 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
           <HubLink to={{ kind: "finder", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
             {tl("Game finder")}
           </HubLink>
-          {teams.length >= 2 && (
+          {headerTeams.length >= 2 && (
             <>
               <HubLink
                 to={{
                   kind: "prep",
-                  a: teams[0].u || prettySlug(teams[0].t),
-                  b: teams[1].u || prettySlug(teams[1].t),
+                  a: headerTeams[0].u || prettySlug(headerTeams[0].t),
+                  b: headerTeams[1].u || prettySlug(headerTeams[1].t),
                   period: `y${year}`,
                 }}
                 className="text-rw-accent hover:underline"
@@ -55,7 +79,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(teams[0].u || prettySlug(teams[0].t))},${encodeURIComponent(teams[1].u || prettySlug(teams[1].t))}&p=y${encodeURIComponent(year)}`,
+                  query: `teams=${encodeURIComponent(headerTeams[0].u || prettySlug(headerTeams[0].t))},${encodeURIComponent(headerTeams[1].u || prettySlug(headerTeams[1].t))}&p=y${encodeURIComponent(year)}`,
                 }}
                 className="text-rw-accent hover:underline"
               >
@@ -65,8 +89,8 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 to={{
                   kind: "compare",
                   mode: "team",
-                  a: teams[0].u || prettySlug(teams[0].t),
-                  b: teams[1].u || prettySlug(teams[1].t),
+                  a: headerTeams[0].u || prettySlug(headerTeams[0].t),
+                  b: headerTeams[1].u || prettySlug(headerTeams[1].t),
                   period: `y${year}`,
                 }}
                 className="text-rw-accent hover:underline"

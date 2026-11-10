@@ -45,14 +45,15 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
   const rows = useMemo(() => {
     const terms = search
       .toLowerCase()
-      .split(",")
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => s.trim())
       .filter(Boolean);
     return players.filter(
       (p) =>
         (role === "All" || p.r === role) &&
         (!regular || p.g >= minG || maxG < 3) &&
-        (!terms.length || terms.some((term) => p.n.toLowerCase().includes(term) || p.t.toLowerCase().includes(term))),
+        (!terms.length ||
+          terms.some((term) => `${p.n} ${p.u || ""} ${p.t} ${p.tu || ""}`.toLowerCase().includes(term))),
     );
   }, [players, role, regular, minG, maxG, search]);
   if (players.length === 0) return null;
@@ -283,7 +284,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
           aria-label={tl("Filter by name or team…")}
           className="bg-rw-bg border border-rw-border rounded px-2 py-1 text-[11px] text-rw-text w-40"
         />
-        {rows.length === 2 && rows[0].u && rows[1].u && (
+        {(rows.length === 2 || (search.trim() && rows.length >= 2)) && rows[0].u && rows[1].u && (
           <HubLink
             to={{ kind: "compare", mode: "player", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
             className="text-rw-accent hover:underline font-semibold"
@@ -311,10 +312,10 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   const rows = useMemo(() => {
     const terms = search
       .toLowerCase()
-      .split(",")
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => s.trim())
       .filter(Boolean);
-    return !terms.length ? teams : teams.filter((t) => terms.some((term) => t.t.toLowerCase().includes(term)));
+    return !terms.length ? teams : teams.filter((t) => terms.some((term) => `${t.t} ${t.u || ""}`.toLowerCase().includes(term)));
   }, [teams, search]);
   if (teams.length === 0 || hidden) return null;
   const maxTeamG = Math.max(1, ...teams.map((t) => t.g));
@@ -467,7 +468,10 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
   const cols = all.filter((c) => c.key !== "grub" || teams.some((t) => t.grub > 0));
   const early = teams.some((t) => t.tn || t.fbn || t.pln);
   if (early) cols.push(...teamEarlyCols(tStatLink));
-  const pair = rows.length === 2 ? [rows[0].u || prettySlug(rows[0].t), rows[1].u || prettySlug(rows[1].t)] : null;
+  const pair =
+    rows.length === 2 || (search.trim() && rows.length >= 2)
+      ? [rows[0].u || prettySlug(rows[0].t), rows[1].u || prettySlug(rows[1].t)]
+      : null;
   return (
     <Section
       title={tl("Team stats")}
