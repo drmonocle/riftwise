@@ -105,8 +105,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     return [...s].sort().reverse();
   }, [hist.data]);
   // all leagues: top-league teams on one scale; one league: its teams ranked within it
-  const rows = useMemo(() => {
-    const filtered = d.teams.filter((r) => (league === "*" ? true : league ? r[3] === league : r[9] === 1));
+  const rankList = (filtered: RatingRow[]) => {
     if (!asOf || !hist.data) {
       return filtered.map((r, i) => ({ r, rank: i + 1 }));
     }
@@ -125,7 +124,11 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       })
       .sort((a, b) => b[5] - a[5]);
     return rewound.map((r, i) => ({ r, rank: i + 1 }));
-  }, [d.teams, league, asOf, hist.data]);
+  };
+  const rows = useMemo(() => {
+    const filtered = d.teams.filter((r) => (league === "*" ? true : league ? r[3] === league : r[9] === 1));
+    return rankList(filtered);
+  }, [d.teams, league, asOf, hist.data]); // eslint-disable-line react-hooks/exhaustive-deps
   const topLeagueCards = useMemo(() => {
     return d.leagues.slice(0, 6).map(([l, u, top4Avg, count]) => {
       const lTeams = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5]);
@@ -176,11 +179,16 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => s.trim())
       .filter(Boolean);
-    return rows.filter(({ r }) => {
+    const matchRow = (r: RatingRow, t: string) => {
       const hay = `${r[0] || ""} ${r[1]} ${r[2] || ""} ${r[3] || ""} ${r[10] || ""}`.toLowerCase();
-      return terms.some((t) => hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t))));
-    });
-  }, [rows, search]);
+      return hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t)));
+    };
+    const pool =
+      !league && terms.some((t) => !rows.some(({ r }) => matchRow(r, t)) && d.teams.some((r) => matchRow(r, t)))
+        ? rankList(d.teams)
+        : rows;
+    return pool.filter(({ r }) => terms.some((t) => matchRow(r, t)));
+  }, [rows, d.teams, league, search, asOf, hist.data]); // eslint-disable-line react-hooks/exhaustive-deps
   const pair =
     search.trim() && shownRows.length >= 2 && (shownRows[0].r[0] || shownRows[0].r[1]) && (shownRows[1].r[0] || shownRows[1].r[1])
       ? [shownRows[0].r[0] || prettySlug(shownRows[0].r[1]), shownRows[1].r[0] || prettySlug(shownRows[1].r[1])]

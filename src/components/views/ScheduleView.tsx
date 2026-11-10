@@ -13,7 +13,7 @@ import { tl, locale, clockOptions, tc } from "../../i18n";
 import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { findSeriesSlug } from "../../hub/seriesLookup";
-import { prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route";
 import { riotImg } from "../../riotImage";
@@ -158,18 +158,19 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     if (searchQuery.trim()) {
       const raw = searchQuery.trim();
       const text = `${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName} ${m.blockName || ""}`.toLowerCase();
+      const matchTerm = (q: string) => text.includes(q) || (bare(q).length >= 2 && bare(text).includes(bare(q)));
       if (/\s+vs\.?\s+|\s+v\s+/i.test(raw)) {
         const parts = raw
           .split(/\s+vs\.?\s+|\s+v\s+/i)
           .map((s) => searchAlias(s.trim()).toLowerCase())
           .filter(Boolean);
-        if (parts.some((p) => !text.includes(p))) return false;
+        if (parts.some((p) => !matchTerm(p))) return false;
       } else {
         const terms = raw
           .split(/[,|]+/)
           .map((s) => searchAlias(s.trim()).toLowerCase())
           .filter(Boolean);
-        if (terms.length && !terms.some((q) => text.includes(q))) return false;
+        if (terms.length && !terms.some((q) => matchTerm(q))) return false;
       }
     }
 

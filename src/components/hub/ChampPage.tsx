@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, tc, roleName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubChamp, normText, prettySlug } from "../../hub/data";
+import { bare, loadHubChamp, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import type { HubChamp } from "../../hub/types";
 import { isFinishedItem, useDDragon } from "../../hub/ddragon";
@@ -98,7 +98,10 @@ const pctOf = (w: number, g: number) => (!g ? "–" : w > 0 && (w / g) * 100 < 0
 
 const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
   const ddReady = useDDragon();
-  const qRole = useMemo(() => new URLSearchParams(query || "").get("role") || "", [query]);
+  const qParams = useMemo(() => new URLSearchParams(query || ""), [query]);
+  const qRole = qParams.get("role") || "";
+  const qVs = qParams.get("vs") || "";
+  const qFilter = qParams.get("player") || qParams.get("q") || "";
   const [recentHidden, revealRecent] = useHidden(`champ-recent:${c.u}`, c.recent[0]?.date);
   const teamByPlayer = useMemo(() => {
     const m = new Map<string, string>();
@@ -115,10 +118,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
   // the champion's roles in order of how often it's played there, with matchups in either list
   const roleKeys = mainRoles.filter((r) => (c.matchups?.[r]?.length || 0) > 0 || (c.matchups12?.[r]?.length || 0) > 0);
   const [muRole, setMuRole] = useState(() => (qRole && roleKeys.includes(qRole) ? qRole : roleKeys[0] || ""));
-  const [muSearch, setMuSearch] = useState("");
+  const [muSearch, setMuSearch] = useState(qVs);
   const [duoSearch, setDuoSearch] = useState("");
-  const [playerSearch, setPlayerSearch] = useState("");
-  const [recentSearch, setRecentSearch] = useState("");
+  const [playerSearch, setPlayerSearch] = useState(qFilter);
+  const [recentSearch, setRecentSearch] = useState(qFilter);
   // this meta (last 12 months) first when there is one
   const [muRecentPick, setMuRecent] = useState(() => Object.keys(c.matchups12 || {}).length > 0);
   // the last 12 months have no matchups in this role: show all time
@@ -139,7 +142,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
     else if (!qRole && roleKeys[0]) setMuRole(roleKeys[0]);
     if (qRole && buildRoles.includes(qRole)) setBuildRole(qRole);
     else if (!qRole) setBuildRole("");
-  }, [qRole, c.u]); // eslint-disable-line react-hooks/exhaustive-deps
+    setMuSearch(qVs);
+    setPlayerSearch(qFilter);
+    setRecentSearch(qFilter);
+  }, [qRole, qVs, qFilter, c.u]); // eslint-disable-line react-hooks/exhaustive-deps
   const syncChampRole = (r: string) => {
     const nextQ = new URLSearchParams(query || "");
     if (r) nextQ.set("role", r);
@@ -582,10 +588,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                             .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
                             .map((t) => normText(t))
                             .filter(Boolean);
-                          const hit = muRows.find(([oc]) => {
-                            const hay = `${normText(champName(oc))} ${normText(oc)}`;
-                            return terms.some((t) => hay.includes(t));
-                          });
+                          const hit = muRows.find(([oc]) => terms.some((t) => matchesChampSearch(oc, t)));
                           return hit ? `&vs=${encodeURIComponent(hit[0])}` : "";
                         })()
                       : ""
@@ -656,10 +659,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     .map((t) => normText(t))
                     .filter(Boolean);
                   const shownMu = terms.length
-                    ? muRows.filter(([oc]) => {
-                        const hay = `${normText(champName(oc))} ${normText(oc)}`;
-                        return terms.some((t) => hay.includes(t));
-                      })
+                    ? muRows.filter(([oc]) => terms.some((t) => matchesChampSearch(oc, t)))
                     : muRows;
                   return shownMu.slice(0, 8).map(([oc, g, w, , gd], idx) => ({
                     rank: idx + 1,
@@ -781,10 +781,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   .map((t) => normText(t))
                   .filter(Boolean);
                 const shownMu = terms.length
-                  ? muRows.filter(([oc]) => {
-                      const hay = `${normText(champName(oc))} ${normText(oc)}`;
-                      return terms.some((t) => hay.includes(t));
-                    })
+                  ? muRows.filter(([oc]) => terms.some((t) => matchesChampSearch(oc, t)))
                   : muRows;
                 return shownMu.map(([oc, g, w, tn, gd, cs, xp, ahead]) => (
                   <tr key={oc} className="border-t border-rw-border">
@@ -908,10 +905,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   .filter(Boolean);
                 const allDuos = c.duos || [];
                 const duos = terms.length
-                  ? allDuos.filter(([pc]) => {
-                      const hay = `${normText(champName(pc))} ${normText(pc)}`;
-                      return terms.some((t) => hay.includes(t));
-                    })
+                  ? allDuos.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))
                   : allDuos;
                 const topDuo = duos[0] || allDuos[0];
                 return (
@@ -1009,10 +1003,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   .filter(Boolean);
                 const allDuos = c.duos || [];
                 const duos = terms.length
-                  ? allDuos.filter(([pc]) => {
-                      const hay = `${normText(champName(pc))} ${normText(pc)}`;
-                      return terms.some((t) => hay.includes(t));
-                    })
+                  ? allDuos.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))
                   : allDuos.slice(0, 15);
                 const maxDuoG = Math.max(1, ...duos.map((x) => x[1]));
                 return duos.map(([pc, g, w]) => (
@@ -1089,9 +1080,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 .filter(Boolean);
               const pList = terms.length
                 ? allPlayers.filter((p) => {
+                    const pSlug = p.u || prettySlug(p.n);
                     const pTeam = teamByPlayer.get(p.u || p.n) || "";
                     const hay = `${normText(p.n)} ${normText(p.u || "")} ${normText(pTeam)}`;
-                    return terms.some((t) => hay.includes(t));
+                    return terms.some((t) => hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t))) || (!!t && resolvePlayerSlug(t) === pSlug));
                   })
                 : allPlayers.slice(0, 25);
               const t0 = pList[0] ? teamByPlayer.get(pList[0].u || pList[0].n) || "" : "";
@@ -1171,7 +1163,12 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     {tl("Pro tier list")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "rankings" }}
+                    to={{
+                      kind: "rankings",
+                      ...(playerSearch.trim() && t0
+                        ? { query: `q=${encodeURIComponent(prettySlug(t0))}${t1 && prettySlug(t1) !== prettySlug(t0) ? `,${encodeURIComponent(prettySlug(t1))}` : ""}` }
+                        : {}),
+                    }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
@@ -1216,9 +1213,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 .filter(Boolean);
               const pList = terms.length
                 ? allPlayers.filter((p) => {
+                    const pSlug = p.u || prettySlug(p.n);
                     const pTeam = teamByPlayer.get(p.u || p.n) || "";
                     const hay = `${normText(p.n)} ${normText(p.u || "")} ${normText(pTeam)}`;
-                    return terms.some((t) => hay.includes(t));
+                    return terms.some((t) => hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t))) || (!!t && resolvePlayerSlug(t) === pSlug));
                   })
                 : allPlayers.slice(0, 25);
               const maxPG = Math.max(1, ...pList.map((x) => x.g));
@@ -1320,8 +1318,9 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 const r0 = c.recent.find((r) => {
                   if (!usedIn(r)) return false;
                   if (!rTerms.length) return true;
+                  const pSlug = r.u || prettySlug(r.n);
                   const hay = `${normText(r.n)} ${normText(r.u || "")} ${normText(r.team)} ${normText(r.opp)} ${normText(r.en)}`;
-                  return rTerms.some((t) => hay.includes(t));
+                  return rTerms.some((t) => hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t))) || (!!t && resolvePlayerSlug(t) === pSlug));
                 });
                 const r0Year = /^\d{4}$/.test((r0?.date || "").slice(0, 4)) ? (r0!.date || "").slice(0, 4) : "";
                 return (
@@ -1444,8 +1443,9 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     .filter(usedIn)
                     .filter((r) => {
                       if (!rTerms.length) return true;
+                      const pSlug = r.u || prettySlug(r.n);
                       const hay = normText(`${r.n} ${r.u || ""} ${r.team || ""} ${r.opp || ""} ${r.en || ""}`);
-                      return rTerms.some((t) => hay.includes(t));
+                      return rTerms.some((t) => hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t))) || (!!t && resolvePlayerSlug(t) === pSlug));
                     })
                     .slice(0, 10)
                     .map((r, idx) => ({
@@ -1478,8 +1478,9 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 .filter(usedIn)
                 .filter((r) => {
                   if (!rTerms.length) return true;
+                  const pSlug = r.u || prettySlug(r.n);
                   const hay = normText(`${r.n} ${r.u || ""} ${r.team || ""} ${r.opp || ""} ${r.en || ""}`);
-                  return rTerms.some((t) => hay.includes(t));
+                  return rTerms.some((t) => hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t))) || (!!t && resolvePlayerSlug(t) === pSlug));
                 })
                 .map((r, i) => (
               <li key={i} className="min-w-0">
@@ -1623,8 +1624,9 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 const r0 = c.recent.find((r) => {
                   if (!usedIn(r)) return false;
                   if (!rTerms.length) return true;
+                  const pSlug = r.u || prettySlug(r.n);
                   const hay = `${normText(r.n)} ${normText(r.u || "")} ${normText(r.team)} ${normText(r.opp)} ${normText(r.en)}`;
-                  return rTerms.some((t) => hay.includes(t));
+                  return rTerms.some((t) => hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t))) || (!!t && resolvePlayerSlug(t) === pSlug));
                 });
                 const r0Year = /^\d{4}$/.test((r0?.date || "").slice(0, 4)) ? (r0!.date || "").slice(0, 4) : "";
                 return r0?.team && r0?.opp ? (

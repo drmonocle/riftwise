@@ -259,7 +259,13 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 >
                   {tl("Game finder")}
                 </HubLink>
-                <HubLink to={{ kind: "rankings" }} className={heroBtn()}>
+                <HubLink
+                  to={{
+                    kind: "rankings",
+                    query: `q=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}`,
+                  }}
+                  className={heroBtn()}
+                >
                   {tl("Power rankings")}
                 </HubLink>
                 <HubLink
@@ -277,7 +283,14 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(seriesPeriod ? { query: `key=${encodeURIComponent(seriesPeriod)}` } : {}),
+                    ...(seriesPeriod || s.e
+                      ? {
+                          query: new URLSearchParams({
+                            ...(seriesPeriod ? { key: seriesPeriod } : {}),
+                            ...(s.e ? { event: s.e } : {}),
+                          }).toString(),
+                        }
+                      : {}),
                   }}
                   className={heroBtn()}
                 >
@@ -648,7 +661,10 @@ const SeriesGames: React.FC<{
                 {tl("Game finder")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings" }}
+                to={{
+                  kind: "rankings",
+                  query: `q=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}`,
+                }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
@@ -670,7 +686,17 @@ const SeriesGames: React.FC<{
                 {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "tiers", ...(seriesYear ? { query: `key=y${encodeURIComponent(seriesYear)}` } : {}) }}
+                to={{
+                  kind: "tiers",
+                  ...(s.e || seriesYear
+                    ? {
+                        query: new URLSearchParams({
+                          ...(seriesYear ? { key: `y${seriesYear}` } : {}),
+                          ...(s.e ? { event: s.e } : {}),
+                        }).toString(),
+                      }
+                    : {}),
+                }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
@@ -857,14 +883,26 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(g.patch ? { query: `key=p${encodeURIComponent(g.patch)}` } : gamePeriod ? { query: `key=${encodeURIComponent(gamePeriod)}` } : {}),
+                    ...(g.patch
+                      ? { query: `key=p${encodeURIComponent(g.patch)}` }
+                      : gamePeriod || s.e
+                        ? {
+                            query: new URLSearchParams({
+                              ...(gamePeriod ? { key: gamePeriod } : {}),
+                              ...(s.e ? { event: s.e } : {}),
+                            }).toString(),
+                          }
+                        : {}),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                 >
                   {tl("Pro tier list")}
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{
+                    kind: "rankings",
+                    query: `q=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}`,
+                  }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")}
@@ -1265,7 +1303,10 @@ const PlayerBars: React.FC<{
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings" }}
+                to={{
+                  kind: "rankings",
+                  query: `q=${encodeURIComponent(blueU)},${encodeURIComponent(redU)}`,
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
@@ -1471,7 +1512,10 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                     {tl("Game finder")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "rankings" }}
+                    to={{
+                      kind: "rankings",
+                      query: `q=${encodeURIComponent(blueU)},${encodeURIComponent(redU)}`,
+                    }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
@@ -1580,7 +1624,10 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                     {tl("Player leaderboards")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "rankings" }}
+                    to={{
+                      kind: "rankings",
+                      query: `q=${encodeURIComponent(blueU)},${encodeURIComponent(redU)}`,
+                    }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
@@ -1899,7 +1946,10 @@ const Scoreboard: React.FC<{
             <HubLink
               to={{
                 kind: "leaders",
-                ...(period && /^y\d{4}$/.test(period) ? { query: `year=${encodeURIComponent(period.slice(1))}` } : {}),
+                query: new URLSearchParams({
+                  q: name,
+                  ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
+                }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -1915,7 +1965,10 @@ const Scoreboard: React.FC<{
               {tl("Game finder")} →
             </HubLink>
             <HubLink
-              to={{ kind: "rankings" }}
+              to={{
+                kind: "rankings",
+                query: `q=${encodeURIComponent(u)}${oppU ? `,${encodeURIComponent(oppU)}` : ""}`,
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Power rankings")} →

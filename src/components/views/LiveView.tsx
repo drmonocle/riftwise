@@ -710,7 +710,7 @@ const LiveMatchBlock: React.FC<{
                   onClick={() =>
                     navigateHub({
                       kind: "rankings",
-                      ...(m.leagueSlug ? { query: `league=${encodeURIComponent(resolveLeagueSlug(m.leagueSlug))}` } : {}),
+                      query: `q=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
                     })
                   }
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -1122,7 +1122,7 @@ const NextMatchCard: React.FC<{
                   onClick={() =>
                     navigateHub({
                       kind: "rankings",
-                      ...(m.leagueSlug ? { query: `league=${encodeURIComponent(resolveLeagueSlug(m.leagueSlug))}` } : {}),
+                      query: `q=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
                     })
                   }
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"

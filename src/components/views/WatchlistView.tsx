@@ -11,7 +11,7 @@ import { searchAlias, isNonLatin } from "../../searchAliases";
 import { mainPlayerEntries, pickTeamByCode } from "../../helpers";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
-import { prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { PlayerPhoto, TeamLogo } from "../hub/ui";
 
 interface WatchlistViewProps {
@@ -148,16 +148,10 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       return [...followed, ...major.slice(0, 50)];
     }
     return all
-      .filter((t) =>
-        qTerms.some(
-          (term) =>
-            t.code.toLowerCase().includes(term) ||
-            t.name.toLowerCase().includes(term) ||
-            t.league.toLowerCase().includes(term) ||
-            t.region.toLowerCase().includes(term) ||
-            regionName(t.region).toLowerCase().includes(term),
-        ),
-      )
+      .filter((t) => {
+        const hay = `${t.code} ${t.name} ${t.league} ${t.region} ${regionName(t.region)}`.toLowerCase();
+        return qTerms.some((term) => hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term))));
+      })
       .slice(0, 100);
   }, [catalog.teams, settings.followedTeams, q, qTerms]);
 
@@ -174,16 +168,10 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       return combined.length > 0 ? combined.slice(0, 40) : all.slice(0, 40);
     }
     return all
-      .filter((p) =>
-        qTerms.some(
-          (term) =>
-            p.name.toLowerCase().includes(term) ||
-            p.teamCode.toLowerCase().includes(term) ||
-            p.teamName.toLowerCase().includes(term) ||
-            p.role.toLowerCase().includes(term) ||
-            (p.realName && p.realName.toLowerCase().includes(term)),
-        ),
-      )
+      .filter((p) => {
+        const hay = `${p.name} ${p.teamCode} ${p.teamName} ${p.role} ${p.realName || ""}`.toLowerCase();
+        return qTerms.some((term) => hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term))));
+      })
       .slice(0, 100);
   }, [catalog.players, catalog.teams, settings.followedPlayers, q, qTerms]);
 

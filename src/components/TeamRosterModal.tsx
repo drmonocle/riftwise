@@ -113,7 +113,17 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute(() => navigateHub({ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }))}
+        onClick={() =>
+          openRoute((slug) =>
+            navigateHub({
+              kind: "rankings",
+              query: new URLSearchParams({
+                q: slug,
+                ...(lg ? { league: lg } : {}),
+              }).toString(),
+            }),
+          )
+        }
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Power rankings")}
@@ -129,7 +139,17 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute(() => navigateHub({ kind: "leaders", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }))}
+        onClick={() =>
+          openRoute(() =>
+            navigateHub({
+              kind: "leaders",
+              query: new URLSearchParams({
+                q: name,
+                ...(lg ? { league: lg } : {}),
+              }).toString(),
+            }),
+          )
+        }
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Player leaderboards")}
@@ -383,7 +403,11 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       type="button"
                       onClick={() => {
                         const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
-                        navigateHub({ kind: "leaders", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) });
+                        const q = new URLSearchParams({
+                          q: displayName,
+                          ...(lg ? { league: lg } : {}),
+                        }).toString();
+                        navigateHub({ kind: "leaders", query: q });
                         onClose();
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"

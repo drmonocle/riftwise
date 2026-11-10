@@ -25,6 +25,10 @@ const ALIASES: Record<string, string> = {
   rekky: "Rekkles", sally: "Caedrel",
   lr: "Los Ratones", ratones: "Los Ratones",
   kcorp: "Karmine Corp",
+  geng: "Gen.G",
+  skt: "T1", "skt t1": "T1",
+  dwg: "Dplus", damwon: "Dplus",
+  "show-maker": "ShowMaker", "the-shy": "TheShy", "jackey-love": "JackeyLove",
 };
 
 /** The Latin name to search for, if the query is a known nickname in another alphabet or handle. */
