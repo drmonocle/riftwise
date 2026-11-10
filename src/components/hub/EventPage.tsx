@@ -827,9 +827,36 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
     }),
   }));
   // four rounds or more need the whole page width (half of a two-column page made them scroll sideways)
+  const finalS = stages[stages.length - 1]?.series.find((r) => r.au && r.bu);
   return (
     <div className={columns.length >= 4 ? "rw-span" : undefined}>
-      <Section title={title || tl("Bracket")}>
+      <Section
+        title={title || tl("Bracket")}
+        right={
+          finalS?.au && finalS?.bu ? (
+            <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+              <HubLink
+                to={{ kind: "prep", a: finalS.au, b: finalS.bu }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(finalS.au)},${encodeURIComponent(finalS.bu)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: finalS.au, b: finalS.bu }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </span>
+          ) : undefined
+        }
+      >
         <div className="overflow-x-auto -mx-1 px-1 pb-1">
           <BracketBoard columns={columns} />
         </div>
@@ -889,7 +916,7 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
       title={tl("Matches")}
       right={
         <span className="flex flex-wrap items-center gap-1.5" data-nocapture="1">
-          {(isVsMatchup || terms.length >= 1) && shown[0]?.au && shown[0]?.bu && (
+          {shown[0]?.au && shown[0]?.bu && (
             <>
               <HubLink
                 to={{ kind: "prep", a: shown[0].au, b: shown[0].bu }}
@@ -1175,15 +1202,26 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
             </HubLink>
           )}
           {rows.length >= 1 && (
-            <HubLink
-              to={{
-                kind: "items",
-                query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].n))}`,
-              }}
-              className="text-[11px] text-rw-accent hover:underline"
-            >
-              {tl("Item history")} →
-            </HubLink>
+            <>
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].n))}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(rows[0].u || rows[0].n)}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+            </>
           )}
           <HubLink
             to={{
@@ -1402,6 +1440,24 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
               {tl("Item history")} →
             </HubLink>
           )}
+          <HubLink
+            to={{
+              kind: "draft",
+              query: `p=e:${encodeURIComponent(e.u)}`,
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Draft board")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "finder",
+              query: `event=${encodeURIComponent(e.u)}${rows.length === 1 ? `&champ=${encodeURIComponent(rows[0].c)}` : ""}`,
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           {more}
           <SectionCard
             section={tl("Champions")}

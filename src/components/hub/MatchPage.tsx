@@ -1104,12 +1104,26 @@ const PlayerBars: React.FC<{
             ))}
           </div>
           {blueU && redU && (
-            <HubLink
-              to={{ kind: "compare", mode: "team", a: blueU, b: redU, period }}
-              className="text-[11px] text-rw-accent hover:underline"
-            >
-              {tl("Compare")} →
-            </HubLink>
+            <>
+              <HubLink
+                to={{ kind: "prep", a: blueU, b: redU, period }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(blueU)},${encodeURIComponent(redU)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: blueU, b: redU, period }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
           )}
           <SectionCard
             section={`${tl("Player by player")} · ${have.find(([k]) => k === m)?.[1] || ""}`}
@@ -1595,6 +1609,22 @@ const Scoreboard: React.FC<{
         </HubLink>
         <TeamLink name={name} u={u} className="text-rw-text hover:underline truncate" />
         {!hidden && won && <span className="text-[10px] text-rw-teal">{tl("Victory")}</span>}
+        {u && (
+          <span className="ml-auto flex items-center gap-2 shrink-0 font-normal">
+            <HubLink
+              to={{ kind: "team", slug: u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Stats")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "team", slug: u, tab: "champions", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Champions")} →
+            </HubLink>
+          </span>
+        )}
       </h3>
       <div className="space-y-2">
         {players.map((p, i) => (

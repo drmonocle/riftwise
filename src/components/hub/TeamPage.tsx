@@ -616,6 +616,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           right={
             <span className="flex flex-wrap items-center gap-2">
               <HubLink
+                to={{ kind: "prep", a: t.u }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "compare", mode: "team", a: t.u }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -626,6 +632,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
               </HubLink>
               <SectionCard
                 section={tl("By year")}
@@ -725,6 +737,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               >
                 {tl("Titles")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
               <SectionCard
                 section={tl("Titles")}
                 name={t.name}
@@ -812,6 +830,15 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   {allEvents ? tl("Show fewer") : tl("Show all {n}", { n: t.events.length })}
                 </button>
               )}
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(t.u)}${eventTerms.length && filteredEvents.length === 1 && filteredEvents[0].e ? `&p=e:${encodeURIComponent(filteredEvents[0].e)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
               <HubLink
                 to={{
                   kind: "finder",
@@ -2096,6 +2123,12 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
         ) : (
           <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
             <span className="text-rw-muted font-mono">{periodLabel}</span>
+            <HubLink to={{ kind: "prep", a: t.u }} className="text-rw-accent hover:underline">
+              {tl("Match prep")} →
+            </HubLink>
+            <HubLink to={{ kind: "compare", mode: "team", a: t.u }} className="text-rw-accent hover:underline">
+              {tl("Compare")} →
+            </HubLink>
             <HubLink to={{ kind: "team", slug: t.u, tab: "stats" }} className="text-rw-accent hover:underline font-semibold">
               {tl("Stats")} · {tl("Open →")}
             </HubLink>

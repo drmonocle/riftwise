@@ -287,6 +287,18 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   ))}
                 </span>
               )}
+              <HubLink
+                to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(c.name))}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}${buildRole ? `&role=${encodeURIComponent(buildRole)}` : ""}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
               <SectionCard
                 section={tl("Pro builds in the last 12 months")}
                 name={champName(c.name)}
@@ -1074,6 +1086,18 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   {tl("With {name}", { name: usedName })} ✕
                 </button>
               )}
+              <HubLink
+                to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(c.name))}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
               <SectionCard
                 section={tl("Latest pro games")}
                 name={champName(c.name)}
@@ -1237,20 +1261,34 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         <Section
           title={tl("By pick order")}
           right={
-            <SectionCard
-              section={tl("By pick order")}
-              name={champName(c.name)}
-              rows={() =>
-                Object.entries(c.slots!).map(([slot, [g, w]], idx) => ({
-                  rank: idx + 1,
-                  champ: c.name,
-                  label: slot,
-                  sub: tl("{n} games", { n: fmtNum(g) }),
-                  value: g >= 5 ? pctOf(w, g) : "–",
-                  win: g >= 5 ? w / g >= 0.5 : undefined,
-                }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              <HubLink
+                to={{ kind: "draft" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+              <SectionCard
+                section={tl("By pick order")}
+                name={champName(c.name)}
+                rows={() =>
+                  Object.entries(c.slots!).map(([slot, [g, w]], idx) => ({
+                    rank: idx + 1,
+                    champ: c.name,
+                    label: slot,
+                    sub: tl("{n} games", { n: fmtNum(g) }),
+                    value: g >= 5 ? pctOf(w, g) : "–",
+                    win: g >= 5 ? w / g >= 0.5 : undefined,
+                  }))
+                }
+              />
+            </span>
           }
         >
           <p className="text-[11px] text-rw-muted">{tl("Games and win rate by where it was picked in the draft (B = blue side, R = red side), every pro game with the pick order known.")}</p>
@@ -1287,8 +1325,20 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
         <Section
           title={tl("Recent patches")}
           right={
-            <span className="flex items-center gap-2">
+            <span className="flex flex-wrap items-center gap-2">
               {c.patches.length >= 3 && <PatchTrend patches={c.patches} />}
+              <HubLink
+                to={{ kind: "tiers" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Pro tier list")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "champions" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Champions")} →
+              </HubLink>
               <SectionCard
                 section={tl("Recent patches")}
                 name={champName(c.name)}
@@ -1346,7 +1396,19 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
       <Section
         title={tl("By year")}
         right={
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            <HubLink
+              to={{ kind: "champions" }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Champions")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
+            </HubLink>
             <BroadcastCardButton data={() => champCardData(c, champName(c.name))} name={`${c.u}-pro-play`} label={tl("Overview card")} />
             <SectionCard
               section={tl("By year")}

@@ -411,6 +411,18 @@ const PlayerView: React.FC<{
                 </button>
               )}
               <HubLink
+                to={{ kind: "compare", mode: "player", a: p.u }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
                 to={{
                   kind: "finder",
                   query: `player=${encodeURIComponent(p.u)}${eventTerms.length && filteredEvents.length === 1 && filteredEvents[0].e ? `&event=${encodeURIComponent(filteredEvents[0].e)}` : ""}`,
@@ -481,6 +493,12 @@ const PlayerView: React.FC<{
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
               </HubLink>
               <SectionCard
                 section={tl("By year")}
@@ -582,6 +600,12 @@ const PlayerView: React.FC<{
               <RevealButton onReveal={revealRecent} small />
             ) : (
               <span className="flex flex-wrap items-center gap-2">
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: p.u }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
                 <HubLink
                   to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}` }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -726,6 +750,12 @@ const PlayerView: React.FC<{
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Records")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
               </HubLink>
               <SectionCard
                 section={tl("Career bests")}
@@ -1287,6 +1317,12 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
               {tl("Compare")} →
             </HubLink>
           )}
+          <HubLink
+            to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           <SectionCard
             section={tl("Teams")}
             name={p.name}
