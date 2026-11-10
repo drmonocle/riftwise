@@ -90,7 +90,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.u} className="border-t border-rw-border">
-                    <td className="px-1.5 sm:px-2 py-1 truncate">
+                    <td className="px-1.5 sm:px-2 py-1 truncate" data-sort={r.name}>
                       <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
                         <TeamLogo name={r.name} size={15} />
                         <TeamLink name={r.name} u={r.u} className="truncate" />

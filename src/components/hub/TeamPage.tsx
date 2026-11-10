@@ -40,6 +40,7 @@ const TAB_LABEL: Record<string, string> = {
 };
 
 export const TeamPage: React.FC<{ slug: string; tab?: string }> = ({ slug, tab }) => {
+  const resolvedTab = tab === "series" ? "matches" : tab && TAB_LABEL[tab] ? tab : "";
   // reached by an old or short address (/team/hle): show the team's own address, once this team's file is in and
   // only while its page is still the one open (moving to another team mustn't bounce back)
   const state = useLoad(
@@ -47,18 +48,18 @@ export const TeamPage: React.FC<{ slug: string; tab?: string }> = ({ slug, tab }
       loadHubTeam(slug).then((t) => {
         const now = currentHubRoute();
         if (t.u && t.u !== slug && now.kind === "team" && now.slug === slug)
-          navigateHub({ kind: "team", slug: t.u, ...("tab" in now && now.tab ? { tab: now.tab } : {}), ...("query" in now && now.query ? { query: now.query } : {}) }, { replace: true });
+          navigateHub({ kind: "team", slug: t.u, ...("tab" in now && now.tab ? { tab: now.tab === "series" ? "matches" : now.tab } : {}), ...("query" in now && now.query ? { query: now.query } : {}) }, { replace: true });
         return t;
       }),
     [slug],
   );
-  usePageTitle(state.data ? (tab && TAB_LABEL[tab] ? `${state.data.name} · ${tl(TAB_LABEL[tab])}` : state.data.name) : undefined);
+  usePageTitle(state.data ? (resolvedTab && TAB_LABEL[resolvedTab] ? `${state.data.name} · ${tl(TAB_LABEL[resolvedTab])}` : state.data.name) : undefined);
   useDDragon();
   return (
     <Page state={state}>
       {(t) => (
         <CaptureContext.Provider value={t.name}>
-          <TeamView t={t} tab={tab && TAB_LABEL[tab] ? tab : ""} />
+          <TeamView t={t} tab={resolvedTab} />
         </CaptureContext.Provider>
       )}
     </Page>
@@ -316,7 +317,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   value: `${t.sw}–${t.sg - t.sw}`,
                   sub: tl("{pct} won", { pct: winRate(t.sw, t.sg) }),
                   bar: t.sg > 0 ? { split: [t.sw, t.sg - t.sw] } : undefined,
-                  to: to("series"),
+                  to: to("matches"),
                 },
                 t.rating
                   ? {
@@ -343,7 +344,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 t.earnings
                   ? { label: tl("Prize money"), value: fmtUsdShort(t.earnings), title: fmtUsd(t.earnings), sub: `${fmtUsd(t.earnings)} · ${tl("as listed in US dollars")}`, to: to("history") }
                   : null,
-                { label: tl("Best streak"), value: t.bestStreak ? tl("{n} wins", { n: t.bestStreak.n }) : "–", sub: t.bestStreak ? fmtDate(t.bestStreak.date) : undefined, to: to("series") },
+                { label: tl("Best streak"), value: t.bestStreak ? tl("{n} wins", { n: t.bestStreak.n }) : "–", sub: t.bestStreak ? fmtDate(t.bestStreak.date) : undefined, to: to("matches") },
                 { label: tl("Avg game"), value: tl("{n} min", { n: t.avgMin }), to: to("stats") },
                 t.kills != null ? { label: tl("Kills / game"), value: t.kills, sub: tl("{n} deaths", { n: t.deaths ?? 0 }), to: to("stats") } : null,
                 t.obj ? { label: tl("Dragons / game"), value: t.obj.dragons, sub: tl("{n} barons", { n: t.obj.barons }), to: to("stats") } : null,
@@ -431,7 +432,13 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                         {r.us > r.them ? tc("short result", "W") : tc("short result", "L")} {r.us}-{r.them}
                       </span>
                     )}
-                    <span className="text-rw-muted shrink-0">vs</span>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: t.u, b: t.opps.find((o) => o.n === r.opp)?.u || prettySlug(r.opp) }}
+                      className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
+                      title={tl("Compare {a} and {b}", { a: t.name, b: r.opp })}
+                    >
+                      vs
+                    </HubLink>
                     <TeamLogo name={r.opp} size={15} />
                     <TeamLink name={r.opp} u={t.opps.find((o) => o.n === r.opp)?.u || prettySlug(r.opp)} className="truncate" />
                     <span className="text-rw-muted truncate">
@@ -439,11 +446,20 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     </span>
                   </span>
                   <span className="text-rw-muted shrink-0 flex items-center gap-2">
-                    {r.r != null && (
-                      <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Series rating")}>
-                        {r.r.toFixed(0)}
-                      </span>
-                    )}
+                    {r.r != null &&
+                      (r.g ? (
+                        <HubLink
+                          to={{ kind: "match", slug: r.g }}
+                          className={`tabular-nums font-semibold hover:underline ${ratingTextClass(r.r)}`}
+                          title={tl("Series rating")}
+                        >
+                          {r.r.toFixed(0)}
+                        </HubLink>
+                      ) : (
+                        <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Series rating")}>
+                          {r.r.toFixed(0)}
+                        </span>
+                      ))}
                     {fmtDate(r.date, false)}
                   </span>
                 </li>
@@ -1093,6 +1109,7 @@ const TeamChampGames: React.FC<{
             label={tl("Picks")}
             value={totalG > 0 ? `${totalW}–${totalG - totalW} (${winRate(totalW, totalG)})` : tl("{n} games", { n: 0 })}
             sub={tn("{n} game", "{n} games", totalG)}
+            to={totalG > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}` } : undefined}
           />
           <Stat
             label={tl("Blue / red side")}
@@ -1102,16 +1119,19 @@ const TeamChampGames: React.FC<{
                 : "–"
             }
             sub={`${blueW}–${blueEntries.length - blueW} ${tl("Blue side")} · ${redW}–${redEntries.length - redW} ${tl("Red side")}`}
+            to={totalG > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}&side=blue` } : undefined}
           />
           <Stat
             label={tl("Gold @15")}
             value={avgGd15 != null ? `${avgGd15 > 0 ? "+" : ""}${fmtNum(avgGd15)}` : "–"}
             sub={tl("Average lead over the lane opponent at 15 minutes")}
+            to={{ kind: "team", slug: t.u, tab: "stats" }}
           />
           <Stat
             label={tl("Bans")}
             value={`${bansInfo.byTeam} / ${bansInfo.vsTeam}`}
             sub={tl("Banned it {n} times · banned against them {m} times", { n: bansInfo.byTeam, m: bansInfo.vsTeam })}
+            to={bansInfo.byTeam + bansInfo.vsTeam > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&ban=${encodeURIComponent(canonical)}` } : undefined}
           />
         </div>
 
@@ -1379,7 +1399,7 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string }> = (
   const [hidden, reveal] = useHidden(`team-event:${x.e}`, x.date);
   return (
     <tr className="border-t border-rw-border">
-      <td className={`${td} max-w-[14rem] truncate`}>
+      <td className={`${td} max-w-[14rem] truncate`} data-sort={x.en}>
         <EventLink name={x.en} u={x.e} />
         {x.as && x.as !== teamName && <span className="text-rw-muted text-[10px]"> {tl("as {name}", { name: x.as })}</span>}
       </td>
@@ -1531,7 +1551,11 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {metrics.map((m) => (
-              <div key={m.label} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex flex-col justify-between gap-1.5">
+              <HubLink
+                key={m.label}
+                to={{ kind: "team", slug: t.u, tab: "stats" }}
+                className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex flex-col justify-between gap-1.5 hover:border-rw-accent/55 hover:bg-rw-raised/40 transition-colors"
+              >
                 <div>
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{m.label}</div>
                   <div
@@ -1553,7 +1577,7 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
                   </div>
                   {m.sub && <div className="text-[10px] text-rw-muted truncate" title={m.sub}>{m.sub}</div>}
                 </div>
-              </div>
+              </HubLink>
             ))}
           </div>
           {tags.length > 0 && (

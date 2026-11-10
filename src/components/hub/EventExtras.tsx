@@ -119,15 +119,8 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
       <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats">
         <Stat
           label={tl("Games")}
-          value={
-            slug ? (
-              <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }} className="hover:text-rw-accent hover:underline" title={tl("Game finder")}>
-                {fmtNum(o.g)}
-              </HubLink>
-            ) : (
-              fmtNum(o.g)
-            )
-          }
+          value={fmtNum(o.g)}
+          to={slug ? { kind: "finder", query: `event=${encodeURIComponent(slug)}` } : undefined}
         />
         <Stat label={tl("Avg game")} value={o.min ? mmss(o.min) : "–"} />
         <Stat label={tl("Kills / game")} value={o.kills || "–"} />
@@ -143,19 +136,42 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               ? undefined
               : tl("{b} blue · {r} red", { b: o.blue, r: o.red })
           }
+          to={slug && !hidden && sideTotal > 0 ? { kind: "finder", query: `event=${encodeURIComponent(slug)}&side=blue` } : undefined}
         />
       </div>
       {!hidden && sideTotal > 0 && (
         <div className="rounded-lg border border-rw-border bg-rw-bg/50 px-3 py-2 space-y-1.5">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-bold flex items-center gap-1.5" style={{ color: "#4a9eff" }}>
-              <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#4a9eff" }} />
-              {tl("Blue side")} · {bluePct}% <span className="text-rw-muted font-normal">({o.blue})</span>
-            </span>
-            <span className="font-bold flex items-center gap-1.5" style={{ color: "var(--rw-red)" }}>
-              <span className="text-rw-muted font-normal">({o.red})</span> {redPct}% · {tl("Red side")}
-              <span className="w-2 h-2 rounded-full inline-block" style={{ background: "var(--rw-red)" }} />
-            </span>
+            {slug ? (
+              <HubLink
+                to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}&side=blue` }}
+                className="font-bold flex items-center gap-1.5 text-[#4a9eff] hover:underline"
+                title={tl("Game finder")}
+              >
+                <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#4a9eff" }} />
+                {tl("Blue side")} · {bluePct}% <span className="text-rw-muted font-normal">({o.blue})</span>
+              </HubLink>
+            ) : (
+              <span className="font-bold flex items-center gap-1.5" style={{ color: "#4a9eff" }}>
+                <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#4a9eff" }} />
+                {tl("Blue side")} · {bluePct}% <span className="text-rw-muted font-normal">({o.blue})</span>
+              </span>
+            )}
+            {slug ? (
+              <HubLink
+                to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}&side=red` }}
+                className="font-bold flex items-center gap-1.5 text-rw-red hover:underline"
+                title={tl("Game finder")}
+              >
+                <span className="text-rw-muted font-normal">({o.red})</span> {redPct}% · {tl("Red side")}
+                <span className="w-2 h-2 rounded-full inline-block" style={{ background: "var(--rw-red)" }} />
+              </HubLink>
+            ) : (
+              <span className="font-bold flex items-center gap-1.5" style={{ color: "var(--rw-red)" }}>
+                <span className="text-rw-muted font-normal">({o.red})</span> {redPct}% · {tl("Red side")}
+                <span className="w-2 h-2 rounded-full inline-block" style={{ background: "var(--rw-red)" }} />
+              </span>
+            )}
           </div>
           <div className="relative h-2 rounded-full bg-rw-raised overflow-hidden flex">
             <div className="h-full" style={{ width: `${bluePct}%`, background: "#4a9eff" }} />

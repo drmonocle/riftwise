@@ -474,7 +474,11 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   {list.map(([oc, g, w, , gd]) => (
                     <li key={oc} className="flex items-center justify-between gap-2 min-w-0">
                       <ChampLink name={oc} size={18} />
-                      <span className="flex items-center gap-2 shrink-0 tabular-nums text-[11px]">
+                      <HubLink
+                        to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}&vs=${encodeURIComponent(oc)}&role=${encodeURIComponent(muRole)}` }}
+                        className="flex items-center gap-2 shrink-0 tabular-nums text-[11px] hover:underline"
+                        title={tl("Counter-pick finder")}
+                      >
                         <span className={`font-bold ${w / g >= 0.5 ? "text-rw-teal" : "text-rw-red"}`}>{pctOf(w, g)}</span>
                         <span className="text-rw-muted">({w}–{g - w})</span>
                         {gd != null && (
@@ -482,7 +486,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                             {signedText(gd)}
                           </span>
                         )}
-                      </span>
+                      </HubLink>
                     </li>
                   ))}
                 </ul>
@@ -524,7 +528,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 const maxMuG = Math.max(1, ...muRows.map((x) => x[1]));
                 return muRows.map(([oc, g, w, tn, gd, cs, xp, ahead]) => (
                   <tr key={oc} className="border-t border-rw-border">
-                    <td className={`${td} max-w-[10rem]`}>
+                    <td className={`${td} max-w-[10rem]`} data-sort={champName(oc)}>
                       <ChampLink name={oc} size={16} />
                     </td>
                     <td className={`${td} text-rw-sub`} data-sort={g}>
@@ -542,7 +546,13 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                       </span>
                     </td>
                     <td className={td} data-sort={g ? w / g : 0}>
-                      <WinBar w={w} g={g} />
+                      <HubLink
+                        to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}&vs=${encodeURIComponent(oc)}&role=${encodeURIComponent(muRole)}` }}
+                        className="hover:opacity-90"
+                        title={tl("Counter-pick finder")}
+                      >
+                        <WinBar w={w} g={g} />
+                      </HubLink>
                     </td>
                     {muLane && (
                       <>
@@ -610,7 +620,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 const maxDuoG = Math.max(1, ...duos.map((x) => x[1]));
                 return duos.map(([pc, g, w]) => (
                   <tr key={pc} className="border-t border-rw-border">
-                    <td className={`${td} max-w-[10rem]`}>
+                    <td className={`${td} max-w-[10rem]`} data-sort={champName(pc)}>
                       <ChampLink name={pc} size={16} />
                     </td>
                     <td className={`${td} text-rw-sub`} data-sort={g}>
@@ -697,7 +707,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 const pTeam = teamByPlayer.get(p.u || p.n);
                 return (
                 <tr key={p.n + p.u} className="border-t border-rw-border">
-                  <td className={td}>
+                  <td className={td} data-sort={p.n}>
                     <span className="inline-flex items-center gap-1.5 min-w-0">
                       <PlayerPhoto name={p.n} team={pTeam} slug={p.u ?? undefined} size={20} />
                       {pTeam && <TeamLogo name={pTeam} size={13} />}
@@ -860,8 +870,14 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
             {Object.entries(c.slots).map(([slot, [g, w]]) => {
               const wrPct = g > 0 ? Math.round((w / g) * 100) : 0;
               const good = g >= 5 && w / g >= 0.5;
+              const side = slot.startsWith("B") ? "blue" : slot.startsWith("R") ? "red" : "";
               return (
-                <div key={slot} className="rounded-lg border border-rw-border bg-rw-bg px-2 py-1.5 text-center space-y-1">
+                <HubLink
+                  key={slot}
+                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}${side ? `&side=${side}` : ""}` }}
+                  title={tl("Game finder")}
+                  className="rounded-lg border border-rw-border bg-rw-bg px-2 py-1.5 text-center space-y-1 hover:border-rw-accent/60 hover:bg-rw-raised/40 transition-colors"
+                >
                   <div className={`text-xs font-bold ${slot.startsWith("B") ? "text-[#4a9eff]" : "text-rw-red"}`}>{slot}</div>
                   <div className={`text-sm font-semibold tabular-nums ${g >= 5 ? (good ? "text-rw-teal" : "text-rw-red") : "text-rw-text"}`}>
                     {g >= 5 ? pctOf(w, g) : "–"}
@@ -872,7 +888,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </div>
                   )}
                   <div className="text-[10px] text-rw-muted">{tl("{n} games", { n: fmtNum(g) })}</div>
-                </div>
+                </HubLink>
               );
             })}
           </div>

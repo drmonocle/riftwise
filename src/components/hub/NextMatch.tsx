@@ -232,6 +232,12 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         <MatchPrepButton match={m} />
         <MatchOverviewButton match={m} />
         <HubLink
+          to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}${c.opp ? `,${encodeURIComponent(c.opp)}` : ""}` }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+        >
+          {tl("Draft board")}
+        </HubLink>
+        <HubLink
           to={{ kind: "match", slug: RIOT_PREFIX + m.matchId }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
         >

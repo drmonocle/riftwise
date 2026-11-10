@@ -411,7 +411,7 @@ const PlayerView: React.FC<{
                       {y.y}
                     </HubLink>
                   </td>
-                  <td className={`${td} text-rw-sub max-w-[9rem]`}>
+                  <td className={`${td} text-rw-sub max-w-[9rem]`} data-sort={y.team}>
                     <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
                       <TeamLogo name={y.team} size={15} />
                       <TeamLink name={y.team} u={p.teams.find((t) => t.n === y.team)?.u} className="truncate" />
@@ -535,11 +535,20 @@ const PlayerView: React.FC<{
                     </span>
                   </span>
                   <span className="text-rw-muted shrink-0 flex items-center gap-2">
-                    {r.r != null && (
-                      <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Game rating")}>
-                        {r.r.toFixed(0)}
-                      </span>
-                    )}
+                    {r.r != null &&
+                      (r.g ? (
+                        <HubLink
+                          to={{ kind: "match", slug: r.g, game: r.gn }}
+                          className={`tabular-nums font-semibold hover:underline ${ratingTextClass(r.r)}`}
+                          title={tl("Game rating")}
+                        >
+                          {r.r.toFixed(0)}
+                        </HubLink>
+                      ) : (
+                        <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Game rating")}>
+                          {r.r.toFixed(0)}
+                        </span>
+                      ))}
                     {fmtDate(r.date, false)}
                   </span>
                 </li>
@@ -745,7 +754,7 @@ const PlayerChampionsTab: React.FC<{
             <tbody>
               {champs.map((c) => (
                 <tr key={c.c} className={`border-t border-rw-border ${gamesOn === c.c ? "bg-rw-accent/10" : ""}`}>
-                  <td className={`${td} max-w-[10rem]`}>
+                  <td className={`${td} max-w-[10rem]`} data-sort={champName(c.c)}>
                     <ChampLink name={c.c} size={18} />
                   </td>
                   <td className={`${td} text-rw-sub`} data-sort={c.g}>
@@ -797,10 +806,10 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number] }> = ({
   const [hidden, reveal] = useHidden(`player-event:${x.e}`, x.date);
   return (
     <tr className="border-t border-rw-border">
-      <td className={`${td} max-w-[13rem] truncate`}>
+      <td className={`${td} max-w-[13rem] truncate`} data-sort={x.en}>
         <EventLink name={x.en} u={x.e} />
       </td>
-      <td className={`${td} max-w-[9rem]`}>
+      <td className={`${td} max-w-[9rem]`} data-sort={x.t}>
         <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
           <TeamLogo name={x.t} size={14} />
           <TeamLink name={x.t} u={x.tu} className="truncate" />

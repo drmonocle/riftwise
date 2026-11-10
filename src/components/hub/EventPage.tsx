@@ -276,7 +276,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                         {r.p === "1" && <Trophy className="w-3 h-3 inline mr-1" />}
                         {r.p}
                       </td>
-                      <td className={td}>
+                      <td className={td} data-sort={r.t}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
                           <TeamLogo name={r.t} size={16} />
                           <TeamLink name={r.t} u={r.u} />
@@ -416,7 +416,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                 <tbody>
                   {e.teams.map((t) => (
                     <tr key={t.t} className="border-t border-rw-border">
-                      <td className={`${td} max-w-[12rem]`}>
+                      <td className={`${td} max-w-[12rem]`} data-sort={t.t}>
                         <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
                           <TeamLogo name={t.t} size={16} />
                           <TeamLink name={t.t} u={t.u} className="truncate" />
@@ -482,11 +482,20 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
         <span className="truncate">{note ?? fmtDate(r.date, false)}</span>
         <span className="flex items-center gap-1.5 shrink-0">
           {hiddenBySpoiler && !hideResult && played && <RevealButton onReveal={reveal} small />}
-          {!hidden && r.r != null && (
-            <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Series rating: mostly its best game, then its other games")}>
-              {r.r.toFixed(0)}
-            </span>
-          )}
+          {!hidden && r.r != null &&
+            (r.g && !hideResult ? (
+              <HubLink
+                to={{ kind: "match", slug: r.g }}
+                className={`tabular-nums font-semibold hover:underline ${ratingTextClass(r.r)}`}
+                title={tl("Series rating: mostly its best game, then its other games")}
+              >
+                {r.r.toFixed(0)}
+              </HubLink>
+            ) : (
+              <span className={`tabular-nums font-semibold ${ratingTextClass(r.r)}`} title={tl("Series rating: mostly its best game, then its other games")}>
+                {r.r.toFixed(0)}
+              </span>
+            ))}
           {r.g && !hideResult ? (
             <HubLink to={{ kind: "match", slug: r.g }} className="text-rw-accent hover:underline">
               {tl("Details")}
@@ -751,7 +760,7 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
           {rows.map((r, i) => (
             <tr key={r.t + i} className="border-t border-rw-border">
               <td className={`${td} text-rw-muted`} data-sort={r.pl ?? i + 1}>{hide || r.pl === 0 ? "–" : r.pl ?? i + 1}</td>
-              <td className={`${td} max-w-[11rem]`}>
+              <td className={`${td} max-w-[11rem]`} data-sort={r.t}>
                 <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
                   <TeamLogo name={r.t} size={16} />
                   <TeamLink name={r.t} u={r.u} className="truncate" />
@@ -800,20 +809,35 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
     <Section
       title={tl("Player leaders")}
       right={
-        <SectionCard
-          section={`${tl("Player leaders")} · ${tl(LEADER_TITLES[k])}`}
-          sub={eventTitle(e.n)}
-          name={`${e.u}-leaders-${k}`}
-          rows={() =>
-            rows.slice(0, 10).map((r, idx) => ({
-              rank: idx + 1,
-              team: r.t,
-              label: r.n,
-              sub: `${r.t} · ${tn("{n} game", "{n} games", r.g)}`,
-              value: fmtNum(r.v),
-            }))
-          }
-        />
+        <span className="flex flex-wrap items-center gap-2">
+          <HubLink
+            to={{
+              kind: "leaders",
+              query: new URLSearchParams({
+                ...(e.lu ? { league: e.lu } : {}),
+                ...(!e.whole ? { event: e.u } : {}),
+                ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Full leaderboard")}
+          </HubLink>
+          <SectionCard
+            section={`${tl("Player leaders")} · ${tl(LEADER_TITLES[k])}`}
+            sub={eventTitle(e.n)}
+            name={`${e.u}-leaders-${k}`}
+            rows={() =>
+              rows.slice(0, 10).map((r, idx) => ({
+                rank: idx + 1,
+                team: r.t,
+                label: r.n,
+                sub: `${r.t} · ${tn("{n} game", "{n} games", r.g)}`,
+                value: fmtNum(r.v),
+              }))
+            }
+          />
+        </span>
       }
     >
       <div className="flex flex-wrap gap-1">
@@ -962,7 +986,7 @@ const EventChamps: React.FC<{ e: HubEvent }> = ({ e }) => {
             const banPct = games ? Math.min(Math.max(0, 100 - pickPct), (c.b / games) * 100) : 0;
             return (
               <tr key={c.c} className="border-t border-rw-border">
-                <td className={`${td} max-w-[9rem]`}>
+                <td className={`${td} max-w-[9rem]`} data-sort={c.c}>
                   <ChampLink name={c.c} size={18} />
                 </td>
                 <td className={`${td} text-rw-sub`} data-sort={games ? (c.p + c.b) / games : 0}>

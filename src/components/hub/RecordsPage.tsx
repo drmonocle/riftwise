@@ -747,7 +747,7 @@ export const RecordsPanel: React.FC = () => {
                           </span>
                           <span className="text-rw-muted shrink-0">
                             <HubLink
-                              to={{ kind: "team", slug: t.u || prettySlug(t.team), tab: "series" }}
+                              to={{ kind: "team", slug: t.u || prettySlug(t.team), tab: "matches" }}
                               className="text-rw-accent font-bold tabular-nums hover:underline"
                             >
                               {tl("{n} games", { n: t.v })}

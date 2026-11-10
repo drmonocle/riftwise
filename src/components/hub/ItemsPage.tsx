@@ -383,7 +383,7 @@ const PlayerItemsView: React.FC<{
               const wrTone = g.length >= 3 ? (wr >= 0.55 ? "text-rw-teal font-semibold" : wr <= 0.45 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
               return (
                 <tr key={it} className="border-t border-rw-border">
-                  <td className={`${td} max-w-[14rem]`}>
+                  <td className={`${td} max-w-[14rem]`} data-sort={itemName(it)}>
                     <button type="button" onClick={() => onItem(prettySlug(it))} className="flex items-center gap-1.5 min-w-0 text-left hover:text-rw-accent" title={tl("Show the games")}>
                       <ItemIcon name={it} size={18} />
                       <span className="truncate">{itemName(it)}</span>
@@ -513,7 +513,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
             const maxG = Math.max(1, it.players[0]?.[2] || 1);
             return it.players.map(([n, u, g, last]) => (
               <tr key={u} className="border-t border-rw-border">
-                <td className={td}>
+                <td className={td} data-sort={n}>
                   <span className="inline-flex items-center gap-1.5 min-w-0">
                     <PlayerPhoto name={n} team={teamBySlug.get(u)} slug={u} size={16} />
                     <PlayerLink name={n} u={u} />
@@ -622,7 +622,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                   const u = p ? playerSlug(p) : "";
                   return (
                     <tr key={r.k} className="border-t border-rw-border">
-                      <td className={td}>
+                      <td className={td} data-sort={p ? p[0] : ""}>
                         {p ? (
                           <span className="inline-flex items-center gap-1.5 min-w-0">
                             <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
@@ -727,7 +727,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                   const u = p ? playerSlug(p) : "";
                   return (
                     <tr key={k} className="border-t border-rw-border">
-                      <td className={td}>
+                      <td className={td} data-sort={p ? p[0] : ""}>
                         {p ? (
                           <span className="inline-flex items-center gap-1.5 min-w-0">
                             <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
@@ -828,7 +828,7 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
             <tbody>
               {shown.map((r) => (
                 <tr key={r[1]} className="border-t border-rw-border">
-                  <td className={`${td} max-w-[15rem]`}>
+                  <td className={`${td} max-w-[15rem]`} data-sort={itemName(r[0])}>
                     <HubLink to={to(r[1])} className="flex items-center gap-1.5 min-w-0 hover:text-rw-accent">
                       <ItemIcon name={r[0]} size={20} />
                       <span className="truncate">{itemName(r[0])}</span>
@@ -1090,11 +1090,20 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                 </span>
               </span>
               <span className="flex items-center gap-2 text-rw-muted shrink-0">
-                {!hide && r[23] != null && (
-                  <span className={`tabular-nums font-semibold ${ratingTextClass(r[23])}`} title={tl("Game rating")}>
-                    {r[23].toFixed(0)}
-                  </span>
-                )}
+                {!hide && r[23] != null &&
+                  (r[1] ? (
+                    <HubLink
+                      to={{ kind: "match", slug: r[1], ...(r[22] ? { game: r[22] } : {}) }}
+                      className={`tabular-nums font-semibold hover:underline ${ratingTextClass(r[23])}`}
+                      title={tl("Game rating")}
+                    >
+                      {r[23].toFixed(0)}
+                    </HubLink>
+                  ) : (
+                    <span className={`tabular-nums font-semibold ${ratingTextClass(r[23])}`} title={tl("Game rating")}>
+                      {r[23].toFixed(0)}
+                    </span>
+                  ))}
                 <span>{fmtDate(r[0], false)}</span>
               </span>
             </li>

@@ -132,7 +132,14 @@ const UpNextRow: React.FC<{
       <span className="flex items-center gap-1.5 min-w-0 @max-[900px]:order-last @max-[900px]:basis-full @min-[900px]:grid @min-[900px]:grid-cols-[minmax(0,1fr)_auto_auto_auto_minmax(0,1fr)]">
         {team(m.team1Code, m.team1Name, true)}
         {logo(m.team1Name, m.team1Code, m.team1Image)}
-        <span className="text-rw-sub">{tl("vs")}</span>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(m.team1Name), b: prettySlug(m.team2Name) })}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+          title={tl("Compare {a} and {b}", { a: m.team1Name, b: m.team2Name })}
+        >
+          {tl("vs")}
+        </button>
         {logo(m.team2Name, m.team2Code, m.team2Image)}
         {team(m.team2Code, m.team2Name, false)}
       </span>
@@ -217,7 +224,7 @@ const FormCell: React.FC<{ m: Match; schedule: Match[]; hidden: boolean }> = ({ 
   const row = (f: ("W" | "L")[], code: string, name: string) => (
     <button
       type="button"
-      onClick={() => navigateHub({ kind: "team", slug: prettySlug(name || code), tab: "series" })}
+      onClick={() => navigateHub({ kind: "team", slug: prettySlug(name || code), tab: "matches" })}
       className="flex gap-px hover:opacity-80"
       title={`${code}: ${f.join(" ")}`}
     >

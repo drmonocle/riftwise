@@ -345,14 +345,14 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number 
             const nPct = Math.max(6, Math.round(((l.n || 0) / maxN) * 100));
             return (
               <tr key={l.u} className="border-t border-rw-border">
-                <td className={`${td} max-w-[22rem]`}>
+                <td className={`${td} max-w-[22rem]`} data-sort={l.s || l.l}>
                   <HubLink to={{ kind: "league", slug: l.u }} className="flex items-baseline gap-2 min-w-0 hover:underline">
                     {l.s && <span className="shrink-0 font-bold text-rw-accent">{l.s}</span>}
                     <span className="truncate">{l.l}</span>
                   </HubLink>
                   {l.h && l.h.length > 1 && <HistoryChain steps={l.h} current={l.u} small />}
                 </td>
-                <td className={`${td} text-rw-sub`}>{l.r ? regionName(l.r, l.r) : ""}</td>
+                <td className={`${td} text-rw-sub`} data-sort={l.r ? regionName(l.r, l.r) : ""}>{l.r ? regionName(l.r, l.r) : ""}</td>
                 <td className={`${td} text-rw-muted`} data-sort={l.from || ""}>{l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : ""}</td>
                 <td className={`${td} text-rw-sub tabular-nums`} data-sort={l.n}>
                   <span className="inline-flex items-center gap-1.5">
@@ -661,7 +661,7 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);
   return (
     <tr className="border-t border-rw-border">
-      <td className={`${td} max-w-[12rem] sm:max-w-[16rem] truncate`}>
+      <td className={`${td} max-w-[12rem] sm:max-w-[16rem] truncate`} data-sort={e.n}>
         <EventLink name={e.n} u={e.u} />
       </td>
       <td
@@ -671,7 +671,7 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
         {fmtDate(e.st, false)}
         {e.en && e.en !== e.st ? ` – ${fmtDate(e.en)}` : ""}
       </td>
-      <td className={`${td} max-w-[18rem] truncate`}>
+      <td className={`${td} max-w-[18rem] truncate`} data-sort={hidden ? "" : e.w || ""}>
         {e.w ? (
           hidden ? (
             <RevealButton onReveal={reveal} small />

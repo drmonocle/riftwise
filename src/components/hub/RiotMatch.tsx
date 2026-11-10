@@ -132,6 +132,12 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             {!hidden && <CopyRiotMatchPost match={m} />}
             <MatchOverviewButton match={m} />
             <MatchPrepButton match={m} />
+            <HubLink
+              to={{ kind: "draft", query: `teams=${encodeURIComponent(prettySlug(m.team1Name))},${encodeURIComponent(prettySlug(m.team2Name))}` }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+            >
+              {tl("Draft board")}
+            </HubLink>
           </span>
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
