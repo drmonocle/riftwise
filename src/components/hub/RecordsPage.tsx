@@ -328,7 +328,10 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
                     <HubLink
                       to={{
                         kind: "leaders",
-                        ...(r0Year ? { query: `year=${encodeURIComponent(r0Year)}` } : {}),
+                        query: new URLSearchParams({
+                          ...(r0Year ? { year: r0Year } : {}),
+                          ...(recentRows[0].c ? { champ: recentRows[0].c } : {}),
+                        }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -996,7 +999,13 @@ export const RecordsPanel: React.FC = () => {
                       {tl("Counters")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "leaders", ...(year !== "all" ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                      to={{
+                        kind: "leaders",
+                        query: new URLSearchParams({
+                          ...(year !== "all" ? { year } : {}),
+                          ...(rows[0].c ? { champ: rows[0].c } : {}),
+                        }).toString(),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Player leaderboards")} →
@@ -1765,30 +1774,43 @@ export const TitlesPanel: React.FC = () => {
                   >
                     {tl("Worlds")} →
                   </HubLink>
-                  <HubLink
-                    to={{ kind: "tournaments", ...(/^\d{4}$/.test((rows[0].date || "").slice(0, 4)) ? { year: (rows[0].date || "").slice(0, 4) } : {}) }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Tournaments")} →
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "records", ...(/^\d{4}$/.test((rows[0].date || "").slice(0, 4)) ? { query: `year=${(rows[0].date || "").slice(0, 4)}` } : {}) }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Records")} →
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "leaders", ...(/^\d{4}$/.test((rows[0].date || "").slice(0, 4)) ? { query: `year=${(rows[0].date || "").slice(0, 4)}` } : {}) }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Player leaderboards")} →
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "tiers", ...(/^\d{4}$/.test((rows[0].date || "").slice(0, 4)) ? { query: `key=y${(rows[0].date || "").slice(0, 4)}` } : {}) }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Pro tier list")} →
-                  </HubLink>
+                  {(() => {
+                    const tYr = /^\d{4}$/.test((rows[0].date || "").slice(0, 4)) ? (rows[0].date || "").slice(0, 4) : "";
+                    return (
+                      <>
+                        <HubLink
+                          to={{ kind: "tournaments", ...(tYr ? { year: tYr } : {}) }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Tournaments")} →
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "records", ...(tYr ? { query: `year=${tYr}` } : {}) }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Records")} →
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "leaders", ...(tYr ? { query: `year=${tYr}` } : {}) }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Player leaderboards")} →
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "tiers", ...(tYr ? { query: `key=y${tYr}` } : {}) }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Pro tier list")} →
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "best", ...(tYr ? { query: `year=${tYr}` } : {}) }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Best games")} →
+                        </HubLink>
+                      </>
+                    );
+                  })()}
                   <SectionCard
                     section={tl("Titles")}
                     name={tl(TITLE_FILTERS.find((f) => f.key === kind)?.label || kind)}

@@ -327,6 +327,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                         ...(year ? { year } : {}),
                         ...(qEvent ? { event: qEvent } : {}),
                         ...(qRole ? { role: qRole } : {}),
+                        ...(qChamp ? { champ: qChamp } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -765,7 +766,11 @@ const FinderBody: React.FC<{
             <span className="text-rw-sub">
               {" "}
               ·{" "}
-              <HubLink to={{ kind: "records" }} className="hover:text-rw-accent hover:underline" title={tl("Records")}>
+              <HubLink
+                to={{ kind: "records", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Records")}
+              >
                 {tl("average {n} min", { n: fmtDec(avg) })}
               </HubLink>
             </span>
@@ -784,6 +789,8 @@ const FinderBody: React.FC<{
               player={q.get("player") || ""}
               league={q.get("league") || ""}
               year={year || ""}
+              event={q.get("event") || ""}
+              patch={q.get("patch") || ""}
               role={q.get("role") || ""}
               onPick={(c) => setChamp(0, champs[0] === c ? "" : c)}
               onBan={(c) => setQ({ ban: q.get("ban") === c ? undefined : c })}
@@ -880,7 +887,7 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(q.get("league") ? { query: `league=${encodeURIComponent(q.get("league")!)}` } : {}),
+                      ...(q.get("league") && q.get("league") !== "top" ? { query: `league=${encodeURIComponent(q.get("league")!)}` } : {}),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -907,6 +914,7 @@ const FinderBody: React.FC<{
                         ...(year ? { year } : {}),
                         ...(q.get("event") ? { event: q.get("event")! } : {}),
                         ...(q.get("role") ? { role: q.get("role")! } : {}),
+                        ...(champs[0] ? { champ: champs[0] } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -979,6 +987,7 @@ const FinderBody: React.FC<{
                         ...(year ? { year } : {}),
                         ...(q.get("event") ? { event: q.get("event")! } : {}),
                         ...(q.get("role") ? { role: q.get("role")! } : {}),
+                        ...(champs[0] ? { champ: champs[0] } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -1049,6 +1058,7 @@ const FinderBody: React.FC<{
                         ...(year ? { year } : {}),
                         ...(q.get("event") ? { event: q.get("event")! } : {}),
                         ...(q.get("role") ? { role: q.get("role")! } : {}),
+                        ...(champs[0] ? { champ: champs[0] } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -1076,8 +1086,8 @@ const FinderBody: React.FC<{
                     to={{
                       kind: "tiers",
                       query: new URLSearchParams({
-                        ...(q.get("league") ? { league: q.get("league")! } : {}),
-                        ...(year ? { key: `y${year}` } : {}),
+                        ...(q.get("league") && q.get("league") !== "top" ? { scope: q.get("league")! } : {}),
+                        ...(q.get("patch") ? { key: `p${q.get("patch")}` } : year ? { key: `y${year}` } : {}),
                         ...(q.get("role") ? { role: q.get("role")! } : {}),
                       }).toString(),
                     }}
@@ -1108,7 +1118,7 @@ const FinderBody: React.FC<{
                       kind: "compare",
                       mode: "player",
                       a: playerOption(opts.players, q.get("player")) || q.get("player")!,
-                      period: year ? `y${year}` : undefined,
+                      period: q.get("event") ? `e:${q.get("event")}` : year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -1131,8 +1141,11 @@ const FinderBody: React.FC<{
                     to={{
                       kind: "leaders",
                       query: new URLSearchParams({
-                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                        ...(q.get("league") && q.get("league") !== "top" ? { league: q.get("league")! } : {}),
                         ...(year ? { year } : {}),
+                        ...(q.get("event") ? { event: q.get("event")! } : {}),
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
+                        ...(champs[0] ? { champ: champs[0] } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -1144,8 +1157,9 @@ const FinderBody: React.FC<{
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
+                          ...(q.get("league") && q.get("league") !== "top" ? { scope: q.get("league")! } : {}),
+                          ...(q.get("patch") ? { key: `p${q.get("patch")}` } : year ? { key: `y${year}` } : {}),
                           ...(q.get("role") ? { role: q.get("role")! } : {}),
-                          ...(year ? { key: `y${year}` } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -1314,11 +1328,14 @@ const Cohort: React.FC<{
   player: string;
   league?: string;
   year?: string;
+  event?: string;
+  patch?: string;
   role?: string;
   onPick?: (c: string) => void;
   onBan?: (c: string) => void;
   onSide?: (s: "b" | "r") => void;
-}> = ({ found, sideCond, champ, player, league, year, role, onPick, onBan, onSide }) => {
+}> = ({ found, sideCond, champ, player, league, year, event, patch, role, onPick, onBan, onSide }) => {
+  const scopeLg = league && league !== "top" ? league : "";
   const d = useMemo(() => {
     let blueW = 0, kills = 0, kg = 0, kMin = 0, gd = 0, gdn = 0;
     const picks = new Map<string, [number, number]>();
@@ -1384,7 +1401,7 @@ const Cohort: React.FC<{
         <div className="flex items-center justify-between gap-2 text-[10px] font-semibold text-rw-muted mb-1">
           <span>{title}</span>
           <span className="flex items-center gap-2 shrink-0">
-            {wr && rows.length >= 1 && (
+            {rows.length >= 1 && (
               <>
                 <HubLink
                   to={{
@@ -1408,8 +1425,8 @@ const Cohort: React.FC<{
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
-                      ...(league ? { scope: league } : {}),
-                      ...(year ? { key: `y${year}` } : {}),
+                      ...(scopeLg ? { scope: scopeLg } : {}),
+                      ...(patch ? { key: `p${patch}` } : year ? { key: `y${year}` } : {}),
                       ...(role ? { role } : {}),
                     }).toString(),
                   }}
@@ -1419,61 +1436,29 @@ const Cohort: React.FC<{
                 </HubLink>
                 <HubLink
                   to={{
-                    kind: "draft",
-                    ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}),
-                  }}
-                  className="text-rw-accent hover:underline"
-                >
-                  {tl("Draft board")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "rankings",
-                    ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}),
-                  }}
-                  className="text-rw-accent hover:underline"
-                >
-                  {tl("Power rankings")} →
-                </HubLink>
-              </>
-            )}
-            {!wr && rows.length >= 1 && (
-              <>
-                <HubLink
-                  to={{
-                    kind: "counters",
-                    query: `champ=${prettySlug(rows[0][0])}${rows[1] ? `&vs=${encodeURIComponent(rows[1][0])}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
-                  }}
-                  className="text-rw-accent hover:underline"
-                >
-                  {tl("Counters")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "items",
-                    query: `champ=${prettySlug(rows[0][0])}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
-                  }}
-                  className="text-rw-accent hover:underline"
-                >
-                  {tl("Item history")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "tiers",
+                    kind: "leaders",
                     query: new URLSearchParams({
-                      ...(league ? { scope: league } : {}),
-                      ...(year ? { key: `y${year}` } : {}),
+                      ...(scopeLg ? { league: scopeLg } : {}),
+                      ...(year ? { year } : {}),
+                      ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
+                      champ: rows[0][0],
                     }).toString(),
                   }}
                   className="text-rw-accent hover:underline"
                 >
-                  {tl("Pro tier list")} →
+                  {tl("Player leaderboards")} →
                 </HubLink>
                 <HubLink
                   to={{
                     kind: "draft",
-                    ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}),
+                    ...(event
+                      ? { query: `p=e:${encodeURIComponent(event)}` }
+                      : patch
+                        ? { query: `p=p:${encodeURIComponent(patch)}` }
+                        : year
+                          ? { query: `p=y${encodeURIComponent(year)}` }
+                          : {}),
                   }}
                   className="text-rw-accent hover:underline"
                 >
@@ -1482,7 +1467,7 @@ const Cohort: React.FC<{
                 <HubLink
                   to={{
                     kind: "rankings",
-                    ...(league ? { query: `league=${encodeURIComponent(league)}` } : {}),
+                    ...(scopeLg ? { query: `league=${encodeURIComponent(scopeLg)}` } : {}),
                   }}
                   className="text-rw-accent hover:underline"
                 >
@@ -1557,7 +1542,11 @@ const Cohort: React.FC<{
           {d.kpg != null && (
             <>
               {" · "}
-              <HubLink to={{ kind: "records" }} className="hover:text-rw-accent hover:underline" title={tl("Records")}>
+              <HubLink
+                to={{ kind: "records", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Records")}
+              >
                 {tl("{n} kills per game", { n: fmtDec(d.kpg) })}
               </HubLink>
             </>
@@ -1565,7 +1554,11 @@ const Cohort: React.FC<{
           {d.ckpm != null && (
             <>
               {" · "}
-              <HubLink to={{ kind: "records" }} className="hover:text-rw-accent hover:underline" title={tl("Records")}>
+              <HubLink
+                to={{ kind: "records", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Records")}
+              >
                 {tl("{n} kills per minute", { n: fmtDec(d.ckpm, 2) })}
               </HubLink>
             </>

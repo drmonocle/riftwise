@@ -218,6 +218,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     ...(isLeague ? { league: rawScope } : {}),
                     ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
                     ...(role ? { role } : {}),
+                    ...(topChamp ? { champ: topChamp.c } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -423,6 +424,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                         kind: "leaders",
                         query: new URLSearchParams({
                           role: r,
+                          champ: byRole.get(r)![0].c,
                           ...(isLeague ? { league: rawScope } : {}),
                           ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
                         }).toString(),
