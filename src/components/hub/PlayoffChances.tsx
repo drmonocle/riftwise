@@ -131,7 +131,10 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </HubLink>
                 <HubLink
                   data-nocapture="1"
-                  to={{ kind: "tiers" }}
+                  to={{
+                    kind: "tiers",
+                    ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { query: `key=y${(e.start || e.end || "").slice(0, 4)}` } : {}),
+                  }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Pro tier list")} →

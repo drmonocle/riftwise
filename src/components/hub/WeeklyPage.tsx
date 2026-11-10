@@ -205,36 +205,71 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
           <CopyWeeklyPost w={w} range={range} />
           <CopyMarkdown w={w} />
           <span className="ml-auto flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
-            <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Power rankings")} →
-            </HubLink>
-            <HubLink to={{ kind: "best" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Best games")} →
-            </HubLink>
-            <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Player leaderboards")} →
-            </HubLink>
-            <HubLink to={{ kind: "champions" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Champions")} →
-            </HubLink>
-            <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Pro tier list")} →
-            </HubLink>
-            <HubLink to={{ kind: "items" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Item history")} →
-            </HubLink>
-            <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Records")} →
-            </HubLink>
-            <HubLink to={{ kind: "draft" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Draft board")} →
-            </HubLink>
-            <HubLink to={{ kind: "counters" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Counters")} →
-            </HubLink>
-            <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
-              {tl("Game finder")} →
-            </HubLink>
+            {(() => {
+              const ta = w.upsets[0] ? prettySlug(w.upsets[0].w) : w.best[0] ? prettySlug(w.best[0].a) : w.movers[0]?.u || "";
+              const tb = w.upsets[0] ? prettySlug(w.upsets[0].l) : w.best[0] ? prettySlug(w.best[0].b) : w.movers[1]?.u || "";
+              const c0 = w.champs?.[0]?.[0];
+              const c1 = w.champs?.[1]?.[0];
+              return (
+                <>
+                  {ta && (
+                    <>
+                      <HubLink to={{ kind: "prep", a: ta, ...(tb && tb !== ta ? { b: tb } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink to={{ kind: "compare", mode: "team", a: ta, ...(tb && tb !== ta ? { b: tb } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  )}
+                  <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Power rankings")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "best" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Best games")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "leaders" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Player leaderboards")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "champions" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Champions")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "items", ...(c0 ? { query: `champ=${encodeURIComponent(prettySlug(c0))}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Records")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      ...(ta ? { query: `teams=${encodeURIComponent(ta)}${tb && tb !== ta ? `,${encodeURIComponent(tb)}` : ""}` } : {}),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      ...(c0 ? { query: `champ=${encodeURIComponent(prettySlug(c0))}${c1 ? `&vs=${encodeURIComponent(c1)}` : ""}` } : {}),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                  <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    {tl("Game finder")} →
+                  </HubLink>
+                </>
+              );
+            })()}
           </span>
         </div>
       </div>
@@ -928,9 +963,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               title={tl("Picks and bans this week")}
               right={
                 <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
-                  {w.champs.length >= 2 && (
+                  {w.champs.length >= 1 && (
                     <HubLink
-                      to={{ kind: "counters", query: `champ=${prettySlug(w.champs[0][0])}&vs=${encodeURIComponent(w.champs[1][0])}` }}
+                      to={{
+                        kind: "counters",
+                        query: `champ=${prettySlug(w.champs[0][0])}${w.champs[1] ? `&vs=${encodeURIComponent(w.champs[1][0])}` : ""}`,
+                      }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Counters")} →

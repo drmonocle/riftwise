@@ -358,10 +358,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Swiss stage")}
         right={
           <span className="flex flex-wrap items-center gap-2">
-            {!all && sorted.length >= 2 && (
+            {!all && sorted.length >= 1 && (
               <>
                 <HubLink
-                  to={{ kind: "prep", a: sorted[0].u || prettySlug(sorted[0].team), b: sorted[1].u || prettySlug(sorted[1].team), period: `y${yearOnly(sorted[0].year)}` }}
+                  to={{
+                    kind: "prep",
+                    a: sorted[0].u || prettySlug(sorted[0].team),
+                    ...(sorted[1] ? { b: sorted[1].u || prettySlug(sorted[1].team) } : {}),
+                    period: `y${yearOnly(sorted[0].year)}`,
+                  }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Match prep")} →
@@ -369,14 +374,22 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(sorted[0].u || prettySlug(sorted[0].team))},${encodeURIComponent(sorted[1].u || prettySlug(sorted[1].team))}&p=y${encodeURIComponent(yearOnly(sorted[0].year))}`,
+                    query: `teams=${encodeURIComponent(sorted[0].u || prettySlug(sorted[0].team))}${
+                      sorted[1] ? `,${encodeURIComponent(sorted[1].u || prettySlug(sorted[1].team))}` : ""
+                    }&p=y${encodeURIComponent(yearOnly(sorted[0].year))}`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Draft board")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "compare", mode: "team", a: sorted[0].u || prettySlug(sorted[0].team), b: sorted[1].u || prettySlug(sorted[1].team), period: `y${yearOnly(sorted[0].year)}` }}
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: sorted[0].u || prettySlug(sorted[0].team),
+                    ...(sorted[1] ? { b: sorted[1].u || prettySlug(sorted[1].team) } : {}),
+                    period: `y${yearOnly(sorted[0].year)}`,
+                  }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Compare")} →
@@ -629,22 +642,25 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Finals")}
         right={
           <span className="flex flex-wrap items-center gap-2">
-            {fin.mostReached.length >= 2 && (
+            {fin.mostReached.length >= 1 && (
               <>
                 <HubLink
-                  to={{ kind: "prep", a: fin.mostReached[0].u, b: fin.mostReached[1].u }}
+                  to={{ kind: "prep", a: fin.mostReached[0].u, ...(fin.mostReached[1] ? { b: fin.mostReached[1].u } : {}) }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Match prep")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(fin.mostReached[0].u)},${encodeURIComponent(fin.mostReached[1].u)}` }}
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(fin.mostReached[0].u)}${fin.mostReached[1] ? `,${encodeURIComponent(fin.mostReached[1].u)}` : ""}`,
+                  }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Draft board")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "compare", mode: "team", a: fin.mostReached[0].u, b: fin.mostReached[1].u }}
+                  to={{ kind: "compare", mode: "team", a: fin.mostReached[0].u, ...(fin.mostReached[1] ? { b: fin.mostReached[1].u } : {}) }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Compare")} →
@@ -1087,24 +1103,28 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           title={tl("Year by year")}
           right={
             <span className="flex flex-wrap items-center gap-2">
-              {ys[0]?.top?.[0] && (
-                <>
-                  <HubLink
-                    to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(ys[0].top[0]))}` }}
-                    className="text-[11px] font-semibold text-rw-accent hover:underline"
-                    data-nocapture="1"
-                  >
-                    {tl("Counters")} →
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(ys[0].top[0]))}` }}
-                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    data-nocapture="1"
-                  >
-                    {tl("Item history")} →
-                  </HubLink>
-                </>
-              )}
+              {ys[0]?.top?.[0] && (() => {
+                const c0 = ys[0].top[0];
+                const c1 = ys[0].best?.[0] && ys[0].best[0] !== c0 ? ys[0].best[0] : ys[1]?.top?.[0] && ys[1].top[0] !== c0 ? ys[1].top[0] : undefined;
+                return (
+                  <>
+                    <HubLink
+                      to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(c0))}${c1 ? `&vs=${encodeURIComponent(c1)}` : ""}` }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                      data-nocapture="1"
+                    >
+                      {tl("Counters")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(c0))}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      data-nocapture="1"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                  </>
+                );
+              })()}
               <HubLink to={{ kind: "champions" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
                 {tl("Champions")} →
               </HubLink>
