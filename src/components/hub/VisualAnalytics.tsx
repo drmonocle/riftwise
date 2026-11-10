@@ -279,6 +279,21 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                 >
                   {tl("Compare")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `player=${encodeURIComponent(p.u)}${periodKey?.startsWith("y") ? `&year=${encodeURIComponent(periodKey.slice(1))}` : ""}`,
+                  }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}` }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Item history")} →
+                </HubLink>
                 <SectionCard
                   section={`${tl("Playstyle")} · ${periodLabel}`}
                   name={p.name}
@@ -772,10 +787,19 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
                 <HubLink
-                  to={{ kind: "counters", query: `champ=${prettySlug(sel.champ)}` }}
+                  to={{
+                    kind: "counters",
+                    query: `champ=${prettySlug(sel.champ)}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Counters")}
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: p.u }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Compare")}
                 </HubLink>
                 {sel.seriesSlug ? (
                   <HubLink
@@ -821,7 +845,10 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
           <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
             {topChamps.length >= 2 && (
               <HubLink
-                to={{ kind: "counters", query: `champ=${prettySlug(topChamps[0].c)}&vs=${encodeURIComponent(topChamps[1].c)}` }}
+                to={{
+                  kind: "counters",
+                  query: `champ=${prettySlug(topChamps[0].c)}&vs=${encodeURIComponent(topChamps[1].c)}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Counters")} →
@@ -972,54 +999,68 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
           hidden ? (
             <RevealButton onReveal={reveal} small />
           ) : (
-            <SectionCard
-              section={`${tl("Recent series")} & ${tl("Blue / red side")}`}
-              name={t.name}
-              sub={cardSub}
-              rows={() =>
-                [
-                  ...(series.length > 0
-                    ? [
-                        {
-                          team: t.name,
-                          label: tl("Recent series"),
-                          sub: `${gameWins}-${gameLosses} ${tl("Games")}`,
-                          value: `${seriesWins}-${series.length - seriesWins} (${winRate(seriesWins, series.length)})`,
-                          win: seriesWins * 2 >= series.length,
-                        },
-                      ]
-                    : []),
-                  ...(hasSides
-                    ? [
-                        {
-                          team: t.name,
-                          label: tl("Blue side"),
-                          sub: `${blueW}-${blueG - blueW}`,
-                          value: winRate(blueW, blueG),
-                          win: blueWr >= 50,
-                        },
-                        {
-                          team: t.name,
-                          label: tl("Red side"),
-                          sub: `${redW}-${redG - redW}`,
-                          value: winRate(redW, redG),
-                          win: redWr >= 50,
-                        },
-                      ]
-                    : []),
-                  ...(t.obj
-                    ? [
-                        {
-                          team: t.name,
-                          label: `${tl("Dragons")} · ${tl("Barons")} · ${tl("Towers")}`,
-                          sub: tl("Per game"),
-                          value: `${fmtDec(t.obj.dragons, 2)} · ${fmtDec(t.obj.barons, 2)} · ${fmtDec(t.obj.towers, 1)}`,
-                        },
-                      ]
-                    : []),
-                ].map((r, idx) => ({ ...r, rank: idx + 1 }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+              <HubLink to={{ kind: "prep", a: t.u }} className="text-rw-accent hover:underline font-semibold">
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}` }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink to={{ kind: "compare", mode: "team", a: t.u }} className="text-rw-accent hover:underline font-semibold">
+                {tl("Compare")} →
+              </HubLink>
+              <SectionCard
+                section={`${tl("Recent series")} & ${tl("Blue / red side")}`}
+                name={t.name}
+                sub={cardSub}
+                rows={() =>
+                  [
+                    ...(series.length > 0
+                      ? [
+                          {
+                            team: t.name,
+                            label: tl("Recent series"),
+                            sub: `${gameWins}-${gameLosses} ${tl("Games")}`,
+                            value: `${seriesWins}-${series.length - seriesWins} (${winRate(seriesWins, series.length)})`,
+                            win: seriesWins * 2 >= series.length,
+                          },
+                        ]
+                      : []),
+                    ...(hasSides
+                      ? [
+                          {
+                            team: t.name,
+                            label: tl("Blue side"),
+                            sub: `${blueW}-${blueG - blueW}`,
+                            value: winRate(blueW, blueG),
+                            win: blueWr >= 50,
+                          },
+                          {
+                            team: t.name,
+                            label: tl("Red side"),
+                            sub: `${redW}-${redG - redW}`,
+                            value: winRate(redW, redG),
+                            win: redWr >= 50,
+                          },
+                        ]
+                      : []),
+                    ...(t.obj
+                      ? [
+                          {
+                            team: t.name,
+                            label: `${tl("Dragons")} · ${tl("Barons")} · ${tl("Towers")}`,
+                            sub: tl("Per game"),
+                            value: `${fmtDec(t.obj.dragons, 2)} · ${fmtDec(t.obj.barons, 2)} · ${fmtDec(t.obj.towers, 1)}`,
+                          },
+                        ]
+                      : []),
+                  ].map((r, idx) => ({ ...r, rank: idx + 1 }))
+                }
+              />
+            </span>
           )
         }
       >
@@ -1171,6 +1212,15 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                         className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
                       >
                         {tl("Match prep")}
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "draft",
+                          query: `teams=${encodeURIComponent(t.u)},${encodeURIComponent(oppSlug)}${selPeriod ? `&p=${encodeURIComponent(selPeriod)}` : ""}`,
+                        }}
+                        className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Draft board")}
                       </HubLink>
                       <HubLink
                         to={{ kind: "compare", mode: "team", a: t.u, b: oppSlug, period: selPeriod }}
@@ -1367,35 +1417,58 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
         title={`${tl("Recent patches")} · ${tl("Blue / red side")}`}
         share={`${c.u}-meta-profile`}
         right={
-          <SectionCard
-            section={`${tl("Recent patches")} · ${champName(c.name)}`}
-            name={champName(c.name)}
-            sub={`${fmtNum(c.p)} ${tl("Picks")} · ${fmtNum(c.b)} ${tl("Bans")} · ${winRate(c.w, c.p)}`}
-            rows={() =>
-              [
-                ...topRoles.slice(0, 3).map((r) => ({
-                  champ: c.name,
-                  label: roleName(r.r),
-                  sub: `${fmtNum(r.p)} ${tl("Picks")}`,
-                  value: `${Math.round((r.p / totalRoles) * 100)}%`,
-                  win: true,
-                })),
-                ...patches
-                  .slice(-5)
-                  .reverse()
-                  .map((p) => {
-                    const pr = Math.round(((p.pr ?? p.pk + p.b) / Math.max(1, p.g)) * 100);
-                    return {
-                      champ: c.name,
-                      label: tl("Patch {patch}", { patch: p.p }),
-                      sub: `${p.pk} ${tl("Picks")} · ${p.b} ${tl("Bans")}`,
-                      value: `${pr}% · ${p.pk ? winRate(p.w, p.pk) : "–"}`,
-                      win: p.pk >= 3 ? p.w / p.pk >= 0.5 : undefined,
-                    };
-                  }),
-              ].map((r, idx) => ({ ...r, rank: idx + 1 }))
-            }
-          />
+          <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+            <HubLink
+              to={{
+                kind: "counters",
+                query: `champ=${encodeURIComponent(c.u)}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}`,
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Counters")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "tiers", ...(primaryRole ? { query: `role=${encodeURIComponent(primaryRole)}` } : {}) }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Game finder")} →
+            </HubLink>
+            <SectionCard
+              section={`${tl("Recent patches")} · ${champName(c.name)}`}
+              name={champName(c.name)}
+              sub={`${fmtNum(c.p)} ${tl("Picks")} · ${fmtNum(c.b)} ${tl("Bans")} · ${winRate(c.w, c.p)}`}
+              rows={() =>
+                [
+                  ...topRoles.slice(0, 3).map((r) => ({
+                    champ: c.name,
+                    label: roleName(r.r),
+                    sub: `${fmtNum(r.p)} ${tl("Picks")}`,
+                    value: `${Math.round((r.p / totalRoles) * 100)}%`,
+                    win: true,
+                  })),
+                  ...patches
+                    .slice(-5)
+                    .reverse()
+                    .map((p) => {
+                      const pr = Math.round(((p.pr ?? p.pk + p.b) / Math.max(1, p.g)) * 100);
+                      return {
+                        champ: c.name,
+                        label: tl("Patch {patch}", { patch: p.p }),
+                        sub: `${p.pk} ${tl("Picks")} · ${p.b} ${tl("Bans")}`,
+                        value: `${pr}% · ${p.pk ? winRate(p.w, p.pk) : "–"}`,
+                        win: p.pk >= 3 ? p.w / p.pk >= 0.5 : undefined,
+                      };
+                    }),
+                ].map((r, idx) => ({ ...r, rank: idx + 1 }))
+              }
+            />
+          </span>
         }
       >
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-start">

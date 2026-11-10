@@ -12,6 +12,7 @@ import type { HubEvent, SeriesRow } from "../../hub/types";
 import { Bracket, SeriesBox, Standings } from "./EventPage";
 import { stageLabel } from "../../i18n";
 import { EventLink, HubLink } from "./ui";
+import { SectionCard } from "./BroadcastCard";
 
 // the leagues a stream event can be in (MSI 2020 was replaced by the Mid-Season Cup)
 const LEAGUE: Record<string, string[]> = {
@@ -146,16 +147,37 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             className="hover:text-rw-accent hover:underline"
           />
         </h3>
-        {!airing.streamDone && (
-          <button
-            type="button"
-            onClick={() => setShowAll((v) => !v)}
-            className="flex items-center gap-1 text-[11px] text-rw-accent hover:underline"
-          >
-            <Eye className="w-3 h-3" />
-            {showAll ? tl("Hide results the stream hasn't shown yet") : tl("Show all results")}
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {!airing.streamDone && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="flex items-center gap-1 text-[11px] text-rw-accent hover:underline"
+            >
+              <Eye className="w-3 h-3" />
+              {showAll ? tl("Hide results the stream hasn't shown yet") : tl("Show all results")}
+            </button>
+          )}
+          {(showAll || airing.streamDone || listDone) && ev.standings && ev.standings[0]?.rows?.length ? (
+            <SectionCard
+              section={streamEventTitle({ event: which.event, season: which.season } as StreamEvent)}
+              name={ev.n}
+              rows={() =>
+                ev.standings![0].rows.slice(0, 12).map((r, idx) => {
+                  const w = r.sw ?? r.gw ?? 0;
+                  const l = r.sl ?? r.gl ?? 0;
+                  return {
+                    rank: r.pl ?? idx + 1,
+                    team: r.t,
+                    label: r.t,
+                    value: `${w}–${l}`,
+                    win: w >= l,
+                  };
+                })
+              }
+            />
+          ) : null}
+        </div>
       </div>
       <div className="space-y-1">
         <p className="text-[11px] text-rw-muted">
@@ -230,6 +252,10 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             </HubLink>
           </>
         )}
+        {" · "}
+        <HubLink to={{ kind: "finder", query: `q=${encodeURIComponent(ev.n)}` }} className="text-rw-accent hover:underline">
+          {tl("Game finder")}
+        </HubLink>
         {" · "}
         <HubLink to={{ kind: "home" }} className="text-rw-accent hover:underline">
           {tl("Pro Stats")}

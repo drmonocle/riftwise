@@ -140,7 +140,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
       title={tl("On the line today")}
       share="riftwise-on-the-line-today"
       right={
-        <span className="flex flex-wrap items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2 text-[11px]">
           {!narrow && allBlocks.length > 3 && (
             <input
               type="search"
@@ -152,6 +152,28 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
             />
           )}
+          {terms.length > 0 && blocks.length >= 1 && (() => {
+            const m0 = blocks[0].m;
+            const a = findHubTeam(data.index, m0.team1Name, m0.team1Code) || prettySlug(m0.team1Name || m0.team1Code);
+            const b = findHubTeam(data.index, m0.team2Name, m0.team2Code) || prettySlug(m0.team2Name || m0.team2Code);
+            const p = m0.startTimeUtc ? `y${m0.startTimeUtc.slice(0, 4)}` : undefined;
+            return (
+              <span className="flex items-center gap-2" data-nocapture="1">
+                <HubLink to={{ kind: "prep", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${p ? `&p=${encodeURIComponent(p)}` : ""}` }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink to={{ kind: "compare", mode: "team", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  {tl("Compare")} →
+                </HubLink>
+              </span>
+            );
+          })()}
           <SectionCard
             section={tl("On the line today")}
             name="RiftWise"
@@ -235,6 +257,19 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               <span className="ml-auto flex items-center gap-1" data-nocapture="1">
                 <MatchOverviewButton match={m} compact />
                 <MatchPrepButton match={m} compact />
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(
+                      findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
+                    )},${encodeURIComponent(
+                      findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
+                    )}`,
+                  }}
+                  className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
+                >
+                  {tl("Draft board")}
+                </HubLink>
               </span>
             </div>
             <StoryBullets lines={lines} spoilerKey={`stakes:${m.matchId}`} />

@@ -465,14 +465,30 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
       loadHubPlayer(filledEntity.slug)
         .then((p) => {
           if (!alive) return;
-          const top: Shortcut[] = p.champs.slice(0, 4).map((c) => ({
-            key: `top-p-${p.u}-${c.c}`,
-            route: { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` },
-            label: `${p.name} · ${champName(c.c)}`,
-            sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)}) · KDA ${fmtN(c.kda)}`,
-            icon: <ChampIcon name={c.c} size={16} />,
-            fillText: `${p.name} ${champName(c.c)}`,
-          }));
+          const top: Shortcut[] = [
+            ...p.champs.slice(0, 4).map((c) => ({
+              key: `top-p-${p.u}-${c.c}`,
+              route: { kind: "player" as const, slug: p.u, tab: "champions" as const, query: `champ=${encodeURIComponent(c.c)}` },
+              label: `${p.name} · ${champName(c.c)}`,
+              sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)}) · KDA ${fmtN(c.kda)}`,
+              icon: <ChampIcon name={c.c} size={16} />,
+              fillText: `${p.name} ${champName(c.c)}`,
+            })),
+            {
+              key: `top-p-items-${p.u}`,
+              route: { kind: "items", query: `player=${encodeURIComponent(p.u)}` },
+              label: `${p.name} · ${tl("Item history")}`,
+              sub: tl("Has a pro ever built it?"),
+              icon: <Package className="w-3.5 h-3.5" />,
+            },
+            {
+              key: `top-p-finder-${p.u}`,
+              route: { kind: "finder", query: `player=${encodeURIComponent(p.u)}` },
+              label: `${p.name} · ${tl("Game finder")}`,
+              sub: tl("Any game by team, champion, player"),
+              icon: <Compass className="w-3.5 h-3.5" />,
+            },
+          ];
           setEntityChamps((prev) => ({ ...prev, [filledEntity.key]: top }));
         })
         .catch(() => {});
@@ -480,20 +496,43 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
       loadHubTeam(filledEntity.slug)
         .then((t) => {
           if (!alive) return;
-          const top: Shortcut[] = t.champs.slice(0, 4).map((c) => {
-            const qParts = [
-              filledEntity.matched ? `as=${encodeURIComponent(filledEntity.matched)}` : "",
-              `champ=${encodeURIComponent(c.c)}`,
-            ].filter(Boolean);
-            return {
-              key: `top-t-${t.u}-${c.c}`,
-              route: { kind: "team", slug: t.u, tab: "champions", query: qParts.join("&") },
-              label: `${t.name} · ${champName(c.c)}`,
-              sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)})`,
-              icon: <ChampIcon name={c.c} size={16} />,
-              fillText: `${t.name} ${champName(c.c)}`,
-            };
-          });
+          const top: Shortcut[] = [
+            ...t.champs.slice(0, 4).map((c) => {
+              const qParts = [
+                filledEntity.matched ? `as=${encodeURIComponent(filledEntity.matched)}` : "",
+                `champ=${encodeURIComponent(c.c)}`,
+              ].filter(Boolean);
+              return {
+                key: `top-t-${t.u}-${c.c}`,
+                route: { kind: "team" as const, slug: t.u, tab: "champions" as const, query: qParts.join("&") },
+                label: `${t.name} · ${champName(c.c)}`,
+                sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)})`,
+                icon: <ChampIcon name={c.c} size={16} />,
+                fillText: `${t.name} ${champName(c.c)}`,
+              };
+            }),
+            {
+              key: `top-t-prep-${t.u}`,
+              route: { kind: "prep", a: t.u },
+              label: `${t.name} · ${tl("Match prep")}`,
+              sub: tl("Form, head-to-head, drafts and every lane"),
+              icon: <ClipboardList className="w-3.5 h-3.5" />,
+            },
+            {
+              key: `top-t-draft-${t.u}`,
+              route: { kind: "draft", query: `teams=${encodeURIComponent(t.u)}` },
+              label: `${t.name} · ${tl("Draft board")}`,
+              sub: `${tl("Champion pool")} · ${tl("Fearless")}`,
+              icon: <Swords className="w-3.5 h-3.5" />,
+            },
+            {
+              key: `top-t-finder-${t.u}`,
+              route: { kind: "finder", query: `team=${encodeURIComponent(t.u)}` },
+              label: `${t.name} · ${tl("Game finder")}`,
+              sub: tl("Any game by team, champion, player"),
+              icon: <Compass className="w-3.5 h-3.5" />,
+            },
+          ];
           setEntityChamps((prev) => ({ ...prev, [filledEntity.key]: top }));
         })
         .catch(() => {});

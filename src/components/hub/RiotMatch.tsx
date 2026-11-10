@@ -15,6 +15,7 @@ import { navigateHub } from "../../hub/route";
 import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { HubSeries } from "../../hub/types";
 import { card, fmtDate, HubLink, hubShareUrl, Loading, RevealButton, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
+import { SectionCard } from "./BroadcastCard";
 
 const CopyRiotMatchPost: React.FC<{ match: Match }> = ({ match }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
@@ -168,7 +169,34 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             {live && <span className="text-rw-red font-bold">· {tl("LIVE")}</span>}
           </span>
           <span className="flex flex-wrap items-center gap-1.5">
-            {!hidden && <CopyRiotMatchPost match={m} />}
+            {!hidden && (
+              <>
+                <SectionCard
+                  section={m.leagueName}
+                  name={`${m.team1Name} vs ${m.team2Name}`}
+                  sub={`${m.team1Score}–${m.team2Score} · ${fmtDate(m.startTimeUtc.slice(0, 10))}`}
+                  rows={() => [
+                    {
+                      rank: 1,
+                      team: m.team1Name,
+                      label: m.team1Name,
+                      sub: m.team1Code,
+                      value: String(m.team1Score),
+                      win: m.team1Score >= m.team2Score,
+                    },
+                    {
+                      rank: 2,
+                      team: m.team2Name,
+                      label: m.team2Name,
+                      sub: m.team2Code,
+                      value: String(m.team2Score),
+                      win: m.team2Score >= m.team1Score,
+                    },
+                  ]}
+                />
+                <CopyRiotMatchPost match={m} />
+              </>
+            )}
             <MatchOverviewButton match={m} />
             <MatchPrepButton match={m} />
             <HubLink

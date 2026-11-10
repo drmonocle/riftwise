@@ -171,9 +171,9 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
       </HubLink>
     );
   }
-  if (nt.k === "streak" && who?.kind === "team") {
+  if (nt.k === "streak" && who) {
     return (
-      <HubLink to={{ kind: "team", slug: who.slug, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+      <HubLink to={{ kind: who.kind, slug: who.slug, tab: "matches" }} className="hover:text-rw-accent hover:underline">
         {plain}
       </HubLink>
     );
@@ -338,15 +338,53 @@ export const HomeStorylines: React.FC = () => {
       columns
       right={
         all.length > 6 ? (
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={tl("Filter by name or team…")}
-            aria-label={tl("Filter by name or team…")}
-            data-nocapture="1"
-            className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
-          />
+          <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+            {terms.length > 0 && (() => {
+              const teamSlugs = Array.from(new Set(rows.filter((r) => r.t === "team").map((r) => r.u)));
+              if (teamSlugs.length >= 2) {
+                return (
+                  <>
+                    <HubLink to={{ kind: "prep", a: teamSlugs[0], b: teamSlugs[1] }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlugs[0])},${encodeURIComponent(teamSlugs[1])}` }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: teamSlugs[0], b: teamSlugs[1] }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                );
+              }
+              const playerSlugs = Array.from(new Set(rows.filter((r) => r.t === "player").map((r) => r.u)));
+              if (playerSlugs.length >= 2) {
+                return (
+                  <HubLink
+                    to={{ kind: "compare", mode: "player", a: playerSlugs[0], b: playerSlugs[1] }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                );
+              }
+              return null;
+            })()}
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tl("Filter by name or team…")}
+              aria-label={tl("Filter by name or team…")}
+              data-nocapture="1"
+              className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
+            />
+          </span>
         ) : undefined
       }
       lines={rows.map((r, i) => ({

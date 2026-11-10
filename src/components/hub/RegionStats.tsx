@@ -249,6 +249,27 @@ const bestText = (p: number | null) => (p == null ? "–" : p === 1 ? tl("Won it
 
 export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string[]; all: boolean; name: string }> = ({ files, years, all, name }) => {
   const { list, pairs } = useMemo(() => regionStats(files, years), [files, years]);
+  const [pairSearch, setPairSearch] = useState("");
+  const pairTerms = useMemo(
+    () =>
+      pairSearch
+        .trim()
+        .toLowerCase()
+        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [pairSearch],
+  );
+  const filteredPairs = useMemo(
+    () =>
+      pairTerms.length > 0
+        ? pairs.filter((p) => {
+            const hay = `${p.a} ${regionLabel(p.a)} ${p.b} ${regionLabel(p.b)}`.toLowerCase();
+            return pairTerms.some((t) => hay.includes(t));
+          })
+        : pairs,
+    [pairs, pairTerms],
+  );
   if (!list.length) return null;
   const maxTitles = Math.max(1, ...list.map((r) => r.titles));
   const maxFinals = Math.max(1, ...list.map((r) => r.finals));
@@ -402,16 +423,27 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
         <Section
           title={tl("Region vs region")}
           right={
-            <span className="flex items-center gap-2">
+            <span className="flex flex-wrap items-center gap-2">
+              {pairs.length > 6 && (
+                <input
+                  type="search"
+                  value={pairSearch}
+                  onChange={(e) => setPairSearch(e.target.value)}
+                  placeholder={tl("Filter by name or team…")}
+                  aria-label={tl("Filter by name or team…")}
+                  data-nocapture="1"
+                  className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-32"
+                />
+              )}
               <CopyRegionStatsPost
                 title={`${tl("Region vs region")} · ${name}`}
-                rows={pairs.slice(0, 6).map((p) => `${regionLabel(p.a)} ${p.wa}–${p.wb} ${regionLabel(p.b)}`)}
+                rows={filteredPairs.slice(0, 6).map((p) => `${regionLabel(p.a)} ${p.wa}–${p.wb} ${regionLabel(p.b)}`)}
               />
               <SectionCard
                 section={tl("Region vs region")}
                 name={name}
                 rows={() =>
-                  pairs.map((p, idx) => ({
+                  filteredPairs.map((p, idx) => ({
                     rank: idx + 1,
                     label: `${regionLabel(p.a)} vs ${regionLabel(p.b)}`,
                     value: `${p.wa}-${p.wb}`,
@@ -423,7 +455,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
           }
         >
           <ul className="text-xs space-y-1.5">
-            {pairs.slice(0, 12).map((p) => {
+            {(pairTerms.length > 0 ? filteredPairs : filteredPairs.slice(0, 12)).map((p) => {
               const tot = p.wa + p.wb;
               const shareA = tot > 0 ? Math.round((p.wa / tot) * 100) : 50;
               return (
