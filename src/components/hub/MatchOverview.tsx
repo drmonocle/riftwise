@@ -237,7 +237,16 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
         <div className="border-t border-rw-border pt-2 space-y-1">
           <div className="flex items-center justify-between text-[10px] text-rw-muted uppercase tracking-wider font-semibold">
             <span>{tl("Lane by lane")}</span>
-            <span>{tl("Compare")} →</span>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u });
+              }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </button>
           </div>
           <div className="grid grid-cols-1 gap-1">
             {lanePairs.map(({ role, a, b }) => {
@@ -278,7 +287,16 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
         <div className="space-y-1.5">
           <div className="space-y-1 border-t border-rw-border pt-2">
             <div className="flex justify-between gap-2">
-              <span className="text-rw-sub">{tl("Head to head (series)")}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigateHub({ kind: "finder", query: `team=${encodeURIComponent(x.team.u)}&vs=${encodeURIComponent(y.team.u)}` });
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline text-left"
+              >
+                {tl("Head to head (series)")}
+              </button>
               <span className="font-bold tabular-nums">
                 {meetings.length ? (
                   <button

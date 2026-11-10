@@ -348,6 +348,12 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               {tl("Compare")} →
             </HubLink>
           )}
+          <HubLink
+            to={event ? { kind: "event", slug: event } : { kind: "league", slug: league, year }}
+            className="ml-auto text-rw-accent hover:underline font-semibold"
+          >
+            {scope} →
+          </HubLink>
         </div>
       </div>
       {loading && <Loading />}

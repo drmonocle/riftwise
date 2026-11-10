@@ -593,7 +593,13 @@ const ChanceNow: React.FC<{ leftCode: string; rightCode: string; minute: number;
   return (
     <div className="space-y-0.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-[10px] text-rw-sub">
-        <span className={LABEL}>{tl("Win chance right now")}</span>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "about" })}
+          className={`${LABEL} hover:text-rw-accent hover:underline`}
+        >
+          {tl("Win chance right now")}
+        </button>
         <span className="text-rw-muted" title={tl("P = 1 / (1 + e^(−a × gold lead)), a = 0.0098 / (minute + 2.3): fitted on about 37,000 pro games since 2023 with gold at 10, 15 and 20 minutes (Oracle's Elixir). Gold only: towers, dragons and barons count through the gold they bring.")}>
           {tl("from the gold lead at this minute · ~37,000 pro games since 2023")}
         </span>

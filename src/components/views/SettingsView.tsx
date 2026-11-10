@@ -26,7 +26,7 @@ import {
 } from "../../platform";
 import { tl, locale, LANGUAGES, TRANSLATION_EMAIL, TRANSLATION_MAILTO, detectLanguage } from "../../i18n";
 import { langAddress } from "../../hub/route";
-import { prettySlug } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { HubLink, TeamLogo } from "../hub/ui";
 import { PushAlertsCard } from "../PushAlerts";
 import { SyncPanel } from "../SyncPanel";
@@ -701,7 +701,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {tl("Reset All Follows")}
             </button>
           </div>
-          {(settings.followedTeams.length > 0 || settings.followedPlayers.length > 0) && (
+          {(settings.followedTeams.length > 0 || settings.followedPlayers.length > 0 || settings.followedLeagues.length > 0) && (
             <div className="flex flex-wrap gap-1.5 pt-2 border-t border-rw-border">
               {settings.followedTeams.map((t) => {
                 const team = catalog ? pickTeamByCode(catalog.teams, t) : undefined;
@@ -725,6 +725,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-teal/60 text-[11px] font-semibold text-rw-teal hover:underline"
                 >
                   {p}
+                </HubLink>
+              ))}
+              {settings.followedLeagues.map((l) => (
+                <HubLink
+                  key={`l-${l}`}
+                  to={{ kind: "league", slug: resolveLeagueSlug(l) }}
+                  className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-sub hover:text-rw-accent"
+                >
+                  {l}
                 </HubLink>
               ))}
             </div>

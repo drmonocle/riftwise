@@ -5,7 +5,7 @@ import { HubLink, Section, usePageTitle } from "./ui";
 import { JumpBar } from "./PageTabs";
 
 export { FEEDBACK_EMAIL as REPORT_EMAIL, reportUrl } from "../../feedback";
-import { FEEDBACK_EMAIL as REPORT_EMAIL, reportUrl } from "../../feedback";
+import { reportUrl } from "../../feedback";
 
 
 const Term: React.FC<{ t: string; bar?: number; barColor?: string; children: React.ReactNode }> = ({ t, bar, barColor = "bg-rw-accent/70", children }) => (
@@ -65,9 +65,24 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
       </Section>
       <Section title={tl("What counts")}>
         <ul className="list-disc pl-4 space-y-1 text-rw-sub">
-          <li>{tl("Every league, international event, qualifier and academy league Leaguepedia lists. All-Star and show matches aren't counted.")}</li>
-          <li>{tl("Titles: finals of Worlds, MSI, First Stand and other big international events, plus the playoffs, championships and cups of the main leagues.")}</li>
-          <li>{tl("Teams that changed names (SK Telecom T1 to T1) count as one team, as on Leaguepedia.")}</li>
+          <li>
+            {tl("Every league, international event, qualifier and academy league Leaguepedia lists. All-Star and show matches aren't counted.")}{" "}
+            <HubLink to={{ kind: "leagues" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Leagues")} →
+            </HubLink>
+          </li>
+          <li>
+            {tl("Titles: finals of Worlds, MSI, First Stand and other big international events, plus the playoffs, championships and cups of the main leagues.")}{" "}
+            <HubLink to={{ kind: "titles" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Titles")} →
+            </HubLink>
+          </li>
+          <li>
+            {tl("Teams that changed names (SK Telecom T1 to T1) count as one team, as on Leaguepedia.")}{" "}
+            <HubLink to={{ kind: "team", slug: "t1", tab: "history" }} className="text-rw-accent hover:underline font-semibold">
+              T1 →
+            </HubLink>
+          </li>
           <li>{tl("Per-game, per-minute and share numbers use games with a full scoreboard only.")}</li>
         </ul>
       </Section>
@@ -92,7 +107,10 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           <Term t={tl("Blind%")}>{tl("How often a champion was picked before the enemy laner was known (games where the draft order is known).")}</Term>
           <Term t="B1">{tl("The first pick of the draft (blue side).")}</Term>
           <Term t={tl("League ranks")}>
-            {tl("A player against the same role in the same league and year (all splits and playoffs) with at least 30% of the most games played; a team against the league's teams.")}
+            {tl("A player against the same role in the same league and year (all splits and playoffs) with at least 30% of the most games played; a team against the league's teams.")}{" "}
+            <HubLink to={{ kind: "leaders" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Leaderboards")} →
+            </HubLink>
           </Term>
           <Term t={tl("Averages")}>
             {tl("Rates are worked out from totals (all gold ÷ all minutes), so longer games weigh more. Sites that average game by game can show slightly different numbers.")}
@@ -140,7 +158,10 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
         </dl>
         <p className="text-rw-sub mt-2">
           {tl("Each number is measured in spreads from the role's average, and the form part is scaled so about two in three games land within a point of 6. A win adds half a point, a loss takes half a point off. The rating uses only the scoreboard, so it can't see vision denial, macro calls or the shotcalling behind a fight.")}{" "}
-          {tl("The game's top rated player is starred on its match page; the best averages are the Players of the week and of the month.")}
+          {tl("The game's top rated player is starred on its match page; the best averages are the Players of the week and of the month.")}{" "}
+          <HubLink to={{ kind: "weekly" }} className="text-rw-accent hover:underline font-semibold">
+            {tl("The week in pro League")} →
+          </HubLink>
         </p>
       </Section>
       <Section title={tl("Not shown yet")}>

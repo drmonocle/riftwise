@@ -435,10 +435,19 @@ const ColoredOpponentGraph: React.FC<{
               <TeamLogo name={active.opp} size={16} />
               <TeamLink name={active.opp} u={active.u} />
             </span>
-            <span className="tabular-nums font-bold" style={{ color: toneColor(active.tone) }}>
+            <HubLink
+              to={{ kind: "team", slug: active.u || prettySlug(active.opp) }}
+              className="tabular-nums font-bold hover:underline"
+              style={{ color: toneColor(active.tone) }}
+            >
               {active.fmt}
-            </span>
-            <span className="text-rw-muted tabular-nums">{active.sub}</span>
+            </HubLink>
+            <HubLink
+              to={{ kind: "team", slug: active.u || prettySlug(active.opp) }}
+              className="text-rw-muted tabular-nums hover:text-rw-accent hover:underline"
+            >
+              {active.sub}
+            </HubLink>
             {active.champs && active.champs.length > 0 && (
               <span className="inline-flex items-center gap-0.5">
                 {active.champs.slice(0, 3).map((c) => (
@@ -913,11 +922,13 @@ export const PlayerOpponents: React.FC<{
                           className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
-                          <span onClick={(e) => e.stopPropagation()}>{o.g}</span>
-                        </HubLink>{" "}
-                        <span className="text-[11px] text-rw-muted">
-                          ({o.w}–{o.g - o.w})
-                        </span>
+                          <span onClick={(e) => e.stopPropagation()}>
+                            {o.g}{" "}
+                            <span className="text-[11px] font-normal text-rw-muted">
+                              ({o.w}–{o.g - o.w})
+                            </span>
+                          </span>
+                        </HubLink>
                       </span>
                     </span>
                   </td>
@@ -1144,11 +1155,13 @@ export const TeamOpponentsChart: React.FC<{
                           className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
-                          <span onClick={(e) => e.stopPropagation()}>{o.g}</span>
-                        </HubLink>{" "}
-                        <span className="text-[11px] text-rw-muted">
-                          ({o.w}–{o.g - o.w})
-                        </span>
+                          <span onClick={(e) => e.stopPropagation()}>
+                            {o.g}{" "}
+                            <span className="text-[11px] font-normal text-rw-muted">
+                              ({o.w}–{o.g - o.w})
+                            </span>
+                          </span>
+                        </HubLink>
                       </span>
                     </span>
                   </td>
@@ -1467,11 +1480,13 @@ export const TeamPeriodOpponents: React.FC<{
                           className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
-                          <span onClick={(e) => e.stopPropagation()}>{o.g}</span>
-                        </HubLink>{" "}
-                        <span className="text-[11px] text-rw-muted">
-                          ({o.w}–{o.g - o.w})
-                        </span>
+                          <span onClick={(e) => e.stopPropagation()}>
+                            {o.g}{" "}
+                            <span className="text-[11px] font-normal text-rw-muted">
+                              ({o.w}–{o.g - o.w})
+                            </span>
+                          </span>
+                        </HubLink>
                       </span>
                     </span>
                   </td>

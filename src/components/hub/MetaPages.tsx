@@ -237,11 +237,14 @@ const HistoryChain: React.FC<{ steps: LeagueStep[]; current: string; small?: boo
           {st.u && st.u !== current ? (
             <HubLink to={{ kind: "league", slug: st.u }} className="hover:text-rw-accent hover:underline">
               {st.s || st.l}
+              {st.y && <span className="text-rw-muted"> ({st.y})</span>}
             </HubLink>
           ) : (
-            <span className={st.u === current ? "text-rw-text font-semibold" : ""}>{st.s || st.l}</span>
+            <>
+              <span className={st.u === current ? "text-rw-text font-semibold" : ""}>{st.s || st.l}</span>
+              {st.y && <span> ({st.y})</span>}
+            </>
           )}
-          {st.y && <span> ({st.y})</span>}
         </span>
       </React.Fragment>
     ))}

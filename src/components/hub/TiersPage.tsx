@@ -143,6 +143,12 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               >
                 {tl("Champions")} →
               </HubLink>
+              <HubLink
+                to={{ kind: "counters", ...(role ? { query: `role=${role}` } : {}) }}
+                className="font-semibold text-rw-accent hover:underline"
+              >
+                {tl("Counter-pick finder")} →
+              </HubLink>
               <SectionCard
                 section={tl("Pro tier list")}
                 name={label(key)}

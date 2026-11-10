@@ -388,7 +388,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             {/* Upcoming Matches */}
             <section className="space-y-2">
               <h3 className="text-xs font-bold text-rw-accent uppercase tracking-wider flex items-center gap-1.5">
-                <span>{tl("Next Scheduled Matches")}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigateHub({ kind: "team", slug: prettySlug(displayName), tab: "matches" });
+                    onClose();
+                  }}
+                  className="hover:underline text-left"
+                >
+                  {tl("Next Scheduled Matches")}
+                </button>
               </h3>
               {upcomingMatches.length > 0 ? (
                 <div className="space-y-1.5">
@@ -429,9 +438,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               }}
                               className="text-rw-accent hover:underline text-left"
                             >
-                              {opp}
+                              {opp} ({oppCode})
                             </button>
-                            <span>({oppCode})</span>
                           </div>
                           <div className="text-[10px] text-rw-sub">
                             <button
@@ -444,7 +452,18 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             >
                               {m.leagueName}
                             </button>{" "}
-                            · {tc("short best of", "Bo{n}", { n: m.bestOf })}
+                            ·{" "}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigateHub({ kind: "prep", a: prettySlug(displayName), b: prettySlug(opp) });
+                                onClose();
+                              }}
+                              className="hover:text-rw-accent hover:underline"
+                              title={tl("Match prep")}
+                            >
+                              {tc("short best of", "Bo{n}", { n: m.bestOf })}
+                            </button>
                           </div>
                           {h2h && <H2HMeter team1Code={teamCode} team2Code={oppCode} h2h={h2h} matchId={m.matchId} />}
                         </div>
@@ -483,7 +502,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             {/* Recent Results */}
             <section className="space-y-2">
               <h3 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-1.5">
-                <span>{tl("Recent Series Results")}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigateHub({ kind: "team", slug: prettySlug(displayName), tab: "matches" });
+                    onClose();
+                  }}
+                  className="hover:text-rw-accent hover:underline text-left"
+                >
+                  {tl("Recent Series Results")}
+                </button>
               </h3>
               {completedMatches.length > 0 ? (
                 <div className="space-y-1.5">
