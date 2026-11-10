@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from "react";
 import { tl, regionName } from "../../i18n";
 import type { EventLines } from "../../hub/worldsFacts";
+import { normText } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { HubLink, Section } from "./ui";
 import { STable } from "../STable";
@@ -313,22 +314,20 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
     () =>
       pairSearch
         .trim()
-        .toLowerCase()
         .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-        .map((s) => s.trim())
+        .map((s) => normText(s.trim()))
         .filter(Boolean),
     [pairSearch],
   );
-  const filteredPairs = useMemo(
-    () =>
-      pairTerms.length > 0
-        ? pairs.filter((p) => {
-            const hay = `${p.a} ${regionLabel(p.a)} ${p.b} ${regionLabel(p.b)}`.toLowerCase();
-            return pairTerms.some((t) => hay.includes(t));
-          })
-        : pairs,
-    [pairs, pairTerms],
-  );
+  const filteredPairs = useMemo(() => {
+    if (!pairTerms.length) return pairs;
+    const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
+    return pairs.filter((p) => {
+      const hay = normText(`${p.a} ${regionLabel(p.a)} ${p.b} ${regionLabel(p.b)}`);
+      const hayBare = bare(hay);
+      return pairTerms.some((t) => hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t))));
+    });
+  }, [pairs, pairTerms]);
   if (!list.length) return null;
   const maxTitles = Math.max(1, ...list.map((r) => r.titles));
   const maxFinals = Math.max(1, ...list.map((r) => r.finals));
@@ -397,10 +396,27 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             >
               {tl("Tournaments")} →
             </HubLink>
-            <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{
+                kind: "titles",
+                ...(topRegTeamA ? { query: `q=${encodeURIComponent(topRegTeamA)}` } : {}),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Titles")} →
             </HubLink>
-            <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            <HubLink
+              to={{
+                kind: "rankings",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(topRegTeamA ? { q: `${topRegTeamA}${topRegTeamB && topRegTeamB !== topRegTeamA ? `,${topRegTeamB}` : ""}` } : {}),
+                }).toString(),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
               {tl("Power rankings")} →
             </HubLink>
             <HubLink
@@ -593,7 +609,13 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     {all && (
                       <td className={`${cell} font-bold ${r.titles ? "text-rw-accent" : "text-rw-muted"}`} data-sort={r.titles}>
                         {r.titles > 0 ? (
-                          <HubLink to={{ kind: "titles" }} className="inline-flex items-center justify-end gap-1.5 hover:underline">
+                          <HubLink
+                            to={{
+                              kind: "titles",
+                              ...(topTeamByRegion.get(r.code) ? { query: `q=${encodeURIComponent(topTeamByRegion.get(r.code)!)}` } : {}),
+                            }}
+                            className="inline-flex items-center justify-end gap-1.5 hover:underline"
+                          >
                             {tBar > 0 && (
                               <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                                 <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${tBar}%` }} />
@@ -609,7 +631,13 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     {all && (
                       <td className={cell} data-sort={r.finals}>
                         {r.finals > 0 ? (
-                          <HubLink to={{ kind: "titles" }} className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline">
+                          <HubLink
+                            to={{
+                              kind: "titles",
+                              ...(topTeamByRegion.get(r.code) ? { query: `q=${encodeURIComponent(topTeamByRegion.get(r.code)!)}` } : {}),
+                            }}
+                            className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline"
+                          >
                             {fBar > 0 && (
                               <span className="hidden sm:inline-block w-7 h-1 rounded-full bg-rw-border/70 overflow-hidden shrink-0" aria-hidden="true">
                                 <span className="block h-full rounded-full bg-rw-teal/70" style={{ width: `${fBar}%` }} />
@@ -687,10 +715,31 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               >
                 {tl("Tournaments")} →
               </HubLink>
-              <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              <HubLink
+                to={{
+                  kind: "titles",
+                  ...(pairTeamA
+                    ? {
+                        query: `q=${encodeURIComponent(`${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}`)}`,
+                      }
+                    : {}),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
                 {tl("Titles")} →
               </HubLink>
-              <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              <HubLink
+                to={{
+                  kind: "rankings",
+                  query: new URLSearchParams({
+                    league: intlLeague,
+                    ...(pairTeamA ? { q: `${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}` } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
                 {tl("Power rankings")} →
               </HubLink>
               <HubLink
@@ -699,6 +748,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     league: intlLeague,
                     ...(singleYear ? { year: singleYear } : {}),
+                    ...(pairTerms.length > 0 && pairTeamA
+                      ? {
+                          team: pairTeamA,
+                          ...(pairTeamB && pairTeamB !== pairTeamA ? { vs: pairTeamB } : {}),
+                        }
+                      : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -725,6 +780,9 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     league: intlLeague,
                     ...(singleYear ? { year: singleYear } : {}),
+                    ...(pairTerms.length > 0 && pairTeamA
+                      ? { q: `${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}` }
+                      : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -738,6 +796,9 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     league: intlLeague,
                     ...(singleYear ? { year: singleYear } : {}),
+                    ...(pairTerms.length > 0 && pairTeamA
+                      ? { q: `${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}` }
+                      : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Crown, ClipboardCopy } from "lucide-react";
 import { tl, tn, regionName } from "../../i18n";
-import { loadLeague, loadLeagues, loadPatches, matchesChampSearch, normText, prettySlug } from "../../hub/data";
+import { loadLeague, loadLeagues, loadPatches, matchesChampSearch, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { HubLeague, LeagueRow, LeagueStep, PatchMove, PatchRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import {
@@ -549,14 +549,15 @@ export const LeaguesPanel: React.FC<{ query?: string }> = ({ query }) => {
 const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string; onSetQ?: (q: string) => void }> = ({ rows, scope, q, onSetQ }) => {
   const groups = useMemo(() => {
     const terms = q
-      .toLowerCase()
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-      .map((s) => s.trim())
+      .map((s) => normText(s.trim()))
       .filter(Boolean);
+    const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
     const match = (l: LeagueRow) => {
       if (!terms.length) return true;
-      const hay = `${l.s || ""} ${l.l} ${l.r || ""} ${l.r ? regionName(l.r, l.r) : ""}`.toLowerCase();
-      return terms.some((t) => hay.includes(t));
+      const hay = normText(`${l.s || ""} ${l.l} ${l.u} ${l.r || ""} ${l.r ? regionName(l.r, l.r) : ""}`);
+      const hayBare = bare(hay);
+      return terms.some((t) => hay.includes(t) || resolveLeagueSlug(t) === l.u || (t.length >= 2 && hayBare.includes(bare(t))));
     };
     const newest = rows.reduce((m, l) => (l.to && l.to > m ? l.to : m), "");
     const isCurrent = (l: LeagueRow) => !!l.to && l.to >= newest;
@@ -954,7 +955,17 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                   {tl("Titles")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings", query: `league=${encodeURIComponent(l.s || l.u)}` }}
+                  to={{
+                    kind: "rankings",
+                    query: new URLSearchParams({
+                      league: l.s || l.u,
+                      ...(l.titles[0]
+                        ? {
+                            q: `${l.titles[0].u || prettySlug(l.titles[0].t)}${l.titles[1] ? `,${l.titles[1].u || prettySlug(l.titles[1].t)}` : ""}`,
+                          }
+                        : {}),
+                    }).toString(),
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -975,7 +986,18 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "leaders", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
+                  to={{
+                    kind: "leaders",
+                    query: new URLSearchParams({
+                      league: l.u,
+                      ...(season ? { year: season } : {}),
+                      ...(l.titles[0]
+                        ? {
+                            q: `${l.titles[0].u || prettySlug(l.titles[0].t)}${l.titles[1] ? `,${l.titles[1].u || prettySlug(l.titles[1].t)}` : ""}`,
+                          }
+                        : {}),
+                    }).toString(),
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Player leaderboards")} →
@@ -1082,100 +1104,145 @@ const LeagueEventsSection: React.FC<{
   const [evSearch, setEvSearch] = useState("");
   const shownEvents = useMemo(() => {
     const terms = evSearch
-      .toLowerCase()
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-      .map((s) => s.trim())
+      .map((s) => normText(s.trim()))
       .filter(Boolean);
     if (!terms.length) return events;
+    const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
     return events.filter((e) => {
-      const hay = `${e.n} ${e.w || ""} ${e.y || ""}`.toLowerCase();
-      return terms.some((t) => hay.includes(t));
+      const hay = normText(`${e.n} ${e.u} ${e.w || ""} ${e.wu || ""} ${e.y || ""}`);
+      const hayBare = bare(hay);
+      return terms.some((t) => hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t))));
     });
   }, [events, evSearch]);
+  const singleEvSlug = evSearch.trim() && shownEvents.length === 1 ? shownEvents[0].u : "";
+  const wTeams = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          shownEvents
+            .filter((e) => e.w && !isHidden(`event:${e.u}`, e.en))
+            .map((e) => e.wu || prettySlug(e.w!)),
+        ),
+      ),
+    [shownEvents, isHidden],
+  );
   return (
     <Section
       title={season ? tl("{year} season", { year: season }) : tl("Every tournament")}
       right={
         events.length > 0 ? (
           <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
-            {(() => {
-              const wTeams = Array.from(
-                new Set(
-                  shownEvents
-                    .filter((e) => e.w && !isHidden(`event:${e.u}`, e.en))
-                    .map((e) => e.wu || prettySlug(e.w!)),
-                ),
-              );
-              if (wTeams.length < 1) return null;
-              return (
-                <>
-                  <HubLink
-                    to={{
-                      kind: "prep",
-                      a: wTeams[0],
-                      ...(wTeams[1] ? { b: wTeams[1] } : {}),
-                      ...(season ? { period: `y${season}` } : {}),
-                    }}
-                    className="text-[11px] font-semibold text-rw-accent hover:underline"
-                  >
-                    {tl("Match prep")} →
-                  </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "draft",
-                      query: `teams=${encodeURIComponent(wTeams[0])}${wTeams[1] ? `,${encodeURIComponent(wTeams[1])}` : ""}${season ? `&p=y${encodeURIComponent(season)}` : ""}`,
-                    }}
-                    className="text-[11px] font-semibold text-rw-accent hover:underline"
-                  >
-                    {tl("Draft board")} →
-                  </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "compare",
-                      mode: "team",
-                      a: wTeams[0],
-                      ...(wTeams[1] ? { b: wTeams[1] } : {}),
-                      ...(season ? { period: `y${season}` } : {}),
-                    }}
-                    className="text-[11px] font-semibold text-rw-accent hover:underline"
-                  >
-                    {tl("Compare")} →
-                  </HubLink>
-                </>
-              );
-            })()}
+            {wTeams.length >= 1 && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: wTeams[0],
+                    ...(wTeams[1] ? { b: wTeams[1] } : {}),
+                    ...(singleEvSlug ? { period: `e:${singleEvSlug}` } : season ? { period: `y${season}` } : {}),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(wTeams[0])}${wTeams[1] ? `,${encodeURIComponent(wTeams[1])}` : ""}${singleEvSlug ? `&p=e:${encodeURIComponent(singleEvSlug)}` : season ? `&p=y${encodeURIComponent(season)}` : ""}`,
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "compare",
+                    mode: "team",
+                    a: wTeams[0],
+                    ...(wTeams[1] ? { b: wTeams[1] } : {}),
+                    ...(singleEvSlug ? { period: `e:${singleEvSlug}` } : season ? { period: `y${season}` } : {}),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            )}
             <HubLink
-              to={{ kind: "champions", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
+              to={{
+                kind: "champions",
+                query: new URLSearchParams({
+                  league: l.u,
+                  ...(singleEvSlug ? { event: singleEvSlug, key: `e:${singleEvSlug}` } : season ? { year: season, key: `y${season}` } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Champions")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `league=${encodeURIComponent(l.u)}${season ? `&key=y${encodeURIComponent(season)}` : ""}` }}
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  league: l.u,
+                  ...(singleEvSlug ? { event: singleEvSlug, key: `e:${singleEvSlug}` } : season ? { key: `y${season}` } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Pro tier list")} →
             </HubLink>
             <HubLink
-              to={{ kind: "leaders", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  league: l.u,
+                  ...(season ? { year: season } : {}),
+                  ...(singleEvSlug ? { event: singleEvSlug } : {}),
+                  ...(evSearch.trim() && wTeams.length >= 1 ? { q: wTeams.slice(0, 2).join(",") } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "rankings", query: `league=${encodeURIComponent(l.s || l.u)}` }}
+              to={{
+                kind: "rankings",
+                query: new URLSearchParams({
+                  league: l.s || l.u,
+                  ...(evSearch.trim() && wTeams.length >= 1 ? { q: wTeams.slice(0, 2).join(",") } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Power rankings")} →
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  league: l.u,
+                  ...(season ? { year: season } : {}),
+                  ...(singleEvSlug ? { event: singleEvSlug } : {}),
+                  ...(evSearch.trim() && wTeams.length >= 1 ? { team: wTeams[0], ...(wTeams[1] ? { vs: wTeams[1] } : {}) } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Game finder")} →
             </HubLink>
             <HubLink
-              to={{ kind: "best", query: `league=${encodeURIComponent(l.u)}${season ? `&year=${encodeURIComponent(season)}` : ""}` }}
+              to={{
+                kind: "best",
+                query: new URLSearchParams({
+                  league: l.u,
+                  ...(season ? { year: season } : {}),
+                  ...(singleEvSlug ? { event: singleEvSlug } : {}),
+                  ...(evSearch.trim() && wTeams.length >= 1 ? { q: wTeams.slice(0, 2).join(",") } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Best games")} →

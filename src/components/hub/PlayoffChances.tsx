@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl } from "../../i18n";
-import { loadRatings } from "../../hub/data";
+import { loadRatings, normText } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import type { HubEvent } from "../../hub/types";
 import { playoffOdds } from "../../hub/playoffOdds";
@@ -27,14 +27,18 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
   const cut = pick != null && odds.cuts.includes(pick) ? pick : odds.cut;
   const ci = odds.cuts.indexOf(cut);
   const rows = [...odds.rows].sort((a, b) => b.top[ci] - a.top[ci] || b.first - a.first || b.sw - a.sw);
+  const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
   const terms = search
     .trim()
-    .toLowerCase()
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-    .map((s) => s.trim())
+    .map((s) => normText(s.trim()))
     .filter(Boolean);
   const filteredRows = terms.length
-    ? rows.filter((r) => terms.some((q) => r.name.toLowerCase().includes(q) || r.u.toLowerCase().includes(q)))
+    ? rows.filter((r) => {
+        const hay = normText(`${r.name} ${r.u}`);
+        const hayBare = bare(hay);
+        return terms.some((q) => hay.includes(q) || (q.length >= 2 && hayBare.includes(bare(q))));
+      })
     : rows;
   const unrated = odds.rows.filter((r) => r.unrated).length;
   const th = "px-1.5 sm:px-2 py-1 font-normal text-[10px] text-rw-muted whitespace-nowrap";
@@ -117,7 +121,16 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </HubLink>
                 <HubLink
                   data-nocapture="1"
-                  to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
+                  to={{
+                    kind: "rankings",
+                    query:
+                      new URLSearchParams({
+                        ...(e.lu ? { league: e.lu } : {}),
+                        ...(terms.length > 0 && filteredRows[0]
+                          ? { q: `${filteredRows[0].u}${filteredRows[1] ? `,${filteredRows[1].u}` : ""}` }
+                          : {}),
+                      }).toString() || undefined,
+                  }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Power rankings")} →
@@ -130,6 +143,9 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                       ...(e.lu ? { league: e.lu } : {}),
                       ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                       event: e.u,
+                      ...(terms.length > 0 && filteredRows[0]
+                        ? { q: `${filteredRows[0].u}${filteredRows[1] ? `,${filteredRows[1].u}` : ""}` }
+                        : {}),
                     }).toString(),
                   }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -143,7 +159,11 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                     query:
                       new URLSearchParams({
                         ...(e.lu ? { league: e.lu } : {}),
-                        ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
+                        ...(e.u
+                          ? { event: e.u, key: `e:${e.u}` }
+                          : /^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                            ? { key: `y${(e.start || e.end || "").slice(0, 4)}` }
+                            : {}),
                       }).toString() || undefined,
                   }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"

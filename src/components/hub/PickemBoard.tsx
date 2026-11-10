@@ -8,6 +8,7 @@ import React, { useEffect, useState } from "react";
 import { EyeOff, LogIn, Trophy, UserMinus, Upload } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { pickemBoard, submitPickem, leavePickem, hidePickem, syncAccount, SYNC_EVENT, SyncError, type PickemBoard as Board, type PickemPick, type PickemRow, type PickemTeam } from "../../sync";
+import { normText } from "../../hub/data";
 import { Section, HubLink } from "./ui";
 import { BroadcastCardButton, listCard } from "./BroadcastCard";
 import { OPEN_TAB_EVENT } from "../../a11y";
@@ -75,8 +76,15 @@ export const PickemBoard: React.FC<{
 
   const [search, setSearch] = useState("");
   const rows = board?.rows || [];
-  const q = search.trim().toLowerCase();
-  const filteredRows = q ? rows.filter((r) => shownName(r).toLowerCase().includes(q)) : rows;
+  const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
+  const q = normText(search.trim());
+  const qBare = bare(q);
+  const filteredRows = q
+    ? rows.filter((r) => {
+        const hay = normText(shownName(r));
+        return hay.includes(q) || (qBare.length >= 2 && bare(hay).includes(qBare));
+      })
+    : rows;
   const me = board?.me;
   const sub = board ? `${tn("{n} player entered", "{n} players entered", board.players)} · ${tn("{n} series decided", "{n} series decided", board.results)}` : "";
   return (
@@ -132,7 +140,14 @@ export const PickemBoard: React.FC<{
             return (
               <>
                 <HubLink
-                  to={{ kind: "rankings", ...(evLg ? { query: `league=${encodeURIComponent(evLg)}` } : {}) }}
+                  to={{
+                    kind: "rankings",
+                    query:
+                      new URLSearchParams({
+                        ...(evLg ? { league: evLg } : {}),
+                        ...(teams.length >= 1 ? { q: `${teams[0].u}${teams[1] ? `,${teams[1].u}` : ""}` } : {}),
+                      }).toString() || undefined,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -146,7 +161,15 @@ export const PickemBoard: React.FC<{
                   {tl("Tournaments")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "best", ...(evYr ? { query: `year=${encodeURIComponent(evYr)}` } : {}) }}
+                  to={{
+                    kind: "best",
+                    query:
+                      new URLSearchParams({
+                        ...(evLg ? { league: evLg } : {}),
+                        ...(evYr ? { year: evYr } : {}),
+                        event,
+                      }).toString() || undefined,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -172,7 +195,7 @@ export const PickemBoard: React.FC<{
                     query:
                       new URLSearchParams({
                         ...(evLg ? { league: evLg } : {}),
-                        ...(evYr ? { key: `y${evYr}` } : {}),
+                        ...(event ? { event, key: `e:${event}` } : evYr ? { key: `y${evYr}` } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -282,7 +305,7 @@ export const PickemBoard: React.FC<{
           return (
             <ol className="text-xs divide-y divide-rw-border border border-rw-border rounded-lg overflow-hidden">
               {filteredRows.map((r, i) => renderRow(r, i))}
-              {me && !filteredRows.some((r) => r.me) && (!q || shownName(me).toLowerCase().includes(q)) && renderRow(me, "me", true)}
+              {me && !filteredRows.some((r) => r.me) && (!q || normText(shownName(me)).includes(q) || (qBare.length >= 2 && bare(shownName(me)).includes(qBare))) && renderRow(me, "me", true)}
             </ol>
           );
         })()
