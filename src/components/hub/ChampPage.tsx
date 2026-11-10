@@ -293,7 +293,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           }
         >
           <p className="text-[11px] text-rw-muted">
-            {tl("From {n} pro games since {date}. Share of games and win rate.", { n: fmtNum(activeBuilds.g), date: fmtDate(c.builds.since) })}
+            <HubLink
+              to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(c.name))}` }}
+              className="hover:text-rw-accent hover:underline"
+            >
+              {tl("From {n} pro games since {date}. Share of games and win rate.", { n: fmtNum(activeBuilds.g), date: fmtDate(c.builds.since) })}
+            </HubLink>
           </p>
           <div className="grid gap-3 md:grid-cols-3">
             <div>
@@ -459,13 +464,18 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           )}
           {laneNow && laneNow.length > 2 && (
             <p className="text-[11px] text-rw-sub">
-              {tl("In lane at 15 minutes: {gd} gold, {cs} CS, {xp} XP against the other {role}; ahead in {p} of games.", {
-                gd: signedText(laneNow[3]),
-                cs: signedText(laneNow[4]),
-                xp: signedText(laneNow[5]),
-                role: roleName(muRole),
-                p: pctOf(laneNow[6], laneNow[2]),
-              })}
+              <HubLink
+                to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}&role=${encodeURIComponent(muRole)}` }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("In lane at 15 minutes: {gd} gold, {cs} CS, {xp} XP against the other {role}; ahead in {p} of games.", {
+                  gd: signedText(laneNow[3]),
+                  cs: signedText(laneNow[4]),
+                  xp: signedText(laneNow[5]),
+                  role: roleName(muRole),
+                  p: pctOf(laneNow[6], laneNow[2]),
+                })}
+              </HubLink>
             </p>
           )}
           {muRows.length >= 2 && (() => {

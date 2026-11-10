@@ -780,9 +780,12 @@ export const PlayerOpponents: React.FC<{
             <span className="inline-flex items-center gap-1.5 font-semibold text-rw-text">
               <TeamLogo name={expanded.opp} size={18} />
               <TeamLink name={expanded.opp} u={expanded.u} />
-              <span className="text-rw-muted font-normal tabular-nums">
+              <HubLink
+                to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}${periodQuerySuffix(period || scope)}` }}
+                className="text-rw-muted font-normal tabular-nums hover:text-rw-accent hover:underline"
+              >
                 · {expanded.w}–{expanded.g - expanded.w} ({Math.round((expanded.w / expanded.g) * 100)}%) · KDA {expanded.kda.toFixed(2)}
-              </span>
+              </HubLink>
             </span>
             <span className="flex items-center gap-2">
               <HubLink
@@ -829,7 +832,13 @@ export const PlayerOpponents: React.FC<{
                   </span>
                   <span className="flex items-center gap-2 shrink-0 text-rw-muted tabular-nums">
                     {rv != null && <RatingBadge v={rv} />}
-                    <span>{fmtDate(g[0], true)}</span>
+                    {g[1] ? (
+                      <HubLink to={{ kind: "match", slug: g[1], game: g[22] || undefined }} className="hover:text-rw-accent hover:underline">
+                        {fmtDate(g[0], true)}
+                      </HubLink>
+                    ) : (
+                      <span>{fmtDate(g[0], true)}</span>
+                    )}
                     {g[1] && (
                       <HubLink to={{ kind: "match", slug: g[1], game: g[22] || undefined }} className="text-rw-accent hover:underline">
                         {tl("Details")}
@@ -1330,9 +1339,12 @@ export const TeamPeriodOpponents: React.FC<{
             <span className="inline-flex items-center gap-1.5 font-semibold text-rw-text">
               <TeamLogo name={expanded.opp} size={18} />
               <TeamLink name={expanded.opp} u={expanded.u} />
-              <span className="text-rw-muted font-normal tabular-nums">
+              <HubLink
+                to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}${pSuffix}` }}
+                className="text-rw-muted font-normal tabular-nums hover:text-rw-accent hover:underline"
+              >
                 · {expanded.w}–{expanded.g - expanded.w} ({Math.round((expanded.w / expanded.g) * 100)}%)
-              </span>
+              </HubLink>
             </span>
             <span className="flex flex-wrap items-center gap-2 text-[11px]">
               <HubLink to={{ kind: "prep", a: teamSlug, b: expanded.u, period: pVal }} className="text-rw-accent hover:underline">
@@ -1367,9 +1379,12 @@ export const TeamPeriodOpponents: React.FC<{
                     <span className={`w-3.5 shrink-0 font-bold ${won ? "text-rw-teal" : "text-rw-red"}`}>
                       {won ? tc("short result", "W") : tc("short result", "L")}
                     </span>
-                    <span className={`text-[10px] font-bold shrink-0 ${g[6] === "b" ? "text-[#4a9eff]" : "text-rw-red"}`}>
+                    <HubLink
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}&side=${g[6]}${pSuffix}` }}
+                      className={`text-[10px] font-bold shrink-0 hover:underline ${g[6] === "b" ? "text-[#4a9eff]" : "text-rw-red"}`}
+                    >
                       {g[6] === "b" ? tl("Blue") : tl("Red")}
-                    </span>
+                    </HubLink>
                     <span className="inline-flex items-center gap-0.5 shrink-0">
                       {(g[20] || []).slice(0, 5).map((ch) => (
                         <HubLink key={ch} to={{ kind: "champ", slug: prettySlug(ch) }} title={champName(ch)}>
@@ -1390,7 +1405,13 @@ export const TeamPeriodOpponents: React.FC<{
                     <EventLink name={g[3]} u={g[2]} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                   </span>
                   <span className="flex items-center gap-2 shrink-0 text-rw-muted tabular-nums">
-                    <span>{fmtDate(g[0], true)}</span>
+                    {g[1] ? (
+                      <HubLink to={{ kind: "match", slug: g[1] }} className="hover:text-rw-accent hover:underline">
+                        {fmtDate(g[0], true)}
+                      </HubLink>
+                    ) : (
+                      <span>{fmtDate(g[0], true)}</span>
+                    )}
                     {g[1] && (
                       <HubLink to={{ kind: "match", slug: g[1] }} className="text-rw-accent hover:underline">
                         {tl("Details")}

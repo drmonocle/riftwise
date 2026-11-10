@@ -175,7 +175,15 @@ const PlayerView: React.FC<{
             <p>
               {(
                 [
-                  roleName(p.role),
+                  p.role ? (
+                    <HubLink
+                      key="role"
+                      to={{ kind: "leaders", query: `role=${encodeURIComponent(p.role)}` }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {roleName(p.role)}
+                    </HubLink>
+                  ) : null,
                   p.bio.real,
                   localCountry(p.bio.country, p.bio.cc) ? (
                     <span key="cc" className="inline-flex items-center gap-1">
@@ -201,7 +209,14 @@ const PlayerView: React.FC<{
                 <TeamLink name={p.club} u={p.clubU} className="font-semibold text-rw-text hover:text-rw-accent hover:underline" />{" "}
                 <span>{tl("(last game {date})", { date: fmtDate(p.clubTo) })}</span>
                 {p.bio.contract && <span>· {tl("Contract until {date}", { date: fmtDate(p.bio.contract) })}</span>}
-                {p.bio.res && <span>· {tl("Residency: {region}", { region: regionName(p.bio.res, p.bio.res) })}</span>}
+                {p.bio.res && (
+                  <span>
+                    ·{" "}
+                    <HubLink to={{ kind: "leagues" }} className="hover:text-rw-accent hover:underline">
+                      {tl("Residency: {region}", { region: regionName(p.bio.res, p.bio.res) })}
+                    </HubLink>
+                  </span>
+                )}
               </p>
             )}
           </>
@@ -626,7 +641,14 @@ const PlayerView: React.FC<{
                     </HubLink>
                     <TeamLogo name={b.opp} size={13} />
                     <TeamLink name={b.opp} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
-                    , {b.date.slice(0, 4)})
+                    ,{" "}
+                    <HubLink
+                      to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${b.date.slice(0, 4)}` }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {b.date.slice(0, 4)}
+                    </HubLink>
+                    )
                   </span>
                 </span>
               </li>

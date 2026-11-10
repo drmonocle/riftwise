@@ -234,9 +234,24 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         }
         lines={
           <p>
-            {[t.region ? regionName(t.region, t.region) : null, tl("Pro games from {from} to {to}", { from: fmtDate(t.from), to: fmtDate(t.to) }), t.disbanded ? tl("Disbanded") : null]
+            {(
+              [
+                t.region ? (
+                  <HubLink key="region" to={{ kind: "leagues" }} className="hover:text-rw-accent hover:underline">
+                    {regionName(t.region, t.region)}
+                  </HubLink>
+                ) : null,
+                tl("Pro games from {from} to {to}", { from: fmtDate(t.from), to: fmtDate(t.to) }),
+                t.disbanded ? tl("Disbanded") : null,
+              ] as React.ReactNode[]
+            )
               .filter(Boolean)
-              .join(" · ")}
+              .map((item, idx) => (
+                <React.Fragment key={idx}>
+                  {idx > 0 && " · "}
+                  {item}
+                </React.Fragment>
+              ))}
           </p>
         }
         extra={
@@ -519,7 +534,17 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline font-medium">
                         {y.y}
                       </HubLink>
-                      {y.as !== t.name && <span className="text-rw-muted text-[10px]"> {tl("as {name}", { name: y.as })}</span>}
+                      {y.as !== t.name && (
+                        <>
+                          {" "}
+                          <HubLink
+                            to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }}
+                            className="text-rw-muted text-[10px] hover:text-rw-accent hover:underline"
+                          >
+                            {tl("as {name}", { name: y.as })}
+                          </HubLink>
+                        </>
+                      )}
                     </td>
                     <td className={`${td} text-rw-sub`} data-sort={y.g}>
                       <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline tabular-nums">
@@ -572,7 +597,18 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 <span className="text-rw-text min-w-0 truncate">
                   <Trophy className={`w-3 h-3 inline mr-1 ${x.kind === "Worlds" ? "text-rw-accent" : "text-rw-muted"}`} />
                   <EventLink name={eventTitle(x.t)} u={x.e} />
-                  {x.as !== t.name && <span className="text-rw-muted"> ({tl("as {name}", { name: x.as })})</span>}
+                  {x.as !== t.name && (
+                    <span className="text-rw-muted">
+                      {" ("}
+                      <HubLink
+                        to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${x.date.slice(0, 4)}` }}
+                        className="hover:text-rw-accent hover:underline"
+                      >
+                        {tl("as {name}", { name: x.as })}
+                      </HubLink>
+                      {")"}
+                    </span>
+                  )}
                 </span>
                 <span className="text-rw-muted shrink-0 inline-flex items-center gap-1.5">
                   {x.e ? (
@@ -1341,7 +1377,10 @@ const TeamChampGames: React.FC<{
                   ))}
                 </select>
               )}
-              <span className="text-[11px] text-rw-sub">
+              <HubLink
+                to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tn("{n} game", "{n} games", filtered.length)}
                 {!hidden && filtered.length > 0 && (
                   <>
@@ -1354,7 +1393,7 @@ const TeamChampGames: React.FC<{
                     })}
                   </>
                 )}
-              </span>
+              </HubLink>
               {hidden && <RevealButton onReveal={reveal} small />}
             </div>
 
@@ -1497,7 +1536,17 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string; teamS
     <tr className="border-t border-rw-border">
       <td className={`${td} max-w-[14rem] truncate`} data-sort={x.en}>
         <EventLink name={x.en} u={x.e} />
-        {x.as && x.as !== teamName && <span className="text-rw-muted text-[10px]"> {tl("as {name}", { name: x.as })}</span>}
+        {x.as && x.as !== teamName && (
+          <>
+            {" "}
+            <HubLink
+              to={{ kind: "team", slug: teamSlug, tab: "stats", query: x.e ? `p=e:${x.e}` : `p=y${x.date.slice(0, 4)}` }}
+              className="text-rw-muted text-[10px] hover:text-rw-accent hover:underline"
+            >
+              {tl("as {name}", { name: x.as })}
+            </HubLink>
+          </>
+        )}
       </td>
       <td
         className={`${td} ${x.pl === "1" ? "text-rw-accent font-bold" : "text-rw-sub"}`}

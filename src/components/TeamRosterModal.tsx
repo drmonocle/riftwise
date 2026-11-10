@@ -254,7 +254,21 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     </button>
                   </span>
                 )}
-                {catalogTeam?.region && <span>· {regionName(catalogTeam.region)}</span>}
+                {catalogTeam?.region && (
+                  <span>
+                    ·{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        navigateHub({ kind: "leagues" });
+                      }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {regionName(catalogTeam.region)}
+                    </button>
+                  </span>
+                )}
               </div>
               <TeamStatsLink name={displayName} code={upperCode} onDone={onClose} />
             </div>
@@ -278,7 +292,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-semibold text-rw-text uppercase tracking-wider flex items-center gap-2">
-                <span>{tl("Active Roster ({n})", { n: players.length })}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    navigateHub({ kind: "team", slug: prettySlug(displayName), tab: "history" });
+                  }}
+                  className="hover:text-rw-accent hover:underline uppercase tracking-wider"
+                >
+                  {tl("Active Roster ({n})", { n: players.length })}
+                </button>
               </h3>
               <span className="text-[11px] text-rw-sub">{tl("Click star to follow player")}</span>
             </div>
@@ -431,12 +454,19 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           {m.state === "inProgress" ? (
                             <div className="text-right font-mono text-[11px] font-bold text-rw-red">{tl("LIVE")}</div>
                           ) : (
-                            <div className="text-right font-mono text-[11px] text-rw-teal">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onClose();
+                                navigateHub({ kind: "prep", a: prettySlug(displayName), b: prettySlug(opp) });
+                              }}
+                              className="text-right font-mono text-[11px] text-rw-teal hover:underline"
+                            >
                               {new Date(m.startTimeUtc).toLocaleDateString(locale(), {
                                 month: "short",
                                 day: "numeric",
                               })}
-                            </div>
+                            </button>
                           )}
                         </div>
                       </div>

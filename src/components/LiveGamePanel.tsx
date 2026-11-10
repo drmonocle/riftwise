@@ -550,12 +550,20 @@ const UpsetMeter: React.FC<{ leftCode: string; rightCode: string; before: number
   return (
     <div className="space-y-0.5" title={tl("The underdog's chance before the game, from the power rankings, against its chance now from the gold lead.")}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-[10px] text-rw-sub">
-        <span className={LABEL}>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "rankings" })}
+          className={`${LABEL} hover:text-rw-accent hover:underline`}
+        >
           {tl("Upset meter")} · <span className={hot ? "text-rw-accent" : "text-rw-sub"}>{label}</span>
-        </span>
-        <span className="text-rw-muted">
+        </button>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "team", slug: prettySlug(dog) })}
+          className="text-rw-muted hover:text-rw-accent hover:underline"
+        >
           {tl("{team}: {before} before the game, {now} now", { team: dog, before: `${Math.round(pre * 100)}%`, now: `${Math.round(cur * 100)}%` })}
-        </span>
+        </button>
       </div>
       {/* the underdog's chance now, with a tick where it started */}
       <div className="relative h-2 rounded-sm bg-rw-border overflow-hidden" aria-hidden="true">
@@ -591,15 +599,23 @@ const ChanceNow: React.FC<{ leftCode: string; rightCode: string; minute: number;
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <span className="font-mono tabular-nums font-bold text-rw-side-a w-16 text-right whitespace-nowrap">
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "team", slug: prettySlug(leftCode) })}
+          className="font-mono tabular-nums font-bold text-rw-side-a w-16 text-right whitespace-nowrap hover:underline"
+        >
           {leftCode} {a}%
-        </span>
+        </button>
         <div className="flex-1 h-2 rounded-sm overflow-hidden bg-rw-side-b/70" role="img" aria-label={`${leftCode} ${a}% · ${rightCode} ${100 - a}%`}>
           <div className="h-full bg-rw-side-a" style={{ width: `${a}%` }} />
         </div>
-        <span className="font-mono tabular-nums font-bold text-rw-side-b w-16 whitespace-nowrap">
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "team", slug: prettySlug(rightCode) })}
+          className="font-mono tabular-nums font-bold text-rw-side-b w-16 text-left whitespace-nowrap hover:underline"
+        >
           {100 - a}% {rightCode}
-        </span>
+        </button>
       </div>
     </div>
   );
@@ -879,9 +895,14 @@ const GoldGraph: React.FC<{ points: TimelinePoint[]; blueIsLeft: boolean; leftCo
           {tab("chance", tl("Win chance"))}
           <span className="text-rw-muted">· {tl("{a} minus {b}", { a: leftCode, b: rightCode })}</span>
         </span>
-        <span className="font-mono text-rw-text" title={mode === "chance" ? tl("From the gold lead only, as in pro games since 2023") : undefined}>
+        <button
+          type="button"
+          onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(leftCode), b: prettySlug(rightCode) })}
+          className="font-mono text-rw-text hover:text-rw-accent hover:underline"
+          title={mode === "chance" ? tl("From the gold lead only, as in pro games since 2023") : undefined}
+        >
           {ahead(val(last))}
-        </span>
+        </button>
       </div>
       <div ref={box} className="relative select-none">
         <svg

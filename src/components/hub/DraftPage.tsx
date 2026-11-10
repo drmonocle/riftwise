@@ -2146,7 +2146,12 @@ const PlayerPools: React.FC<{
       title={tl("{team}: player pools", { team: side.team.name })}
       right={
         <span className="flex items-center gap-2">
-          <span className={`text-[11px] ${color}`}>{tl("{n} games in this period", { n: p.games })}</span>
+          <HubLink
+            to={{ kind: "finder", query: `team=${encodeURIComponent(side.team.u)}` }}
+            className={`text-[11px] ${color} hover:underline`}
+          >
+            {tl("{n} games in this period", { n: p.games })}
+          </HubLink>
           {rows.length > 0 && (
             <SectionCard
               section={tl("{team}: player pools", { team: side.team.name })}
@@ -2622,7 +2627,12 @@ const Priorities: React.FC<{
       right={
         <span className="flex items-center gap-2">
           <TeamLink name={side.team.name} u={side.team.u} className={`text-[11px] font-semibold ${color} hover:underline`} />
-          <span className={`text-[11px] ${color}`}>{tl("{n} games in this period", { n: p.games })}</span>
+          <HubLink
+            to={{ kind: "finder", query: `team=${encodeURIComponent(side.team.u)}` }}
+            className={`text-[11px] ${color} hover:underline`}
+          >
+            {tl("{n} games in this period", { n: p.games })}
+          </HubLink>
           {open.length > 0 && (
             <SectionCard
               section={side.team.name}

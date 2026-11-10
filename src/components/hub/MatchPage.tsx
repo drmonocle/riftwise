@@ -149,8 +149,31 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
         />
         <div className="relative text-[13px] text-rw-sub flex flex-wrap items-center gap-x-2 gap-y-1">
           <EventLink name={s.en} u={s.e} className="text-rw-accent font-semibold hover:underline" />
-          {s.stage && <span>· {stageLabel(s.stage)}</span>}
-          <span>· {fmtDate(s.date)}</span>
+          {s.stage && (
+            <span>
+              ·{" "}
+              {s.e ? (
+                <HubLink to={{ kind: "event", slug: s.e }} className="hover:text-rw-accent hover:underline">
+                  {stageLabel(s.stage)}
+                </HubLink>
+              ) : (
+                stageLabel(s.stage)
+              )}
+            </span>
+          )}
+          <span>
+            ·{" "}
+            <HubLink
+              to={
+                s.a.u && s.b.u
+                  ? { kind: "finder", query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}` }
+                  : { kind: "finder", ...(seriesYear ? { query: `year=${encodeURIComponent(seriesYear)}` } : {}) }
+              }
+              className="hover:text-rw-accent hover:underline"
+            >
+              {fmtDate(s.date)}
+            </HubLink>
+          </span>
           <span>· {tc("series length", "Best of {n}", { n: s.bo })}</span>
           <span>
             ·{" "}
@@ -1028,13 +1051,34 @@ const PlayerBars: React.FC<{
               return (
                 <div key={it.label} className="rounded-lg border border-rw-border/70 bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
                   <div className="flex items-center justify-between text-[10px] font-mono tabular-nums">
-                    <span className="font-bold" style={{ color: BLUE }}>
-                      {it.fmt(it.b)}
-                    </span>
-                    <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted">{it.label}</span>
-                    <span className="font-bold" style={{ color: RED }}>
-                      {it.fmt(it.r)}
-                    </span>
+                    {blueU ? (
+                      <HubLink to={{ kind: "team", slug: blueU, tab: "stats" }} className="font-bold hover:underline" style={{ color: BLUE }}>
+                        {it.fmt(it.b)}
+                      </HubLink>
+                    ) : (
+                      <span className="font-bold" style={{ color: BLUE }}>
+                        {it.fmt(it.b)}
+                      </span>
+                    )}
+                    {blueU && redU ? (
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: blueU, b: redU, period }}
+                        className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted hover:text-rw-accent hover:underline"
+                      >
+                        {it.label}
+                      </HubLink>
+                    ) : (
+                      <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted">{it.label}</span>
+                    )}
+                    {redU ? (
+                      <HubLink to={{ kind: "team", slug: redU, tab: "stats" }} className="font-bold hover:underline" style={{ color: RED }}>
+                        {it.fmt(it.r)}
+                      </HubLink>
+                    ) : (
+                      <span className="font-bold" style={{ color: RED }}>
+                        {it.fmt(it.r)}
+                      </span>
+                    )}
                   </div>
                   <div className="h-1.5 rounded-full overflow-hidden flex bg-rw-raised">
                     <div style={{ width: `${bPct}%`, background: BLUE }} />

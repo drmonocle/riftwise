@@ -261,7 +261,12 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
               <RevealButton onReveal={reveal} small />
             ) : (
               <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
-                <span className="text-rw-muted font-mono">{periodLabel}</span>
+                <HubLink
+                  to={{ kind: "player", slug: p.u, tab: "stats" }}
+                  className="text-rw-muted hover:text-rw-accent hover:underline font-mono"
+                >
+                  {periodLabel}
+                </HubLink>
                 <HubLink to={{ kind: "player", slug: p.u, tab: "stats" }} className="text-rw-accent hover:underline font-semibold">
                   {tl("Stats")} · {tl("Open →")}
                 </HubLink>
@@ -1147,11 +1152,14 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
                     <span>{tl("Blue / red side")}</span>
-                    <span className="font-mono text-rw-sub normal-case">
+                    <HubLink
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=${blueWr >= redWr ? "b" : "r"}` }}
+                      className="font-mono text-rw-sub normal-case hover:text-rw-accent hover:underline"
+                    >
                       {blueWr >= redWr
                         ? `${tl("Blue side")} +${fmtDec(blueWr - redWr, 1)}%`
                         : `${tl("Red side")} +${fmtDec(redWr - blueWr, 1)}%`}
-                    </span>
+                    </HubLink>
                   </div>
 
                   {/* Blue Side Bar */}
@@ -1358,7 +1366,19 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                   </span>
                 </span>
                 <span className="text-[11px] text-rw-sub font-mono">
-                  {patches[0].p} → {patches[patches.length - 1].p}
+                  <HubLink
+                    to={{ kind: "champions", query: `key=p${encodeURIComponent(patches[0].p)}` }}
+                    className="hover:text-rw-accent hover:underline"
+                  >
+                    {patches[0].p}
+                  </HubLink>{" "}
+                  →{" "}
+                  <HubLink
+                    to={{ kind: "champions", query: `key=p${encodeURIComponent(patches[patches.length - 1].p)}` }}
+                    className="hover:text-rw-accent hover:underline"
+                  >
+                    {patches[patches.length - 1].p}
+                  </HubLink>
                 </span>
               </div>
 
