@@ -625,14 +625,29 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
       key: "kda",
       label: tl("KDA"),
       value: (c) => c.kda,
-      render: (c) => <KdaBar kda={c.kda} />,
+      render: (c) => (
+        <HubLink
+          to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}&p=${encodeURIComponent(period)}` }}
+          className="inline-flex hover:opacity-85"
+          title={tl("Every game")}
+        >
+          <KdaBar kda={c.kda} />
+        </HubLink>
+      ),
     },
     {
       key: "kdaa",
       label: "K / D / A",
       value: (c) => c.k / c.g,
-      render: (c) =>
-        `${fmtDec(c.k / c.g)} / ${fmtDec(c.d / c.g)} / ${fmtDec(c.a / c.g)}`,
+      render: (c) => (
+        <HubLink
+          to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}&p=${encodeURIComponent(period)}` }}
+          className="hover:text-rw-accent hover:underline"
+          title={tl("Every game")}
+        >
+          {`${fmtDec(c.k / c.g)} / ${fmtDec(c.d / c.g)} / ${fmtDec(c.a / c.g)}`}
+        </HubLink>
+      ),
     },
     ...(detail
       ? ([

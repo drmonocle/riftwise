@@ -566,7 +566,17 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     {muLane && (
                       <>
                         <td className={td} data-sort={gd ?? ""}>
-                          <Lead v={gd} />
+                          {gd != null ? (
+                            <HubLink
+                              to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}&vs=${encodeURIComponent(oc)}&role=${encodeURIComponent(muRole)}` }}
+                              className="hover:underline"
+                              title={tl("Counter-pick finder")}
+                            >
+                              <Lead v={gd} />
+                            </HubLink>
+                          ) : (
+                            <Lead v={gd} />
+                          )}
                         </td>
                         <td className={td} data-sort={cs ?? ""}>
                           <Lead v={cs} />
@@ -579,7 +589,16 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                           data-sort={tn && ahead != null ? ahead / tn : ""}
                           title={tn ? tl("{n} games with timelines", { n: tn }) : undefined}
                         >
-                          {tn && ahead != null ? pctOf(ahead, tn) : "–"}
+                          {tn && ahead != null ? (
+                            <HubLink
+                              to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}&vs=${encodeURIComponent(oc)}&role=${encodeURIComponent(muRole)}` }}
+                              className="hover:underline"
+                            >
+                              {pctOf(ahead, tn)}
+                            </HubLink>
+                          ) : (
+                            "–"
+                          )}
                         </td>
                       </>
                     )}
@@ -761,7 +780,17 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </HubLink>
                   </td>
                   <td className={td} data-sort={p.kda}>
-                    <KdaBar kda={p.kda} />
+                    <HubLink
+                      to={
+                        p.u
+                          ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}${playersRecent ? "&p=12m" : ""}` }
+                          : { kind: "finder", query: `player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c.name)}` }
+                      }
+                      className="inline-flex hover:opacity-85"
+                      title={tl("Game finder")}
+                    >
+                      <KdaBar kda={p.kda} />
+                    </HubLink>
                   </td>
                 </tr>
                 );

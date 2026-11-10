@@ -128,7 +128,18 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       key: "kda",
       label: tl("KDA"),
       value: (p) => per(p.k + p.a, Math.max(p.d, 1), 2),
-      render: (p) => <KdaBar kda={per(p.k + p.a, Math.max(p.d, 1), 2) ?? 0} />,
+      render: (p) =>
+        p.u ? (
+          <HubLink
+            to={{ kind: "player", slug: p.u, tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+            className="inline-flex hover:opacity-85"
+            title={tl("Stats")}
+          >
+            <KdaBar kda={per(p.k + p.a, Math.max(p.d, 1), 2) ?? 0} />
+          </HubLink>
+        ) : (
+          <KdaBar kda={per(p.k + p.a, Math.max(p.d, 1), 2) ?? 0} />
+        ),
     },
     { key: "k", label: "K", title: tl("Kills per game"), value: (p) => per(p.k, p.g) },
     { key: "d", label: "D", title: tl("Deaths per game"), value: (p) => per(p.d, p.g) },
@@ -338,7 +349,15 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       render: (t) => {
         const v = per(t.k, Math.max(t.d, 1), 2);
         if (v == null) return "–";
-        return <span className={v >= 1.15 ? "text-rw-teal font-semibold" : v <= 0.85 ? "text-rw-red" : ""}>{v}</span>;
+        return (
+          <HubLink
+            to={{ kind: "team", slug: t.u || prettySlug(t.t), tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+            className={`hover:underline ${v >= 1.15 ? "text-rw-teal font-semibold" : v <= 0.85 ? "text-rw-red" : ""}`}
+            title={tl("Stats")}
+          >
+            {v}
+          </HubLink>
+        );
       },
     },
     { key: "k", label: tl("Kills"), title: tl("Kills per game"), value: (t) => per(t.k, t.g) },
@@ -382,7 +401,15 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       value: (t) => per(t.gd, t.g, 0),
       render: (t) => {
         const v = per(t.gd, t.g, 0) ?? 0;
-        return <span className={v >= 0 ? "text-rw-teal" : "text-rw-red"}>{`${v >= 0 ? "+" : ""}${fmtNum(v)}`}</span>;
+        return (
+          <HubLink
+            to={{ kind: "team", slug: t.u || prettySlug(t.t), tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+            className={`hover:underline ${v >= 0 ? "text-rw-teal" : "text-rw-red"}`}
+            title={tl("Stats")}
+          >
+            {`${v >= 0 ? "+" : ""}${fmtNum(v)}`}
+          </HubLink>
+        );
       },
     },
     { key: "drag", label: tl("Dragons"), title: tl("Dragons per game"), value: (t) => per(t.drag, t.g, 2) },

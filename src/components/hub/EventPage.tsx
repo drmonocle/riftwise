@@ -299,7 +299,13 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                                 />
                               </span>
                             )}
-                            <span>{fmtUsd(r.usd)}</span>
+                            <HubLink
+                              to={{ kind: "team", slug: r.u || r.t.toLowerCase().replace(/[^a-z0-9]+/g, "-"), tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+                              className="hover:text-rw-accent hover:underline"
+                              title={tl("Stats")}
+                            >
+                              {fmtUsd(r.usd)}
+                            </HubLink>
                           </span>
                         ) : (
                           ""
@@ -800,7 +806,21 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
         <tbody>
           {rows.map((r, i) => (
             <tr key={r.t + i} className="border-t border-rw-border">
-              <td className={`${td} text-rw-muted`} data-sort={r.pl ?? i + 1}>{hide || r.pl === 0 ? "–" : r.pl ?? i + 1}</td>
+              <td className={`${td} text-rw-muted`} data-sort={r.pl ?? i + 1}>
+                {hide || r.pl === 0 ? (
+                  "–"
+                ) : eventSlug ? (
+                  <HubLink
+                    to={{ kind: "team", slug: r.u || r.t.toLowerCase().replace(/[^a-z0-9]+/g, "-"), tab: "stats", query: `p=e:${encodeURIComponent(eventSlug)}` }}
+                    className="hover:text-rw-accent hover:underline"
+                    title={tl("Stats")}
+                  >
+                    {r.pl ?? i + 1}
+                  </HubLink>
+                ) : (
+                  r.pl ?? i + 1
+                )}
+              </td>
               <td className={`${td} max-w-[11rem]`} data-sort={r.t}>
                 <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
                   <TeamLogo name={r.t} size={16} />

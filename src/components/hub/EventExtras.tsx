@@ -79,7 +79,13 @@ const GameLine: React.FC<{
           <span className="text-rw-text inline-flex items-center gap-1">
             <TeamLogo name={r.a} size={13} />
             <TeamLink name={r.a} />
-            <span>vs</span>
+            <HubLink
+              to={{ kind: "compare", mode: "team", a: prettySlug(r.a), b: prettySlug(r.b) }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+              title={tl("Compare")}
+            >
+              vs
+            </HubLink>
             <TeamLogo name={r.b} size={13} />
             <TeamLink name={r.b} />
           </span>
@@ -451,11 +457,28 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                     <PlayerLink name={n} u={u} />
                   </span>
                   <span className="inline-flex items-center gap-1 text-rw-muted shrink-0 text-[10px]">
-                    {role
-                      ? /coach/i.test(role)
-                        ? tl("Coach")
-                        : roleName(role)
-                      : ""}
+                    {role ? (
+                      /coach/i.test(role) ? (
+                        tl("Coach")
+                      ) : u ? (
+                        <HubLink
+                          to={{
+                            kind: "player",
+                            slug: u,
+                            tab: "stats",
+                            ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}),
+                          }}
+                          className="hover:text-rw-accent hover:underline"
+                          title={tl("Stats")}
+                        >
+                          {roleName(role)}
+                        </HubLink>
+                      ) : (
+                        roleName(role)
+                      )
+                    ) : (
+                      ""
+                    )}
                     {flag ? (
                       <>
                         {role ? " · " : ""}

@@ -126,14 +126,26 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                     </td>
                     <td className="px-2 py-1 text-right tabular-nums text-rw-muted max-sm:hidden" data-sort={r.left}>{r.left}</td>
                     <td className="px-1 py-0.5 text-right" data-sort={r.first}>
-                      <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-sub" style={chanceShade(r.first)}>
-                        {pctText(r.first)}
-                      </span>
+                      <HubLink
+                        to={{ kind: "team", slug: r.u, tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+                        className="hover:underline"
+                        title={tl("Stats")}
+                      >
+                        <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-sub" style={chanceShade(r.first)}>
+                          {pctText(r.first)}
+                        </span>
+                      </HubLink>
                     </td>
                     <td className="px-1 py-0.5 text-right" data-sort={r.top[ci]}>
-                      <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-text" style={chanceShade(r.top[ci])}>
-                        {pctText(r.top[ci])}
-                      </span>
+                      <HubLink
+                        to={{ kind: "team", slug: r.u, tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+                        className="hover:underline"
+                        title={tl("Stats")}
+                      >
+                        <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-text" style={chanceShade(r.top[ci])}>
+                          {pctText(r.top[ci])}
+                        </span>
+                      </HubLink>
                     </td>
                   </tr>
                 ))}
