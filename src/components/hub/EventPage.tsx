@@ -290,6 +290,12 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                     </HubLink>
                   </>
                 )}
+                <HubLink
+                  to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
                 <SectionCard
                   section={e.resultsFrom === "event" ? tl("Final standings (whole event)") : tl("Final standings")}
                   sub={eventTitle(e.n)}
@@ -542,21 +548,32 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       </>
                     )}
                     {!resultsHidden && (
-                      <SectionCard
-                        section={tl("Teams")}
-                        sub={eventTitle(e.n)}
-                        name={`${e.u}-teams`}
-                        rows={() =>
-                          filteredTeams.slice(0, 12).map((t, idx) => ({
-                            rank: idx + 1,
-                            team: t.t,
-                            label: t.t,
-                            sub: `${t.w}-${t.g - t.w} ${tl("Games")}`,
-                            value: `${t.sw}-${t.sg - t.sw}`,
-                            win: t.sg ? t.sw / t.sg >= 0.5 : undefined,
-                          }))
-                        }
-                      />
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query: `event=${encodeURIComponent(e.u)}${filteredTeams.length === 1 ? `&team=${encodeURIComponent(filteredTeams[0].u || filteredTeams[0].t)}` : ""}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Game finder")} →
+                        </HubLink>
+                        <SectionCard
+                          section={tl("Teams")}
+                          sub={eventTitle(e.n)}
+                          name={`${e.u}-teams`}
+                          rows={() =>
+                            filteredTeams.slice(0, 12).map((t, idx) => ({
+                              rank: idx + 1,
+                              team: t.t,
+                              label: t.t,
+                              sub: `${t.w}-${t.g - t.w} ${tl("Games")}`,
+                              value: `${t.sw}-${t.sg - t.sw}`,
+                              win: t.sg ? t.sw / t.sg >= 0.5 : undefined,
+                            }))
+                          }
+                        />
+                      </>
                     )}
                   </span>
                 }
@@ -1009,6 +1026,14 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
                   {tl("Compare")} →
                 </HubLink>
               </>
+            )}
+            {eventSlug && (
+              <HubLink
+                to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
             )}
             <SectionCard
               section={name}

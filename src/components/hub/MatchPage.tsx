@@ -1103,6 +1103,14 @@ const PlayerBars: React.FC<{
               </button>
             ))}
           </div>
+          {blueU && redU && (
+            <HubLink
+              to={{ kind: "compare", mode: "team", a: blueU, b: redU, period }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
+          )}
           <SectionCard
             section={`${tl("Player by player")} · ${have.find(([k]) => k === m)?.[1] || ""}`}
             name={`${blueName} vs ${redName}`}
@@ -1271,28 +1279,46 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
           title={tl("Gold and XP lead")}
           share={`game-${g.n}-leads`}
           right={
-            <SectionCard
-              section={tl("Gold and XP lead")}
-              name={`${blueName} vs ${redName}`}
-              rows={() =>
-                [
-                  ...gold.map(([m, v]) => ({
-                    team: v >= 0 ? blueName : redName,
-                    label: `${tl("Gold")} · ${tl("{n} min", { n: m })}`,
-                    sub: v >= 0 ? blueName : redName,
-                    value: kfmt(v),
-                    win: v >= 0,
-                  })),
-                  ...xp.map(([m, v]) => ({
-                    team: v >= 0 ? blueName : redName,
-                    label: `XP · ${tl("{n} min", { n: m })}`,
-                    sub: v >= 0 ? blueName : redName,
-                    value: kfmt(v),
-                    win: v >= 0,
-                  })),
-                ].map((r, idx) => ({ rank: idx + 1, ...r }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              {blueU && redU && (
+                <>
+                  <HubLink
+                    to={{ kind: "prep", a: blueU, b: redU, period }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "compare", mode: "team", a: blueU, b: redU, period }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
+              <SectionCard
+                section={tl("Gold and XP lead")}
+                name={`${blueName} vs ${redName}`}
+                rows={() =>
+                  [
+                    ...gold.map(([m, v]) => ({
+                      team: v >= 0 ? blueName : redName,
+                      label: `${tl("Gold")} · ${tl("{n} min", { n: m })}`,
+                      sub: v >= 0 ? blueName : redName,
+                      value: kfmt(v),
+                      win: v >= 0,
+                    })),
+                    ...xp.map(([m, v]) => ({
+                      team: v >= 0 ? blueName : redName,
+                      label: `XP · ${tl("{n} min", { n: m })}`,
+                      sub: v >= 0 ? blueName : redName,
+                      value: kfmt(v),
+                      win: v >= 0,
+                    })),
+                  ].map((r, idx) => ({ rank: idx + 1, ...r }))
+                }
+              />
+            </span>
           }
         >
           <div className="space-y-1.5">
@@ -1314,21 +1340,39 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
           title={tl("Gold lead in each lane at 15 minutes")}
           share={`game-${g.n}-lanes`}
           right={
-            <SectionCard
-              section={tl("Gold lead in each lane at 15 minutes")}
-              name={`${blueName} vs ${redName}`}
-              rows={() =>
-                lanes.map(({ r, b, o }, idx) => ({
-                  rank: idx + 1,
-                  champ: (b!.g15 as number) >= 0 ? b!.c : o!.c,
-                  team: (b!.g15 as number) >= 0 ? blueName : redName,
-                  label: `${roleName(r)} · ${b!.n} vs ${o!.n}`,
-                  sub: (b!.g15 as number) >= 0 ? b!.n : o!.n,
-                  value: kfmt(b!.g15 as number),
-                  win: (b!.g15 as number) >= 0,
-                }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              {blueU && redU && (
+                <>
+                  <HubLink
+                    to={{ kind: "prep", a: blueU, b: redU, period }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "compare", mode: "team", a: blueU, b: redU, period }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
+              <SectionCard
+                section={tl("Gold lead in each lane at 15 minutes")}
+                name={`${blueName} vs ${redName}`}
+                rows={() =>
+                  lanes.map(({ r, b, o }, idx) => ({
+                    rank: idx + 1,
+                    champ: (b!.g15 as number) >= 0 ? b!.c : o!.c,
+                    team: (b!.g15 as number) >= 0 ? blueName : redName,
+                    label: `${roleName(r)} · ${b!.n} vs ${o!.n}`,
+                    sub: (b!.g15 as number) >= 0 ? b!.n : o!.n,
+                    value: kfmt(b!.g15 as number),
+                    win: (b!.g15 as number) >= 0,
+                  }))
+                }
+              />
+            </span>
           }
         >
           <div className="space-y-1.5">

@@ -153,6 +153,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   {tl("Draft board")} →
                 </HubLink>
                 <HubLink
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&year=${encodeURIComponent(activeRoster.y)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${activeRoster.y}` }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -505,6 +511,12 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     </HubLink>
                   </>
                 )}
+                <HubLink
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
                 <SectionCard
                   section={tl("Recent series")}
                   name={t.name}
@@ -602,21 +614,35 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         <Section
           title={tl("By year")}
           right={
-            <SectionCard
-              section={tl("By year")}
-              name={t.name}
-              sub={cardSub}
-              rows={() =>
-                [...t.years].reverse().map((y, idx) => ({
-                  rank: idx + 1,
-                  team: y.as || t.name,
-                  label: y.as !== t.name ? `${y.y} · ${y.as}` : y.y,
-                  sub: `${y.w}-${y.g - y.w}`,
-                  value: winRate(y.w, y.g),
-                  win: y.g ? y.w / y.g >= 0.5 : undefined,
-                }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: t.u }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <SectionCard
+                section={tl("By year")}
+                name={t.name}
+                sub={cardSub}
+                rows={() =>
+                  [...t.years].reverse().map((y, idx) => ({
+                    rank: idx + 1,
+                    team: y.as || t.name,
+                    label: y.as !== t.name ? `${y.y} · ${y.as}` : y.y,
+                    sub: `${y.w}-${y.g - y.w}`,
+                    value: winRate(y.w, y.g),
+                    win: y.g ? y.w / y.g >= 0.5 : undefined,
+                  }))
+                }
+              />
+            </span>
           }
         >
           <STable className="w-full text-xs">
@@ -692,21 +718,29 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         <Section
           title={tl("Titles")}
           right={
-            <SectionCard
-              section={tl("Titles")}
-              name={t.name}
-              sub={tl("{n} titles", { n: t.titles.length })}
-              rows={() =>
-                t.titles.map((x, idx) => ({
-                  rank: idx + 1,
-                  team: x.as || t.name,
-                  label: eventTitle(x.t),
-                  sub: `${x.score} vs ${x.l}`,
-                  value: x.date.slice(0, 4),
-                  win: true,
-                }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              <HubLink
+                to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.name)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Titles")} →
+              </HubLink>
+              <SectionCard
+                section={tl("Titles")}
+                name={t.name}
+                sub={tl("{n} titles", { n: t.titles.length })}
+                rows={() =>
+                  t.titles.map((x, idx) => ({
+                    rank: idx + 1,
+                    team: x.as || t.name,
+                    label: eventTitle(x.t),
+                    sub: `${x.score} vs ${x.l}`,
+                    value: x.date.slice(0, 4),
+                    win: true,
+                  }))
+                }
+              />
+            </span>
           }
         >
           <ul className="text-xs space-y-1">
@@ -778,6 +812,15 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   {allEvents ? tl("Show fewer") : tl("Show all {n}", { n: t.events.length })}
                 </button>
               )}
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `team=${encodeURIComponent(t.u)}${eventTerms.length && filteredEvents.length === 1 && filteredEvents[0].e ? `&event=${encodeURIComponent(filteredEvents[0].e)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
               <SectionCard
                 section={tl("Tournaments")}
                 name={t.name}
@@ -971,15 +1014,35 @@ const TeamChampionsTab: React.FC<{
                 </HubLink>
               )}
               {shownChamps.length >= 1 && (
-                <HubLink
-                  to={{
-                    kind: "items",
-                    query: `champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}`,
-                  }}
-                  className="text-[11px] text-rw-accent hover:underline"
-                >
-                  {tl("Item history")} →
-                </HubLink>
+                <>
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      query: `champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}`,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(t.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: `team=${encodeURIComponent(t.u)}${shownChamps.length === 1 ? `&champ=${encodeURIComponent(shownChamps[0].c)}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
+                </>
               )}
               <SectionCard
                 section={tl("Most picked champions")}
@@ -1040,11 +1103,35 @@ const TeamChampionsTab: React.FC<{
         <Section
           title={tl("Most banned by them")}
           right={
-            <SectionCard
-              section={tl("Most banned by them")}
-              name={t.name}
-              rows={() => shownBans.map((c, idx) => ({ rank: idx + 1, champ: c.c, team: t.name, label: champName(c.c), value: String(c.g) }))}
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              {shownBans.length >= 1 && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: `champ=${encodeURIComponent(prettySlug(shownBans[0].c))}${shownBans[1] ? `&vs=${encodeURIComponent(prettySlug(shownBans[1].c))}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(t.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                </>
+              )}
+              <SectionCard
+                section={tl("Most banned by them")}
+                name={t.name}
+                rows={() => shownBans.map((c, idx) => ({ rank: idx + 1, champ: c.c, team: t.name, label: champName(c.c), value: String(c.g) }))}
+              />
+            </span>
           }
         >
           <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">
@@ -1084,11 +1171,35 @@ const TeamChampionsTab: React.FC<{
           <Section
             title={tl("Most banned against them")}
             right={
-              <SectionCard
-                section={tl("Most banned against them")}
-                name={t.name}
-                rows={() => shownBansVs.map((c, idx) => ({ rank: idx + 1, champ: c.c, team: t.name, label: champName(c.c), value: String(c.g) }))}
-              />
+              <span className="flex flex-wrap items-center gap-2">
+                {shownBansVs.length >= 1 && (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "counters",
+                        query: `champ=${encodeURIComponent(prettySlug(shownBansVs[0].c))}${shownBansVs[1] ? `&vs=${encodeURIComponent(prettySlug(shownBansVs[1].c))}` : ""}`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Counters")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(t.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                )}
+                <SectionCard
+                  section={tl("Most banned against them")}
+                  name={t.name}
+                  rows={() => shownBansVs.map((c, idx) => ({ rank: idx + 1, champ: c.c, team: t.name, label: champName(c.c), value: String(c.g) }))}
+                />
+              </span>
             }
           >
             <ul className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1">

@@ -469,21 +469,35 @@ const PlayerView: React.FC<{
         <Section
           title={tl("By year")}
           right={
-            <SectionCard
-              section={tl("By year")}
-              name={p.name}
-              sub={cardSub}
-              rows={() =>
-                [...p.years].reverse().map((y, idx) => ({
-                  rank: idx + 1,
-                  team: y.team,
-                  label: y.y,
-                  sub: `${y.team} · ${y.w}-${y.g - y.w}`,
-                  value: `KDA ${fmtN(y.kda)}`,
-                  win: y.g ? y.w / y.g >= 0.5 : undefined,
-                }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: p.u }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <SectionCard
+                section={tl("By year")}
+                name={p.name}
+                sub={cardSub}
+                rows={() =>
+                  [...p.years].reverse().map((y, idx) => ({
+                    rank: idx + 1,
+                    team: y.team,
+                    label: y.y,
+                    sub: `${y.team} · ${y.w}-${y.g - y.w}`,
+                    value: `KDA ${fmtN(y.kda)}`,
+                    win: y.g ? y.w / y.g >= 0.5 : undefined,
+                  }))
+                }
+              />
+            </span>
           }
         >
           <STable className="w-full text-xs">
@@ -706,21 +720,29 @@ const PlayerView: React.FC<{
         <Section
           title={tl("Career bests")}
           right={
-            <SectionCard
-              section={tl("Career bests")}
-              name={p.name}
-              sub={cardSub}
-              rows={() =>
-                Object.entries(p.best).map(([k, b], idx) => ({
-                  rank: idx + 1,
-                  champ: b.c,
-                  team: p.club || undefined,
-                  label: BEST_LABEL[k] ? tl(BEST_LABEL[k]) : k,
-                  sub: `${champName(b.c)} vs ${b.opp}, ${b.date.slice(0, 4)}`,
-                  value: fmtNum(b.v),
-                }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              <HubLink
+                to={{ kind: "records" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Records")} →
+              </HubLink>
+              <SectionCard
+                section={tl("Career bests")}
+                name={p.name}
+                sub={cardSub}
+                rows={() =>
+                  Object.entries(p.best).map(([k, b], idx) => ({
+                    rank: idx + 1,
+                    champ: b.c,
+                    team: p.club || undefined,
+                    label: BEST_LABEL[k] ? tl(BEST_LABEL[k]) : k,
+                    sub: `${champName(b.c)} vs ${b.opp}, ${b.date.slice(0, 4)}`,
+                    value: fmtNum(b.v),
+                  }))
+                }
+              />
+            </span>
           }
         >
           <ul className="text-xs space-y-1">
@@ -808,20 +830,28 @@ const PlayerView: React.FC<{
         <Section
           title={tl("Titles")}
           right={
-            <SectionCard
-              section={tl("Titles")}
-              name={p.name}
-              sub={tl("{n} titles", { n: p.titles.length })}
-              rows={() =>
-                p.titles.map((x, idx) => ({
-                  rank: idx + 1,
-                  team: p.club || undefined,
-                  label: eventTitle(x.t),
-                  value: x.date.slice(0, 4),
-                  win: true,
-                }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              <HubLink
+                to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(p.name)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Titles")} →
+              </HubLink>
+              <SectionCard
+                section={tl("Titles")}
+                name={p.name}
+                sub={tl("{n} titles", { n: p.titles.length })}
+                rows={() =>
+                  p.titles.map((x, idx) => ({
+                    rank: idx + 1,
+                    team: p.club || undefined,
+                    label: eventTitle(x.t),
+                    value: x.date.slice(0, 4),
+                    win: true,
+                  }))
+                }
+              />
+            </span>
           }
         >
           <ul className="text-xs space-y-1">
@@ -852,22 +882,36 @@ const PlayerView: React.FC<{
         <Section
           title={tl("Pentakills")}
           right={
-            <SectionCard
-              section={tl("Pentakills")}
-              name={p.name}
-              sub={cardSub}
-              rows={() =>
-                p.pentas!.map((x, idx) => ({
-                  rank: idx + 1,
-                  champ: x.c,
-                  team: p.club || undefined,
-                  label: x.x > 1 ? `${champName(x.c)} ×${x.x}` : champName(x.c),
-                  sub: x.en,
-                  value: x.date.slice(0, 4),
-                  win: true,
-                }))
-              }
-            />
+            <span className="flex flex-wrap items-center gap-2">
+              <HubLink
+                to={{ kind: "records" }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Records")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
+              <SectionCard
+                section={tl("Pentakills")}
+                name={p.name}
+                sub={cardSub}
+                rows={() =>
+                  p.pentas!.map((x, idx) => ({
+                    rank: idx + 1,
+                    champ: x.c,
+                    team: p.club || undefined,
+                    label: x.x > 1 ? `${champName(x.c)} ×${x.x}` : champName(x.c),
+                    sub: x.en,
+                    value: x.date.slice(0, 4),
+                    win: true,
+                  }))
+                }
+              />
+            </span>
           }
         >
           <ul className="text-xs space-y-1">
@@ -1016,15 +1060,26 @@ const PlayerChampionsTab: React.FC<{
               </HubLink>
             )}
             {shownChamps.length >= 1 && (
-              <HubLink
-                to={{
-                  kind: "items",
-                  query: `player=${encodeURIComponent(p.u)}${shownChamps.length === 1 ? `&champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}` : ""}`,
-                }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Item history")} →
-              </HubLink>
+              <>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `player=${encodeURIComponent(p.u)}${shownChamps.length === 1 ? `&champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `player=${encodeURIComponent(p.u)}${shownChamps.length === 1 ? `&champ=${encodeURIComponent(shownChamps[0].c)}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+              </>
             )}
             <SectionCard
               section={tl("Champion pool")}
@@ -1218,25 +1273,40 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
     <Section
       title={tl("Teams")}
       right={
-        <SectionCard
-          section={tl("Teams")}
-          name={p.name}
-          sub={cardSub}
-          rows={() =>
-            p.teams.map((x, idx) => {
-              const fy = x.from.slice(0, 4);
-              const ty = x.to.slice(0, 4);
-              return {
-                rank: idx + 1,
-                team: x.n,
-                label: x.n,
-                sub: fy === ty ? fy : `${fy}–${ty}`,
-                value: `${x.w}-${x.g - x.w} (${winRate(x.w, x.g)})`,
-                win: x.g ? x.w / x.g >= 0.5 : undefined,
-              };
-            })
-          }
-        />
+        <span className="flex flex-wrap items-center gap-2">
+          {p.teams.length >= 2 && (
+            <HubLink
+              to={{
+                kind: "compare",
+                mode: "team",
+                a: p.teams[0].u || prettySlug(p.teams[0].n),
+                b: p.teams[1].u || prettySlug(p.teams[1].n),
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
+          )}
+          <SectionCard
+            section={tl("Teams")}
+            name={p.name}
+            sub={cardSub}
+            rows={() =>
+              p.teams.map((x, idx) => {
+                const fy = x.from.slice(0, 4);
+                const ty = x.to.slice(0, 4);
+                return {
+                  rank: idx + 1,
+                  team: x.n,
+                  label: x.n,
+                  sub: fy === ty ? fy : `${fy}–${ty}`,
+                  value: `${x.w}-${x.g - x.w} (${winRate(x.w, x.g)})`,
+                  win: x.g ? x.w / x.g >= 0.5 : undefined,
+                };
+              })
+            }
+          />
+        </span>
       }
     >
       <ol className="relative border-l-2 border-rw-border ml-2.5 pl-4 space-y-2.5 text-xs">
@@ -1376,21 +1446,35 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
     <Section
       title={`${tl("Compare")} · ${p.role ? roleName(p.role) : tl("Players")}`}
       right={
-        <SectionCard
-          section={`${tl("Compare")} · ${p.role ? roleName(p.role) : tl("Players")}`}
-          name={p.name}
-          sub={cardSub}
-          rows={() =>
-            peers.map(({ peer, shared }, idx) => ({
-              rank: idx + 1,
-              team: peer.club || undefined,
-              label: peer.name,
-              sub: [peer.club, shared.slice(0, 3).map(champName).join(", ")].filter(Boolean).join(" · "),
-              value: `KDA ${fmtN(peer.kda)} · ${winRate(peer.w, peer.g)}`,
-              win: peer.g ? peer.w / peer.g >= 0.5 : undefined,
-            }))
-          }
-        />
+        <span className="flex flex-wrap items-center gap-2">
+          <HubLink
+            to={{ kind: "compare", mode: "player", a: p.u, b: peers[0].peer.u }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Compare")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "leaders", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Player leaderboards")} →
+          </HubLink>
+          <SectionCard
+            section={`${tl("Compare")} · ${p.role ? roleName(p.role) : tl("Players")}`}
+            name={p.name}
+            sub={cardSub}
+            rows={() =>
+              peers.map(({ peer, shared }, idx) => ({
+                rank: idx + 1,
+                team: peer.club || undefined,
+                label: peer.name,
+                sub: [peer.club, shared.slice(0, 3).map(champName).join(", ")].filter(Boolean).join(" · "),
+                value: `KDA ${fmtN(peer.kda)} · ${winRate(peer.w, peer.g)}`,
+                win: peer.g ? peer.w / peer.g >= 0.5 : undefined,
+              }))
+            }
+          />
+        </span>
       }
     >
       <ul className="space-y-2 text-xs">

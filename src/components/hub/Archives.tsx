@@ -135,18 +135,30 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                   fmtDate(r[0])
                 )}
                 {showOpp && r[2] && teamName && (
-                  <HubLink
-                    to={{
-                      kind: "prep",
-                      a: teamSlug || prettySlug(teamName),
-                      b: r[2],
-                      period: /^\d{4}/.test(r[0]) ? `y${r[0].slice(0, 4)}` : undefined,
-                    }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                    title={tl("Match prep")}
-                  >
-                    {tl("Match prep")}
-                  </HubLink>
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: teamSlug || prettySlug(teamName),
+                        b: r[2],
+                        period: /^\d{4}/.test(r[0]) ? `y${r[0].slice(0, 4)}` : undefined,
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                      title={tl("Match prep")}
+                    >
+                      {tl("Match prep")}
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(teamSlug || prettySlug(teamName))},${encodeURIComponent(r[2])}${/^\d{4}/.test(r[0]) ? `&p=y${r[0].slice(0, 4)}` : ""}`,
+                      }}
+                      className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
+                      title={tl("Draft board")}
+                    >
+                      {tl("Draft board")}
+                    </HubLink>
+                  </>
                 )}
                 {r[7] && (
                   <HubLink to={{ kind: "match", slug: r[7] }} className="text-rw-accent hover:underline">
@@ -347,6 +359,15 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
               {tl("Draft board")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "finder",
+                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+              }}
+              className="text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("Game finder")} →
             </HubLink>
             <CopyArchivePost
               title={`${aName} vs ${bName}`}
@@ -651,6 +672,17 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
         </HubLink>
         {!hidden && shown.length > 0 && (
           <>
+            <HubLink
+              to={{
+                kind: "compare",
+                mode: "player",
+                a: slug,
+                ...(year !== "all" ? { period: `y${year}` } : {}),
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
             <HubLink
               to={{
                 kind: "items",
