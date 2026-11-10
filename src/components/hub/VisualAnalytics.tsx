@@ -507,13 +507,21 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
         <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
             <div className="flex flex-wrap items-center gap-3">
-              <span className="font-semibold text-rw-text tabular-nums">
+              <HubLink
+                to={{ kind: "player", slug: p.u, tab: "matches" }}
+                className="font-semibold text-rw-text tabular-nums hover:text-rw-accent hover:underline"
+              >
                 {winsCount}W – {points.length - winsCount}L{" "}
                 <span className="text-rw-sub">({winRate(winsCount, points.length)})</span>
-              </span>
+              </HubLink>
               <span className="text-rw-sub tabular-nums">
                 {activeMetric === "rating" ? tl("Rating") : activeMetric === "gd15" ? "GD@15" : tl("KDA")}:{" "}
-                <span className="font-bold text-rw-accent">{fmtMetric(avgVal)}</span>
+                <HubLink
+                  to={{ kind: "player", slug: p.u, tab: "stats" }}
+                  className="font-bold text-rw-accent hover:underline"
+                >
+                  {fmtMetric(avgVal)}
+                </HubLink>
               </span>
             </div>
             <div className="flex items-center gap-3 text-[10px] text-rw-muted">
@@ -962,12 +970,18 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
                       {tl("Recent series")} ({series.length})
                     </span>
-                    <span className="font-bold text-rw-text tabular-nums">
+                    <HubLink
+                      to={{ kind: "team", slug: t.u, tab: "matches" }}
+                      className="font-bold text-rw-text tabular-nums hover:text-rw-accent hover:underline"
+                    >
                       {seriesWins}W – {series.length - seriesWins}L
-                    </span>
-                    <span className="text-rw-muted tabular-nums text-[11px]">
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }}
+                      className="text-rw-muted tabular-nums text-[11px] hover:text-rw-accent hover:underline"
+                    >
                       ({gameWins}–{gameLosses} {tl("Games")})
-                    </span>
+                    </HubLink>
                   </div>
                   {streakN >= 2 && streakWon != null && (
                     <span
@@ -1045,7 +1059,10 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                   </svg>
                 </div>
 
-                {sel && (
+                {sel && (() => {
+                  const oppSlug = t.opps.find((o) => o.n === sel.opp)?.u || prettySlug(sel.opp);
+                  const selPeriod = /^\d{4}/.test(sel.date) ? `y${sel.date.slice(0, 4)}` : undefined;
+                  return (
                   <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rw-border bg-rw-bg/60 px-3 py-1.5 text-xs">
                     <span className="flex items-center gap-1.5 min-w-0 truncate">
                       {sel.g ? (
@@ -1060,22 +1077,28 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                           {sel.us > sel.them ? tc("short result", "W") : tc("short result", "L")} {sel.us}–{sel.them}
                         </span>
                       )}
-                      <span className="text-rw-muted">vs</span>
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: t.u, b: oppSlug, period: selPeriod }}
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                        title={tl("Compare")}
+                      >
+                        vs
+                      </HubLink>
                       <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
-                      <TeamLink name={sel.opp} u={t.opps.find((o) => o.n === sel.opp)?.u || prettySlug(sel.opp)} />
+                      <TeamLink name={sel.opp} u={oppSlug} />
                       <span className="text-rw-muted">·</span>
                       <EventLink name={sel.en} u={sel.e} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                     </span>
                     <span className="flex items-center gap-2 shrink-0 text-rw-muted">
                       <span>{fmtDate(sel.date, false)}</span>
                       <HubLink
-                        to={{ kind: "prep", a: t.u, b: t.opps.find((o) => o.n === sel.opp)?.u || prettySlug(sel.opp) }}
+                        to={{ kind: "prep", a: t.u, b: oppSlug, period: selPeriod }}
                         className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
                       >
                         {tl("Match prep")}
                       </HubLink>
                       <HubLink
-                        to={{ kind: "compare", mode: "team", a: t.u, b: t.opps.find((o) => o.n === sel.opp)?.u || prettySlug(sel.opp) }}
+                        to={{ kind: "compare", mode: "team", a: t.u, b: oppSlug, period: selPeriod }}
                         className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
                       >
                         {tl("Compare")}
@@ -1087,7 +1110,8 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       )}
                     </span>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             )}
 
@@ -1152,31 +1176,43 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
 
               {t.obj && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
+                  <HubLink
+                    to={{ kind: "team", slug: t.u, tab: "stats" }}
+                    className="block rounded-lg border border-rw-border bg-rw-bg/40 hover:border-rw-accent/60 px-2.5 py-1.5 space-y-1 transition-colors"
+                  >
                     <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Dragons")}</div>
                     <div className="text-sm font-bold font-mono text-rw-text tabular-nums">{fmtDec(t.obj.dragons, 2)}</div>
                     <div className="h-1 rounded-full bg-rw-raised overflow-hidden">
                       <div className="h-full rounded-full bg-rw-accent/80" style={{ width: `${clamp(Math.round((t.obj.dragons / 4.0) * 100), 8, 100)}%` }} />
                     </div>
                     <div className="text-[10px] text-rw-muted">{tl("Per game")}</div>
-                  </div>
-                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "team", slug: t.u, tab: "stats" }}
+                    className="block rounded-lg border border-rw-border bg-rw-bg/40 hover:border-rw-accent/60 px-2.5 py-1.5 space-y-1 transition-colors"
+                  >
                     <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Barons")}</div>
                     <div className="text-sm font-bold font-mono text-rw-text tabular-nums">{fmtDec(t.obj.barons, 2)}</div>
                     <div className="h-1 rounded-full bg-rw-raised overflow-hidden">
                       <div className="h-full rounded-full bg-rw-accent/80" style={{ width: `${clamp(Math.round((t.obj.barons / 1.5) * 100), 8, 100)}%` }} />
                     </div>
                     <div className="text-[10px] text-rw-muted">{tl("Per game")}</div>
-                  </div>
-                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "team", slug: t.u, tab: "stats" }}
+                    className="block rounded-lg border border-rw-border bg-rw-bg/40 hover:border-rw-accent/60 px-2.5 py-1.5 space-y-1 transition-colors"
+                  >
                     <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Towers")}</div>
                     <div className="text-sm font-bold font-mono text-rw-text tabular-nums">{fmtDec(t.obj.towers, 1)}</div>
                     <div className="h-1 rounded-full bg-rw-raised overflow-hidden">
                       <div className="h-full rounded-full bg-rw-accent/80" style={{ width: `${clamp(Math.round((t.obj.towers / 11.0) * 100), 8, 100)}%` }} />
                     </div>
                     <div className="text-[10px] text-rw-muted">{tl("Per game")}</div>
-                  </div>
-                  <div className="rounded-lg border border-rw-border bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "team", slug: t.u, tab: "stats" }}
+                    className="block rounded-lg border border-rw-border bg-rw-bg/40 hover:border-rw-accent/60 px-2.5 py-1.5 space-y-1 transition-colors"
+                  >
                     <div className="text-[10px] uppercase tracking-wider text-rw-muted">{tl("Gold diff")}</div>
                     <div className={`text-sm font-bold font-mono tabular-nums ${t.obj.golddiff >= 0 ? "text-rw-teal" : "text-rw-red"}`}>
                       {signed(Math.round(t.obj.golddiff))}
@@ -1188,7 +1224,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       />
                     </div>
                     <div className="text-[10px] text-rw-muted">{t.avgMin ? `${fmtDec(t.avgMin, 1)}m` : tl("Per game")}</div>
-                  </div>
+                  </HubLink>
                 </div>
               )}
             </div>

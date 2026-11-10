@@ -61,7 +61,13 @@ const GameLine: React.FC<{
     <li className="flex flex-wrap items-baseline justify-between gap-x-2 min-w-0">
       <span className="text-rw-sub shrink-0">{label}</span>
       <span className="min-w-0 text-right inline-flex items-center gap-1 flex-wrap justify-end">
-        <span className="text-rw-accent font-bold">{value}</span>
+        {r.g ? (
+          <HubLink to={{ kind: "match", slug: r.g, game: r.n }} className="text-rw-accent font-bold hover:underline">
+            {value}
+          </HubLink>
+        ) : (
+          <span className="text-rw-accent font-bold">{value}</span>
+        )}
         {r.g ? (
           <HubLink to={{ kind: "match", slug: r.g, game: r.n }} className="inline-flex items-center gap-1">
             <TeamLogo name={r.a} size={13} />
@@ -227,9 +233,15 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
                 {tl("Best farming game")}
               </span>
               <span className="min-w-0 text-right inline-flex items-center gap-1 flex-wrap justify-end">
-                <span className="text-rw-accent font-bold">
-                  {tl("{n} CS/min", { n: o.farm.v })}
-                </span>
+                {o.farm.g ? (
+                  <HubLink to={{ kind: "match", slug: o.farm.g, game: o.farm.gn }} className="text-rw-accent font-bold hover:underline">
+                    {tl("{n} CS/min", { n: o.farm.v })}
+                  </HubLink>
+                ) : (
+                  <span className="text-rw-accent font-bold">
+                    {tl("{n} CS/min", { n: o.farm.v })}
+                  </span>
+                )}
                 <PlayerPhoto name={o.farm.n} slug={o.farm.u ?? undefined} size={15} />
                 <PlayerLink name={o.farm.n} u={o.farm.u} />
                 <span className="text-rw-muted">

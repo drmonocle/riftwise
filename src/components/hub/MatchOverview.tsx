@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import { ClipboardList, GitCompare, Swords, X } from "lucide-react";
 import type { Match } from "../../types";
 import { tl, tc, roleName } from "../../i18n";
-import { loadHubTeam, loadRatings, loadTeamSeries, teamStarter } from "../../hub/data";
+import { loadHubTeam, loadRatings, loadTeamSeries, prettySlug, teamStarter } from "../../hub/data";
 import type { TeamSeriesRow } from "../../hub/types";
 import { pct } from "../../hub/winChance";
 import { navigateHub } from "../../hub/route";
@@ -64,7 +64,18 @@ export const MatchOverview: React.FC<{ match: Match; a: string; b: string; onClo
       >
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-[11px] font-semibold uppercase tracking-wider text-rw-text">
-            {tl("Match overview")} · {match.leagueName} · {tc("short best of", "Bo{n}", { n: match.bestOf })}
+            {tl("Match overview")} ·{" "}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigateHub({ kind: "league", slug: prettySlug(match.leagueSlug || match.leagueName) });
+              }}
+              className="hover:text-rw-accent hover:underline uppercase font-semibold"
+            >
+              {match.leagueName}
+            </button>{" "}
+            · {tc("short best of", "Bo{n}", { n: match.bestOf })}
           </h3>
           <button type="button" onClick={onClose} aria-label={tl("Close")} className="p-1 text-rw-muted hover:text-rw-text">
             <X className="w-4 h-4" />
@@ -131,7 +142,17 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
       </button>
       {s.team.rating && (
         <div className="text-[11px] text-rw-sub">
-          {rankText(s.team)} · <Change v={s.team.rating.chg30} /> {tl("in 30 days")}
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigateHub({ kind: "rankings" });
+            }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {rankText(s.team)}
+          </button>{" "}
+          · <Change v={s.team.rating.chg30} /> {tl("in 30 days")}
         </div>
       )}
       {!hidden && (

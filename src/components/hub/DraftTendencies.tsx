@@ -168,7 +168,9 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
       ? `&year=${encodeURIComponent(period.slice(1))}`
       : period?.startsWith("e:")
         ? `&event=${encodeURIComponent(period.slice(2))}`
-        : "";
+        : period?.startsWith("p:")
+          ? `&patch=${encodeURIComponent(period.slice(2))}`
+          : "";
   return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold text-rw-muted" title={hint}>
@@ -245,7 +247,9 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: s
       ? `&year=${encodeURIComponent(period.slice(1))}`
       : period?.startsWith("e:")
         ? `&event=${encodeURIComponent(period.slice(2))}`
-        : "";
+        : period?.startsWith("p:")
+          ? `&patch=${encodeURIComponent(period.slice(2))}`
+          : "";
   return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold text-rw-muted mb-1" title={hint}>

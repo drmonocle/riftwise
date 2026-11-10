@@ -718,7 +718,14 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 label={tl("Rating")}
                 value={fmtRating(rated.avg)}
                 sub={tl("best {r} · 6 is an average game", { r: fmtRating(rated.best) })}
-                to={{ kind: "leaders" }}
+                to={{
+                  kind: "leaders",
+                  ...(/^y\d{4}$/.test(period)
+                    ? { query: `year=${encodeURIComponent(period.slice(1))}` }
+                    : period.startsWith("e:")
+                      ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                      : {}),
+                }}
               />
             )}
             <Stat
@@ -814,6 +821,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
             name={who?.name || slug}
             rows={sel}
             cardSub={periodText}
+            period={period}
           />
           <p className="text-[10px] text-rw-muted">
             {tl("Games with a full scoreboard only.")}
@@ -955,7 +963,18 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                 b: t.blue[0],
                 r: t.red[0],
               })}
-              to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}` }}
+              to={{
+                kind: "finder",
+                query: `team=${encodeURIComponent(slug)}${
+                  /^y\d{4}$/.test(period)
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(period.slice(2))}`
+                      : period.startsWith("p:")
+                        ? `&patch=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                }`,
+              }}
             />
             <Stat
               label={tl("Avg game")}
@@ -1083,6 +1102,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
             teamName={who?.name || slug}
             rows={sel}
             cardSub={periodText}
+            period={period}
           />
           {t.sg < t.g && (
             <p className="text-[10px] text-rw-muted">

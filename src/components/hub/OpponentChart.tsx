@@ -459,6 +459,15 @@ const ColoredOpponentGraph: React.FC<{
   );
 };
 
+const periodQuerySuffix = (p?: string): string => {
+  if (!p || p === "all") return "";
+  if (p.startsWith("y:")) return `&year=${encodeURIComponent(p.slice(2))}`;
+  if (/^y\d{4}$/.test(p)) return `&year=${encodeURIComponent(p.slice(1))}`;
+  if (p.startsWith("e:")) return `&event=${encodeURIComponent(p.slice(2))}`;
+  if (p.startsWith("p:")) return `&patch=${encodeURIComponent(p.slice(2))}`;
+  return "";
+};
+
 /**
  * Player performance vs each opponent team (`PlayerPage` Overview & `PlayerPeriodStats`).
  * When `rows` is passed (from `PlayerPeriodStats`), uses those filtered games directly;
@@ -470,7 +479,8 @@ export const PlayerOpponents: React.FC<{
   has2y?: boolean;
   rows?: PlayerGameRow[];
   cardSub?: string;
-}> = ({ slug, name, has2y, rows: givenRows, cardSub }) => {
+  period?: string;
+}> = ({ slug, name, has2y, rows: givenRows, cardSub, period }) => {
   const [fullLog, setFullLog] = useState(false);
   const loaded = useLoad(
     () =>
@@ -776,7 +786,7 @@ export const PlayerOpponents: React.FC<{
             </span>
             <span className="flex items-center gap-2">
               <HubLink
-                to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}` }}
+                to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}${periodQuerySuffix(period || scope)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")}
@@ -889,7 +899,7 @@ export const PlayerOpponents: React.FC<{
                       </span>
                       <span>
                         <HubLink
-                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(o.u || prettySlug(o.opp))}` }}
+                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(o.u || prettySlug(o.opp))}${periodQuerySuffix(period || scope)}` }}
                           onNavigate={() => {}}
                           className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
@@ -933,7 +943,7 @@ export const PlayerOpponents: React.FC<{
                       {o.champs.slice(0, 4).map((c) => (
                         <HubLink
                           key={c.c}
-                          to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}` }}
+                          to={{ kind: "player", slug, tab: "champions", query: `champ=${encodeURIComponent(c.c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
                           title={`${champName(c.c)}: ${c.w}–${c.g - c.w}`}
                         >
                           <ChampIcon name={c.c} size={17} />
@@ -1160,7 +1170,10 @@ export const TeamPeriodOpponents: React.FC<{
   teamName: string;
   rows: TeamGameRow[];
   cardSub?: string;
-}> = ({ teamSlug, teamName, rows, cardSub }) => {
+  period?: string;
+}> = ({ teamSlug, teamName, rows, cardSub, period }) => {
+  const pVal = period && period !== "all" ? period : undefined;
+  const pSuffix = periodQuerySuffix(period);
   const hiddenCheck = useHiddenCheck();
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
   const [metric, setMetric] = useState<"wr" | "gd15">("wr");
@@ -1298,20 +1311,20 @@ export const TeamPeriodOpponents: React.FC<{
               </span>
             </span>
             <span className="flex flex-wrap items-center gap-2 text-[11px]">
-              <HubLink to={{ kind: "prep", a: teamSlug, b: expanded.u }} className="text-rw-accent hover:underline">
+              <HubLink to={{ kind: "prep", a: teamSlug, b: expanded.u, period: pVal }} className="text-rw-accent hover:underline">
                 {tl("Match prep")}
               </HubLink>
               <HubLink
-                to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)},${encodeURIComponent(expanded.u)}` }}
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)},${encodeURIComponent(expanded.u)}${pVal ? `&p=${encodeURIComponent(pVal)}` : ""}` }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tl("Draft board")}
               </HubLink>
-              <HubLink to={{ kind: "compare", mode: "team", a: teamSlug, b: expanded.u }} className="text-rw-muted hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "compare", mode: "team", a: teamSlug, b: expanded.u, period: pVal }} className="text-rw-muted hover:text-rw-accent hover:underline">
                 {tl("Compare")}
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}` }}
+                to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}${pSuffix}` }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tl("Game finder")}
@@ -1400,7 +1413,7 @@ export const TeamPeriodOpponents: React.FC<{
                       </span>
                       <span>
                         <HubLink
-                          to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(o.u || prettySlug(o.opp))}` }}
+                          to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(o.u || prettySlug(o.opp))}${pSuffix}` }}
                           className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -1432,21 +1445,21 @@ export const TeamPeriodOpponents: React.FC<{
                       {o.u && (
                         <span className="inline-flex items-center gap-2 text-[10px]">
                           <HubLink
-                            to={{ kind: "prep", a: teamSlug, b: o.u }}
+                            to={{ kind: "prep", a: teamSlug, b: o.u, period: pVal }}
                             className="text-rw-accent hover:underline"
                             title={tl("Match prep")}
                           >
                             {tl("Match prep")}
                           </HubLink>
                           <HubLink
-                            to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)},${encodeURIComponent(o.u)}` }}
+                            to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)},${encodeURIComponent(o.u)}${pVal ? `&p=${encodeURIComponent(pVal)}` : ""}` }}
                             className="text-rw-muted hover:text-rw-accent hover:underline"
                             title={tl("Draft board")}
                           >
                             {tl("Draft board")}
                           </HubLink>
                           <HubLink
-                            to={{ kind: "compare", mode: "team", a: teamSlug, b: o.u }}
+                            to={{ kind: "compare", mode: "team", a: teamSlug, b: o.u, period: pVal }}
                             className="text-rw-muted hover:text-rw-accent hover:underline"
                             title={tl("Compare")}
                           >

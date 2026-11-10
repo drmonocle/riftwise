@@ -257,9 +257,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 </span>
                 <span className="flex items-center gap-2 shrink-0">
                   {chip(r.path)}
-                  <span className={`tabular-nums font-bold w-8 text-right ${r.wins === 3 ? "text-rw-teal" : r.losses === 3 ? "text-rw-red" : "text-rw-sub"}`}>
+                  <HubLink
+                    to={{ kind: "finder", query: `team=${encodeURIComponent(r.u)}&year=${encodeURIComponent(yearOnly(r.year))}` }}
+                    className={`tabular-nums font-bold w-8 text-right hover:underline ${r.wins === 3 ? "text-rw-teal" : r.losses === 3 ? "text-rw-red" : "text-rw-sub"}`}
+                    title={tl("Game finder")}
+                  >
                     {r.wins}-{r.losses}
-                  </span>
+                  </HubLink>
                 </span>
               </li>
             ))}
@@ -349,7 +353,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         <span className="h-full bg-rw-red/75" style={{ width: `${100 - wrPct}%` }} />
                       </span>
                     )}
-                    <span>{r.n}</span>
+                    <HubLink to={{ kind: "team", slug: r.u, tab: "tournaments" }} className="hover:underline">
+                      {r.n}
+                    </HubLink>
                   </span>
                 }
               />
@@ -377,7 +383,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
                           <span className="h-full bg-rw-red/75 rounded-full" style={{ width: `${Math.round((r.n / maxLost) * 100)}%` }} />
                         </span>
-                        <span>{r.n}</span>
+                        <HubLink to={{ kind: "team", slug: r.u, tab: "tournaments" }} className="hover:underline">
+                          {r.n}
+                        </HubLink>
                       </span>
                     }
                   />
@@ -451,7 +459,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
                       <span className="h-full bg-rw-accent/85 rounded-full" style={{ width: `${Math.round((p.titles.length / maxTitles) * 100)}%` }} />
                     </span>
-                    <span>{p.titles.length}</span>
+                    {p.u ? (
+                      <HubLink to={{ kind: "player", slug: p.u, tab: "career" }} className="hover:underline">
+                        {p.titles.length}
+                      </HubLink>
+                    ) : (
+                      <span>{p.titles.length}</span>
+                    )}
                   </span>
                 }
               />
@@ -540,7 +554,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
                             <span className="h-full bg-rw-accent/75 rounded-full" style={{ width: `${Math.round((y.games / maxG) * 100)}%` }} />
                           </span>
-                          <span className="w-7 text-right">{y.games}</span>
+                          <HubLink
+                            to={{ kind: "finder", query: `year=${encodeURIComponent(yearOnly(y.year))}` }}
+                            className="w-7 text-right hover:text-rw-accent hover:underline"
+                          >
+                            {y.games}
+                          </HubLink>
                         </span>
                       </td>
                       <td className="px-2 py-1 text-right tabular-nums" data-sort={y.blue ?? -1}>

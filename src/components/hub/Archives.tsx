@@ -295,11 +295,37 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                   <div className="flex items-center justify-between text-xs font-bold tabular-nums">
                     <span className="inline-flex items-center gap-1.5 text-rw-side-a truncate min-w-0">
                       <TeamLogo name={aName} size={15} />
-                      <TeamLink name={aName} u={a} className="truncate hover:underline" /> {ga}
+                      <TeamLink name={aName} u={a} className="truncate hover:underline" />{" "}
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                        }}
+                        className="hover:underline"
+                      >
+                        {ga}
+                      </HubLink>
                     </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Games")}</span>
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                      }}
+                      className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Games")}
+                    </HubLink>
                     <span className="inline-flex items-center justify-end gap-1.5 text-rw-side-b truncate text-right min-w-0">
-                      {gb} <TeamLink name={bName} u={b} className="truncate hover:underline" />
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query: `team=${encodeURIComponent(b)}&vs=${encodeURIComponent(a)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                        }}
+                        className="hover:underline"
+                      >
+                        {gb}
+                      </HubLink>{" "}
+                      <TeamLink name={bName} u={b} className="truncate hover:underline" />
                       <TeamLogo name={bName} size={15} />
                     </span>
                   </div>
@@ -493,7 +519,10 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
                   )}{" "}
                   <span className="text-rw-sub inline-flex items-center gap-1 align-baseline">
                     <HubLink
-                      to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(prettySlug(r[8]))}` }}
+                      to={{
+                        kind: "finder",
+                        query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(prettySlug(r[8]))}${champ !== "all" ? `&champ=${encodeURIComponent(champ)}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                      }}
                       className="text-rw-muted hover:text-rw-accent hover:underline"
                       title={tl("Game finder")}
                     >
@@ -537,7 +566,7 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
                 {its.map((it) => (
                   <HubLink
                     key={it}
-                    to={{ kind: "items", query: new URLSearchParams({ player: slug, item: prettySlug(it) }).toString() }}
+                    to={{ kind: "items", query: new URLSearchParams({ player: slug, item: prettySlug(it), ...(r[2] ? { champ: prettySlug(r[2]) } : {}) }).toString() }}
                     className="hover:opacity-80"
                   >
                     <ItemIcon name={it} size={18} />

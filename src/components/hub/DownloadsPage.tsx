@@ -9,7 +9,7 @@ import { load } from "../../stats";
 import { IS_WEB, SITE_URL } from "../../platform";
 import { downloadEventCsv, downloadStagesCsv, joinCsvs, saveCsv } from "../../hub/data";
 import { navigateHub } from "../../hub/route";
-import { card, EventLink, Failed, fmtNum, Loading, Section, useLoad, usePageTitle } from "./ui";
+import { card, EventLink, Failed, fmtNum, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
 
 export { saveCsv, downloadEventCsv, downloadStagesCsv };
 
@@ -270,7 +270,15 @@ const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOp
   return (
     <div className={`${card} space-y-1`}>
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-sm font-bold text-rw-text">{league.l || league.u}</h3>
+        <h3 className="text-sm font-bold text-rw-text">
+          {league.u ? (
+            <HubLink to={{ kind: "league", slug: league.u }} className="hover:text-rw-accent hover:underline">
+              {league.l || league.u}
+            </HubLink>
+          ) : (
+            league.l || league.u
+          )}
+        </h3>
         {busy && <span className="text-[11px] text-rw-accent">{busy}</span>}
       </div>
       {years.map((y) => {
@@ -306,7 +314,12 @@ const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOp
                   <li key={slug} className="flex items-center justify-between gap-2">
                     <span className="truncate text-rw-sub">
                       <EventLink name={name} u={slug} className="text-rw-text hover:text-rw-accent hover:underline" />{" "}
-                      <span className="text-rw-muted">· {tn("{n} game", "{n} games", g)}</span>
+                      <span className="text-rw-muted">
+                        ·{" "}
+                        <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }} className="hover:text-rw-accent hover:underline">
+                          {tn("{n} game", "{n} games", g)}
+                        </HubLink>
+                      </span>
                     </span>
                     <button type="button" onClick={() => downloadEventCsv(slug, onOpenUrl)} className="text-rw-accent hover:underline shrink-0">
                       CSV
