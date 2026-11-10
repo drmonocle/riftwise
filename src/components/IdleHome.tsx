@@ -211,7 +211,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               const yr = done[0]?.startTimeUtc?.slice(0, 4);
               const lg = done[0]?.leagueSlug ? resolveLeagueSlug(done[0].leagueSlug) : "";
               const q = new URLSearchParams({
-                ...(lg ? { league: lg } : {}),
+                ...(lg ? { scope: lg } : {}),
                 ...(yr ? { key: `y${yr}` } : {}),
               }).toString();
               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -397,12 +397,24 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
           <button
             type="button"
             onClick={() => {
-              navigateHub({ kind: "leaders" });
+              const tq = [top[0]?.[0] || top[0]?.[1], top[1]?.[0] || top[1]?.[1]].filter(Boolean).join(",");
+              navigateHub({ kind: "leaders", ...(tq ? { query: `q=${encodeURIComponent(tq)}` } : {}) });
               onSelectTab("stats");
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
           >
             {tl("Player leaderboards")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const bq = [top[0]?.[1] || top[0]?.[0], top[1]?.[1] || top[1]?.[0]].filter(Boolean).join(",");
+              navigateHub({ kind: "best", ...(bq ? { query: `q=${encodeURIComponent(bq)}` } : {}) });
+              onSelectTab("stats");
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+          >
+            {tl("Best games")}
           </button>
           <button
             type="button"

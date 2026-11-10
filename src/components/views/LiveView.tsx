@@ -723,7 +723,7 @@ const LiveMatchBlock: React.FC<{
                     const yr = m.startTimeUtc?.slice(0, 4);
                     const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
                     const q = new URLSearchParams({
-                      ...(lg ? { league: lg } : {}),
+                      ...(lg ? { scope: lg } : {}),
                       ...(yr ? { key: `y${yr}` } : {}),
                     }).toString();
                     navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -737,9 +737,11 @@ const LiveMatchBlock: React.FC<{
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
                     const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const tq = `${prettySlug(m.team1Name || m.team1Code)},${prettySlug(m.team2Name || m.team2Code)}`;
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
+                      ...(tq ? { q: tq } : {}),
                     }).toString();
                     navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
                   }}
@@ -1135,7 +1137,7 @@ const NextMatchCard: React.FC<{
                     const yr = m.startTimeUtc?.slice(0, 4);
                     const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
                     const q = new URLSearchParams({
-                      ...(lg ? { league: lg } : {}),
+                      ...(lg ? { scope: lg } : {}),
                       ...(yr ? { key: `y${yr}` } : {}),
                     }).toString();
                     navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -1149,9 +1151,11 @@ const NextMatchCard: React.FC<{
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
                     const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const tq = `${prettySlug(m.team1Name || m.team1Code)},${prettySlug(m.team2Name || m.team2Code)}`;
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
+                      ...(tq ? { q: tq } : {}),
                     }).toString();
                     navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
                   }}

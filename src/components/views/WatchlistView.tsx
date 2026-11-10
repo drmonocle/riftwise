@@ -11,7 +11,7 @@ import { searchAlias, isNonLatin } from "../../searchAliases";
 import { mainPlayerEntries, pickTeamByCode } from "../../helpers";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
-import { bare, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
 import { PlayerPhoto, TeamLogo } from "../hub/ui";
 
 interface WatchlistViewProps {
@@ -122,14 +122,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     onUpdateSettings({ followedLeagues: [] });
   };
 
-  const q = search.trim().toLowerCase();
+  const q = normText(search.trim());
   // 페이커 -> faker, B站 -> bilibili: fans type names the way their community writes them
-  const qs = searchAlias(search).trim().toLowerCase();
+  const qs = normText(searchAlias(search).trim());
   const qTerms = useMemo(
     () =>
       search
         .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-        .map((s) => searchAlias(s).trim().toLowerCase())
+        .map((s) => normText(searchAlias(s).trim()))
         .filter(Boolean),
     [search],
   );
@@ -149,7 +149,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     }
     return all
       .filter((t) => {
-        const hay = `${t.code} ${t.name} ${t.league} ${t.region} ${regionName(t.region)}`.toLowerCase();
+        const hay = normText(`${t.code} ${t.name} ${t.league} ${t.region} ${regionName(t.region)}`);
         return qTerms.some((term) => hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term))));
       })
       .slice(0, 100);
@@ -169,8 +169,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     }
     return all
       .filter((p) => {
-        const hay = `${p.name} ${p.teamCode} ${p.teamName} ${p.role} ${p.realName || ""}`.toLowerCase();
-        return qTerms.some((term) => hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term))));
+        const hay = normText(`${p.name} ${p.teamCode} ${p.teamName} ${p.role} ${p.realName || ""}`);
+        const pSlug = prettySlug(p.name);
+        return qTerms.some(
+          (term) =>
+            hay.includes(term) ||
+            (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
+            resolvePlayerSlug(term) === pSlug,
+        );
       })
       .slice(0, 100);
   }, [catalog.players, catalog.teams, settings.followedPlayers, q, qTerms]);
@@ -180,12 +186,12 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     if (!q) return MAJOR_REGIONS;
     return MAJOR_REGIONS.filter(
       (r) =>
-        r.name.toLowerCase().includes(qs) ||
-        r.code.toLowerCase().includes(qs) ||
-        regionName(r.code, r.name).toLowerCase().includes(qs) ||
-        r.leagues.some((l) => l.toLowerCase().includes(qs))
+        normText(r.name).includes(qs) ||
+        normText(r.code).includes(qs) ||
+        normText(regionName(r.code, r.name)).includes(qs) ||
+        r.leagues.some((l) => normText(l).includes(qs))
     );
-  }, [qs]);
+  }, [qs, q]);
 
   // Filtered LEAGUES: searches across all catalog.leagues (~51 leagues)
   const filteredLeagues = useMemo(() => {
@@ -201,12 +207,12 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     }
     return all.filter(
       (l) =>
-        l.name.toLowerCase().includes(qs) ||
-        l.slug.toLowerCase().includes(qs) ||
-        l.region.toLowerCase().includes(qs) ||
-        regionName(l.region).toLowerCase().includes(qs)
+        normText(l.name).includes(qs) ||
+        normText(l.slug).includes(qs) ||
+        normText(l.region).includes(qs) ||
+        normText(regionName(l.region)).includes(qs)
     );
-  }, [catalog.leagues, qs]);
+  }, [catalog.leagues, qs, q]);
 
   // Search input placeholder per tab
   const searchPlaceholder =
@@ -240,14 +246,30 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "rankings" })}
+              onClick={() => {
+                const tq = settings.followedTeams
+                  .slice(0, 4)
+                  .map((c) => prettySlug(pickTeamByCode(catalog.teams || [], c)?.name || c))
+                  .filter(Boolean)
+                  .join(",");
+                navigateHub({ kind: "rankings", ...(tq ? { query: `q=${encodeURIComponent(tq)}` } : {}) });
+              }}
               className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Power rankings")} →
             </button>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "leaders" })}
+              onClick={() => {
+                const lq = (
+                  settings.followedPlayers.length > 0
+                    ? settings.followedPlayers.slice(0, 4).map((n) => prettySlug(n))
+                    : settings.followedTeams.slice(0, 4).map((c) => prettySlug(pickTeamByCode(catalog.teams || [], c)?.name || c))
+                )
+                  .filter(Boolean)
+                  .join(",");
+                navigateHub({ kind: "leaders", ...(lq ? { query: `q=${encodeURIComponent(lq)}` } : {}) });
+              }}
               className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Player leaderboards")} →
@@ -455,6 +477,20 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   >
                     {tl("Game finder")} →
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "rankings", query: `q=${encodeURIComponent(a)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Power rankings")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "leaders", query: `q=${encodeURIComponent(a)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
+                  </button>
                 </span>
               );
             })()}
@@ -494,10 +530,17 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "rankings" })}
+                    onClick={() => navigateHub({ kind: "rankings", query: `q=${encodeURIComponent(`${a},${b}`)}` })}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateHub({ kind: "leaders", query: `q=${encodeURIComponent(`${a},${b}`)}` })}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
                   </button>
                 </span>
               );
@@ -738,6 +781,19 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   >
                     {tl("Game finder")} →
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const r = filteredPlayers[0]?.role && filteredPlayers[0].role !== "Sub" ? filteredPlayers[0].role : "";
+                      navigateHub({
+                        kind: "leaders",
+                        query: `q=${encodeURIComponent(a)}${r ? `&role=${encodeURIComponent(r)}` : ""}`,
+                      });
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
+                  </button>
                 </span>
               );
             })()}
@@ -783,7 +839,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "finder", query: `player=${encodeURIComponent(a)}` })}
+                    onClick={() => navigateHub({ kind: "finder", query: `player=${encodeURIComponent(a)}&vsplayer=${encodeURIComponent(b)}` })}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
@@ -799,7 +855,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           : "";
                       navigateHub({
                         kind: "leaders",
-                        ...(sameRole ? { query: `role=${encodeURIComponent(sameRole)}` } : {}),
+                        query: `q=${encodeURIComponent(`${a},${b}`)}${sameRole ? `&role=${encodeURIComponent(sameRole)}` : ""}`,
                       });
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1021,7 +1077,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigateHub({ kind: "tiers", query: `league=${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
+                            navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
                           }}
                           className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
                         >
@@ -1167,7 +1223,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigateHub({ kind: "tiers", query: `league=${encodeURIComponent(resolveLeagueSlug(league.slug))}` });
+                        navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(resolveLeagueSlug(league.slug))}` });
                       }}
                       className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
                     >

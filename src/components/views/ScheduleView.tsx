@@ -13,7 +13,7 @@ import { tl, locale, clockOptions, tc } from "../../i18n";
 import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { findSeriesSlug } from "../../hub/seriesLookup";
-import { bare, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route";
 import { riotImg } from "../../riotImage";
@@ -157,18 +157,18 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     // Search query (supports "Team A vs Team B" for head-to-head and "Team A, Team B" for multiple teams/leagues)
     if (searchQuery.trim()) {
       const raw = searchQuery.trim();
-      const text = `${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName} ${m.blockName || ""}`.toLowerCase();
+      const text = normText(`${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName} ${m.blockName || ""}`);
       const matchTerm = (q: string) => text.includes(q) || (bare(q).length >= 2 && bare(text).includes(bare(q)));
       if (/\s+vs\.?\s+|\s+v\s+/i.test(raw)) {
         const parts = raw
           .split(/\s+vs\.?\s+|\s+v\s+/i)
-          .map((s) => searchAlias(s.trim()).toLowerCase())
+          .map((s) => normText(searchAlias(s.trim())))
           .filter(Boolean);
         if (parts.some((p) => !matchTerm(p))) return false;
       } else {
         const terms = raw
           .split(/[,|]+/)
-          .map((s) => searchAlias(s.trim()).toLowerCase())
+          .map((s) => normText(searchAlias(s.trim())))
           .filter(Boolean);
         if (terms.length && !terms.some((q) => matchTerm(q))) return false;
       }
@@ -266,7 +266,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "tiers", ...(league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
+            onClick={() => navigateHub({ kind: "tiers", ...(league ? { query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")} →
@@ -341,7 +341,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "tiers", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    onClick={() => navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}` })}
                     className="hidden md:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Pro tier list")} →
@@ -457,6 +457,20 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       >
                         {tl("Game finder")} →
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "rankings", query: `q=${encodeURIComponent(sSlug)}` })}
+                        className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                      >
+                        {tl("Power rankings")} →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "leaders", query: `q=${encodeURIComponent(sSlug)}${sYr ? `&year=${encodeURIComponent(sYr)}` : ""}` })}
+                        className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                      >
+                        {tl("Player leaderboards")} →
+                      </button>
                     </div>
                   );
                 }
@@ -492,6 +506,20 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                     >
                       {tl("Game finder")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "rankings", query: `q=${encodeURIComponent(`${a},${b}`)}` })}
+                      className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                    >
+                      {tl("Power rankings")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateHub({ kind: "leaders", query: `q=${encodeURIComponent(`${a},${b}`)}${pYr ? `&year=${encodeURIComponent(pYr)}` : ""}` })}
+                      className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                    >
+                      {tl("Player leaderboards")} →
                     </button>
                   </div>
                 );
