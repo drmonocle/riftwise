@@ -462,6 +462,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     >
                       {tl("Game finder")} →
                     </HubLink>
+                    <HubLink
+                      to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft" }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
                     <button
                       type="button"
                       onClick={() => set({ champ: prettySlug(vsMatch.oppCanon), vs: rawChamp })}
@@ -624,6 +636,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         {tl("Game finder")} →
                       </HubLink>
                     )}
+                    <HubLink
+                      to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
                     <SectionCard
                       section={tl("{champ} does best against", { champ: cName })}
                       name={cName}
@@ -709,6 +727,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         {tl("Game finder")} →
                       </HubLink>
                     )}
+                    <HubLink
+                      to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
                     <SectionCard
                       section={tl("{champ} struggles against", { champ: cName })}
                       name={cName}
@@ -806,6 +830,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       {tl("Game finder")} →
                     </HubLink>
                   )}
+                  <HubLink
+                    to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "tiers", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
                   <SectionCard
                     section={tl("Every lane matchup: {champ}", { champ: cName })}
                     name={cName}
@@ -866,16 +902,33 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       />
                     )}
                     {data.data.ch.duos[0] && (
-                      <HubLink
-                        to={{
-                          kind: "finder",
-                          query: `champ=${encodeURIComponent(`${rawChamp || cName},${data.data.ch.duos[0][0]}`)}`,
-                        }}
-                        className="text-[11px] text-rw-accent hover:underline"
-                      >
-                        {tl("Game finder")} →
-                      </HubLink>
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query: `champ=${encodeURIComponent(`${rawChamp || cName},${data.data.ch.duos[0][0]}`)}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Game finder")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "counters",
+                            query: `champ=${encodeURIComponent(prettySlug(data.data.ch.duos[0][0]))}`,
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Counters")} →
+                        </HubLink>
+                      </>
                     )}
+                    <HubLink
+                      to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
                     <SectionCard
                       section={tl("Bot lane partners")}
                       name={cName}

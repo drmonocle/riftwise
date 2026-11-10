@@ -357,6 +357,19 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     </HubLink>
                     <HubLink
                       to={{
+                        kind: "draft",
+                        ...(key.startsWith("p")
+                          ? { query: `p=p:${encodeURIComponent(key.slice(1))}` }
+                          : key.startsWith("y")
+                            ? { query: `p=${encodeURIComponent(key)}` }
+                            : {}),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
                         kind: "finder",
                         query: new URLSearchParams({
                           champ: byRole.get(r)![0].c,

@@ -379,6 +379,18 @@ const PlayerItemsView: React.FC<{
       right={
         list.length > 0 ? (
           <span className="flex flex-wrap items-center gap-2">
+            {(champ || list[0]?.[1]?.[0]?.[2]) && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: `champ=${encodeURIComponent(prettySlug(champ || list[0][1][0][2]))}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline font-semibold"
+                data-nocapture="1"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             <HubLink
               to={{ kind: "compare", mode: "player", a: slug, ...(year ? { period: `y${year}` } : {}) }}
               className="text-[11px] text-rw-accent hover:underline font-semibold"
@@ -1120,6 +1132,12 @@ const ItemStats: React.FC<{ loading: boolean; rows?: ItemIndexRow[]; scope: stri
             </HubLink>
             <HubLink to={{ kind: "tiers" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Pro tier list")} →
+            </HubLink>
+            <HubLink to={{ kind: "draft" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Draft board")} →
+            </HubLink>
+            <HubLink to={{ kind: "finder" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Game finder")} →
             </HubLink>
             <CopyItemsPost
               title={tl("Item stats")}
