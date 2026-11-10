@@ -333,24 +333,42 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           <input
             type="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              set({ q: e.target.value || undefined });
+            }}
             placeholder={tl("Filter by name or team…")}
             aria-label={tl("Filter by name or team…")}
             className={`${sel} w-44`}
           />
-          {shownRows.length === 2 && shownRows[0].u && shownRows[1].u && (
-            <HubLink
-              to={{
-                kind: "compare",
-                mode: "player",
-                a: shownRows[0].u,
-                b: shownRows[1].u,
-                period: event ? `e:${event}` : `y${year}`,
-              }}
-              className="text-rw-accent hover:underline font-semibold"
-            >
-              {tl("Compare")} →
-            </HubLink>
+          {shownRows.length >= 1 && (shownRows.length === 2 || (search.trim() && shownRows.length <= 4)) && shownRows[0].u && (
+            <>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "player",
+                  a: shownRows[0].u,
+                  b: shownRows[1]?.u || undefined,
+                  period: event ? `e:${event}` : `y${year}`,
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              {shownRows.length === 2 && shownRows[0].tu && shownRows[1].tu && shownRows[0].tu !== shownRows[1].tu && (
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: shownRows[0].tu,
+                    b: shownRows[1].tu,
+                    period: event ? `e:${event}` : `y${year}`,
+                  }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+              )}
+            </>
           )}
           <HubLink
             to={event ? { kind: "event", slug: event } : { kind: "league", slug: league, year }}

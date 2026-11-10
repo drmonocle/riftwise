@@ -253,7 +253,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
             />
             {tl("Only games with a VOD")}
           </label>
-          {isVsQuery && shown.length > 0 && (() => {
+          {(isVsQuery || teamTerms.length >= 1) && shown.length > 0 && (() => {
             const first = shown[0];
             const [aName, aSlug, bName, bSlug] =
               view === "series"
@@ -275,6 +275,15 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Compare")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${year ? `&year=${encodeURIComponent(year)}` : ""}${league ? `&league=${encodeURIComponent(league)}` : ""}`,
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
                 </HubLink>
               </span>
             );

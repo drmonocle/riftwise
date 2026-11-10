@@ -331,6 +331,19 @@ const LeagueTable: React.FC<{
   if (!file.data || !result) return <Failed />;
   const eventName = eventSlug ? file.data.events.find(([s]) => s === eventSlug)?.[1] : null;
   type LRow = ChampAggRow & Delta;
+  const shownRows = useMemo(() => {
+    const base = emerging && vs ? result.rows.filter((r) => r.emerging) : result.rows;
+    const terms = search
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s.trim()))
+      .filter(Boolean);
+    if (!terms.length) return base;
+    return base.filter((r) => {
+      const cDisp = normText(champName(r.c));
+      const cRaw = normText(r.c);
+      return terms.some((t) => cDisp.includes(t) || cRaw.includes(t));
+    });
+  }, [result.rows, emerging, vs, search]);
   const maxLPicks = Math.max(1, ...result.rows.map((r) => r.p || 0));
   const maxLBans = Math.max(1, ...result.rows.map((r) => r.b || 0));
   const cols: Column<LRow>[] = [
@@ -612,10 +625,17 @@ const LeagueTable: React.FC<{
             </>
           )}
         </span>
-        {result.rows.length > 0 && (
+        {shownRows.length > 0 && (
           <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
             <HubLink
-              to={{ kind: "counters", query: roleQ ? `role=${encodeURIComponent(roleQ)}` : "" }}
+              to={{
+                kind: "counters",
+                query: new URLSearchParams({
+                  ...(shownRows[0] ? { champ: prettySlug(shownRows[0].c) } : {}),
+                  ...(shownRows[1] ? { vs: shownRows[1].c } : {}),
+                  ...(roleQ ? { role: roleQ } : {}),
+                }).toString(),
+              }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Counter-pick finder")} →
@@ -631,7 +651,7 @@ const LeagueTable: React.FC<{
               name={[leagueName, year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
               sub={tl("{n} games", { n: fmtNum(result.games) })}
               rows={() =>
-                result.rows.slice(0, 12).map((c, i) => ({
+                shownRows.slice(0, 12).map((c, i) => ({
                   rank: i + 1,
                   champ: c.c,
                   label: champName(c.c),
@@ -643,22 +663,18 @@ const LeagueTable: React.FC<{
             />
             <CopyChampsPost
               title={[tl("Champions"), leagueName, year, q.get("patch") && tl("Patch {patch}", { patch: q.get("patch")! })].filter(Boolean).join(" · ")}
-              rows={result.rows}
+              rows={shownRows}
               query={q.toString()}
             />
           </span>
         )}
       </div>
-      {result.rows.length > 0 && <MetaSpotlight rows={result.rows} minWrPicks={5} />}
+      {shownRows.length > 0 && <MetaSpotlight rows={shownRows} minWrPicks={5} />}
       {result.games === 0 ? (
         <p className="text-xs text-rw-sub py-4 text-center">{tl("No games match these filters.")}</p>
       ) : (
         <SortTable
-          rows={(() => {
-            const base = emerging && vs ? result.rows.filter((r) => r.emerging) : result.rows;
-            const nq = normText(search);
-            return nq ? base.filter((r) => normText(champName(r.c)).includes(nq) || normText(r.c).includes(nq)) : base;
-          })()}
+          rows={shownRows}
           columns={cols}
           // with a role picked, bans (not tied to a role) would put e.g. top-lane bans at the top of a mid list
           initial={{ key: vs ? "dPres" : roleQ ? "p" : "presence", desc: true }}
@@ -701,6 +717,19 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   const label = (k: string) =>
     k === "all" ? tl("All time (2011 to today)") : k.startsWith("p") ? tl("Patch {patch}", { patch: k.slice(1) }) : tl("Year {year}", { year: k.slice(1) });
   type Row = (typeof rows)[number];
+  const shownRows = useMemo(() => {
+    const base = emerging && thenBlock ? rows.filter((r) => r.emerging) : rows;
+    const terms = search
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s.trim()))
+      .filter(Boolean);
+    if (!terms.length) return base;
+    return base.filter((r) => {
+      const cDisp = normText(champName(r.c));
+      const cRaw = normText(r.c);
+      return terms.some((t) => cDisp.includes(t) || cRaw.includes(t));
+    });
+  }, [rows, emerging, thenBlock, search]);
   const maxOPicks = useMemo(() => Math.max(1, ...rows.map((r) => r.p || 0)), [rows]);
   const maxOBans = useMemo(() => Math.max(1, ...rows.map((r) => r.b || 0)), [rows]);
   const cols: Column<Row>[] = [
@@ -868,10 +897,17 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
             {tl("{n} games", { n: fmtNum(block.games) })}
           </HubLink>
         )}
-        {block && rows.length > 0 && (
+        {block && shownRows.length > 0 && (
           <span className="ml-auto flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
             <HubLink
-              to={{ kind: "counters", query: roleQ ? `role=${encodeURIComponent(roleQ)}` : "" }}
+              to={{
+                kind: "counters",
+                query: new URLSearchParams({
+                  ...(shownRows[0] ? { champ: prettySlug(shownRows[0].c) } : {}),
+                  ...(shownRows[1] ? { vs: shownRows[1].c } : {}),
+                  ...(roleQ ? { role: roleQ } : {}),
+                }).toString(),
+              }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Counter-pick finder")} →
@@ -887,7 +923,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
               name={label(key)}
               sub={tl("{n} games", { n: fmtNum(block.games) })}
               rows={() =>
-                rows.slice(0, 12).map((c, i) => ({
+                shownRows.slice(0, 12).map((c, i) => ({
                   rank: i + 1,
                   champ: c.c,
                   label: champName(c.c),
@@ -897,7 +933,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 }))
               }
             />
-            <CopyChampsPost title={`${tl("Champions")} · ${label(key)}`} rows={rows} query={q.toString()} />
+            <CopyChampsPost title={`${tl("Champions")} · ${label(key)}`} rows={shownRows} query={q.toString()} />
           </span>
         )}
       </div>
@@ -907,13 +943,9 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         <Failed />
       ) : (
         <div className={`${card} space-y-2.5`}>
-          {rows.length > 0 && <MetaSpotlight rows={rows} minWrPicks={10} />}
+          {shownRows.length > 0 && <MetaSpotlight rows={shownRows} minWrPicks={10} />}
           <SortTable
-            rows={(() => {
-              const base = emerging && thenBlock ? rows.filter((r) => r.emerging) : rows;
-              const nq = normText(search);
-              return nq ? base.filter((r) => normText(champName(r.c)).includes(nq) || normText(r.c).includes(nq)) : base;
-            })()}
+            rows={shownRows}
             columns={cols}
             initial={{ key: thenBlock ? "dPres" : "presence", desc: true }}
             key={thenBlock ? "by-delta" : "by-presence"}

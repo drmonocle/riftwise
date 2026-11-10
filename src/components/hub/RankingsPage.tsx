@@ -73,7 +73,15 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   };
   const [limit, setLimit] = useState(50);
   const [asOf, setAsOf] = useState("");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => q.get("q") || "");
+  const setSearchQ = (v: string) => {
+    setSearch(v);
+    const next = new URLSearchParams(q);
+    if (!v.trim()) next.delete("q");
+    else next.set("q", v.trim());
+    const qs = next.toString();
+    navigateHub({ kind: "rankings", ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
   const hist = useLoad(loadRatingsHistory, []);
   const histDates = useMemo(() => {
     if (!hist.data) return [];
@@ -453,12 +461,32 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 >
                   {tl("Compare")} →
                 </HubLink>
+                <HubLink
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(pair[0])},${encodeURIComponent(pair[1])}` }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(pair[0])}&vs=${encodeURIComponent(pair[1])}` }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
               </>
+            )}
+            {search.trim() && shownRows.length === 1 && (shownRows[0].r[0] || shownRows[0].r[1]) && (
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: shownRows[0].r[0] || prettySlug(shownRows[0].r[1]) }}
+                className="text-rw-accent hover:underline font-medium"
+              >
+                {tl("Compare")} →
+              </HubLink>
             )}
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => setSearchQ(e.target.value)}
               placeholder={tl("Filter by name or team…")}
               aria-label={tl("Filter by name or team…")}
               className="bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text placeholder:text-rw-muted w-40 focus:border-rw-accent focus:outline-none"

@@ -119,11 +119,26 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchTe
       <Section
         title={tl("Most pentakills")}
         right={
-          <SectionCard
-            section={tl("Most pentakills")}
-            name={tl("Records")}
-            rows={() => mostRows.slice(0, 12).map((x, i) => ({ rank: i + 1, label: x.n, value: String(x.v), win: true }))}
-          />
+          <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+            {mostRows.length >= 2 && (
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "player",
+                  a: mostRows[0].u || prettySlug(mostRows[0].n),
+                  b: mostRows[1].u || prettySlug(mostRows[1].n),
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            )}
+            <SectionCard
+              section={tl("Most pentakills")}
+              name={tl("Records")}
+              rows={() => mostRows.slice(0, 12).map((x, i) => ({ rank: i + 1, label: x.n, value: String(x.v), win: true }))}
+            />
+          </span>
         }
         share="records-most-pentakills"
       >
@@ -715,12 +730,27 @@ export const RecordsPanel: React.FC = () => {
               title={title}
               right={
                 rows.length > 0 ? (
-                  <SectionCard
-                    section={title}
-                    name={tl("Career totals")}
-                    sub={scopeLabel}
-                    rows={() => rows.slice(0, 12).map((p, i) => ({ rank: i + 1, label: p.pl, value: fmtNum(p.v), win: true }))}
-                  />
+                  <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                    {rows.length >= 2 && (
+                      <HubLink
+                        to={{
+                          kind: "compare",
+                          mode: "player",
+                          a: rows[0].u || prettySlug(rows[0].pl),
+                          b: rows[1].u || prettySlug(rows[1].pl),
+                        }}
+                        className="text-rw-accent hover:underline font-semibold"
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    )}
+                    <SectionCard
+                      section={title}
+                      name={tl("Career totals")}
+                      sub={scopeLabel}
+                      rows={() => rows.slice(0, 12).map((p, i) => ({ rank: i + 1, label: p.pl, value: fmtNum(p.v), win: true }))}
+                    />
+                  </span>
                 ) : undefined
               }
               share={shareName(title)}
@@ -821,20 +851,47 @@ export const RecordsPanel: React.FC = () => {
                 title={tl("Longest win streaks")}
                 right={
                   streakRows.length > 0 ? (
-                    <SectionCard
-                      section={tl("Longest win streaks")}
-                      name={tl("Records")}
-                      rows={() =>
-                        streakRows.slice(0, 10).map((t, i) => ({
-                          rank: i + 1,
-                          team: t.team,
-                          label: t.team,
-                          sub: tl("ended {date}", { date: fmtDate(t.date) }),
-                          value: tl("{n} games", { n: t.v }),
-                          win: true,
-                        }))
-                      }
-                    />
+                    <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                      {streakRows.length >= 2 && (
+                        <>
+                          <HubLink
+                            to={{
+                              kind: "compare",
+                              mode: "team",
+                              a: streakRows[0].u || prettySlug(streakRows[0].team),
+                              b: streakRows[1].u || prettySlug(streakRows[1].team),
+                            }}
+                            className="text-rw-accent hover:underline font-semibold"
+                          >
+                            {tl("Compare")} →
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "prep",
+                              a: streakRows[0].u || prettySlug(streakRows[0].team),
+                              b: streakRows[1].u || prettySlug(streakRows[1].team),
+                            }}
+                            className="text-rw-accent hover:underline font-semibold"
+                          >
+                            {tl("Match prep")} →
+                          </HubLink>
+                        </>
+                      )}
+                      <SectionCard
+                        section={tl("Longest win streaks")}
+                        name={tl("Records")}
+                        rows={() =>
+                          streakRows.slice(0, 10).map((t, i) => ({
+                            rank: i + 1,
+                            team: t.team,
+                            label: t.team,
+                            sub: tl("ended {date}", { date: fmtDate(t.date) }),
+                            value: tl("{n} games", { n: t.v }),
+                            win: true,
+                          }))
+                        }
+                      />
+                    </span>
                   ) : undefined
                 }
                 share="records-longest-win-streaks"
@@ -883,20 +940,47 @@ export const RecordsPanel: React.FC = () => {
                 )}
                 right={
                   titleRecordRows.length > 0 ? (
-                    <SectionCard
-                      section={tl("Most international titles (Worlds, MSI, First Stand)")}
-                      name={tl("Records")}
-                      rows={() =>
-                        titleRecordRows.slice(0, 10).map((t, i) => ({
-                          rank: i + 1,
-                          team: t.team,
-                          label: t.team,
-                          sub: t.worlds ? tl("{n} Worlds", { n: t.worlds }) : undefined,
-                          value: tl("{n} total", { n: t.v }),
-                          win: true,
-                        }))
-                      }
-                    />
+                    <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                      {titleRecordRows.length >= 2 && (
+                        <>
+                          <HubLink
+                            to={{
+                              kind: "compare",
+                              mode: "team",
+                              a: titleRecordRows[0].u || prettySlug(titleRecordRows[0].team),
+                              b: titleRecordRows[1].u || prettySlug(titleRecordRows[1].team),
+                            }}
+                            className="text-rw-accent hover:underline font-semibold"
+                          >
+                            {tl("Compare")} →
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "prep",
+                              a: titleRecordRows[0].u || prettySlug(titleRecordRows[0].team),
+                              b: titleRecordRows[1].u || prettySlug(titleRecordRows[1].team),
+                            }}
+                            className="text-rw-accent hover:underline font-semibold"
+                          >
+                            {tl("Match prep")} →
+                          </HubLink>
+                        </>
+                      )}
+                      <SectionCard
+                        section={tl("Most international titles (Worlds, MSI, First Stand)")}
+                        name={tl("Records")}
+                        rows={() =>
+                          titleRecordRows.slice(0, 10).map((t, i) => ({
+                            rank: i + 1,
+                            team: t.team,
+                            label: t.team,
+                            sub: t.worlds ? tl("{n} Worlds", { n: t.worlds }) : undefined,
+                            value: tl("{n} total", { n: t.v }),
+                            win: true,
+                          }))
+                        }
+                      />
+                    </span>
                   ) : undefined
                 }
                 share="records-most-international-titles"

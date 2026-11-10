@@ -105,10 +105,19 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   const byRole = useMemo(() => {
     const out = new Map<string, Ranked[]>(ROLES.map((r) => [r, []]));
     if (!block) return out;
-    const cf = champFilter.trim().toLowerCase();
+    const cfTerms = champFilter
+      .toLowerCase()
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => s.trim())
+      .filter(Boolean);
     for (const c of block.champs) {
       if (!c.role || !out.has(c.role) || c.p + c.b < 2) continue;
-      if (cf && !champName(c.c).toLowerCase().includes(cf) && !c.c.toLowerCase().includes(cf)) continue;
+      if (
+        cfTerms.length > 0 &&
+        !cfTerms.some((cf) => champName(c.c).toLowerCase().includes(cf) || c.c.toLowerCase().includes(cf))
+      ) {
+        continue;
+      }
       out.get(c.role)!.push({ ...c, presence: block.games ? (c.p + c.b) / block.games : 0, wr: c.p ? c.w / c.p : null, score: tierScore(c, block.games) });
     }
     for (const list of out.values()) list.sort((a, b) => b.score - a.score);
@@ -272,6 +281,17 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               right={
                 (byRole.get(r) || []).length > 0 ? (
                   <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+                    {(byRole.get(r) || []).length >= 2 && (
+                      <HubLink
+                        to={{
+                          kind: "counters",
+                          query: `champ=${prettySlug(byRole.get(r)![0].c)}&vs=${encodeURIComponent(byRole.get(r)![1].c)}&role=${encodeURIComponent(r)}`,
+                        }}
+                        className="text-[11px] font-semibold text-rw-accent hover:underline"
+                      >
+                        {tl("Counters")} →
+                      </HubLink>
+                    )}
                     <HubLink
                       to={{
                         kind: "champions",

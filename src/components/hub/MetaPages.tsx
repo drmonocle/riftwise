@@ -79,14 +79,19 @@ export const PatchesPanel: React.FC = () => {
   return (
     <Page state={state}>
       {(rows: PatchRow[]) => {
-        const term = normText(q.trim());
-        const filtered = term
-          ? rows.filter(
-              (p) =>
-                p.p.toLowerCase().includes(term) ||
-                p.c.some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)) ||
-                (p.up || []).some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)) ||
-                (p.down || []).some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)),
+        const terms = q
+          .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+          .map((s) => normText(s.trim()))
+          .filter(Boolean);
+        const filtered = terms.length
+          ? rows.filter((p) =>
+              terms.some(
+                (term) =>
+                  p.p.toLowerCase().includes(term) ||
+                  p.c.some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)) ||
+                  (p.up || []).some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)) ||
+                  (p.down || []).some(([c]) => normText(champName(c)).includes(term) || normText(c).includes(term)),
+              ),
             )
           : rows;
         return (
@@ -128,6 +133,14 @@ export const PatchesPanel: React.FC = () => {
                   </span>
                 </div>
                 <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+                  {p.c.length >= 2 && (
+                    <HubLink
+                      to={{ kind: "counters", query: `champ=${prettySlug(p.c[0][0])}&vs=${encodeURIComponent(p.c[1][0])}` }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Counters")}
+                    </HubLink>
+                  )}
                   <HubLink to={{ kind: "tiers", query: `key=p${p.p}` }} className="text-rw-accent hover:underline font-semibold">
                     {tl("Pro tier list")}
                   </HubLink>
@@ -363,8 +376,16 @@ export const LeaguesPanel: React.FC = () => {
 
 const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string; onSetQ?: (q: string) => void }> = ({ rows, scope, q, onSetQ }) => {
   const groups = useMemo(() => {
-    const qq = q.trim().toLowerCase();
-    const match = (l: LeagueRow) => !qq || `${l.s || ""} ${l.l} ${l.r || ""}`.toLowerCase().includes(qq);
+    const terms = q
+      .toLowerCase()
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const match = (l: LeagueRow) => {
+      if (!terms.length) return true;
+      const hay = `${l.s || ""} ${l.l} ${l.r || ""}`.toLowerCase();
+      return terms.some((t) => hay.includes(t));
+    };
     const newest = rows.reduce((m, l) => (l.to && l.to > m ? l.to : m), "");
     const isCurrent = (l: LeagueRow) => !!l.to && l.to >= newest;
     const intl = (l: LeagueRow) => (l.r || "").toLowerCase() === "international";
@@ -639,20 +660,47 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
           <Section
             title={tl("Most titles")}
             right={
-              <SectionCard
-                section={tl("Most titles")}
-                sub={l.l}
-                name={`${l.u}-most-titles`}
-                rows={() =>
-                  l.titles.slice(0, 10).map((t, idx) => ({
-                    rank: idx + 1,
-                    team: t.t,
-                    label: t.t,
-                    value: String(t.n),
-                    win: true,
-                  }))
-                }
-              />
+              <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                {l.titles.length >= 2 && (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a: l.titles[0].u || prettySlug(l.titles[0].t),
+                        b: l.titles[1].u || prettySlug(l.titles[1].t),
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: l.titles[0].u || prettySlug(l.titles[0].t),
+                        b: l.titles[1].u || prettySlug(l.titles[1].t),
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                  </>
+                )}
+                <SectionCard
+                  section={tl("Most titles")}
+                  sub={l.l}
+                  name={`${l.u}-most-titles`}
+                  rows={() =>
+                    l.titles.slice(0, 10).map((t, idx) => ({
+                      rank: idx + 1,
+                      team: t.t,
+                      label: t.t,
+                      value: String(t.n),
+                      win: true,
+                    }))
+                  }
+                />
+              </span>
             }
           >
             <ul className="text-xs space-y-1.5">
@@ -737,29 +785,53 @@ const LeagueEventsSection: React.FC<{
   pick: (y?: string) => void;
 }> = ({ l, season, years, events, pick }) => {
   const isHidden = useHiddenCheck();
+  const [evSearch, setEvSearch] = useState("");
+  const shownEvents = useMemo(() => {
+    const terms = evSearch
+      .toLowerCase()
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!terms.length) return events;
+    return events.filter((e) => {
+      const hay = `${e.n} ${e.w || ""} ${e.y || ""}`.toLowerCase();
+      return terms.some((t) => hay.includes(t));
+    });
+  }, [events, evSearch]);
   return (
     <Section
       title={season ? tl("{year} season", { year: season }) : tl("Every tournament")}
       right={
         events.length > 0 ? (
-          <SectionCard
-            section={season ? tl("{year} season", { year: season }) : tl("Every tournament")}
-            name={l.s || l.l}
-            sub={l.l}
-            rows={() =>
-              events.slice(0, 12).map((e, idx) => {
-                const hide = isHidden(`event:${e.u}`, e.en);
-                return {
-                  rank: idx + 1,
-                  team: e.w && !hide ? e.w : undefined,
-                  label: e.n,
-                  sub: [fmtDate(e.st, false), e.en && e.en !== e.st ? fmtDate(e.en, false) : ""].filter(Boolean).join(" – "),
-                  value: e.w && !hide ? e.w : fmtDate(e.st, false),
-                  win: Boolean(e.w && !hide),
-                };
-              })
-            }
-          />
+          <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+            {events.length > 10 && (
+              <input
+                value={evSearch}
+                onChange={(e) => setEvSearch(e.target.value)}
+                placeholder={tl("Filter by name or team…")}
+                aria-label={tl("Filter by name or team…")}
+                className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted w-40"
+              />
+            )}
+            <SectionCard
+              section={season ? tl("{year} season", { year: season }) : tl("Every tournament")}
+              name={l.s || l.l}
+              sub={l.l}
+              rows={() =>
+                shownEvents.slice(0, 12).map((e, idx) => {
+                  const hide = isHidden(`event:${e.u}`, e.en);
+                  return {
+                    rank: idx + 1,
+                    team: e.w && !hide ? e.w : undefined,
+                    label: e.n,
+                    sub: [fmtDate(e.st, false), e.en && e.en !== e.st ? fmtDate(e.en, false) : ""].filter(Boolean).join(" – "),
+                    value: e.w && !hide ? e.w : fmtDate(e.st, false),
+                    win: Boolean(e.w && !hide),
+                  };
+                })
+              }
+            />
+          </span>
         ) : undefined
       }
     >
@@ -790,7 +862,7 @@ const LeagueEventsSection: React.FC<{
             </tr>
           </thead>
           <tbody>
-            {events.map((e) => (
+            {shownEvents.map((e) => (
               <LeagueEventRow key={e.u} e={e} />
             ))}
           </tbody>

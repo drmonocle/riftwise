@@ -156,9 +156,16 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
   const [resultFilter, setResultFilter] = useState("");
   const range = `${fmtDate(w.from, false)} – ${fmtDate(w.to)}`;
   const pct = (p: number) => `${Math.round(p * 100)}%`;
-  const rq = resultFilter.trim().toLowerCase();
-  const shownResults = rq
-    ? w.results.filter((r) => `${r.a} ${r.b} ${r.t} ${r.e || ""}`.toLowerCase().includes(rq))
+  const rTerms = resultFilter
+    .toLowerCase()
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const shownResults = rTerms.length
+    ? w.results.filter((r) => {
+        const hay = `${r.a} ${r.b} ${r.t} ${r.e || ""}`.toLowerCase();
+        return rTerms.some((t) => hay.includes(t));
+      })
     : w.results;
   return (
     <div className="rw-page">
@@ -466,20 +473,35 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             <Section
               title={tl("Players of the week")}
               right={
-                <SectionCard
-                  section={tl("Players of the week")}
-                  name={range}
-                  rows={() =>
-                    w.players!.map((p, i) => ({
-                      rank: i + 1,
-                      team: p.t,
-                      label: p.n,
-                      sub: [p.r ? roleName(p.r) : "", p.t, `${p.g}G`].filter(Boolean).join(" · "),
-                      value: fmtRating(p.rt),
-                      win: true,
-                    }))
-                  }
-                />
+                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                  {w.players.length >= 2 && (
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "player",
+                        a: w.players[0].u || prettySlug(w.players[0].n),
+                        b: w.players[1].u || prettySlug(w.players[1].n),
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  )}
+                  <SectionCard
+                    section={tl("Players of the week")}
+                    name={range}
+                    rows={() =>
+                      w.players!.map((p, i) => ({
+                        rank: i + 1,
+                        team: p.t,
+                        label: p.n,
+                        sub: [p.r ? roleName(p.r) : "", p.t, `${p.g}G`].filter(Boolean).join(" · "),
+                        value: fmtRating(p.rt),
+                        win: true,
+                      }))
+                    }
+                  />
+                </span>
               }
               share="weekly-players"
             >
@@ -563,20 +585,30 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             <Section
               title={tl("Picks and bans this week")}
               right={
-                <SectionCard
-                  section={tl("Picks and bans this week")}
-                  name={range}
-                  rows={() =>
-                    w.champs!.slice(0, 12).map(([c, pk, bn, wn], i) => ({
-                      rank: i + 1,
-                      champ: c,
-                      label: champName(c),
-                      sub: `${pk} ${tl("Picks")} · ${bn} ${tl("Bans")}`,
-                      value: `${w.champGames ? `${Math.round(((pk + bn) / w.champGames) * 100)}%` : "–"}${pk ? ` · ${Math.round((wn / pk) * 100)}%` : ""}`,
-                      win: pk >= 3 ? wn / pk >= 0.5 : undefined,
-                    }))
-                  }
-                />
+                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                  {w.champs.length >= 2 && (
+                    <HubLink
+                      to={{ kind: "counters", query: `champ=${prettySlug(w.champs[0][0])}&vs=${encodeURIComponent(w.champs[1][0])}` }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Counters")} →
+                    </HubLink>
+                  )}
+                  <SectionCard
+                    section={tl("Picks and bans this week")}
+                    name={range}
+                    rows={() =>
+                      w.champs!.slice(0, 12).map(([c, pk, bn, wn], i) => ({
+                        rank: i + 1,
+                        champ: c,
+                        label: champName(c),
+                        sub: `${pk} ${tl("Picks")} · ${bn} ${tl("Bans")}`,
+                        value: `${w.champGames ? `${Math.round(((pk + bn) / w.champGames) * 100)}%` : "–"}${pk ? ` · ${Math.round((wn / pk) * 100)}%` : ""}`,
+                        win: pk >= 3 ? wn / pk >= 0.5 : undefined,
+                      }))
+                    }
+                  />
+                </span>
               }
               share="weekly-champs"
             >
@@ -682,6 +714,33 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               right={
                 w.results.length > 0 ? (
                   <span className="flex flex-wrap items-center gap-2">
+                    {rTerms.length > 0 && shownResults.length > 0 && shownResults[0].au && shownResults[0].bu && (
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: shownResults[0].au,
+                            b: shownResults[0].bu,
+                            ...(/^\d{4}$/.test((shownResults[0].date || "").slice(0, 4)) ? { period: `y${(shownResults[0].date || "").slice(0, 4)}` } : {}),
+                          }}
+                          className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "compare",
+                            mode: "team",
+                            a: shownResults[0].au,
+                            b: shownResults[0].bu,
+                            ...(/^\d{4}$/.test((shownResults[0].date || "").slice(0, 4)) ? { period: `y${(shownResults[0].date || "").slice(0, 4)}` } : {}),
+                          }}
+                          className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        >
+                          {tl("Compare")} →
+                        </HubLink>
+                      </>
+                    )}
                     {w.results.length > 8 && (
                       <input
                         type="search"
