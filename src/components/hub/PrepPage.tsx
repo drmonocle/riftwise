@@ -160,8 +160,8 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
   useEffect(() => {
     let alive = true;
     setSides({ a: null, b: null });
-    if (!a || !b) return;
-    Promise.all([loadSide(a, true), loadSide(b, true)])
+    if (!a && !b) return;
+    Promise.all([a ? loadSide(a, true) : Promise.resolve(null), b ? loadSide(b, true) : Promise.resolve(null)])
       .then(([x, y]) => alive && setSides({ a: x, b: y }))
       .catch((e) => alive && setSides({ a: null, b: null, failed: true, missing: e instanceof MissingFile }));
     return () => {
@@ -184,17 +184,28 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
           <p className="text-rw-sub">{tl("Pick two teams: storylines, form, head-to-head, team numbers, draft tendencies and every lane, on one page.")}</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          {(["a", "b"] as const).map((k) => (
-            <div key={k} className={`${card} min-w-0`}>
-              {(k === "a" ? a : b) ? (
-                <button type="button" onClick={() => set({ [k]: undefined })} className="text-[11px] text-rw-accent hover:underline">
-                  {tl("Change")}
-                </button>
-              ) : (
-                <ComparePick kind="team" autoFocus={k === "a" || !!a} onPick={(slug) => set({ [k]: slug })} />
-              )}
-            </div>
-          ))}
+          {(["a", "b"] as const).map((k) => {
+            const slug = k === "a" ? a : b;
+            const side = k === "a" ? sides.a : sides.b;
+            const label = side?.team.name || slug;
+            return (
+              <div key={k} className={`${card} min-w-0`}>
+                {slug ? (
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-rw-text min-w-0">
+                      {label && <TeamLogo name={label} size={18} />}
+                      <span className="truncate">{label}</span>
+                    </span>
+                    <button type="button" onClick={() => set({ [k]: undefined })} className="text-[11px] text-rw-accent hover:underline shrink-0">
+                      {tl("Change")}
+                    </button>
+                  </div>
+                ) : (
+                  <ComparePick kind="team" autoFocus={k === "a" || !!a} onPick={(s) => set({ [k]: s })} />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );

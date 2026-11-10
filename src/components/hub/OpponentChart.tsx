@@ -776,7 +776,7 @@ export const PlayerOpponents: React.FC<{
             </span>
             <span className="flex items-center gap-2">
               <HubLink
-                to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&team=${encodeURIComponent(expanded.u || expanded.opp)}` }}
+                to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(expanded.u || expanded.opp)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")}
@@ -889,7 +889,7 @@ export const PlayerOpponents: React.FC<{
                       </span>
                       <span>
                         <HubLink
-                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vsteam=${encodeURIComponent(o.u || prettySlug(o.opp))}` }}
+                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(o.u || prettySlug(o.opp))}` }}
                           onNavigate={() => {}}
                           className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
@@ -1105,7 +1105,7 @@ export const TeamOpponentsChart: React.FC<{
                       </span>
                       <span>
                         <HubLink
-                          to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vsteam=${encodeURIComponent(o.u || prettySlug(o.n))}` }}
+                          to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(o.u || prettySlug(o.n))}` }}
                           className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -1126,6 +1126,12 @@ export const TeamOpponentsChart: React.FC<{
                       <span className="inline-flex items-center gap-2">
                         <HubLink to={{ kind: "prep", a: teamSlug, b: o.u }} className="text-rw-accent hover:underline">
                           {tl("Match prep")}
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)},${encodeURIComponent(o.u)}` }}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")}
                         </HubLink>
                         <HubLink to={{ kind: "compare", mode: "team", a: teamSlug, b: o.u }} className="text-rw-muted hover:text-rw-accent hover:underline">
                           {tl("Compare")}
@@ -1313,7 +1319,13 @@ export const TeamPeriodOpponents: React.FC<{
                         />
                       </span>
                       <span>
-                        <span className="font-semibold text-rw-text">{o.g}</span>{" "}
+                        <HubLink
+                          to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(o.u || prettySlug(o.opp))}` }}
+                          className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          <span onClick={(e) => e.stopPropagation()}>{o.g}</span>
+                        </HubLink>{" "}
                         <span className="text-[11px] text-rw-muted">
                           ({o.w}–{o.g - o.w})
                         </span>
@@ -1345,6 +1357,13 @@ export const TeamPeriodOpponents: React.FC<{
                             title={tl("Match prep")}
                           >
                             {tl("Match prep")}
+                          </HubLink>
+                          <HubLink
+                            to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)},${encodeURIComponent(o.u)}` }}
+                            className="text-rw-muted hover:text-rw-accent hover:underline"
+                            title={tl("Draft board")}
+                          >
+                            {tl("Draft board")}
                           </HubLink>
                           <HubLink
                             to={{ kind: "compare", mode: "team", a: teamSlug, b: o.u }}

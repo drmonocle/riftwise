@@ -285,7 +285,8 @@ const LeagueTable: React.FC<{
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const eventSlug = q.get("event") || "";
   const roleQ = q.get("role") || "";
-  const side = q.get("side") === "b" || q.get("side") === "r" ? (q.get("side") as "b" | "r") : undefined;
+  const rawSide = q.get("side");
+  const side: "b" | "r" | undefined = rawSide === "b" || rawSide === "blue" ? "b" : rawSide === "r" || rawSide === "red" ? "r" : undefined;
   const vs = q.get("vs") || "";
   const result = useMemo(() => {
     if (!file.data) return null;
@@ -413,7 +414,34 @@ const LeagueTable: React.FC<{
           </span>
         ),
     },
-    { key: "fp", label: "B1", title: tl("First pick of the draft (blue side)"), value: (c) => c.fp || null, render: (c) => (c.fp ? c.fp : "–") },
+    {
+      key: "fp",
+      label: "B1",
+      title: tl("First pick of the draft (blue side)"),
+      value: (c) => c.fp || null,
+      render: (c) =>
+        c.fp ? (
+          <HubLink
+            to={{
+              kind: "finder",
+              query: new URLSearchParams({
+                champ: c.c,
+                league,
+                side: "b",
+                ...(year ? { year } : {}),
+                ...(eventSlug ? { event: eventSlug } : {}),
+                ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+              }).toString(),
+            }}
+            className="hover:text-rw-accent hover:underline"
+            title={tl("Game finder")}
+          >
+            {c.fp}
+          </HubLink>
+        ) : (
+          "–"
+        ),
+    },
     { key: "csm", label: tl("CS/m"), title: tl("CS per minute"), value: (c) => c.csm },
     { key: "gpm", label: tl("GPM"), title: tl("Gold per minute"), value: (c) => c.gpm },
     { key: "dpm", label: tl("DPM"), title: tl("Damage per minute"), value: (c) => c.dpm },

@@ -377,7 +377,18 @@ const FeaturedMatch: React.FC<{
               </span>
             )
           ) : (
-            <span className="text-xs font-bold text-rw-sub bg-rw-bg border border-rw-border px-2.5 py-1 rounded-full uppercase tracking-widest font-num">{tl("VS")}</span>
+            <button
+              type="button"
+              onClick={() => {
+                const a = prettySlug(m.team1Name || m.team1Code);
+                const b = prettySlug(m.team2Name || m.team2Code);
+                if (a && b) navigateHub({ kind: "compare", mode: "team", a, b });
+              }}
+              title={tl("Compare")}
+              className="text-xs font-bold text-rw-sub hover:text-rw-accent bg-rw-bg border border-rw-border hover:border-rw-accent/60 px-2.5 py-1 rounded-full uppercase tracking-widest font-num transition-colors"
+            >
+              {tl("VS")}
+            </button>
           )}
         </div>
         {team(m.team2Code, m.team2Name, m.team2Image, true)}
@@ -391,6 +402,17 @@ const FeaturedMatch: React.FC<{
             </button>
           )}
           <MatchPrepButton match={m} />
+          <button
+            type="button"
+            onClick={() => {
+              const a = prettySlug(m.team1Name || m.team1Code);
+              const b = prettySlug(m.team2Name || m.team2Code);
+              if (a && b) navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}` });
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rw-border bg-rw-bg hover:border-rw-accent text-rw-text font-semibold transition-colors px-2.5 py-1 text-[11px]"
+          >
+            {tl("Draft board")}
+          </button>
           <MatchOverviewButton match={m} />
           <AddToCalendarMenu match={m} onOpenUrl={onOpenUrl} />
           <ShareMatchButton match={m} className="border border-rw-border bg-rw-bg p-1.5" />

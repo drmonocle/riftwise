@@ -458,7 +458,13 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string }>
                     <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${r[3]}/${r[4]}/${r[5]}`}</span>
                   )}{" "}
                   <span className="text-rw-sub inline-flex items-center gap-1 align-baseline">
-                    <span>vs</span>
+                    <HubLink
+                      to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(prettySlug(r[8]))}` }}
+                      className="text-rw-muted hover:text-rw-accent hover:underline"
+                      title={tl("Game finder")}
+                    >
+                      vs
+                    </HubLink>
                     <TeamLogo name={r[8]} size={13} />
                     <TeamLink name={r[8]} />
                     {r[10] ? ` · ${roleName(r[10])}` : ""}

@@ -15,6 +15,7 @@ import { RIOT_PREFIX } from "../hub/riotMatch";
 import { TeamLogo, useLoad } from "./hub/ui";
 import { SectionCard } from "./hub/BroadcastCard";
 import { MatchOverviewButton } from "./MatchOverviewButton";
+import { MatchPrepButton } from "./MatchPrepButton";
 import { clickable, OPEN_TAB_EVENT } from "../a11y";
 
 const HEAD = "font-head text-[13px] font-bold uppercase tracking-[0.12em] text-rw-sub";
@@ -131,6 +132,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                 <span className="truncate">{m.team2Name}</span>
               </button>
               <span className="w-16 shrink-0 text-right text-[11px] text-rw-muted">{when(m.startTimeUtc)}</span>
+              <MatchPrepButton match={m} compact />
               {shown && <MatchOverviewButton match={m} compact />}
             </li>
           );

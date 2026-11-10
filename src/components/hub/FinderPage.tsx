@@ -64,7 +64,7 @@ function matchSide(g: ChampGame, q: Q, eventIdx: number | null): number {
   const ban = q.get("ban");
   if (ban && !g[7].includes(ban) && !g[8].includes(ban)) return -1;
   const team = q.get("team");
-  const vs = q.get("vs");
+  const vs = q.get("vs") || q.get("vsteam");
   const rawSide = q.get("side");
   const side = rawSide === "blue" ? "b" : rawSide === "red" ? "r" : rawSide;
   const result = q.get("result");
@@ -313,6 +313,7 @@ const FinderBody: React.FC<{
   const sideCond = !!(
     q.get("team") ||
     q.get("vs") ||
+    q.get("vsteam") ||
     q.get("side") ||
     q.get("result") ||
     q.get("champ") ||
@@ -422,8 +423,8 @@ const FinderBody: React.FC<{
             ))}
           </select>
           <select
-            value={teamOption(opts.teams, q.get("vs"))}
-            onChange={(e) => setQ({ vs: e.target.value || undefined })}
+            value={teamOption(opts.teams, q.get("vs") || q.get("vsteam"))}
+            onChange={(e) => setQ({ vs: e.target.value || undefined, vsteam: undefined })}
             aria-label={tl("Opponent")}
             className={sel}
           >

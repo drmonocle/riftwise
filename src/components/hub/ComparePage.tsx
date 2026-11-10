@@ -605,11 +605,71 @@ export const TeamRows: React.FC<{
   const gObj = `${tl("Towers")} · ${tl("Baron%")}`;
   const gPace = tl("Stats");
   const rows: RowSpec[] = [
-    { key: "h2h", group: gOverview, label: career ? tl("Head to head (games)") : tl("Head to head this period (games)"), a: h2h.g ? h2h.w : "–", b: h2h.g ? h2h.g - h2h.w : "–", va: h2h.g ? h2h.w : null, vb: h2h.g ? h2h.g - h2h.w : null },
+    {
+      key: "h2h",
+      group: gOverview,
+      label: career ? tl("Head to head (games)") : tl("Head to head this period (games)"),
+      a: h2h.g ? (
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(x.u)}&vs=${encodeURIComponent(y.u)}` }} className="hover:text-rw-accent hover:underline">
+          {h2h.w}
+        </HubLink>
+      ) : (
+        "–"
+      ),
+      b: h2h.g ? (
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(y.u)}&vs=${encodeURIComponent(x.u)}` }} className="hover:text-rw-accent hover:underline">
+          {h2h.g - h2h.w}
+        </HubLink>
+      ) : (
+        "–"
+      ),
+      va: h2h.g ? h2h.w : null,
+      vb: h2h.g ? h2h.g - h2h.w : null,
+    },
     { key: "games", group: gOverview, label: tl("Games won"), a: `${A.w}-${A.g - A.w}`, b: `${B.w}-${B.g - B.w}` },
     { key: "wr", group: gOverview, label: tl("Win rate"), a: winRate(A.w, A.g), b: winRate(B.w, B.g), va: wr(A.w, A.g), vb: wr(B.w, B.g), ...pc("wr") },
-    { key: "blue", group: gOverview, label: tl("Blue side wins"), a: `${winRate(A.blue[1], A.blue[0])} (${A.blue[0]})`, b: `${winRate(B.blue[1], B.blue[0])} (${B.blue[0]})`, va: wr(A.blue[1], A.blue[0]), vb: wr(B.blue[1], B.blue[0]) },
-    { key: "red", group: gOverview, label: tl("Red side wins"), a: `${winRate(A.red[1], A.red[0])} (${A.red[0]})`, b: `${winRate(B.red[1], B.red[0])} (${B.red[0]})`, va: wr(A.red[1], A.red[0]), vb: wr(B.red[1], B.red[0]) },
+    {
+      key: "blue",
+      group: gOverview,
+      label: tl("Blue side wins"),
+      a: A.blue[0] ? (
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(x.u)}&side=b` }} className="hover:text-rw-accent hover:underline">
+          {`${winRate(A.blue[1], A.blue[0])} (${A.blue[0]})`}
+        </HubLink>
+      ) : (
+        `${winRate(A.blue[1], A.blue[0])} (${A.blue[0]})`
+      ),
+      b: B.blue[0] ? (
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(y.u)}&side=b` }} className="hover:text-rw-accent hover:underline">
+          {`${winRate(B.blue[1], B.blue[0])} (${B.blue[0]})`}
+        </HubLink>
+      ) : (
+        `${winRate(B.blue[1], B.blue[0])} (${B.blue[0]})`
+      ),
+      va: wr(A.blue[1], A.blue[0]),
+      vb: wr(B.blue[1], B.blue[0]),
+    },
+    {
+      key: "red",
+      group: gOverview,
+      label: tl("Red side wins"),
+      a: A.red[0] ? (
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(x.u)}&side=r` }} className="hover:text-rw-accent hover:underline">
+          {`${winRate(A.red[1], A.red[0])} (${A.red[0]})`}
+        </HubLink>
+      ) : (
+        `${winRate(A.red[1], A.red[0])} (${A.red[0]})`
+      ),
+      b: B.red[0] ? (
+        <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(y.u)}&side=r` }} className="hover:text-rw-accent hover:underline">
+          {`${winRate(B.red[1], B.red[0])} (${B.red[0]})`}
+        </HubLink>
+      ) : (
+        `${winRate(B.red[1], B.red[0])} (${B.red[0]})`
+      ),
+      va: wr(A.red[1], A.red[0]),
+      vb: wr(B.red[1], B.red[0]),
+    },
     ...(career
       ? ([
           { key: "titles", group: gOverview, label: tl("Titles"), a: x.titles.length, b: y.titles.length, va: x.titles.length, vb: y.titles.length },
@@ -843,7 +903,23 @@ const PlayerRows: React.FC<{ x: HubPlayer; y: HubPlayer; ra: PlayerGameRow[]; rb
       : []),
     { key: "p_games", group: gOverview, label: tl("Games won"), a: `${A.w}-${A.g - A.w}`, b: `${B.w}-${B.g - B.w}` },
     { key: "p_wr", group: gOverview, label: tl("Win rate"), a: winRate(A.w, A.g), b: winRate(B.w, B.g), va: wr(A.w, A.g), vb: wr(B.w, B.g) },
-    { key: "p_champs", group: gOverview, label: tl("Champions played"), a: A.champs.length, b: B.champs.length, va: A.champs.length, vb: B.champs.length },
+    {
+      key: "p_champs",
+      group: gOverview,
+      label: tl("Champions played"),
+      a: (
+        <HubLink to={{ kind: "player", slug: x.u, tab: "champions" }} className="hover:text-rw-accent hover:underline">
+          {A.champs.length}
+        </HubLink>
+      ),
+      b: (
+        <HubLink to={{ kind: "player", slug: y.u, tab: "champions" }} className="hover:text-rw-accent hover:underline">
+          {B.champs.length}
+        </HubLink>
+      ),
+      va: A.champs.length,
+      vb: B.champs.length,
+    },
     ...(career
       ? ([
           { key: "p_titles", group: gOverview, label: tl("Titles"), a: x.titles.length, b: y.titles.length, va: x.titles.length, vb: y.titles.length },
@@ -1365,6 +1441,19 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
           </details>
         )}
         <span className="ml-auto flex flex-wrap items-center gap-2">
+          {mode === "team" && rows.length >= 2 && (
+            <>
+              <HubLink to={{ kind: "prep", a: rows[0].slug, b: rows[1].slug }} className="text-rw-accent hover:underline">
+                {tl("Match prep")}
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(rows[0].slug)},${encodeURIComponent(rows[1].slug)}` }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Draft board")}
+              </HubLink>
+            </>
+          )}
           <span className="text-rw-muted">{tl("Stats for")}</span>
           <QuickPeriods options={options} value={period} onChange={(p) => set({ period: p })} />
           <PeriodPicker options={options} value={period} onChange={(p) => set({ period: p })} />

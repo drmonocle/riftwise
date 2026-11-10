@@ -177,7 +177,10 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         const u = t[1] || prettySlug(t[0]);
         return (
           <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">
-            <HubLink to={{ kind: "compare", mode: "team", a: u }} className="text-rw-accent hover:underline">
+            <HubLink to={{ kind: "prep", a: u }} className="text-rw-accent hover:underline">
+              {tl("Match prep")}
+            </HubLink>
+            <HubLink to={{ kind: "compare", mode: "team", a: u }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Compare")}
             </HubLink>
             <HubLink to={{ kind: "finder", query: `team=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
@@ -361,6 +364,9 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
           <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">
             <HubLink to={{ kind: "compare", mode: "player", a: u }} className="text-rw-accent hover:underline">
               {tl("Compare")}
+            </HubLink>
+            <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              {tl("Game finder")}
             </HubLink>
             <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
               {tl("Item history")}

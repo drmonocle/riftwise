@@ -273,7 +273,17 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       key: "last",
       label: tl("Last game"),
       value: (x) => x.r[8],
-      render: (x) => fmtDate(x.r[8]),
+      render: (x) =>
+        x.r[8] ? (
+          <HubLink
+            to={{ kind: "team", slug: x.r[0], tab: "matches" }}
+            className="hover:text-rw-accent hover:underline"
+          >
+            {fmtDate(x.r[8])}
+          </HubLink>
+        ) : (
+          "–"
+        ),
       className: "text-rw-muted",
     },
   ];
