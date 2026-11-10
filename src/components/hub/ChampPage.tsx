@@ -1,10 +1,10 @@
 /** Champion page: pro picks, bans and wins by year and patch, builds, matchups, best players and the latest pro games. */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { tl, tc, roleName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { loadHubChamp, normText, prettySlug } from "../../hub/data";
-import { hubShareUrl } from "../../hub/route";
+import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import type { HubChamp } from "../../hub/types";
 import { isFinishedItem, useDDragon } from "../../hub/ddragon";
 import {
@@ -42,11 +42,20 @@ import { BroadcastCardButton, SectionCard, champCardData } from "./BroadcastCard
 import { WinBar, KdaBar } from "./OpponentChart";
 import { ChampVisualOverview } from "./VisualAnalytics";
 
-export const ChampPage: React.FC<{ slug: string }> = ({ slug }) => {
-  const state = useLoad(() => loadHubChamp(slug), [slug]);
+export const ChampPage: React.FC<{ slug: string; query?: string }> = ({ slug, query }) => {
+  const state = useLoad(
+    () =>
+      loadHubChamp(slug).then((c) => {
+        const now = currentHubRoute();
+        if (c.u && c.u !== slug && now.kind === "champ" && now.slug === slug)
+          navigateHub({ kind: "champ", slug: c.u, ...("query" in now && now.query ? { query: now.query } : {}) }, { replace: true });
+        return c;
+      }),
+    [slug],
+  );
   usePageTitle(state.data ? champName(state.data.name) : null, state.data?.name);
   useDDragon();
-  return <Page state={state}>{(c) => <ChampView c={c} />}</Page>;
+  return <Page state={state}>{(c) => <ChampView c={c} query={query} />}</Page>;
 };
 
 /** A lead at 15 minutes: "+250" in teal, "-40" in red. */
@@ -87,8 +96,9 @@ const PatchTrend: React.FC<{ patches: NonNullable<HubChamp["patches"]> }> = ({ p
 // "<1%" rather than "0%" for something that did happen, just rarely
 const pctOf = (w: number, g: number) => (!g ? "–" : w > 0 && (w / g) * 100 < 0.5 ? "<1%" : `${Math.round((w / g) * 100)}%`);
 
-const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
+const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
   const ddReady = useDDragon();
+  const qRole = useMemo(() => new URLSearchParams(query || "").get("role") || "", [query]);
   const [recentHidden, revealRecent] = useHidden(`champ-recent:${c.u}`, c.recent[0]?.date);
   const teamByPlayer = useMemo(() => {
     const m = new Map<string, string>();
@@ -104,7 +114,7 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
   const mainRoles = c.roles.filter((r) => r.p / totalRoles >= 0.1).map((r) => r.r);
   // the champion's roles in order of how often it's played there, with matchups in either list
   const roleKeys = mainRoles.filter((r) => (c.matchups?.[r]?.length || 0) > 0 || (c.matchups12?.[r]?.length || 0) > 0);
-  const [muRole, setMuRole] = useState(roleKeys[0] || "");
+  const [muRole, setMuRole] = useState(() => (qRole && roleKeys.includes(qRole) ? qRole : roleKeys[0] || ""));
   const [muSearch, setMuSearch] = useState("");
   const [duoSearch, setDuoSearch] = useState("");
   const [playerSearch, setPlayerSearch] = useState("");
@@ -123,7 +133,20 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
     for (const r of c.recent) if (r.r) counts.set(r.r, (counts.get(r.r) || 0) + 1);
     return [...counts.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).map(([r]) => r);
   }, [c.builds, c.recent]);
-  const [buildRole, setBuildRole] = useState("");
+  const [buildRole, setBuildRole] = useState(() => (qRole && buildRoles.includes(qRole) ? qRole : ""));
+  useEffect(() => {
+    if (qRole && roleKeys.includes(qRole)) setMuRole(qRole);
+    else if (!qRole && roleKeys[0]) setMuRole(roleKeys[0]);
+    if (qRole && buildRoles.includes(qRole)) setBuildRole(qRole);
+    else if (!qRole) setBuildRole("");
+  }, [qRole, c.u]); // eslint-disable-line react-hooks/exhaustive-deps
+  const syncChampRole = (r: string) => {
+    const nextQ = new URLSearchParams(query || "");
+    if (r) nextQ.set("role", r);
+    else nextQ.delete("role");
+    const qs = nextQ.toString();
+    navigateHub({ kind: "champ", slug: c.u, ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
   const activeBuilds = useMemo(() => {
     if (!c.builds) return null;
     if (!buildRole) return c.builds;
@@ -298,7 +321,10 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <button
                       key={r || "all"}
                       type="button"
-                      onClick={() => setBuildRole(r)}
+                      onClick={() => {
+                        setBuildRole(r);
+                        syncChampRole(r);
+                      }}
                       className={`px-2 py-0.5 rounded text-[11px] border ${
                         r === buildRole ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
                       }`}
@@ -654,7 +680,10 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setMuRole(r)}
+                  onClick={() => {
+                    setMuRole(r);
+                    syncChampRole(r === roleKeys[0] && !buildRole ? "" : r);
+                  }}
                   className={`px-2 py-0.5 rounded text-[11px] border ${
                     r === muRole ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub"
                   }`}
@@ -1784,6 +1813,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Champions")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "patches", query: `q=${encodeURIComponent(c.name)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Patches")} →
               </HubLink>
               <HubLink
                 to={{

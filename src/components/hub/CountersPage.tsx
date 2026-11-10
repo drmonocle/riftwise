@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, prettySlug } from "../../hub/data";
+import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, prettySlug, resolveChampSlug } from "../../hub/data";
 import { ROLES } from "../../hub/champAgg";
 import type { HubChamp, HubMatchups } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
@@ -25,7 +25,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   useDDragon();
   const q = new URLSearchParams(query || "");
   const rawSlug = q.get("champ") || "";
-  const slug = rawSlug ? prettySlug(rawSlug) : "";
+  const slug = rawSlug ? resolveChampSlug(rawSlug) : "";
   const vsParam = q.get("vs") || "";
   const role = q.get("role") || "";
   const spanParam = q.get("span") || "";
@@ -63,11 +63,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     setVsInput(vsParam ? champName(vsParam) : "");
   }, [vsParam]);
   const matchChamp = (raw: string) => {
-    const b = bare(raw.trim());
+    const resolved = resolveChampSlug(raw.trim());
+    const b = bare(resolved || raw.trim());
     if (!b) return undefined;
     const list = index.data?.champs || [];
     return (
-      list.find((c) => bare(c[0]) === b || bare(champName(c[0])) === b || c[1] === b) ||
+      list.find((c) => c[1] === resolved || bare(c[0]) === b || bare(champName(c[0])) === b || c[1] === b) ||
       (b.length >= 3 ? list.find((c) => bare(c[0]).startsWith(b) || bare(champName(c[0])).startsWith(b)) : undefined)
     );
   };
@@ -245,7 +246,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const vsMatch = useMemo(() => {
     const d = data.data;
     if (!d || !vsParam) return null;
-    const b = bare(vsParam);
+    const b = bare(resolveChampSlug(vsParam) || vsParam);
     const allRows: Row[] = [];
     if (span === "12m" && d.ch?.matchups12) {
       ROLES.forEach((rName, rIdx) => {
@@ -303,7 +304,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
           {slug && vsParam ? (
             <button
               type="button"
-              onClick={() => set({ champ: prettySlug(vsMatch?.oppCanon || vsParam), vs: rawChamp || slug })}
+              onClick={() => set({ champ: resolveChampSlug(vsMatch?.oppCanon || vsParam), vs: rawChamp || slug })}
               className="px-1.5 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 font-semibold"
               title={`⇄ ${champName(vsMatch?.oppCanon || vsParam)} ${tl("vs")} ${cName || slug}`}
             >

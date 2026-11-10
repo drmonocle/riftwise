@@ -132,11 +132,11 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   const kind = PATH_ENTITY[parts[0]];
   const rawQ = new URLSearchParams(search);
   const keptQ = new URLSearchParams();
-  for (const k of ["p", "as", "y", "champ"]) {
+  for (const k of ["p", "as", "y", "champ", "role"]) {
     const v = rawQ.get(k);
     if (v) keptQ.set(k, v);
   }
-  const qStr = (kind === "team" || kind === "player") && keptQ.toString() ? keptQ.toString() : undefined;
+  const qStr = (kind === "team" || kind === "player" || kind === "champ") && keptQ.toString() ? keptQ.toString() : undefined;
   // a league page can open at one season: /league/lck/2025
   if (kind === "league" && parts.length === 3 && /^\d{4}$/.test(parts[2])) return { kind, slug: parts[1].toLowerCase(), year: parts[2] };
   // a match page can open at one of its games via /match/<slug>/5 as well as ?g=5

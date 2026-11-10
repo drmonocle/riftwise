@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { hubPath, parseHubPath } from "../hub/route";
-import { resolveEventSlug, resolveLeagueSlug } from "../hub/data";
+import { resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug } from "../hub/data";
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
 import { filterBuiltSeasons } from "../components/hub/Ranks";
 import { champPairShortcuts, matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
@@ -49,6 +49,8 @@ describe("page tabs in the address", () => {
   it("resolves legacy and alternate entity/compare URLs and slug aliases", () => {
     expect(parseHubPath("/event/worlds-2026-main-event", "")).toEqual({ kind: "event", slug: "worlds-2026-main-event" });
     expect(parseHubPath("/champ/ahri", "")).toEqual({ kind: "champ", slug: "ahri" });
+    expect(parseHubPath("/champion/pantheon", "?role=Support")).toEqual({ kind: "champ", slug: "pantheon", query: "role=Support" });
+    expect(hubPath({ kind: "champ", slug: "pantheon", query: "role=Support" })).toBe("/champion/pantheon?role=Support");
     expect(parseHubPath("/team/t1/tournaments", "")).toEqual({ kind: "team", slug: "t1", tab: "history" });
     expect(parseHubPath("/team/t1/series", "")).toEqual({ kind: "team", slug: "t1", tab: "matches" });
     expect(hubPath({ kind: "team", slug: "t1", tab: "tournaments" })).toBe("/team/t1/history");
@@ -58,6 +60,15 @@ describe("page tabs in the address", () => {
     expect(resolveEventSlug("world-championship-2016")).toBe("worlds-2016");
     expect(resolveEventSlug("lol-world-championship-2013")).toBe("worlds-season-3");
     expect(resolveEventSlug("mid-season-invitational-2024")).toBe("msi-2024");
+    expect(resolveChampSlug("k-sante")).toBe("ksante");
+    expect(resolveChampSlug("Kha-Zix")).toBe("khazix");
+    expect(resolveChampSlug("leesin")).toBe("lee-sin");
+    expect(resolveChampSlug("monkeyking")).toBe("wukong");
+    expect(resolveChampSlug("nunu")).toBe("nunu-and-willump");
+    expect(resolveChampSlug("j4")).toBe("jarvan-iv");
+    expect(resolvePlayerSlug("show-maker")).toBe("showmaker");
+    expect(resolvePlayerSlug("the-shy")).toBe("theshy");
+    expect(resolvePlayerSlug("thebausffs")).toBe("baus");
   });
 });
 

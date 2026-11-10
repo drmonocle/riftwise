@@ -12,7 +12,7 @@ import type { HubRoute } from "../../hub/route";
 import { tl, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, normText, prettySlug, resolveChampSlug, resolvePlayerSlug } from "../../hub/data";
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub, hubShareUrl } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
@@ -64,7 +64,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   const picks: Picks = {
     player: resolvePlayerSlug(prettySlug(q.get("player") || "")),
     item: prettySlug(q.get("item") || ""),
-    champ: prettySlug(q.get("champ") || ""),
+    champ: resolveChampSlug(q.get("champ") || ""),
     year: q.get("year") || "",
   };
   const { player, item, champ, year } = picks;
@@ -86,7 +86,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   const resolvedItem = itemRow?.[1] || item;
   const resolvedPicks: Picks = { ...picks, item: resolvedItem };
   const champs = useMemo(() => [...(people.data?.champs || [])].sort((a, b) => champName(a[0]).localeCompare(champName(b[0]))), [people.data]);
-  const champRow = useMemo(() => champs.find((r) => prettySlug(r[0]) === champ), [champs, champ]);
+  const champRow = useMemo(() => champs.find((r) => (r[1] || prettySlug(r[0])) === champ || prettySlug(r[0]) === champ), [champs, champ]);
   const champLabel = champRow ? champName(champRow[0]) : champ;
   const thisYear = new Date().getFullYear();
   const years = Array.from({ length: thisYear - FIRST_YEAR + 1 }, (_, i) => String(thisYear - i));

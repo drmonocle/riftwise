@@ -132,8 +132,120 @@ const PLAYER_SLUG_ALIASES: Record<string, string> = {
   bausffs: "baus",
   thebaus: "baus",
   rekky: "rekkles",
+  "show-maker": "showmaker",
+  "the-shy": "theshy",
+  "jackey-love": "jackeylove",
+  "double-lift": "doublelift",
+  "clear-love": "clearlove",
+  knight9: "knight",
+  bjerg: "bjergsen",
+  dl: "doublelift",
 };
-export const resolvePlayerSlug = (slug: string) => PLAYER_SLUG_ALIASES[slug.toLowerCase()] || slug;
+export const resolvePlayerSlug = (slug: string) => PLAYER_SLUG_ALIASES[slug.toLowerCase()] || slug.toLowerCase();
+
+async function playerFile<T>(dir: string, slug: string): Promise<T> {
+  const first = resolvePlayerSlug(slug);
+  try {
+    return await load<T>(`hub/${dir}/${first}.json`);
+  } catch (err) {
+    if (!(err instanceof MissingFile)) throw err;
+    const noDash = first.replace(/-/g, "");
+    if (noDash && noDash !== first) {
+      try {
+        return await load<T>(`hub/${dir}/${noDash}.json`);
+      } catch (e2) {
+        if (!(e2 instanceof MissingFile)) throw e2;
+      }
+    }
+    throw err;
+  }
+}
+
+const CHAMP_SLUG_ALIASES: Record<string, string> = {
+  "k-sante": "ksante",
+  "kha-zix": "khazix",
+  "rek-sai": "reksai",
+  "vel-koz": "velkoz",
+  "kog-maw": "kogmaw",
+  "cho-gath": "chogath",
+  "bel-veth": "belveth",
+  "kai-sa": "kaisa",
+  "le-blanc": "leblanc",
+  lb: "leblanc",
+  leesin: "lee-sin",
+  twistedfate: "twisted-fate",
+  tf: "twisted-fate",
+  missfortune: "miss-fortune",
+  mf: "miss-fortune",
+  tahmkench: "tahm-kench",
+  tk: "tahm-kench",
+  jarvaniv: "jarvan-iv",
+  jarvan: "jarvan-iv",
+  jarvan4: "jarvan-iv",
+  "jarvan-4": "jarvan-iv",
+  j4: "jarvan-iv",
+  aurelionsol: "aurelion-sol",
+  asol: "aurelion-sol",
+  "a-sol": "aurelion-sol",
+  masteryi: "master-yi",
+  yi: "master-yi",
+  xinzhao: "xin-zhao",
+  xin: "xin-zhao",
+  drmundo: "dr-mundo",
+  mundo: "dr-mundo",
+  renataglasc: "renata-glasc",
+  renata: "renata-glasc",
+  nunu: "nunu-and-willump",
+  "nunu-willump": "nunu-and-willump",
+  nunuwillump: "nunu-and-willump",
+  nunuandwillump: "nunu-and-willump",
+  monkeyking: "wukong",
+  "monkey-king": "wukong",
+  blitz: "blitzcrank",
+  cass: "cassiopeia",
+  cassio: "cassiopeia",
+  gp: "gangplank",
+  ez: "ezreal",
+  morde: "mordekaiser",
+  cait: "caitlyn",
+  vlad: "vladimir",
+  heimer: "heimerdinger",
+  nid: "nidalee",
+  nida: "nidalee",
+  sej: "sejuani",
+  malph: "malphite",
+  ali: "alistar",
+  noc: "nocturne",
+  renek: "renekton",
+  ori: "orianna",
+  aphel: "aphelios",
+  kass: "kassadin",
+};
+export function resolveChampSlug(slug: string): string {
+  const raw = (slug || "").trim().toLowerCase();
+  if (CHAMP_SLUG_ALIASES[raw]) return CHAMP_SLUG_ALIASES[raw];
+  const p = prettySlug(slug);
+  return CHAMP_SLUG_ALIASES[p] || p;
+}
+
+async function champFile<T>(dir: "champ" | "matchups", slug: string): Promise<T> {
+  const first = resolveChampSlug(slug);
+  try {
+    return await load<T>(`hub/${dir}/${first}.json`);
+  } catch (err) {
+    if (!(err instanceof MissingFile)) throw err;
+    const b = bare(first || slug);
+    if (b) {
+      const champs = await loadHubIndexQuick()
+        .then((i) => i.champs)
+        .catch(() => [] as SearchChampRow[]);
+      const hit = champs.find((c) => bare(c[0]) === b || bare(c[1]) === b);
+      const canon = hit ? slugOf(hit[0], hit[1]) : "";
+      if (canon && canon !== first) return load<T>(`hub/${dir}/${canon}.json`);
+    }
+    throw err;
+  }
+}
 
 const EVENT_EARLY_WORLDS: Record<string, string> = {
   "worlds-2011": "worlds-season-1",
@@ -150,10 +262,26 @@ export function resolveEventSlug(slug: string): string {
 }
 
 export const loadHubTeam = (slug: string) => teamFile<HubTeam>("team", slug);
-export const loadHubPlayer = (slug: string) => load<HubPlayer>(`hub/player/${resolvePlayerSlug(slug)}.json`);
-export const loadHubEvent = (slug: string) => load<HubEvent>(`hub/event/${resolveEventSlug(slug)}.json`);
+export const loadHubPlayer = (slug: string) => playerFile<HubPlayer>("player", slug);
+export const loadHubEvent = async (slug: string): Promise<HubEvent> => {
+  const first = resolveEventSlug(slug);
+  try {
+    return await load<HubEvent>(`hub/event/${first}.json`);
+  } catch (err) {
+    if (!(err instanceof MissingFile)) throw err;
+    const events = await loadHubIndexQuick()
+      .then((i) => i.events)
+      .catch(() => [] as SearchEventRow[]);
+    const b = bare(first);
+    const hit =
+      events.find((e) => e[1] === `${first}-main-event`) ||
+      (b ? events.find((e) => bare(e[1]) === b || bare(e[0]) === b) : undefined);
+    if (hit && hit[1] && hit[1] !== first) return load<HubEvent>(`hub/event/${hit[1]}.json`);
+    throw err;
+  }
+};
 export const loadHubSeries = withAlias<HubSeries>("game");
-export const loadHubChamp = (slug: string) => load<HubChamp>(`hub/champ/${prettySlug(slug)}.json`);
+export const loadHubChamp = (slug: string) => champFile<HubChamp>("champ", slug);
 /** Every game scoreboard of a Worlds / MSI / First Stand event in one file (Worlds page facts). */
 export const loadEventLines = (slug: string) => load<import("./worldsFacts").EventLines>(`hub/lines/${resolveEventSlug(slug)}.json`);
 export const loadEventsOfYear = (year: string) => load<EventListItem[]>(`hub/events/${year}.json`);
@@ -476,7 +604,7 @@ export function findHubTeam(index: HubIndex, name: string, code?: string): strin
 }
 
 export const loadTeamSeries = (slug: string) => teamFile<import("./types").TeamSeriesRow[]>("teamseries", slug);
-export const loadPlayerGames = (slug: string) => load<import("./types").PlayerGameRow[]>(`hub/playergames/${resolvePlayerSlug(slug)}.json`);
+export const loadPlayerGames = (slug: string) => playerFile<import("./types").PlayerGameRow[]>("playergames", slug);
 export const loadTeamGames = (slug: string) => teamFile<import("./types").TeamGameRow[]>("teamgames", slug);
 const seasonCache = new Map<string, Promise<import("./types").LeagueSeason>>();
 export const loadLeagueSeason = (league: string, year: string): Promise<import("./types").LeagueSeason> => {
@@ -563,7 +691,7 @@ export function prefetchHub(r: import("./route").HubRoute): void {
     best: () => Promise.all([loadBestIndex(), loadBest()]),
     counters: () => {
       const ch = qp.get("champ") || "";
-      return Promise.all([loadHubIndexQuick(), ...(ch ? [loadMatchups(prettySlug(ch))] : [])]);
+      return Promise.all([loadHubIndexQuick(), ...(ch ? [loadMatchups(ch)] : [])]);
     },
     finder: () => Promise.all([loadChampIndex(), loadAliases()]),
     leaders: () => {
@@ -612,7 +740,7 @@ export function prefetchHub(r: import("./route").HubRoute): void {
 }
 export const loadBestIndex = () => load<import("./types").BestIndex>("hub/best/index.json");
 export const loadRecordsYear = (year: string) => load<import("./types").HubRecordsYear>(`hub/records/${year}.json`);
-export const loadMatchups = (slug: string) => load<import("./types").HubMatchups>(`hub/matchups/${slug}.json`);
+export const loadMatchups = (slug: string) => champFile<import("./types").HubMatchups>("matchups", slug);
 /** The item history (/stats/items): one player's items, one item's players, and every item */
 const playerItemsCache = new Map<string, Promise<import("./types").PlayerItems>>();
 export const loadPlayerItems = (slug: string): Promise<import("./types").PlayerItems> => {
@@ -620,7 +748,7 @@ export const loadPlayerItems = (slug: string): Promise<import("./types").PlayerI
   let p = playerItemsCache.get(key);
   if (!p) {
     if (playerItemsCache.size >= 32) playerItemsCache.clear();
-    p = load<import("./types").PlayerItems>(`hub/playeritems/${key}.json`).catch((e) => {
+    p = playerFile<import("./types").PlayerItems>("playeritems", key).catch((e) => {
       if (!(e instanceof MissingFile)) playerItemsCache.delete(key);
       throw e;
     });
@@ -630,7 +758,7 @@ export const loadPlayerItems = (slug: string): Promise<import("./types").PlayerI
 };
 export const loadHubItem = (slug: string) => load<import("./types").HubItem>(`hub/items/${prettySlug(slug)}.json`);
 export const loadHubItemChamp = (item: string, champ: string) =>
-  load<import("./types").HubItemChamp>(`hub/items/${prettySlug(item)}/c/${prettySlug(champ)}.json`);
+  load<import("./types").HubItemChamp>(`hub/items/${prettySlug(item)}/c/${resolveChampSlug(champ)}.json`);
 export const loadHubItemYear = (item: string, year: string) => load<import("./types").HubItemYear>(`hub/items/${prettySlug(item)}/y/${year}.json`);
 export const loadItemIndex = () => load<import("./types").ItemIndexRow[]>("hub/items/index.json");
 /** top-league teams' ratings over the last 120 days: slug -> [date, rating][] */
@@ -642,7 +770,7 @@ export const loadPlayerGames2y = (slug: string): Promise<import("./types").Playe
   let p = playerGames2yCache.get(key);
   if (!p) {
     if (playerGames2yCache.size >= 32) playerGames2yCache.clear();
-    p = load<import("./types").PlayerGameRow[]>(`hub/playergames2y/${key}.json`).catch((e) => {
+    p = playerFile<import("./types").PlayerGameRow[]>("playergames2y", key).catch((e) => {
       if (!(e instanceof MissingFile)) playerGames2yCache.delete(key);
       throw e;
     });

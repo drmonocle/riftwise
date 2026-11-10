@@ -19,7 +19,7 @@ import { EventStatsSection } from "./EventStats";
 import { PlayoffChances } from "./PlayoffChances";
 import { BroadcastCardButton, SectionCard, eventCardData } from "./BroadcastCard";
 import { WinBar } from "./OpponentChart";
-import { hubShareUrl, type HubRoute } from "../../hub/route";
+import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import {
   card,
   ChampLink,
@@ -70,7 +70,16 @@ const TAB_LABEL: Record<string, string> = {
 };
 
 export const EventPage: React.FC<{ slug: string; tab?: string; onOpenUrl?: (url: string) => void }> = ({ slug, tab, onOpenUrl }) => {
-  const state = useLoad(() => loadHubEvent(slug), [slug]);
+  const state = useLoad(
+    () =>
+      loadHubEvent(slug).then((e) => {
+        const now = currentHubRoute();
+        if (e.u && e.u !== slug && now.kind === "event" && now.slug === slug)
+          navigateHub({ kind: "event", slug: e.u, ...("tab" in now && now.tab ? { tab: now.tab } : {}) }, { replace: true });
+        return e;
+      }),
+    [slug],
+  );
   usePageTitle(state.data ? (tab && TAB_LABEL[tab] ? `${state.data.n} · ${tl(TAB_LABEL[tab])}` : state.data.n) : undefined);
   useDDragon();
   return <Page state={state}>{(e) => <EventView e={e} tab={tab || ""} onOpenUrl={onOpenUrl} />}</Page>;

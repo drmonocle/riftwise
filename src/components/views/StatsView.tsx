@@ -266,7 +266,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
         {route.kind === "match" && (
           <MatchPage slug={route.slug} game={route.game} onOpenUrl={onOpenUrl} />
         )}
-        {route.kind === "champ" && <ChampPage slug={route.slug} />}
+        {route.kind === "champ" && <ChampPage slug={route.slug} query={"query" in route ? route.query : undefined} />}
         {(route.kind === "worlds" || route.kind === "msi" || route.kind === "first-stand") && (
           <WorldsPage key={route.kind} kind={route.kind} year={"year" in route ? route.year : undefined} schedule={schedule} />
         )}
