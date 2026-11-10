@@ -88,7 +88,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const sel = "bg-rw-bg border border-rw-border rounded px-2 py-1 text-xs text-rw-text";
   const rawChamp = data.data?.m.c || "";
   const cName = rawChamp ? champName(rawChamp) : "";
-  const finderLink = (opp: string, n: number, roleIdx?: number) => {
+  const finderLink = (opp: string, n: number | string, roleIdx?: number) => {
     const rStr = roleIdx != null && roleIdx >= 0 ? ROLES[roleIdx] : role || "";
     return rawChamp ? (
       <HubLink
@@ -200,7 +200,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
             title: tl("CS lead over the lane opponent at 15 minutes"),
             value: (x) => x.csd ?? null,
             render: (x) =>
-              x.csd == null ? "–" : <span className={x.csd >= 3 ? "text-rw-teal" : x.csd <= -3 ? "text-rw-red" : ""}>{x.csd > 0 ? "+" : ""}{x.csd.toFixed(1)}</span>,
+              x.csd == null ? (
+                "–"
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => set({ vs: x.c })}
+                  className={`hover:underline ${x.csd >= 3 ? "text-rw-teal" : x.csd <= -3 ? "text-rw-red" : "hover:text-rw-accent"}`}
+                >
+                  {x.csd > 0 ? "+" : ""}
+                  {x.csd.toFixed(1)}
+                </button>
+              ),
             className: "tabular-nums",
           },
         ] as Column<Row>[])
@@ -436,9 +447,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         {vsMatch.totalW}W–{vsMatch.totalG - vsMatch.totalW}L ({finderLink(vsMatch.oppCanon, vsMatch.totalG)} {tl("Games")})
                         {vsMatch.avgGd != null && (
                           <span className={vsMatch.avgGd > 150 ? "text-rw-teal" : vsMatch.avgGd < -150 ? "text-rw-red" : ""}>
-                            {" "}
-                            · {vsMatch.avgGd > 0 ? "+" : ""}
-                            {vsMatch.avgGd} GD@15
+                            {" · "}
+                            {finderLink(vsMatch.oppCanon, `${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15`)}
                           </span>
                         )}
                       </div>
@@ -504,7 +514,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           </div>
                           <div className="text-[10px] font-mono text-rw-sub">
                             {finderLink(vsMatch.oppCanon, r.g, r.role)}G
-                            {r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}
+                            {r.gd != null ? (
+                              <>
+                                {" · "}
+                                {finderLink(vsMatch.oppCanon, `${r.gd > 0 ? "+" : ""}${r.gd} GD@15`, r.role)}
+                              </>
+                            ) : (
+                              ""
+                            )}
                           </div>
                         </div>
                       );

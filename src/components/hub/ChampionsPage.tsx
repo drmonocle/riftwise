@@ -457,12 +457,12 @@ const LeagueTable: React.FC<{
         c.blind == null ? (
           "–"
         ) : (
-          <span className="inline-flex flex-col gap-0.5 min-w-[3rem] tabular-nums">
-            <span>{pct(c.blind)}</span>
+          <HubLink to={{ kind: "champ", slug: prettySlug(c.c) }} className="inline-flex flex-col gap-0.5 min-w-[3rem] tabular-nums hover:text-rw-accent">
+            <span className="hover:underline">{pct(c.blind)}</span>
             <span className="h-1 w-10 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
               <span className="block h-full rounded-full bg-rw-accent/70" style={{ width: `${Math.max(4, Math.min(100, Math.round(c.blind * 100)))}%` }} />
             </span>
-          </span>
+          </HubLink>
         ),
     },
     {
@@ -867,7 +867,13 @@ const MetaSpotlight: React.FC<{
             >
               {item.val}
             </HubLink>
-            {item.sub && <div className="text-[10px] text-rw-muted font-mono">{item.sub}</div>}
+            {item.sub && (
+              <div className="text-[10px] text-rw-muted font-mono">
+                <HubLink to={{ kind: "champ", slug: prettySlug(item.c) }} className="hover:text-rw-accent hover:underline">
+                  {item.sub}
+                </HubLink>
+              </div>
+            )}
           </div>
         </div>
       ))}

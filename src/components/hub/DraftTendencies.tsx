@@ -242,7 +242,21 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][]; teamSlug?:
               <span className="w-7 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
                 <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.min(100, pctVal))}%` }} />
               </span>
-              <span className="tabular-nums text-rw-sub">{pctVal}%</span>
+              {teamSlug ? (
+                <HubLink
+                  to={{
+                    kind: "team",
+                    slug: teamSlug,
+                    tab: "champions",
+                    ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                  }}
+                  className="tabular-nums text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {pctVal}%
+                </HubLink>
+              ) : (
+                <span className="tabular-nums text-rw-sub">{pctVal}%</span>
+              )}
             </span>
           );
         })}
@@ -334,7 +348,16 @@ export const DraftTendencies: React.FC<{
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-baseline gap-2">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Draft tendencies")}</h4>
-          <span className="text-[10px] text-rw-muted">{tl("{n} games with the draft order", { n: d.games })}</span>
+          {resolvedSlug ? (
+            <HubLink
+              to={{ kind: "finder", query: `team=${encodeURIComponent(resolvedSlug)}` }}
+              className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+            >
+              {tl("{n} games with the draft order", { n: d.games })}
+            </HubLink>
+          ) : (
+            <span className="text-[10px] text-rw-muted">{tl("{n} games with the draft order", { n: d.games })}</span>
+          )}
         </div>
         {teamName && (
           <span className="flex items-center gap-2">

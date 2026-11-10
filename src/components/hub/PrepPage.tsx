@@ -642,13 +642,19 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       textValue: `${a.team.name} ${pa != null ? fmtDec(pa * 100) + "%" : "–"} · ${b.team.name} ${pb != null ? fmtDec(pb * 100) + "%" : "–"}`,
       value: (
         <span className="inline-flex items-center justify-end flex-wrap gap-y-0.5">
-          <span className={pa != null && pb != null && pa > pb ? "text-rw-side-a font-semibold" : ""}>
+          <HubLink
+            to={{ kind: "team", slug: a.team.u, tab: "stats" }}
+            className={`hover:underline ${pa != null && pb != null && pa > pb ? "text-rw-side-a font-semibold" : "hover:text-rw-accent"}`}
+          >
             {a.team.name} {pa != null ? fmtDec(pa * 100) + "%" : "–"}
-          </span>
+          </HubLink>
           <span className="mx-1 text-rw-muted">·</span>
-          <span className={pa != null && pb != null && pb > pa ? "text-rw-side-b font-semibold" : ""}>
+          <HubLink
+            to={{ kind: "team", slug: b.team.u, tab: "stats" }}
+            className={`hover:underline ${pa != null && pb != null && pb > pa ? "text-rw-side-b font-semibold" : "hover:text-rw-accent"}`}
+          >
             {b.team.name} {pb != null ? fmtDec(pb * 100) + "%" : "–"}
-          </span>
+          </HubLink>
           {sideBar(pa, pb)}
         </span>
       ),
@@ -659,9 +665,13 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       textValue: `${pa != null && A.g ? signed(Math.round((A.w / A.g - pa) * 1000) / 10) : "–"} · ${pb != null && B.g ? signed(Math.round((B.w / B.g - pb) * 1000) / 10) : "–"}`,
       value: (
         <>
-          <span className={tone(pa != null && A.g ? A.w / A.g - pa : null)}>{pa != null && A.g ? signed(Math.round((A.w / A.g - pa) * 1000) / 10) : "–"}</span>
+          <HubLink to={{ kind: "team", slug: a.team.u, tab: "stats" }} className={`hover:underline ${tone(pa != null && A.g ? A.w / A.g - pa : null)}`}>
+            {pa != null && A.g ? signed(Math.round((A.w / A.g - pa) * 1000) / 10) : "–"}
+          </HubLink>
           {" · "}
-          <span className={tone(pb != null && B.g ? B.w / B.g - pb : null)}>{pb != null && B.g ? signed(Math.round((B.w / B.g - pb) * 1000) / 10) : "–"}</span>
+          <HubLink to={{ kind: "team", slug: b.team.u, tab: "stats" }} className={`hover:underline ${tone(pb != null && B.g ? B.w / B.g - pb : null)}`}>
+            {pb != null && B.g ? signed(Math.round((B.w / B.g - pb) * 1000) / 10) : "–"}
+          </HubLink>
         </>
       ),
       how: tl("actual win rate minus the Pythagorean one, in points (above 0: won more than their kills suggest)"),
@@ -671,9 +681,13 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       textValue: `${sa ? sa.v : "–"} · ${sb ? sb.v : "–"}`,
       value: (
         <span className="inline-flex items-center justify-end">
-          <span className={sa && sb && sa.v > sb.v ? "text-rw-side-a font-semibold" : ""}>{sa ? sa.v : "–"}</span>
+          <HubLink to={{ kind: "rankings" }} className={`hover:underline ${sa && sb && sa.v > sb.v ? "text-rw-side-a font-semibold" : "hover:text-rw-accent"}`}>
+            {sa ? sa.v : "–"}
+          </HubLink>
           <span className="mx-1 text-rw-muted">·</span>
-          <span className={sa && sb && sb.v > sa.v ? "text-rw-side-b font-semibold" : ""}>{sb ? sb.v : "–"}</span>
+          <HubLink to={{ kind: "rankings" }} className={`hover:underline ${sa && sb && sb.v > sa.v ? "text-rw-side-b font-semibold" : "hover:text-rw-accent"}`}>
+            {sb ? sb.v : "–"}
+          </HubLink>
           {sideBar(sa?.v, sb?.v)}
         </span>
       ),
@@ -684,13 +698,19 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       textValue: `${a.team.name} ${pka ?? "–"} · ${b.team.name} ${pkb ?? "–"}`,
       value: (
         <span className="inline-flex items-center justify-end flex-wrap gap-y-0.5">
-          <span className={pka != null && pkb != null && pka > pkb ? "text-rw-side-a font-semibold" : ""}>
+          <HubLink
+            to={{ kind: "team", slug: a.team.u, tab: "stats" }}
+            className={`hover:underline ${pka != null && pkb != null && pka > pkb ? "text-rw-side-a font-semibold" : "hover:text-rw-accent"}`}
+          >
             {a.team.name} {pka ?? "–"}
-          </span>
+          </HubLink>
           <span className="mx-1 text-rw-muted">·</span>
-          <span className={pka != null && pkb != null && pkb > pka ? "text-rw-side-b font-semibold" : ""}>
+          <HubLink
+            to={{ kind: "team", slug: b.team.u, tab: "stats" }}
+            className={`hover:underline ${pka != null && pkb != null && pkb > pka ? "text-rw-side-b font-semibold" : "hover:text-rw-accent"}`}
+          >
             {b.team.name} {pkb ?? "–"}
-          </span>
+          </HubLink>
           {sideBar(pka, pkb)}
         </span>
       ),
@@ -700,11 +720,11 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
       label: tl("Edge by phase ({team})", { team: a.team.name }),
       textValue: `${tl("early")} ${signed(edge("gd10"))} · ${tl("mid")} ${signed(edge("gd15"))} · ${tl("late")} ${signed(edge("gd20"))}`,
       value: (
-        <span className="inline-flex flex-wrap items-center justify-end gap-1">
+        <HubLink to={{ kind: "compare", mode: "team", a: a.team.u, b: b.team.u }} className="inline-flex flex-wrap items-center justify-end gap-1 hover:opacity-90">
           {phaseBadge(tl("early"), edge("gd10"))}
           {phaseBadge(tl("mid"), edge("gd15"))}
           {phaseBadge(tl("late"), edge("gd20"))}
-        </span>
+        </HubLink>
       ),
       how: tl("their average gold lead at 10, 15 and 20 minutes minus {team}'s · {a} and {b} games with timelines (Oracle's Elixir)", {
         team: b.team.name,
@@ -1281,7 +1301,22 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
         <div className={`text-[11px] flex flex-wrap items-center gap-1.5 ${right ? "justify-end" : ""} ${x.deep === minDeep ? "text-rw-red font-bold" : "text-rw-sub"}`}>
           <PlayerPhoto name={x.name} slug={x.slug ?? undefined} size={16} />
           <span>
-            <PlayerLink name={x.name} u={x.slug} /> · {tl("{n} with 2+ games", { n: x.deep })}
+            <PlayerLink name={x.name} u={x.slug} /> ·{" "}
+            {x.slug ? (
+              <HubLink
+                to={{
+                  kind: "player",
+                  slug: x.slug,
+                  tab: "champions",
+                  ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("{n} with 2+ games", { n: x.deep })}
+              </HubLink>
+            ) : (
+              tl("{n} with 2+ games", { n: x.deep })
+            )}
             {x.deep === minDeep && ` · ${tl("pinch point")}`}
           </span>
           <span className="inline-flex gap-0.5 items-center shrink-0" title={`${Math.min(x.deep, 5)}/5`}>

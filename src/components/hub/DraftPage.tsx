@@ -1738,19 +1738,23 @@ const DraftMatchupPanel: React.FC<{
                 <div className="flex flex-col items-center gap-0.5 text-[10px] tabular-nums">
                   <div className="flex items-center gap-1.5">
                     {laneStats ? (
-                      <span
-                        className={
+                      <HubLink
+                        to={{
+                          kind: "counters",
+                          query: `champ=${prettySlug(bChamp)}&vs=${encodeURIComponent(rChamp)}&role=${encodeURIComponent(rKey)}`,
+                        }}
+                        className={`hover:underline ${
                           laneStats.bgd != null && laneStats.bgd > 50
                             ? "text-rw-teal font-semibold"
                             : laneStats.bgd != null && laneStats.bgd < -50
                               ? "text-rw-red font-semibold"
-                              : "text-rw-sub"
-                        }
+                              : "text-rw-sub hover:text-rw-accent"
+                        }`}
                         title={tl("Average lead over the lane opponent at 15 minutes")}
                       >
                         {laneStats.bgd != null ? `GD@15 ${laneStats.bgd > 0 ? "+" : ""}${laneStats.bgd} · ` : ""}
                         {winRate(laneStats.bw, laneStats.g)} ({laneStats.g}G)
-                      </span>
+                      </HubLink>
                     ) : null}
                     <HubLink
                       to={{
@@ -2477,12 +2481,47 @@ const ChampInfo: React.FC<{
                         ) : (
                           tl("{n} games, won {pct}", { n: x.g, pct: winRate(x.w, x.g) })
                         )}
-                        {x.kda != null && ` · ${fmtN(x.kda)} KDA`}
-                        {x.gd15 != null && (
-                          <span className="text-rw-sub" title={tl("Average lead over the lane opponent at 15 minutes")}>
-                            {` · GD@15 ${x.gd15 > 0 ? "+" : ""}${x.gd15}`}
-                          </span>
-                        )}
+                        {x.kda != null &&
+                          (x.u ? (
+                            <>
+                              {" · "}
+                              <HubLink
+                                to={{
+                                  kind: "player",
+                                  slug: x.u,
+                                  tab: "champions",
+                                  query: `champ=${encodeURIComponent(c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                                }}
+                                className="hover:text-rw-accent hover:underline"
+                              >
+                                {`${fmtN(x.kda)} KDA`}
+                              </HubLink>
+                            </>
+                          ) : (
+                            ` · ${fmtN(x.kda)} KDA`
+                          ))}
+                        {x.gd15 != null &&
+                          (x.u ? (
+                            <>
+                              {" · "}
+                              <HubLink
+                                to={{
+                                  kind: "player",
+                                  slug: x.u,
+                                  tab: "champions",
+                                  query: `champ=${encodeURIComponent(c)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                                }}
+                                className="text-rw-sub hover:text-rw-accent hover:underline"
+                                title={tl("Average lead over the lane opponent at 15 minutes")}
+                              >
+                                {`GD@15 ${x.gd15 > 0 ? "+" : ""}${x.gd15}`}
+                              </HubLink>
+                            </>
+                          ) : (
+                            <span className="text-rw-sub" title={tl("Average lead over the lane opponent at 15 minutes")}>
+                              {` · GD@15 ${x.gd15 > 0 ? "+" : ""}${x.gd15}`}
+                            </span>
+                          ))}
                       </>
                     ) : (
                       <span className="text-rw-accent" title={tl("Played it before, but not in this period")}>

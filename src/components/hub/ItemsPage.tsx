@@ -515,9 +515,9 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
     >
       {/* the item at a glance, then its years as columns (a column opens that year) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats">
-        <Stat label={tl("Games")} value={fmtNum(it.g)} sub={tl("ended with it")} />
-        <Stat label={tl("Players")} value={fmtNum(it.np)} />
-        {it.w != null && <Stat label={tl("Win %")} value={winRate(it.w, it.g)} sub={tl("{n} won", { n: fmtNum(it.w) })} />}
+        <Stat label={tl("Games")} value={fmtNum(it.g)} sub={tl("ended with it")} to={{ kind: "items" }} />
+        <Stat label={tl("Players")} value={fmtNum(it.np)} to={{ kind: "items" }} />
+        {it.w != null && <Stat label={tl("Win %")} value={winRate(it.w, it.g)} sub={tl("{n} won", { n: fmtNum(it.w) })} to={{ kind: "items" }} />}
         {top && (
           <Stat
             label={tl("Most built on")}

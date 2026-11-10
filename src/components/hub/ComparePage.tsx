@@ -605,6 +605,17 @@ export const TeamRows: React.FC<{
   const gEarly = tl("Early game");
   const gObj = `${tl("Towers")} · ${tl("Baron%")}`;
   const gPace = tl("Stats");
+  const tStat = (slug: string, v: string) =>
+    v !== "–" ? (
+      <HubLink
+        to={{ kind: "team", slug, tab: "stats", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+        className="hover:text-rw-accent hover:underline"
+      >
+        {v}
+      </HubLink>
+    ) : (
+      v
+    );
   const periodFinderParam =
     period?.startsWith("y") && period.length === 5
       ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -758,15 +769,15 @@ export const TeamRows: React.FC<{
       : []),
     ...(A.tl || B.tl
       ? ([
-          { key: "gd10", group: gEarly, label: "GD@10", a: sgn(A.tl?.gd10 ?? null), b: sgn(B.tl?.gd10 ?? null), va: A.tl?.gd10 ?? null, vb: B.tl?.gd10 ?? null },
-          { key: "gd15", group: gEarly, label: "GD@15", a: sgn(A.tl?.gd15 ?? null), b: sgn(B.tl?.gd15 ?? null), va: A.tl?.gd15 ?? null, vb: B.tl?.gd15 ?? null, ...pc("g15") },
-          { key: "lead15", group: gEarly, label: tl("Ahead at 15"), a: pct(A.tl?.lead15 ?? null), b: pct(B.tl?.lead15 ?? null), va: A.tl?.lead15 ?? null, vb: B.tl?.lead15 ?? null },
+          { key: "gd10", group: gEarly, label: "GD@10", a: tStat(x.u, sgn(A.tl?.gd10 ?? null)), b: tStat(y.u, sgn(B.tl?.gd10 ?? null)), va: A.tl?.gd10 ?? null, vb: B.tl?.gd10 ?? null },
+          { key: "gd15", group: gEarly, label: "GD@15", a: tStat(x.u, sgn(A.tl?.gd15 ?? null)), b: tStat(y.u, sgn(B.tl?.gd15 ?? null)), va: A.tl?.gd15 ?? null, vb: B.tl?.gd15 ?? null, ...pc("g15") },
+          { key: "lead15", group: gEarly, label: tl("Ahead at 15"), a: tStat(x.u, pct(A.tl?.lead15 ?? null)), b: tStat(y.u, pct(B.tl?.lead15 ?? null)), va: A.tl?.lead15 ?? null, vb: B.tl?.lead15 ?? null },
           {
             key: "ahead",
             group: gEarly,
             label: tl("Win rate when ahead at 15"),
-            a: A.tl ? winRate(A.tl.ahead[1], A.tl.ahead[0]) : "–",
-            b: B.tl ? winRate(B.tl.ahead[1], B.tl.ahead[0]) : "–",
+            a: tStat(x.u, A.tl ? winRate(A.tl.ahead[1], A.tl.ahead[0]) : "–"),
+            b: tStat(y.u, B.tl ? winRate(B.tl.ahead[1], B.tl.ahead[0]) : "–"),
             va: A.tl ? wr(A.tl.ahead[1], A.tl.ahead[0]) : null,
             vb: B.tl ? wr(B.tl.ahead[1], B.tl.ahead[0]) : null,
           },
@@ -774,33 +785,33 @@ export const TeamRows: React.FC<{
             key: "behind",
             group: gEarly,
             label: tl("Win rate when behind at 15"),
-            a: A.tl ? winRate(A.tl.behind[1], A.tl.behind[0]) : "–",
-            b: B.tl ? winRate(B.tl.behind[1], B.tl.behind[0]) : "–",
+            a: tStat(x.u, A.tl ? winRate(A.tl.behind[1], A.tl.behind[0]) : "–"),
+            b: tStat(y.u, B.tl ? winRate(B.tl.behind[1], B.tl.behind[0]) : "–"),
             va: A.tl ? wr(A.tl.behind[1], A.tl.behind[0]) : null,
             vb: B.tl ? wr(B.tl.behind[1], B.tl.behind[0]) : null,
           },
-          { key: "fb", group: gEarly, label: tl("First blood"), a: pct(A.tl?.fb ?? null), b: pct(B.tl?.fb ?? null), va: A.tl?.fb ?? null, vb: B.tl?.fb ?? null, ...pc("fb") },
-          { key: "ft", group: gEarly, label: tl("First tower"), a: pct(A.tl?.ft ?? null), b: pct(B.tl?.ft ?? null), va: A.tl?.ft ?? null, vb: B.tl?.ft ?? null, ...pc("ft") },
-          { key: "fd", group: gEarly, label: tl("First dragon"), a: pct(A.tl?.fd ?? null), b: pct(B.tl?.fd ?? null), va: A.tl?.fd ?? null, vb: B.tl?.fd ?? null },
-          { key: "pl", group: gEarly, label: tl("Turret plates"), a: d(A.tl?.plates ?? null), b: d(B.tl?.plates ?? null), va: A.tl?.plates ?? null, vb: B.tl?.plates ?? null, ...pc("pl") },
+          { key: "fb", group: gEarly, label: tl("First blood"), a: tStat(x.u, pct(A.tl?.fb ?? null)), b: tStat(y.u, pct(B.tl?.fb ?? null)), va: A.tl?.fb ?? null, vb: B.tl?.fb ?? null, ...pc("fb") },
+          { key: "ft", group: gEarly, label: tl("First tower"), a: tStat(x.u, pct(A.tl?.ft ?? null)), b: tStat(y.u, pct(B.tl?.ft ?? null)), va: A.tl?.ft ?? null, vb: B.tl?.ft ?? null, ...pc("ft") },
+          { key: "fd", group: gEarly, label: tl("First dragon"), a: tStat(x.u, pct(A.tl?.fd ?? null)), b: tStat(y.u, pct(B.tl?.fd ?? null)), va: A.tl?.fd ?? null, vb: B.tl?.fd ?? null },
+          { key: "pl", group: gEarly, label: tl("Turret plates"), a: tStat(x.u, d(A.tl?.plates ?? null)), b: tStat(y.u, d(B.tl?.plates ?? null)), va: A.tl?.plates ?? null, vb: B.tl?.plates ?? null, ...pc("pl") },
           ...(A.tl?.grubs != null || B.tl?.grubs != null
-            ? [{ key: "grubs", group: gEarly, label: tl("Void grubs"), a: d(A.tl?.grubs ?? null), b: d(B.tl?.grubs ?? null), va: A.tl?.grubs ?? null, vb: B.tl?.grubs ?? null }]
+            ? [{ key: "grubs", group: gEarly, label: tl("Void grubs"), a: tStat(x.u, d(A.tl?.grubs ?? null)), b: tStat(y.u, d(B.tl?.grubs ?? null)), va: A.tl?.grubs ?? null, vb: B.tl?.grubs ?? null }]
             : []),
         ] as RowSpec[])
       : []),
-    { key: "drap", group: gObj, label: tl("DRA%"), a: pct(A.dragShare), b: pct(B.dragShare), va: A.dragShare, vb: B.dragShare, ...pc("drap") },
-    { key: "barp", group: gObj, label: tl("Baron%"), a: pct(A.baronShare), b: pct(B.baronShare), va: A.baronShare, vb: B.baronShare, ...pc("barp") },
-    { key: "tow", group: gObj, label: tl("Towers"), a: d(A.towers), b: d(B.towers), va: A.towers, vb: B.towers, ...pc("tow") },
-    { key: "tl", group: gObj, label: tl("Towers lost per game"), a: d(A.towersLost), b: d(B.towersLost), va: A.towersLost, vb: B.towersLost, better: "low", ...pc("tl") },
-    { key: "k", group: gPace, label: tl("Kills / game"), a: d(A.kills), b: d(B.kills), va: A.kills, vb: B.kills, ...pc("k") },
-    { key: "d", group: gPace, label: tl("Deaths / game"), a: d(A.deaths), b: d(B.deaths), va: A.deaths, vb: B.deaths, better: "low" },
-    { key: "ckpm", group: gPace, label: "CKPM", a: d(A.ckpm), b: d(B.ckpm), va: A.ckpm, vb: B.ckpm },
-    { key: "min", group: gPace, label: tl("Avg game (min)"), a: d(A.min), b: d(B.min) },
-    { key: "gd", group: gPace, label: tl("Gold diff / game"), a: sgn(A.gd), b: sgn(B.gd), va: A.gd, vb: B.gd },
-    { key: "gdm", group: gPace, label: tl("GD/m"), a: sgn(A.gdm), b: sgn(B.gdm), va: A.gdm, vb: B.gdm, ...pc("gdm") },
-    { key: "gpm", group: gPace, label: tl("GPM"), a: A.gpm != null ? fmtNum(A.gpm) : "–", b: B.gpm != null ? fmtNum(B.gpm) : "–", va: A.gpm, vb: B.gpm, ...pc("gpm") },
+    { key: "drap", group: gObj, label: tl("DRA%"), a: tStat(x.u, pct(A.dragShare)), b: tStat(y.u, pct(B.dragShare)), va: A.dragShare, vb: B.dragShare, ...pc("drap") },
+    { key: "barp", group: gObj, label: tl("Baron%"), a: tStat(x.u, pct(A.baronShare)), b: tStat(y.u, pct(B.baronShare)), va: A.baronShare, vb: B.baronShare, ...pc("barp") },
+    { key: "tow", group: gObj, label: tl("Towers"), a: tStat(x.u, d(A.towers)), b: tStat(y.u, d(B.towers)), va: A.towers, vb: B.towers, ...pc("tow") },
+    { key: "tl", group: gObj, label: tl("Towers lost per game"), a: tStat(x.u, d(A.towersLost)), b: tStat(y.u, d(B.towersLost)), va: A.towersLost, vb: B.towersLost, better: "low", ...pc("tl") },
+    { key: "k", group: gPace, label: tl("Kills / game"), a: tStat(x.u, d(A.kills)), b: tStat(y.u, d(B.kills)), va: A.kills, vb: B.kills, ...pc("k") },
+    { key: "d", group: gPace, label: tl("Deaths / game"), a: tStat(x.u, d(A.deaths)), b: tStat(y.u, d(B.deaths)), va: A.deaths, vb: B.deaths, better: "low" },
+    { key: "ckpm", group: gPace, label: "CKPM", a: tStat(x.u, d(A.ckpm)), b: tStat(y.u, d(B.ckpm)), va: A.ckpm, vb: B.ckpm },
+    { key: "min", group: gPace, label: tl("Avg game (min)"), a: tStat(x.u, d(A.min)), b: tStat(y.u, d(B.min)) },
+    { key: "gd", group: gPace, label: tl("Gold diff / game"), a: tStat(x.u, sgn(A.gd)), b: tStat(y.u, sgn(B.gd)), va: A.gd, vb: B.gd },
+    { key: "gdm", group: gPace, label: tl("GD/m"), a: tStat(x.u, sgn(A.gdm)), b: tStat(y.u, sgn(B.gdm)), va: A.gdm, vb: B.gdm, ...pc("gdm") },
+    { key: "gpm", group: gPace, label: tl("GPM"), a: tStat(x.u, A.gpm != null ? fmtNum(A.gpm) : "–"), b: tStat(y.u, B.gpm != null ? fmtNum(B.gpm) : "–"), va: A.gpm, vb: B.gpm, ...pc("gpm") },
     ...(A.tl || B.tl
-      ? ([{ key: "vspm", group: gPace, label: tl("VS / min"), a: d(A.tl?.vspm ?? null), b: d(B.tl?.vspm ?? null), va: A.tl?.vspm ?? null, vb: B.tl?.vspm ?? null }] as RowSpec[])
+      ? ([{ key: "vspm", group: gPace, label: tl("VS / min"), a: tStat(x.u, d(A.tl?.vspm ?? null)), b: tStat(y.u, d(B.tl?.vspm ?? null)), va: A.tl?.vspm ?? null, vb: B.tl?.vspm ?? null }] as RowSpec[])
       : []),
   ];
   const pctNote =
@@ -991,16 +1002,59 @@ const PlayerRows: React.FC<{
   const gOverview = tl("Overview");
   const gStats = tl("Stats");
   const gEarly = tl("Early game");
+  const pStat = (slug: string, v: string) =>
+    v === "–" ? (
+      v
+    ) : (
+      <HubLink
+        to={{ kind: "player", slug, tab: "stats", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+        className="hover:text-rw-accent hover:underline"
+      >
+        {v}
+      </HubLink>
+    );
   const pRows: RowSpec[] = [
-    { key: "p_role", group: gOverview, label: tl("Role"), a: A.roles[0] ? roleName(A.roles[0]) : "–", b: B.roles[0] ? roleName(B.roles[0]) : "–" },
+    {
+      key: "p_role",
+      group: gOverview,
+      label: tl("Role"),
+      a: A.roles[0] ? (
+        <HubLink to={{ kind: "leaders", query: `role=${encodeURIComponent(A.roles[0])}` }} className="hover:text-rw-accent hover:underline">
+          {roleName(A.roles[0])}
+        </HubLink>
+      ) : (
+        "–"
+      ),
+      b: B.roles[0] ? (
+        <HubLink to={{ kind: "leaders", query: `role=${encodeURIComponent(B.roles[0])}` }} className="hover:text-rw-accent hover:underline">
+          {roleName(B.roles[0])}
+        </HubLink>
+      ) : (
+        "–"
+      ),
+    },
     ...(h2h.g > 0
       ? ([
           {
             key: "p_h2h",
             group: gOverview,
             label: career ? tl("Head to head (games)") : tl("Head to head this period (games)"),
-            a: h2h.w,
-            b: h2h.g - h2h.w,
+            a: (
+              <HubLink
+                to={{ kind: "player", slug: x.u, tab: "matches", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {h2h.w}
+              </HubLink>
+            ),
+            b: (
+              <HubLink
+                to={{ kind: "player", slug: y.u, tab: "matches", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {h2h.g - h2h.w}
+              </HubLink>
+            ),
             va: h2h.w,
             vb: h2h.g - h2h.w,
           },
@@ -1109,33 +1163,33 @@ const PlayerRows: React.FC<{
           },
         ] as RowSpec[])
       : []),
-    { key: "p_kda", group: gStats, label: tl("KDA"), a: fmtN(A.kda), b: fmtN(B.kda), va: A.kda, vb: B.kda },
-    { key: "p_kda_line", group: gStats, label: "K / D / A", a: pg(A), b: pg(B) },
-    { key: "p_kp", group: gStats, label: "KP", a: pct(A.kp), b: pct(B.kp), va: A.kp, vb: B.kp },
-    { key: "p_csm", group: gStats, label: tl("CS / min"), a: d(A.csm), b: d(B.csm), va: A.csm, vb: B.csm },
-    { key: "p_gpm", group: gStats, label: tl("GPM"), a: A.gpm != null ? fmtNum(A.gpm) : "–", b: B.gpm != null ? fmtNum(B.gpm) : "–", va: A.gpm, vb: B.gpm },
-    { key: "p_dpm", group: gStats, label: tl("Damage / min"), a: A.dpm != null ? fmtNum(A.dpm) : "–", b: B.dpm != null ? fmtNum(B.dpm) : "–", va: A.dpm, vb: B.dpm },
-    { key: "p_dmgp", group: gStats, label: tl("DMG%"), a: pct(A.dmgShare), b: pct(B.dmgShare), va: A.dmgShare, vb: B.dmgShare },
-    { key: "p_goldp", group: gStats, label: tl("Gold%"), a: pct(A.goldShare), b: pct(B.goldShare), va: A.goldShare, vb: B.goldShare },
-    { key: "p_vsm", group: gStats, label: tl("VS / min"), a: d(A.vsm), b: d(B.vsm), va: A.vsm, vb: B.vsm },
+    { key: "p_kda", group: gStats, label: tl("KDA"), a: pStat(x.u, fmtN(A.kda)), b: pStat(y.u, fmtN(B.kda)), va: A.kda, vb: B.kda },
+    { key: "p_kda_line", group: gStats, label: "K / D / A", a: pStat(x.u, pg(A)), b: pStat(y.u, pg(B)) },
+    { key: "p_kp", group: gStats, label: "KP", a: pStat(x.u, pct(A.kp)), b: pStat(y.u, pct(B.kp)), va: A.kp, vb: B.kp },
+    { key: "p_csm", group: gStats, label: tl("CS / min"), a: pStat(x.u, d(A.csm)), b: pStat(y.u, d(B.csm)), va: A.csm, vb: B.csm },
+    { key: "p_gpm", group: gStats, label: tl("GPM"), a: pStat(x.u, A.gpm != null ? fmtNum(A.gpm) : "–"), b: pStat(y.u, B.gpm != null ? fmtNum(B.gpm) : "–"), va: A.gpm, vb: B.gpm },
+    { key: "p_dpm", group: gStats, label: tl("Damage / min"), a: pStat(x.u, A.dpm != null ? fmtNum(A.dpm) : "–"), b: pStat(y.u, B.dpm != null ? fmtNum(B.dpm) : "–"), va: A.dpm, vb: B.dpm },
+    { key: "p_dmgp", group: gStats, label: tl("DMG%"), a: pStat(x.u, pct(A.dmgShare)), b: pStat(y.u, pct(B.dmgShare)), va: A.dmgShare, vb: B.dmgShare },
+    { key: "p_goldp", group: gStats, label: tl("Gold%"), a: pStat(x.u, pct(A.goldShare)), b: pStat(y.u, pct(B.goldShare)), va: A.goldShare, vb: B.goldShare },
+    { key: "p_vsm", group: gStats, label: tl("VS / min"), a: pStat(x.u, d(A.vsm)), b: pStat(y.u, d(B.vsm)), va: A.vsm, vb: B.vsm },
     ...(A.tl || B.tl
       ? ([
-          { key: "p_gd15", group: gEarly, label: "GD@15", a: sgn(A.tl?.gd15 ?? null), b: sgn(B.tl?.gd15 ?? null), va: A.tl?.gd15 ?? null, vb: B.tl?.gd15 ?? null },
-          { key: "p_csd15", group: gEarly, label: "CSD@15", a: sgn(A.tl?.csd15 ?? null), b: sgn(B.tl?.csd15 ?? null), va: A.tl?.csd15 ?? null, vb: B.tl?.csd15 ?? null },
-          { key: "p_xpd15", group: gEarly, label: "XPD@15", a: sgn(A.tl?.xpd15 ?? null), b: sgn(B.tl?.xpd15 ?? null), va: A.tl?.xpd15 ?? null, vb: B.tl?.xpd15 ?? null },
-          { key: "p_fbp", group: gEarly, label: tl("First blood involvement"), a: pct(A.tl?.fbPart ?? null), b: pct(B.tl?.fbPart ?? null), va: A.tl?.fbPart ?? null, vb: B.tl?.fbPart ?? null },
+          { key: "p_gd15", group: gEarly, label: "GD@15", a: pStat(x.u, sgn(A.tl?.gd15 ?? null)), b: pStat(y.u, sgn(B.tl?.gd15 ?? null)), va: A.tl?.gd15 ?? null, vb: B.tl?.gd15 ?? null },
+          { key: "p_csd15", group: gEarly, label: "CSD@15", a: pStat(x.u, sgn(A.tl?.csd15 ?? null)), b: pStat(y.u, sgn(B.tl?.csd15 ?? null)), va: A.tl?.csd15 ?? null, vb: B.tl?.csd15 ?? null },
+          { key: "p_xpd15", group: gEarly, label: "XPD@15", a: pStat(x.u, sgn(A.tl?.xpd15 ?? null)), b: pStat(y.u, sgn(B.tl?.xpd15 ?? null)), va: A.tl?.xpd15 ?? null, vb: B.tl?.xpd15 ?? null },
+          { key: "p_fbp", group: gEarly, label: tl("First blood involvement"), a: pStat(x.u, pct(A.tl?.fbPart ?? null)), b: pStat(y.u, pct(B.tl?.fbPart ?? null)), va: A.tl?.fbPart ?? null, vb: B.tl?.fbPart ?? null },
           {
             key: "p_fbv",
             group: gEarly,
             label: tl("Died for first blood"),
-            a: pct(A.tl?.fbVictim ?? null),
-            b: pct(B.tl?.fbVictim ?? null),
+            a: pStat(x.u, pct(A.tl?.fbVictim ?? null)),
+            b: pStat(y.u, pct(B.tl?.fbVictim ?? null)),
             va: A.tl?.fbVictim ?? null,
             vb: B.tl?.fbVictim ?? null,
             better: "low",
           },
-          { key: "p_wpm", group: gEarly, label: tl("Wards / min"), a: d(A.tl?.wpm ?? null), b: d(B.tl?.wpm ?? null), va: A.tl?.wpm ?? null, vb: B.tl?.wpm ?? null },
-          { key: "p_wcpm", group: gEarly, label: tl("Wards cleared / min"), a: d(A.tl?.wcpm ?? null), b: d(B.tl?.wcpm ?? null), va: A.tl?.wcpm ?? null, vb: B.tl?.wcpm ?? null },
+          { key: "p_wpm", group: gEarly, label: tl("Wards / min"), a: pStat(x.u, d(A.tl?.wpm ?? null)), b: pStat(y.u, d(B.tl?.wpm ?? null)), va: A.tl?.wpm ?? null, vb: B.tl?.wpm ?? null },
+          { key: "p_wcpm", group: gEarly, label: tl("Wards cleared / min"), a: pStat(x.u, d(A.tl?.wcpm ?? null)), b: pStat(y.u, d(B.tl?.wcpm ?? null)), va: A.tl?.wcpm ?? null, vb: B.tl?.wcpm ?? null },
         ] as RowSpec[])
       : []),
   ];
@@ -1584,7 +1638,9 @@ const PlayerHeadToHead: React.FC<{ a: PlayerGameRow[]; b: PlayerGameRow[]; aName
                   {m.a[23].toFixed(0)}
                 </HubLink>
               )}
-              {fmtDate(m.a[0])}
+              <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="hover:text-rw-accent hover:underline">
+                {fmtDate(m.a[0])}
+              </HubLink>
               <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="text-rw-accent hover:underline">
                 {tl("Details")}
               </HubLink>
@@ -1799,11 +1855,23 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                       <td className="py-1.5 pr-2 text-rw-muted whitespace-nowrap">{label}</td>
                       {vs.map((v, i) => {
                         const cellText = fmt(label, v);
-                        const isStatsLink = v != null && (label === tl("Games") || label === tl("Win rate"));
+                        const isSideLink =
+                          v != null && mode === "team" && (label === tl("Blue side wins") || label === tl("Red side wins"));
                         const isChampsLink = v != null && label === tl("Champion pool");
+                        const isStatsLink = v != null && !isSideLink && !isChampsLink;
                         return (
                           <td key={i} className={`py-1.5 px-2 text-right tabular-nums ${best != null && v === best ? "text-rw-teal font-bold" : "text-rw-text"}`}>
-                            {isStatsLink ? (
+                            {isSideLink ? (
+                              <HubLink
+                                to={{
+                                  kind: "finder",
+                                  query: `team=${encodeURIComponent(rows[i].slug)}&side=${label === tl("Blue side wins") ? "b" : "r"}`,
+                                }}
+                                className="hover:text-rw-accent hover:underline"
+                              >
+                                {cellText}
+                              </HubLink>
+                            ) : isStatsLink ? (
                               <HubLink
                                 to={{
                                   kind: mode,
