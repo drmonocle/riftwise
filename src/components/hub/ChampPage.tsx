@@ -579,10 +579,30 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                           )}
                         </td>
                         <td className={td} data-sort={cs ?? ""}>
-                          <Lead v={cs} />
+                          {cs != null ? (
+                            <HubLink
+                              to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}&vs=${encodeURIComponent(oc)}&role=${encodeURIComponent(muRole)}` }}
+                              className="hover:underline"
+                              title={tl("Counter-pick finder")}
+                            >
+                              <Lead v={cs} />
+                            </HubLink>
+                          ) : (
+                            <Lead v={cs} />
+                          )}
                         </td>
                         <td className={td} data-sort={xp ?? ""}>
-                          <Lead v={xp} />
+                          {xp != null ? (
+                            <HubLink
+                              to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}&vs=${encodeURIComponent(oc)}&role=${encodeURIComponent(muRole)}` }}
+                              className="hover:underline"
+                              title={tl("Counter-pick finder")}
+                            >
+                              <Lead v={xp} />
+                            </HubLink>
+                          ) : (
+                            <Lead v={xp} />
+                          )}
                         </td>
                         <td
                           className={`${td} ${tn && ahead != null ? (ahead / tn >= 0.5 ? "text-rw-teal" : "text-rw-red") : "text-rw-muted"}`}
@@ -884,7 +904,15 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <TeamLogo name={r.opp} size={14} />
                     <TeamLink name={r.opp} className="truncate" />
                   </span>
-                  <span className="text-rw-muted shrink-0">{fmtDate(r.date, false)}</span>
+                  <span className="text-rw-muted shrink-0">
+                    {r.g ? (
+                      <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="hover:text-rw-text hover:underline">
+                        {fmtDate(r.date, false)}
+                      </HubLink>
+                    ) : (
+                      fmtDate(r.date, false)
+                    )}
+                  </span>
                 </div>
                 {r.it && r.it.length > 0 && (
                   <div className="flex items-center gap-0.5 mt-0.5">

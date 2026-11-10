@@ -388,9 +388,19 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
             <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
               <PlayerPhoto name={mvp.n} team={mvp.teamSide === 1 ? s.a.n : s.b.n} slug={mvp.u ?? undefined} size={20} />
               <PlayerLink name={mvp.n} u={mvp.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
-              <span className="text-[10px] text-rw-muted font-mono tabular-nums shrink-0">
-                {mvp.k}/{mvp.d}/{mvp.a}
-              </span>
+              {mvp.u ? (
+                <HubLink
+                  to={{ kind: "player", slug: mvp.u, tab: "stats" }}
+                  className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono tabular-nums shrink-0"
+                  title={tl("Stats")}
+                >
+                  {mvp.k}/{mvp.d}/{mvp.a}
+                </HubLink>
+              ) : (
+                <span className="text-[10px] text-rw-muted font-mono tabular-nums shrink-0">
+                  {mvp.k}/{mvp.d}/{mvp.a}
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
@@ -423,10 +433,21 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
               <span className="font-bold text-rw-side-a">
                 <TeamLink name={codeA} u={s.a.u} className="hover:underline" /> {m.fmt(m.a)}
               </span>
-              <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted">
-                {m.label}
-                {m.label === tl("Kills") && minCount > 0 ? ` · ${fmtMin(totalMin)}` : ""}
-              </span>
+              {s.a.u && s.b.u ? (
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u }}
+                  className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted hover:text-rw-accent hover:underline"
+                  title={tl("Compare")}
+                >
+                  {m.label}
+                  {m.label === tl("Kills") && minCount > 0 ? ` · ${fmtMin(totalMin)}` : ""}
+                </HubLink>
+              ) : (
+                <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted">
+                  {m.label}
+                  {m.label === tl("Kills") && minCount > 0 ? ` · ${fmtMin(totalMin)}` : ""}
+                </span>
+              )}
               <span className="font-bold text-rw-side-b">
                 {m.fmt(m.b)} <TeamLink name={codeB} u={s.b.u} className="hover:underline" />
               </span>
@@ -622,7 +643,17 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 <Star className="w-3 h-3 fill-current" />
                 {tl("Top rated:")} <PlayerPhoto name={top[0].n} slug={top[0].u ?? undefined} size={15} />
                 <PlayerLink name={top[0].n} u={top[0].u} className="text-rw-teal hover:underline font-semibold" />
-                <span className="tabular-nums">{fmtRating(top[1])}</span>
+                {top[0].u ? (
+                  <HubLink
+                    to={{ kind: "player", slug: top[0].u, tab: "stats", ...(gamePeriod ? { query: `p=${encodeURIComponent(gamePeriod)}` } : {}) }}
+                    className="tabular-nums hover:underline"
+                    title={tl("Stats")}
+                  >
+                    {fmtRating(top[1])}
+                  </HubLink>
+                ) : (
+                  <span className="tabular-nums">{fmtRating(top[1])}</span>
+                )}
               </span>
             )}
           </span>
@@ -933,7 +964,17 @@ const PlayerBars: React.FC<{
     const w = v ? (v / max) * 100 : 0;
     return (
       <div className={`flex items-center gap-2 min-w-0 ${right ? "" : "flex-row-reverse"}`}>
-        <span className={`text-[11px] tabular-nums font-semibold text-rw-text w-11 shrink-0 ${right ? "" : "text-right"}`}>{fmt(v)}</span>
+        {p.u ? (
+          <HubLink
+            to={{ kind: "player", slug: p.u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+            className={`text-[11px] tabular-nums font-semibold text-rw-text hover:text-rw-accent hover:underline w-11 shrink-0 ${right ? "" : "text-right"}`}
+            title={tl("Stats")}
+          >
+            {fmt(v)}
+          </HubLink>
+        ) : (
+          <span className={`text-[11px] tabular-nums font-semibold text-rw-text w-11 shrink-0 ${right ? "" : "text-right"}`}>{fmt(v)}</span>
+        )}
         <div className={`flex-1 h-3 flex ${right ? "" : "justify-end"}`}>
           <div className={right ? "rounded-r" : "rounded-l"} style={{ width: `${w}%`, background: right ? RED : BLUE }} />
         </div>
@@ -1242,7 +1283,14 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
         <div className={`mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] ${right ? "justify-end" : ""}`}>
           {obj.map(([l, v]) => (
             <span key={l} className="text-rw-muted">
-              {l} <span className="text-rw-text font-semibold">{v}</span>
+              {l}{" "}
+              {u ? (
+                <HubLink to={{ kind: "team", slug: u, tab: "stats" }} className="text-rw-text font-semibold hover:text-rw-accent hover:underline" title={tl("Stats")}>
+                  {v}
+                </HubLink>
+              ) : (
+                <span className="text-rw-text font-semibold">{v}</span>
+              )}
             </span>
           ))}
         </div>
@@ -1454,8 +1502,21 @@ const PlayerRow: React.FC<{
             )}
           </div>
           <div className="text-[10px] text-rw-muted tabular-nums">
-            {p.cs != null && <>{tl("{n} CS", { n: p.cs })}{csm ? ` (${csm})` : ""}</>}
-            {kp != null && <> · {tl("{pct} KP", { pct: `${kp}%` })}</>}
+            {p.u ? (
+              <HubLink
+                to={{ kind: "player", slug: p.u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Stats")}
+              >
+                {p.cs != null && <>{tl("{n} CS", { n: p.cs })}{csm ? ` (${csm})` : ""}</>}
+                {kp != null && <> · {tl("{pct} KP", { pct: `${kp}%` })}</>}
+              </HubLink>
+            ) : (
+              <>
+                {p.cs != null && <>{tl("{n} CS", { n: p.cs })}{csm ? ` (${csm})` : ""}</>}
+                {kp != null && <> · {tl("{pct} KP", { pct: `${kp}%` })}</>}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1508,22 +1569,45 @@ const PlayerRow: React.FC<{
             {p.stt && <RuneIcon name={p.stt} size={14} />}
           </span>
         )}
-        <span className="text-[10px] text-rw-muted tabular-nums">
-          {p.gd != null && (
-            <>
-              {tl("{n} gold", { n: fmtNum(p.gd) })}
-              {teamGold ? ` (${Math.round((p.gd / teamGold) * 100)}%)` : ""}
-            </>
-          )}
-          {p.dm != null && (
-            <>
-              {" · "}
-              {tl("{n} dmg", { n: fmtNum(p.dm) })}
-              {teamDmg ? ` (${Math.round((p.dm / teamDmg) * 100)}%)` : ""}
-            </>
-          )}
-          {p.v != null && <> · {tl("{n} vision", { n: p.v })}</>}
-        </span>
+        {p.u ? (
+          <HubLink
+            to={{ kind: "player", slug: p.u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+            className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline tabular-nums"
+            title={tl("Stats")}
+          >
+            {p.gd != null && (
+              <>
+                {tl("{n} gold", { n: fmtNum(p.gd) })}
+                {teamGold ? ` (${Math.round((p.gd / teamGold) * 100)}%)` : ""}
+              </>
+            )}
+            {p.dm != null && (
+              <>
+                {" · "}
+                {tl("{n} dmg", { n: fmtNum(p.dm) })}
+                {teamDmg ? ` (${Math.round((p.dm / teamDmg) * 100)}%)` : ""}
+              </>
+            )}
+            {p.v != null && <> · {tl("{n} vision", { n: p.v })}</>}
+          </HubLink>
+        ) : (
+          <span className="text-[10px] text-rw-muted tabular-nums">
+            {p.gd != null && (
+              <>
+                {tl("{n} gold", { n: fmtNum(p.gd) })}
+                {teamGold ? ` (${Math.round((p.gd / teamGold) * 100)}%)` : ""}
+              </>
+            )}
+            {p.dm != null && (
+              <>
+                {" · "}
+                {tl("{n} dmg", { n: fmtNum(p.dm) })}
+                {teamDmg ? ` (${Math.round((p.dm / teamDmg) * 100)}%)` : ""}
+              </>
+            )}
+            {p.v != null && <> · {tl("{n} vision", { n: p.v })}</>}
+          </span>
+        )}
       </div>
       {dmgBarW > 0 && teamDmg > 0 && (
         <div className="mt-1 h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
@@ -1538,7 +1622,16 @@ const PlayerRow: React.FC<{
         ].filter(Boolean);
         return bits.length ? (
           <div className="mt-0.5 text-[10px] text-rw-muted tabular-nums" title={p.g15 != null ? tl("Lead over the lane opponent at 15 minutes (Oracle's Elixir)") : undefined}>
-            {bits.join(" · ")}
+            {p.u ? (
+              <HubLink
+                to={{ kind: "player", slug: p.u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {bits.join(" · ")}
+              </HubLink>
+            ) : (
+              bits.join(" · ")
+            )}
           </div>
         ) : null;
       })()}

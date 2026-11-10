@@ -566,7 +566,13 @@ const PlayerView: React.FC<{
                           {r.r.toFixed(0)}
                         </span>
                       ))}
-                    {fmtDate(r.date, false)}
+                    {r.g ? (
+                      <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="hover:text-rw-text hover:underline">
+                        {fmtDate(r.date, false)}
+                      </HubLink>
+                    ) : (
+                      fmtDate(r.date, false)
+                    )}
                   </span>
                 </li>
               ))}
@@ -664,7 +670,13 @@ const PlayerView: React.FC<{
                   <EventLink name={eventTitle(x.t)} u={x.e} />
                 </span>
                 <span className="text-rw-muted shrink-0">
-                  {fmtDate(x.date)}
+                  {x.e ? (
+                    <HubLink to={{ kind: "event", slug: x.e }} className="hover:text-rw-text hover:underline">
+                      {fmtDate(x.date)}
+                    </HubLink>
+                  ) : (
+                    fmtDate(x.date)
+                  )}
                 </span>
               </li>
             ))}
@@ -699,7 +711,13 @@ const PlayerView: React.FC<{
                   </span>
                 </span>
                 <span className="flex items-center gap-2 shrink-0 text-rw-muted">
-                  {fmtDate(x.date)}
+                  {x.g ? (
+                    <HubLink to={{ kind: "match", slug: x.g, game: x.gn }} className="hover:text-rw-text hover:underline">
+                      {fmtDate(x.date)}
+                    </HubLink>
+                  ) : (
+                    fmtDate(x.date)
+                  )}
                   {x.g && (
                     <HubLink
                       to={{ kind: "match", slug: x.g, game: x.gn }}
@@ -865,7 +883,15 @@ const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number]; playerSlug: str
         className={`${td} ${x.pl === "1" ? "text-rw-accent font-bold" : "text-rw-sub"}`}
         data-sort={hidden ? 999 : parseInt(x.pl || "999", 10) || 999}
       >
-        {hidden ? <RevealButton onReveal={reveal} small /> : x.pl || "–"}
+        {hidden ? (
+          <RevealButton onReveal={reveal} small />
+        ) : x.pl && x.e ? (
+          <HubLink to={{ kind: "event", slug: x.e }} className="hover:text-rw-accent hover:underline">
+            {x.pl}
+          </HubLink>
+        ) : (
+          x.pl || "–"
+        )}
       </td>
       <td className={`${td} text-rw-sub`} data-sort={hidden ? x.g : x.g ? x.w / x.g : 0}>
         {hidden ? (
@@ -976,13 +1002,14 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
                   <div className="bg-rw-red/50" style={{ width: `${((t.g - t.w) / maxG) * 100}%` }} />
                 </div>
                 {stintTitles.length > 0 && (
-                  <span
-                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-rw-accent shrink-0"
+                  <HubLink
+                    to={{ kind: "titles" }}
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-rw-accent hover:underline shrink-0"
                     title={stintTitles.map((x) => `${eventTitle(x.t)} (${x.date.slice(0, 4)})`).join(" · ")}
                   >
                     <Trophy className="w-3 h-3" />
                     {stintTitles.length}
-                  </span>
+                  </HubLink>
                 )}
               </div>
             </li>
@@ -1095,19 +1122,27 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string }> = ({ p, cardS
                     <TeamLink name={peer.club} u={peer.clubU} className="text-rw-muted hover:text-rw-accent hover:underline" />
                   </span>
                 )}
-                <span className="block text-[10px] text-rw-sub tabular-nums">
+                <HubLink
+                  to={{ kind: "player", slug: peer.u, tab: "stats" }}
+                  className="block text-[10px] text-rw-sub hover:text-rw-accent hover:underline tabular-nums"
+                  title={tl("Stats")}
+                >
                   {winRate(peer.w, peer.g)} · KDA {fmtN(peer.kda)}
                   {peer.dpm != null ? ` · ${fmtNum(peer.dpm)} DPM` : ""}
-                </span>
+                </HubLink>
               </span>
             </span>
             <span className="flex items-center gap-2 shrink-0">
-              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono text-rw-sub tabular-nums" title={`${sim}%`}>
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: p.u, b: peer.u }}
+                className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono text-rw-sub hover:text-rw-accent hover:underline tabular-nums"
+                title={`${sim}% · ${tl("Compare")}`}
+              >
                 <span className="w-7 h-1.5 rounded-full bg-rw-bg overflow-hidden shrink-0">
                   <span className="block h-full rounded-full bg-rw-accent/75" style={{ width: `${sim}%` }} />
                 </span>
                 <span>{sim}%</span>
-              </span>
+              </HubLink>
               <span className="flex gap-0.5" title={shared.map(champName).join(", ")}>
                 {shared.slice(0, 3).map((c) => (
                   <HubLink

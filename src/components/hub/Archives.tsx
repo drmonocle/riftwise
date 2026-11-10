@@ -96,7 +96,13 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                       {r[10].toFixed(0)}
                     </span>
                   ))}
-                {fmtDate(r[0])}
+                {r[7] ? (
+                  <HubLink to={{ kind: "match", slug: r[7] }} className="hover:text-rw-text hover:underline">
+                    {fmtDate(r[0])}
+                  </HubLink>
+                ) : (
+                  fmtDate(r[0])
+                )}
                 {r[7] && (
                   <HubLink to={{ kind: "match", slug: r[7] }} className="text-rw-accent hover:underline">
                     {tl("Details")}
@@ -277,11 +283,29 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 <div className="flex items-center justify-between text-xs font-bold tabular-nums">
                   <span className="inline-flex items-center gap-1.5 text-rw-side-a truncate min-w-0">
                     <TeamLogo name={aName} size={15} />
-                    <TeamLink name={aName} u={a} className="truncate hover:underline" /> {wa}
+                    <TeamLink name={aName} u={a} className="truncate hover:underline" />{" "}
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                      }}
+                      className="hover:underline"
+                    >
+                      {wa}
+                    </HubLink>
                   </span>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Series")}</span>
                   <span className="inline-flex items-center justify-end gap-1.5 text-rw-side-b truncate text-right min-w-0">
-                    {rows.length - wa} <TeamLink name={bName} u={b} className="truncate hover:underline" />
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: `team=${encodeURIComponent(b)}&vs=${encodeURIComponent(a)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                      }}
+                      className="hover:underline"
+                    >
+                      {rows.length - wa}
+                    </HubLink>{" "}
+                    <TeamLink name={bName} u={b} className="truncate hover:underline" />
                     <TeamLogo name={bName} size={15} />
                   </span>
                 </div>
@@ -500,9 +524,18 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
             <li key={i} className="min-w-0">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1.5 min-w-0">
-                <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[6] ? "text-rw-teal" : "text-rw-red"}`}>
-                  {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
-                </span>
+                {!hide && r[1] ? (
+                  <HubLink
+                    to={{ kind: "match", slug: r[1], game: r[22] || undefined }}
+                    className={`w-3.5 shrink-0 font-bold hover:underline ${r[6] ? "text-rw-teal" : "text-rw-red"}`}
+                  >
+                    {r[6] ? tc("short result", "W") : tc("short result", "L")}
+                  </HubLink>
+                ) : (
+                  <span className={`w-3.5 shrink-0 font-bold ${hide ? "text-rw-muted" : r[6] ? "text-rw-teal" : "text-rw-red"}`}>
+                    {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
+                  </span>
+                )}
                 <HubLink to={{ kind: "champ", slug: prettySlug(r[2]) }} className="hover:opacity-80" title={champName(r[2])}>
                   <ChampIcon name={r[2]} size={18} />
                 </HubLink>
@@ -553,7 +586,13 @@ const PlayerGamesBody: React.FC<{ slug: string; champ?: string; year?: string; p
                     </span>
                   )
                 )}
-                {fmtDate(r[0])}
+                {r[1] ? (
+                  <HubLink to={{ kind: "match", slug: r[1], game: r[22] || undefined }} className="hover:text-rw-text hover:underline">
+                    {fmtDate(r[0])}
+                  </HubLink>
+                ) : (
+                  fmtDate(r[0])
+                )}
                 {r[1] && (
                   <HubLink to={{ kind: "match", slug: r[1], game: r[22] || undefined }} className="text-rw-accent hover:underline">
                     {tl("Details")}

@@ -476,7 +476,13 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                           {r.r.toFixed(0)}
                         </span>
                       ))}
-                    {fmtDate(r.date, false)}
+                    {r.g ? (
+                      <HubLink to={{ kind: "match", slug: r.g }} className="hover:text-rw-text hover:underline">
+                        {fmtDate(r.date, false)}
+                      </HubLink>
+                    ) : (
+                      fmtDate(r.date, false)
+                    )}
                   </span>
                 </li>
               ))}
@@ -1421,15 +1427,25 @@ const TeamChampGames: React.FC<{
                       </span>
                     </span>
                     <span className="flex items-center gap-2 shrink-0 text-rw-muted">
-                      {!hide && e.gd15 != null && (
-                        <span
-                          className={`hidden sm:inline font-mono text-[10px] tabular-nums ${e.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}
-                          title={tl("Average lead over the lane opponent at 15 minutes")}
-                        >
-                          GD@15 {e.gd15 > 0 ? "+" : ""}
-                          {e.gd15}
-                        </span>
-                      )}
+                      {!hide && e.gd15 != null &&
+                        (r[1] ? (
+                          <HubLink
+                            to={{ kind: "match", slug: r[1] }}
+                            className={`hidden sm:inline font-mono text-[10px] tabular-nums hover:underline ${e.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}
+                            title={tl("Average lead over the lane opponent at 15 minutes")}
+                          >
+                            GD@15 {e.gd15 > 0 ? "+" : ""}
+                            {e.gd15}
+                          </HubLink>
+                        ) : (
+                          <span
+                            className={`hidden sm:inline font-mono text-[10px] tabular-nums ${e.gd15 >= 0 ? "text-rw-teal" : "text-rw-red"}`}
+                            title={tl("Average lead over the lane opponent at 15 minutes")}
+                          >
+                            GD@15 {e.gd15 > 0 ? "+" : ""}
+                            {e.gd15}
+                          </span>
+                        ))}
                       {otherPicks.length > 0 && (
                         <span className="hidden md:flex items-center gap-0.5" title={tl("Picks")}>
                           {otherPicks.map((oc, oi) => (
@@ -1445,7 +1461,13 @@ const TeamChampGames: React.FC<{
                           ))}
                         </span>
                       )}
-                      {fmtDate(r[0])}
+                      {r[1] ? (
+                        <HubLink to={{ kind: "match", slug: r[1] }} className="hover:text-rw-text hover:underline">
+                          {fmtDate(r[0])}
+                        </HubLink>
+                      ) : (
+                        fmtDate(r[0])
+                      )}
                       {r[1] && (
                         <HubLink to={{ kind: "match", slug: r[1] }} className="text-rw-accent hover:underline">
                           {tl("Details")}
@@ -1481,7 +1503,15 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string; teamS
         className={`${td} ${x.pl === "1" ? "text-rw-accent font-bold" : "text-rw-sub"}`}
         data-sort={hidden ? 999 : parseInt(x.pl || "999", 10) || 999}
       >
-        {hidden ? <RevealButton onReveal={reveal} small /> : x.pl || "–"}
+        {hidden ? (
+          <RevealButton onReveal={reveal} small />
+        ) : x.pl && x.e ? (
+          <HubLink to={{ kind: "event", slug: x.e }} className="hover:text-rw-accent hover:underline">
+            {x.pl}
+          </HubLink>
+        ) : (
+          x.pl || "–"
+        )}
       </td>
       <td className={`${td} text-rw-sub`} data-sort={hidden ? x.sg : x.sg ? x.sw / x.sg : 0}>
         {hidden ? (
@@ -1505,7 +1535,19 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; teamName: string; teamS
           "–"
         )}
       </td>
-      <td className={`${td} text-rw-muted`} data-sort={x.usd && !hidden ? x.usd : 0}>{x.usd && !hidden ? fmtUsd(x.usd) : ""}</td>
+      <td className={`${td} text-rw-muted`} data-sort={x.usd && !hidden ? x.usd : 0}>
+        {x.usd && !hidden ? (
+          x.e ? (
+            <HubLink to={{ kind: "event", slug: x.e }} className="hover:text-rw-accent hover:underline">
+              {fmtUsd(x.usd)}
+            </HubLink>
+          ) : (
+            fmtUsd(x.usd)
+          )
+        ) : (
+          ""
+        )}
+      </td>
     </tr>
   );
 };
