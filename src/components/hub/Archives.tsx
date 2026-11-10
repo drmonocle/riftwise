@@ -1068,6 +1068,9 @@ export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string }>
         <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(slug)}` }} className="text-rw-accent hover:underline">
           {tl("Item history")} →
         </HubLink>
+        <HubLink to={{ kind: "counters" }} className="text-rw-accent hover:underline">
+          {tl("Counters")} →
+        </HubLink>
         <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline">
           {tl("Pro tier list")} →
         </HubLink>
@@ -1108,6 +1111,9 @@ export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; cha
         </HubLink>
         <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(prettySlug(champ))}` }} className="text-rw-accent hover:underline">
           {tl("Item history")} →
+        </HubLink>
+        <HubLink to={{ kind: "draft" }} className="text-rw-accent hover:underline">
+          {tl("Draft board")} →
         </HubLink>
         <HubLink to={{ kind: "leaders" }} className="text-rw-accent hover:underline">
           {tl("Player leaderboards")} →

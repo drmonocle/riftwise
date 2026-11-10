@@ -85,6 +85,41 @@ export const PickemBoard: React.FC<{
       id="leaderboard"
       right={
         <span className="flex flex-wrap items-center gap-1.5">
+          {teams.length >= 1 && (
+            <>
+              <HubLink
+                to={{ kind: "prep", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `e:${event}` }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(teams[0].u)}${teams[1] ? `,${encodeURIComponent(teams[1].u)}` : ""}&p=e:${encodeURIComponent(event)}`,
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `e:${event}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
+          <HubLink
+            to={{ kind: "finder", query: `event=${encodeURIComponent(event)}` }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Game finder")} →
+          </HubLink>
           <HubLink
             to={{ kind: "rankings" }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

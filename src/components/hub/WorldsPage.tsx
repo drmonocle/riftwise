@@ -533,6 +533,33 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
           title={tl("Swiss stage")}
           right={
             <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
+              {(() => {
+                const swissUs = Object.keys(swiss.rec).sort(
+                  (a, b) => swiss.rec[b][0] - swiss.rec[a][0] || swiss.rec[a][1] - swiss.rec[b][1],
+                );
+                return swissUs.length >= 1 ? (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: swissUs[0], ...(swissUs[1] ? { b: swissUs[1] } : {}), period: `e:${main.u}` }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a: swissUs[0],
+                        ...(swissUs[1] ? { b: swissUs[1] } : {}),
+                        period: `e:${main.u}`,
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                ) : null;
+              })()}
               <HubLink
                 to={{ kind: "champions", query: `league=world-championship&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -546,7 +573,18 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
-                to={{ kind: "draft", query: `p=e:${encodeURIComponent(main.u)}` }}
+                to={{
+                  kind: "draft",
+                  query: `${
+                    Object.keys(swiss.rec).length > 0
+                      ? `teams=${Object.keys(swiss.rec)
+                          .sort((a, b) => swiss.rec[b][0] - swiss.rec[a][0] || swiss.rec[a][1] - swiss.rec[b][1])
+                          .slice(0, 2)
+                          .map((u) => encodeURIComponent(u))
+                          .join(",")}&`
+                      : ""
+                  }p=e:${encodeURIComponent(main.u)}`,
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Draft board")} →

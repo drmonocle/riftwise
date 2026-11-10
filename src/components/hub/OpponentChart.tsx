@@ -763,6 +763,27 @@ export const PlayerOpponents: React.FC<{
           {search.trim() && filteredOpps.length === 1 && (
             <>
               <HubLink
+                to={{ kind: "prep", a: filteredOpps[0].u || prettySlug(filteredOpps[0].opp), period: period || (scope !== "all" ? scope : undefined) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(filteredOpps[0].u || prettySlug(filteredOpps[0].opp))}${period || scope !== "all" ? `&p=${encodeURIComponent(period || scope)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: filteredOpps[0].u || prettySlug(filteredOpps[0].opp), period: period || (scope !== "all" ? scope : undefined) }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(filteredOpps[0].u || filteredOpps[0].opp)}${periodQuerySuffix(period || scope)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -778,6 +799,30 @@ export const PlayerOpponents: React.FC<{
           )}
           {!search.trim() && (
             <>
+              {opps.length >= 1 && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: opps[0].u || prettySlug(opps[0].opp),
+                      ...(opps[1] ? { b: opps[1].u || prettySlug(opps[1].opp) } : {}),
+                      period: period || (scope !== "all" ? scope : undefined),
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: `teams=${encodeURIComponent(opps[0].u || prettySlug(opps[0].opp))}${opps[1] ? `,${encodeURIComponent(opps[1].u || prettySlug(opps[1].opp))}` : ""}${period || scope !== "all" ? `&p=${encodeURIComponent(period || scope)}` : ""}`,
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                </>
+              )}
               <HubLink
                 to={{
                   kind: "compare",

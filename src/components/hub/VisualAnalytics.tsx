@@ -579,6 +579,29 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
             >
               {tl("Compare")} →
             </HubLink>
+            {(p.club || sel?.team) && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: prettySlug((sel?.team || p.club)!),
+                    ...(sel?.opp ? { b: prettySlug(sel.opp) } : {}),
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(prettySlug((sel?.team || p.club)!))}${sel?.opp ? `,${encodeURIComponent(prettySlug(sel.opp))}` : ""}`,
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+              </>
+            )}
             {sel?.champ && (
               <HubLink
                 to={{
@@ -1034,6 +1057,22 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                 >
                   {tl("Compare")} →
                 </HubLink>
+                {p.club && (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: prettySlug(p.club) }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(prettySlug(p.club))}` }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                )}
                 <HubLink
                   to={{ kind: "tiers", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1710,8 +1749,53 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             >
               {tl("Game finder")} →
             </HubLink>
+            {(() => {
+              const rec0 = c.recent?.find((r) => r.team && r.opp);
+              if (!rec0) return null;
+              return (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: prettySlug(rec0.team),
+                      b: prettySlug(rec0.opp),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: prettySlug(rec0.team),
+                      b: prettySlug(rec0.opp),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              );
+            })()}
             <HubLink
-              to={{ kind: "draft", ...(sel ? { query: `p=p:${encodeURIComponent(sel.p)}` } : {}) }}
+              to={{
+                kind: "draft",
+                query:
+                  (() => {
+                    const rec0 = c.recent?.find((r) => r.team && r.opp);
+                    return [
+                      rec0
+                        ? `teams=${[rec0.team, rec0.opp]
+                            .map((t) => encodeURIComponent(prettySlug(t)))
+                            .join(",")}`
+                        : "",
+                      sel ? `p=p:${encodeURIComponent(sel.p)}` : "",
+                    ]
+                      .filter(Boolean)
+                      .join("&") || undefined;
+                  })(),
+              }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Draft board")} →

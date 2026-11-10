@@ -380,22 +380,25 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             right={
               w.movers.length > 0 ? (
                 <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
-                  {w.movers.length >= 2 && (
+                  {w.movers.length >= 1 && (
                     <>
                       <HubLink
-                        to={{ kind: "prep", a: w.movers[0].u, b: w.movers[1].u }}
+                        to={{ kind: "prep", a: w.movers[0].u, ...(w.movers[1] ? { b: w.movers[1].u } : {}) }}
                         className="text-rw-accent hover:underline font-semibold"
                       >
                         {tl("Match prep")} →
                       </HubLink>
                       <HubLink
-                        to={{ kind: "draft", query: `teams=${encodeURIComponent(w.movers[0].u)},${encodeURIComponent(w.movers[1].u)}` }}
+                        to={{
+                          kind: "draft",
+                          query: `teams=${encodeURIComponent(w.movers[0].u)}${w.movers[1] ? `,${encodeURIComponent(w.movers[1].u)}` : ""}`,
+                        }}
                         className="text-rw-accent hover:underline font-semibold"
                       >
                         {tl("Draft board")} →
                       </HubLink>
                       <HubLink
-                        to={{ kind: "compare", mode: "team", a: w.movers[0].u, b: w.movers[1].u }}
+                        to={{ kind: "compare", mode: "team", a: w.movers[0].u, ...(w.movers[1] ? { b: w.movers[1].u } : {}) }}
                         className="text-rw-accent hover:underline font-semibold"
                       >
                         {tl("Compare")} →
@@ -504,6 +507,45 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               title={tl("All-time records set")}
               right={
                 <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                  {(() => {
+                    const r0 = w.records[0]?.r;
+                    const pl = r0?.pl ? prettySlug(String(r0.pl)) : "";
+                    const tm = r0?.team || r0?.w ? prettySlug(String(r0.team || r0.w)) : "";
+                    const ch = r0?.c ? prettySlug(String(r0.c)) : "";
+                    return (
+                      <>
+                        {pl ? (
+                          <>
+                            <HubLink to={{ kind: "compare", mode: "player", a: pl }} className="text-rw-accent hover:underline font-semibold">
+                              {tl("Compare")} →
+                            </HubLink>
+                            <HubLink to={{ kind: "items", query: `player=${encodeURIComponent(pl)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                              {tl("Item history")} →
+                            </HubLink>
+                          </>
+                        ) : tm ? (
+                          <HubLink to={{ kind: "compare", mode: "team", a: tm }} className="text-rw-accent hover:underline font-semibold">
+                            {tl("Compare")} →
+                          </HubLink>
+                        ) : null}
+                        {tm && (
+                          <>
+                            <HubLink to={{ kind: "prep", a: tm }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                              {tl("Match prep")} →
+                            </HubLink>
+                            <HubLink to={{ kind: "draft", query: `teams=${encodeURIComponent(tm)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                              {tl("Draft board")} →
+                            </HubLink>
+                          </>
+                        )}
+                        {ch && (
+                          <HubLink to={{ kind: "counters", query: `champ=${encodeURIComponent(ch)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                            {tl("Counters")} →
+                          </HubLink>
+                        )}
+                      </>
+                    );
+                  })()}
                   <HubLink to={{ kind: "records" }} className="text-rw-accent hover:underline font-semibold">
                     {tl("Records")} →
                   </HubLink>
@@ -712,19 +754,17 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               title={tl("Players of the week")}
               right={
                 <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
-                  {w.players.length >= 2 && (
-                    <HubLink
-                      to={{
-                        kind: "compare",
-                        mode: "player",
-                        a: w.players[0].u || prettySlug(w.players[0].n),
-                        b: w.players[1].u || prettySlug(w.players[1].n),
-                      }}
-                      className="text-rw-accent hover:underline font-semibold"
-                    >
-                      {tl("Compare")} →
-                    </HubLink>
-                  )}
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "player",
+                      a: w.players[0].u || prettySlug(w.players[0].n),
+                      ...(w.players[1] ? { b: w.players[1].u || prettySlug(w.players[1].n) } : {}),
+                    }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
                   <HubLink
                     to={{ kind: "items", query: `player=${encodeURIComponent(w.players[0].u || prettySlug(w.players[0].n))}` }}
                     className="text-rw-accent hover:underline font-semibold"
