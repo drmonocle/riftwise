@@ -145,12 +145,20 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
               </HubLink>
             )}
             {overview && (
-              <HubLink
-                to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${activeRoster.y}` }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {`${tl("Stats for")} ${activeRoster.y}`}
-              </HubLink>
+              <>
+                <HubLink
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}&p=y${encodeURIComponent(activeRoster.y)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${activeRoster.y}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {`${tl("Stats for")} ${activeRoster.y}`}
+                </HubLink>
+              </>
             )}
             <SectionCard
               section={tl("Roster")}
@@ -462,17 +470,40 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             ) : (
               <span className="flex flex-wrap items-center gap-2">
                 {t.recent[0]?.opp && (
-                  <HubLink
-                    to={{
-                      kind: "prep",
-                      a: t.u,
-                      b: t.opps.find((o) => o.n === t.recent[0].opp)?.u || prettySlug(t.recent[0].opp),
-                      period: /^\d{4}/.test(t.recent[0].date) ? `y${t.recent[0].date.slice(0, 4)}` : undefined,
-                    }}
-                    className="text-[11px] text-rw-accent hover:underline"
-                  >
-                    {tl("Match prep")} →
-                  </HubLink>
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: t.u,
+                        b: t.opps.find((o) => o.n === t.recent[0].opp)?.u || prettySlug(t.recent[0].opp),
+                        period: /^\d{4}/.test(t.recent[0].date) ? `y${t.recent[0].date.slice(0, 4)}` : undefined,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(t.u)},${encodeURIComponent(t.opps.find((o) => o.n === t.recent[0].opp)?.u || prettySlug(t.recent[0].opp))}${/^\d{4}/.test(t.recent[0].date) ? `&p=y${t.recent[0].date.slice(0, 4)}` : ""}`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a: t.u,
+                        b: t.opps.find((o) => o.n === t.recent[0].opp)?.u || prettySlug(t.recent[0].opp),
+                        period: /^\d{4}/.test(t.recent[0].date) ? `y${t.recent[0].date.slice(0, 4)}` : undefined,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
                 )}
                 <SectionCard
                   section={tl("Recent series")}
@@ -928,6 +959,28 @@ const TeamChampionsTab: React.FC<{
                   {tl("Counters")} →
                 </HubLink>
               )}
+              {shownChamps.length === 1 && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: `champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
+              {shownChamps.length >= 1 && (
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}`,
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+              )}
               <SectionCard
                 section={tl("Most picked champions")}
                 name={t.name}
@@ -1336,6 +1389,9 @@ const TeamChampGames: React.FC<{
           </HubLink>
           <HubLink to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(canonical))}` }} className="text-[11px] text-rw-accent hover:underline">
             {tl("Counter-picks")} →
+          </HubLink>
+          <HubLink to={{ kind: "items", query: `champ=${encodeURIComponent(prettySlug(canonical))}` }} className="text-[11px] text-rw-accent hover:underline">
+            {tl("Item history")} →
           </HubLink>
           {!hidden && totalG > 0 && (
             <>

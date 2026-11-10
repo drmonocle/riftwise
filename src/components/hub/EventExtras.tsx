@@ -494,10 +494,53 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               </HubLink>
               <HubLink
                 to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(filteredRosters[0].u || prettySlug(filteredRosters[0].t))},${encodeURIComponent(filteredRosters[1].u || prettySlug(filteredRosters[1].t))}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{
                   kind: "compare",
                   mode: "team",
                   a: filteredRosters[0].u || prettySlug(filteredRosters[0].t),
                   b: filteredRosters[1].u || prettySlug(filteredRosters[1].t),
+                  period: eventSlug ? `e:${eventSlug}` : undefined,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
+          {q && filteredRosters.length === 1 && (
+            <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: filteredRosters[0].u || prettySlug(filteredRosters[0].t),
+                  period: eventSlug ? `e:${eventSlug}` : undefined,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "draft",
+                  query: `teams=${encodeURIComponent(filteredRosters[0].u || prettySlug(filteredRosters[0].t))}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: filteredRosters[0].u || prettySlug(filteredRosters[0].t),
                   period: eventSlug ? `e:${eventSlug}` : undefined,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"

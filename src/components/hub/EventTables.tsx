@@ -285,12 +285,49 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
           className="bg-rw-bg border border-rw-border rounded px-2 py-1 text-[11px] text-rw-text w-40"
         />
         {(rows.length === 2 || (search.trim() && rows.length >= 2)) && rows[0].u && rows[1].u && (
-          <HubLink
-            to={{ kind: "compare", mode: "player", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
-            className="text-rw-accent hover:underline font-semibold"
-          >
-            {tl("Compare")} →
-          </HubLink>
+          <>
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Compare")} →
+            </HubLink>
+            {rows[0].t !== rows[1].t && (
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: rows[0].tu || prettySlug(rows[0].t), b: rows[1].tu || prettySlug(rows[1].t), period: `e:${e.u}` }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(rows[0].tu || prettySlug(rows[0].t))},${encodeURIComponent(rows[1].tu || prettySlug(rows[1].t))}&p=e:${encodeURIComponent(e.u)}`,
+                  }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+              </>
+            )}
+          </>
+        )}
+        {search.trim() && rows.length === 1 && rows[0].u && (
+          <>
+            <HubLink
+              to={{ kind: "compare", mode: "player", a: rows[0].u, period: `e:${e.u}` }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Compare")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "items", query: `player=${encodeURIComponent(rows[0].u)}` }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
+              {tl("Item history")} →
+            </HubLink>
+          </>
         )}
         {maxG >= 3 && (
           <label className="flex items-center gap-1 ml-auto text-rw-sub cursor-pointer">
@@ -531,6 +568,30 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
               </HubLink>
               <span className="text-rw-muted">·</span>
               <HubLink to={{ kind: "compare", mode: "team", a: pair[0], b: pair[1], period: `e:${e.u}` }} className="text-rw-accent hover:underline font-semibold">
+                {tl("Compare")}
+              </HubLink>
+            </span>
+          )}
+          {search.trim() && rows.length === 1 && (
+            <span className="flex items-center gap-2 text-[11px]">
+              <HubLink
+                to={{ kind: "prep", a: rows[0].u || prettySlug(rows[0].t), period: `e:${e.u}` }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Match prep")}
+              </HubLink>
+              <span className="text-rw-muted">·</span>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(rows[0].u || prettySlug(rows[0].t))}&p=e:${encodeURIComponent(e.u)}` }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Draft board")}
+              </HubLink>
+              <span className="text-rw-muted">·</span>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: rows[0].u || prettySlug(rows[0].t), period: `e:${e.u}` }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
                 {tl("Compare")}
               </HubLink>
             </span>

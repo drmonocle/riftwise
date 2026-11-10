@@ -511,6 +511,36 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                         </HubLink>
                       </>
                     )}
+                    {!resultsHidden && filteredTeams.length === 1 && (
+                      <>
+                        <HubLink
+                          to={{ kind: "prep", a: filteredTeams[0].u || prettySlug(filteredTeams[0].t), period: `e:${e.u}` }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "draft",
+                            query: `teams=${encodeURIComponent(filteredTeams[0].u || prettySlug(filteredTeams[0].t))}&p=e:${encodeURIComponent(e.u)}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "compare",
+                            mode: "team",
+                            a: filteredTeams[0].u || prettySlug(filteredTeams[0].t),
+                            period: `e:${e.u}`,
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Compare")} →
+                        </HubLink>
+                      </>
+                    )}
                     {!resultsHidden && (
                       <SectionCard
                         section={tl("Teams")}
@@ -842,13 +872,19 @@ const StageLists: React.FC<{ stages: Stage[] }> = ({ stages }) => {
       title={tl("Matches")}
       right={
         <span className="flex flex-wrap items-center gap-1.5" data-nocapture="1">
-          {isVsMatchup && shown[0]?.au && shown[0]?.bu && (
+          {(isVsMatchup || terms.length >= 1) && shown[0]?.au && shown[0]?.bu && (
             <>
               <HubLink
                 to={{ kind: "prep", a: shown[0].au, b: shown[0].bu }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(shown[0].au)},${encodeURIComponent(shown[0].bu)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
               </HubLink>
               <HubLink
                 to={{ kind: "compare", mode: "team", a: shown[0].au, b: shown[0].bu }}
@@ -1113,6 +1149,17 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
               {tl("Compare")} →
             </HubLink>
           )}
+          {rows.length >= 1 && (
+            <HubLink
+              to={{
+                kind: "items",
+                query: `player=${encodeURIComponent(rows[0].u || prettySlug(rows[0].n))}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
+            </HubLink>
+          )}
           <HubLink
             to={{
               kind: "leaders",
@@ -1306,6 +1353,28 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean }> = ({ e, full }) => 
               className="text-[11px] text-rw-accent hover:underline"
             >
               {tl("Counters")} →
+            </HubLink>
+          )}
+          {rows.length === 1 && (
+            <HubLink
+              to={{
+                kind: "counters",
+                query: `champ=${encodeURIComponent(prettySlug(rows[0].c))}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Counters")} →
+            </HubLink>
+          )}
+          {rows.length >= 1 && (
+            <HubLink
+              to={{
+                kind: "items",
+                query: `champ=${encodeURIComponent(prettySlug(rows[0].c))}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
             </HubLink>
           )}
           {more}

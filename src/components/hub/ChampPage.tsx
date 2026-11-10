@@ -483,6 +483,15 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
               >
                 {tl("Counter-pick finder")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `champ=${encodeURIComponent(c.name)}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
               <SectionCard
                 section={`${tl("Matchups")} · ${roleName(muRole)}`}
                 name={champName(c.name)}
@@ -735,6 +744,12 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
                 />
               )}
+              <HubLink
+                to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
               <SectionCard
                 section={tl("Bot lane partners")}
                 name={champName(c.name)}
@@ -865,31 +880,43 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     return terms.some((t) => hay.includes(t));
                   })
                 : allPlayers.slice(0, 25);
-              return pList.length >= 2 && pList[0].u && pList[1].u ? (
-                <HubLink
-                  to={{ kind: "compare", mode: "player", a: pList[0].u, b: pList[1].u, period: playersRecent ? "12m" : undefined }}
-                  className="text-[11px] text-rw-accent hover:underline"
-                >
-                  {tl("Compare")} →
-                </HubLink>
-              ) : null;
+              return (
+                <>
+                  {pList.length >= 2 && pList[0].u && pList[1].u && (
+                    <HubLink
+                      to={{ kind: "compare", mode: "player", a: pList[0].u, b: pList[1].u, period: playersRecent ? "12m" : undefined }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  )}
+                  {pList.length >= 1 && pList[0].u && (
+                    <HubLink
+                      to={{ kind: "items", query: `player=${encodeURIComponent(pList[0].u)}&champ=${encodeURIComponent(prettySlug(c.name))}` }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                  )}
+                  <SectionCard
+                    section={tl("Most games on {champion}", { champion: champName(c.name) })}
+                    name={champName(c.name)}
+                    sub={playersRecent ? tl("Last 12 months") : tl("All time")}
+                    rows={() =>
+                      pList.slice(0, 12).map((p, idx) => ({
+                        rank: idx + 1,
+                        champ: c.name,
+                        team: teamByPlayer.get(p.u || p.n),
+                        label: p.n,
+                        sub: `${p.g}G · ${fmtN(p.kda)} ${tl("KDA")}`,
+                        value: winRate(p.w, p.g),
+                        win: p.w / Math.max(1, p.g) >= 0.5,
+                      }))
+                    }
+                  />
+                </>
+              );
             })()}
-            <SectionCard
-              section={tl("Most games on {champion}", { champion: champName(c.name) })}
-              name={champName(c.name)}
-              sub={playersRecent ? tl("Last 12 months") : tl("All time")}
-              rows={() =>
-                (playersRecent ? recentPlayersList : c.players).slice(0, 12).map((p, idx) => ({
-                  rank: idx + 1,
-                  champ: c.name,
-                  team: teamByPlayer.get(p.u || p.n),
-                  label: p.n,
-                  sub: `${p.g}G · ${fmtN(p.kda)} ${tl("KDA")}`,
-                  value: winRate(p.w, p.g),
-                  win: p.w / Math.max(1, p.g) >= 0.5,
-                }))
-              }
-            />
           </span>
         }
       >

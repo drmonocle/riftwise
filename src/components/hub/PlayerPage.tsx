@@ -305,6 +305,16 @@ const PlayerView: React.FC<{
               <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }} className={heroLink}>
                 {tl("Game finder")}
               </HubLink>
+              {p.club && (
+                <>
+                  <HubLink to={{ kind: "prep", a: p.clubU || prettySlug(p.club) }} className={heroLink}>
+                    {tl("Match prep")}
+                  </HubLink>
+                  <HubLink to={{ kind: "draft", query: `teams=${encodeURIComponent(p.clubU || prettySlug(p.club))}` }} className={heroLink}>
+                    {tl("Draft board")}
+                  </HubLink>
+                </>
+              )}
             </div>
           </>
         }
@@ -400,12 +410,21 @@ const PlayerView: React.FC<{
                     : tl("Show all {n}", { n: p.events.length })}
                 </button>
               )}
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(p.u)}${eventTerms.length && filteredEvents.length === 1 && filteredEvents[0].e ? `&event=${encodeURIComponent(filteredEvents[0].e)}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Game finder")} →
+              </HubLink>
               <SectionCard
                 section={tl("Tournaments")}
                 name={p.name}
                 sub={cardSub}
                 rows={() =>
-                  p.events
+                  filteredEvents
                     .filter((x) => !hiddenCheck(`player-event:${x.e}`, x.date))
                     .map((x, idx) => ({
                       rank: idx + 1,
@@ -548,22 +567,36 @@ const PlayerView: React.FC<{
             recentHidden ? (
               <RevealButton onReveal={revealRecent} small />
             ) : (
-              <SectionCard
-                section={tl("Recent games")}
-                name={p.name}
-                sub={cardSub}
-                rows={() =>
-                  p.recent.map((r, idx) => ({
-                    rank: idx + 1,
-                    win: !!r.win,
-                    champ: r.c,
-                    team: r.opp,
-                    label: `${r.k}/${r.d}/${r.a} vs ${r.opp}`,
-                    sub: r.en,
-                    value: fmtDate(r.date, false),
-                  }))
-                }
-              />
+              <span className="flex flex-wrap items-center gap-2">
+                <HubLink
+                  to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+                <SectionCard
+                  section={tl("Recent games")}
+                  name={p.name}
+                  sub={cardSub}
+                  rows={() =>
+                    p.recent.map((r, idx) => ({
+                      rank: idx + 1,
+                      win: !!r.win,
+                      champ: r.c,
+                      team: r.opp,
+                      label: `${r.k}/${r.d}/${r.a} vs ${r.opp}`,
+                      sub: r.en,
+                      value: fmtDate(r.date, false),
+                    }))
+                  }
+                />
+              </span>
             )
           }
         >
@@ -969,6 +1002,28 @@ const PlayerChampionsTab: React.FC<{
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Counters")} →
+              </HubLink>
+            )}
+            {shownChamps.length === 1 && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: `champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
+            {shownChamps.length >= 1 && (
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: `player=${encodeURIComponent(p.u)}${shownChamps.length === 1 ? `&champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}` : ""}`,
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
               </HubLink>
             )}
             <SectionCard
