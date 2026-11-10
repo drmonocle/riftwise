@@ -278,7 +278,9 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
 
 const Team: React.FC<{ name: string; u?: string | null; won: boolean }> = ({ name, u, won }) => (
   <span className={`inline-flex items-center gap-1 ${won ? "font-bold text-rw-teal" : "text-rw-text"}`}>
-    <TeamLogo name={name} size={15} />
+    <HubLink to={{ kind: "team", slug: u || prettySlug(name) }} title={name} className="shrink-0">
+      <TeamLogo name={name} size={15} />
+    </HubLink>
     <TeamLink name={name} u={u} className={won ? "font-bold text-rw-teal hover:underline" : "text-rw-text hover:text-rw-accent hover:underline"} />
   </span>
 );

@@ -9,7 +9,7 @@ import { BracketBoard, type BracketColumn } from "../BracketBoard";
 import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
 import { winRate } from "../../stats";
-import { downloadEventCsv, downloadStagesCsv, loadHubEvent } from "../../hub/data";
+import { downloadEventCsv, downloadStagesCsv, loadHubEvent, prettySlug } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
@@ -295,7 +295,9 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       </td>
                       <td className={td} data-sort={r.t}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
-                          <TeamLogo name={r.t} size={16} />
+                          <HubLink to={{ kind: "team", slug: r.u || prettySlug(r.t) }} title={r.t}>
+                            <TeamLogo name={r.t} size={16} />
+                          </HubLink>
                           <TeamLink name={r.t} u={r.u} />
                         </span>
                       </td>
@@ -441,7 +443,9 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                     <tr key={t.t} className="border-t border-rw-border">
                       <td className={`${td} max-w-[12rem]`} data-sort={t.t}>
                         <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
-                          <TeamLogo name={t.t} size={16} />
+                          <HubLink to={{ kind: "team", slug: t.u || prettySlug(t.t) }} title={t.t} className="shrink-0">
+                            <TeamLogo name={t.t} size={16} />
+                          </HubLink>
                           <TeamLink name={t.t} u={t.u} className="truncate" />
                         </span>
                       </td>
@@ -497,7 +501,9 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
   const line = (name: string, u: string | null, score: number | null, won: boolean) => (
     <div className="flex items-center justify-between gap-2 min-w-0">
       <span className={`inline-flex items-center gap-1.5 truncate min-w-0 ${!hidden && won ? "text-rw-text font-bold" : "text-rw-sub"}`}>
-        <TeamLogo name={name} size={14} />
+        <HubLink to={{ kind: "team", slug: u || prettySlug(name) }} title={name} className="shrink-0">
+          <TeamLogo name={name} size={14} />
+        </HubLink>
         <TeamLink name={name} u={u} className={`truncate ${!hidden && won ? "text-rw-text font-bold hover:underline" : "text-rw-sub hover:text-rw-text hover:underline"}`} />
       </span>
       <span className={`tabular-nums font-bold shrink-0 ${!hidden && won ? "text-rw-teal" : "text-rw-muted"}`}>
@@ -842,7 +848,9 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
               </td>
               <td className={`${td} max-w-[11rem]`} data-sort={r.t}>
                 <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
-                  <TeamLogo name={r.t} size={16} />
+                  <HubLink to={{ kind: "team", slug: r.u || prettySlug(r.t) }} title={r.t} className="shrink-0">
+                    <TeamLogo name={r.t} size={16} />
+                  </HubLink>
                   <TeamLink name={r.t} u={r.u} className="truncate" />
                 </span>
               </td>
@@ -973,10 +981,14 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
               />
               <span className="relative inline-flex items-center gap-1.5 truncate min-w-0">
                 <span className={`w-4 shrink-0 tabular-nums ${i === 0 ? "text-rw-accent font-bold" : "text-rw-muted"}`}>{i + 1}.</span>
-                <PlayerPhoto name={r.n} team={r.t} slug={r.u ?? undefined} size={20} />
+                <HubLink to={{ kind: "player", slug: r.u || prettySlug(r.n) }} title={r.n} className="shrink-0">
+                  <PlayerPhoto name={r.n} team={r.t} slug={r.u ?? undefined} size={20} />
+                </HubLink>
                 <PlayerLink name={r.n} u={r.u} />
                 <span className="text-rw-muted shrink-0">·</span>
-                <TeamLogo name={r.t} size={14} />
+                <HubLink to={{ kind: "team", slug: e.teams?.find((tm) => tm.t === r.t)?.u || prettySlug(r.t) }} title={r.t} className="shrink-0">
+                  <TeamLogo name={r.t} size={14} />
+                </HubLink>
                 <TeamLink name={r.t} u={e.teams?.find((tm) => tm.t === r.t)?.u} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
               </span>
               <span className="relative shrink-0 text-rw-sub tabular-nums">

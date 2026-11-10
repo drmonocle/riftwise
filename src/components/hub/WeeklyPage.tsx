@@ -220,14 +220,18 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <HubLink to={{ kind: "match", slug: u.g }} className="text-rw-accent font-bold tabular-nums shrink-0 hover:underline">
                           {pct(u.p)}
                         </HubLink>
-                        <TeamLogo name={u.w} size={14} />
+                        <HubLink to={{ kind: "team", slug: prettySlug(u.w) }} title={u.w} className="shrink-0">
+                          <TeamLogo name={u.w} size={14} />
+                        </HubLink>
                         <span className="truncate min-w-0">
                           <HubLink to={{ kind: "match", slug: u.g }}>{tl("{w} beat {l}", { w: u.w, l: u.l })}</HubLink>{" "}
                           <HubLink to={{ kind: "match", slug: u.g }} className="text-rw-sub hover:text-rw-accent hover:underline">
                             {u.s}
                           </HubLink>
                         </span>
-                        <TeamLogo name={u.l} size={14} />
+                        <HubLink to={{ kind: "team", slug: prettySlug(u.l) }} title={u.l} className="shrink-0">
+                          <TeamLogo name={u.l} size={14} />
+                        </HubLink>
                       </div>
                       <div className="text-[10px] text-rw-muted truncate">
                         <EventLink name={u.t} u={u.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> ·{" "}
@@ -277,7 +281,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       <li key={m.u} className="space-y-0.5 min-w-0">
                         <div className="flex items-baseline justify-between gap-2 min-w-0">
                           <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                            <TeamLogo name={m.n} size={15} />
+                            <HubLink to={{ kind: "team", slug: m.u }} title={m.n} className="shrink-0">
+                              <TeamLogo name={m.n} size={15} />
+                            </HubLink>
                             <TeamLink name={m.n} u={m.u} />{" "}
                             <HubLink to={{ kind: "league", slug: resolveLeagueSlug(m.lg) }} className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
                               {m.lg}
@@ -405,11 +411,15 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       <HubLink to={{ kind: "match", slug: b.g, game: b.gn }} className="text-rw-accent font-bold tabular-nums shrink-0 hover:underline">
                         {b.r}
                       </HubLink>
-                      <TeamLogo name={b.a} size={14} />
+                      <HubLink to={{ kind: "team", slug: prettySlug(b.a) }} title={b.a} className="shrink-0">
+                        <TeamLogo name={b.a} size={14} />
+                      </HubLink>
                       <HubLink to={{ kind: "match", slug: b.g, game: b.gn }} className="truncate">
                         {tl("{a} vs {b}, game {n}", { a: b.a, b: b.b, n: b.gn })}
                       </HubLink>
-                      <TeamLogo name={b.b} size={14} />
+                      <HubLink to={{ kind: "team", slug: prettySlug(b.b) }} title={b.b} className="shrink-0">
+                        <TeamLogo name={b.b} size={14} />
+                      </HubLink>
                     </div>
                     <div className="text-[10px] text-rw-muted truncate">
                       <EventLink name={b.t} u={b.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> ·{" "}
@@ -452,9 +462,15 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     <div className="flex items-center justify-between gap-2 min-w-0">
                       <span className="inline-flex items-center gap-1.5 truncate min-w-0">
                         <span className="text-rw-muted tabular-nums">{i + 1}.</span>
-                        <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
+                        <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} title={p.n} className="shrink-0">
+                          <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
+                        </HubLink>
                         <PlayerLink name={p.n} u={p.u} />
-                        {p.t && <TeamLogo name={p.t} size={13} />}
+                        {p.t && (
+                          <HubLink to={{ kind: "team", slug: prettySlug(p.t) }} title={p.t} className="shrink-0">
+                            <TeamLogo name={p.t} size={13} />
+                          </HubLink>
+                        )}
                         <span className="text-rw-muted truncate">
                           {p.r ? (
                             <>
@@ -494,7 +510,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           {" · "}
                           <HubLink to={{ kind: "match", slug: p.best.g, game: p.best.gn }}>{tl("the game")}</HubLink>
                         </span>
-                        <TeamLogo name={p.best.opp} size={12} />
+                        <HubLink to={{ kind: "team", slug: prettySlug(p.best.opp) }} title={p.best.opp} className="shrink-0">
+                          <TeamLogo name={p.best.opp} size={12} />
+                        </HubLink>
                       </div>
                     )}
                     <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
@@ -641,7 +659,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       <span className="truncate">
                         <TeamLink name={r.a} u={r.au} />
                       </span>
-                      <TeamLogo name={r.a} size={15} />
+                      <HubLink to={{ kind: "team", slug: r.au || prettySlug(r.a) }} title={r.a} className="shrink-0">
+                        <TeamLogo name={r.a} size={15} />
+                      </HubLink>
                     </span>
                     <HubLink to={{ kind: "match", slug: r.g }} className="inline-flex flex-col items-center justify-center w-11 shrink-0 hover:text-rw-accent gap-0.5">
                       <span className="font-num tabular-nums font-bold text-center leading-none">
@@ -661,7 +681,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       )}
                     </HubLink>
                     <span className={`flex-1 min-w-0 flex items-center gap-1.5 ${r.sb > r.sa ? "font-bold text-rw-text" : "text-rw-sub"}`}>
-                      <TeamLogo name={r.b} size={15} />
+                      <HubLink to={{ kind: "team", slug: r.bu || prettySlug(r.b) }} title={r.b} className="shrink-0">
+                        <TeamLogo name={r.b} size={15} />
+                      </HubLink>
                       <span className="truncate">
                         <TeamLink name={r.b} u={r.bu} />
                       </span>

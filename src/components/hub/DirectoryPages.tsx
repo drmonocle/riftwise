@@ -110,7 +110,9 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       value: (t) => t[0].toLowerCase(),
       render: (t) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <TeamLogo name={t[0]} code={(t[5] || "").split(" | ")[0] || undefined} size={16} />
+          <HubLink to={{ kind: "team", slug: t[1] || prettySlug(t[0]) }} title={t[0]} className="shrink-0">
+            <TeamLogo name={t[0]} code={(t[5] || "").split(" | ")[0] || undefined} size={16} />
+          </HubLink>
           <TeamLink name={t[0]} u={t[1] || prettySlug(t[0])} />
         </span>
       ),
@@ -326,7 +328,9 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       value: (p) => p[0].toLowerCase(),
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={p[1] || prettySlug(p[0])} size={18} />
+          <HubLink to={{ kind: "player", slug: p[1] || prettySlug(p[0]) }} title={p[0]} className="shrink-0">
+            <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={p[1] || prettySlug(p[0])} size={18} />
+          </HubLink>
           <PlayerLink name={p[0]} u={p[1] || prettySlug(p[0])} />
         </span>
       ),
@@ -354,7 +358,9 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       render: (p) =>
         p[2] ? (
           <span className="inline-flex items-center gap-1.5 min-w-0">
-            <TeamLogo name={p[2]} size={15} />
+            <HubLink to={{ kind: "team", slug: prettySlug(p[2]) }} title={p[2]} className="shrink-0">
+              <TeamLogo name={p[2]} size={15} />
+            </HubLink>
             <TeamLink name={p[2]} u={prettySlug(p[2])} />
           </span>
         ) : null,

@@ -121,7 +121,9 @@ const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]> }> = ({
             <li key={i} className="space-y-0.5 min-w-0">
               <div className="flex justify-between gap-2 min-w-0">
                 <span className="inline-flex items-center gap-1.5 min-w-0">
-                  <PlayerPhoto name={x.n} slug={x.u ?? undefined} size={16} />
+                  <HubLink to={{ kind: "player", slug: x.u || prettySlug(x.n) }} title={x.n} className="shrink-0">
+                    <PlayerPhoto name={x.n} slug={x.u ?? undefined} size={16} />
+                  </HubLink>
                   <PlayerLink name={x.n} u={x.u} />
                 </span>
                 <HubLink
@@ -199,7 +201,9 @@ const PentaRow: React.FC<{
             <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} title={champName(x.c)}>
               <ChampIcon name={x.c} size={18} />
             </HubLink>
-            <PlayerPhoto name={x.n} slug={x.u ?? undefined} size={16} />
+            <HubLink to={{ kind: "player", slug: x.u || prettySlug(x.n) }} title={x.n} className="shrink-0">
+              <PlayerPhoto name={x.n} slug={x.u ?? undefined} size={16} />
+            </HubLink>
             <span className="truncate">
               <PlayerLink name={x.n} u={x.u} />{" "}
               <HubLink to={{ kind: "champ", slug: prettySlug(x.c) }} className="text-rw-sub hover:text-rw-accent hover:underline">
@@ -218,7 +222,9 @@ const PentaRow: React.FC<{
                 )
               )}{" "}
               <span className="inline-flex items-center gap-1 text-rw-sub">
-                <TeamLogo name={x.a} size={13} />
+                <HubLink to={{ kind: "team", slug: prettySlug(x.a) }} title={x.a} className="shrink-0">
+                  <TeamLogo name={x.a} size={13} />
+                </HubLink>
                 <TeamLink name={x.a} />
                 {x.g ? (
                   <HubLink
@@ -230,7 +236,9 @@ const PentaRow: React.FC<{
                 ) : (
                   <span>vs</span>
                 )}
-                <TeamLogo name={x.b} size={13} />
+                <HubLink to={{ kind: "team", slug: prettySlug(x.b) }} title={x.b} className="shrink-0">
+                  <TeamLogo name={x.b} size={13} />
+                </HubLink>
                 <TeamLink name={x.b} />
               </span>
             </span>
@@ -477,7 +485,9 @@ export const RecordsPanel: React.FC = () => {
                             {fmt(g.v)}
                           </span>
                         )}
-                        <TeamLogo name={g.w} size={14} />
+                        <HubLink to={{ kind: "team", slug: prettySlug(g.w) }} title={g.w} className="shrink-0">
+                          <TeamLogo name={g.w} size={14} />
+                        </HubLink>
                         <span className="truncate min-w-0">
                           {g.g ? (
                             <HubLink to={{ kind: "match", slug: g.g, game: g.gn }}>
@@ -495,7 +505,9 @@ export const RecordsPanel: React.FC = () => {
                             </span>
                           )}
                         </span>
-                        <TeamLogo name={g.w === g.a ? g.b : g.a} size={14} />
+                        <HubLink to={{ kind: "team", slug: prettySlug(g.w === g.a ? g.b : g.a) }} title={g.w === g.a ? g.b : g.a} className="shrink-0">
+                          <TeamLogo name={g.w === g.a ? g.b : g.a} size={14} />
+                        </HubLink>
                       </div>
                       <div className="text-[10px] text-rw-muted truncate">
                         <EventLink
@@ -561,7 +573,9 @@ export const RecordsPanel: React.FC = () => {
                         <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} title={champName(p.c)} className="shrink-0">
                           <ChampIcon name={p.c} size={18} />
                         </HubLink>
-                        <PlayerPhoto name={p.pl} slug={p.u ?? undefined} size={16} />
+                        <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.pl) }} title={p.pl} className="shrink-0">
+                          <PlayerPhoto name={p.pl} slug={p.u ?? undefined} size={16} />
+                        </HubLink>
                         <div className="truncate min-w-0">
                           {p.g ? (
                             <HubLink
@@ -609,7 +623,9 @@ export const RecordsPanel: React.FC = () => {
                         ) : (
                           <span>vs</span>
                         )}
-                        <TeamLogo name={p.opp} size={12} />
+                        <HubLink to={{ kind: "team", slug: prettySlug(p.opp) }} title={p.opp} className="shrink-0">
+                          <TeamLogo name={p.opp} size={12} />
+                        </HubLink>
                         <span className="truncate">
                           <TeamLink name={p.opp} className="text-rw-muted hover:text-rw-accent hover:underline" /> ·{" "}
                           <EventLink
@@ -664,7 +680,9 @@ export const RecordsPanel: React.FC = () => {
                   <li key={i} className="space-y-0.5 min-w-0">
                     <div className="flex justify-between gap-2 min-w-0">
                       <span className="inline-flex items-center gap-1.5 min-w-0">
-                        <PlayerPhoto name={p.pl} slug={p.u ?? undefined} size={16} />
+                        <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.pl) }} title={p.pl} className="shrink-0">
+                          <PlayerPhoto name={p.pl} slug={p.u ?? undefined} size={16} />
+                        </HubLink>
                         <PlayerLink name={p.pl} u={p.u} />
                       </span>
                       <HubLink
@@ -759,7 +777,9 @@ export const RecordsPanel: React.FC = () => {
                       <li key={i} className="space-y-0.5 min-w-0">
                         <div className="flex justify-between gap-2 min-w-0">
                           <span className="inline-flex items-center gap-1.5 min-w-0">
-                            <TeamLogo name={t.team} size={15} />
+                            <HubLink to={{ kind: "team", slug: t.u || prettySlug(t.team) }} title={t.team} className="shrink-0">
+                              <TeamLogo name={t.team} size={15} />
+                            </HubLink>
                             <TeamLink name={t.team} u={t.u} />
                           </span>
                           <span className="text-rw-muted shrink-0">
@@ -817,7 +837,9 @@ export const RecordsPanel: React.FC = () => {
                       <li key={i} className="space-y-0.5 min-w-0">
                         <div className="flex justify-between gap-2 min-w-0">
                           <span className="inline-flex items-center gap-1.5 min-w-0">
-                            <TeamLogo name={t.team} size={15} />
+                            <HubLink to={{ kind: "team", slug: t.u || prettySlug(t.team) }} title={t.team} className="shrink-0">
+                              <TeamLogo name={t.team} size={15} />
+                            </HubLink>
                             <TeamLink name={t.team} u={t.u} />
                           </span>
                           <span className="text-rw-muted shrink-0">
@@ -991,7 +1013,9 @@ export const TitlesPanel: React.FC = () => {
                       </td>
                       <td className={td} data-sort={x.as}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
-                          <TeamLogo name={x.as} size={16} />
+                          <HubLink to={{ kind: "team", slug: x.u || prettySlug(x.as) }} title={x.as} className="shrink-0">
+                            <TeamLogo name={x.as} size={16} />
+                          </HubLink>
                           <TeamLink name={x.as} u={x.u} />
                         </span>
                         {x.as !== x.w && (
@@ -1047,7 +1071,9 @@ export const TitlesPanel: React.FC = () => {
                                     "vs"
                                   )}
                                 </span>
-                                <TeamLogo name={x.l} size={14} />
+                                <HubLink to={{ kind: "team", slug: prettySlug(x.l) }} title={x.l} className="shrink-0">
+                                  <TeamLogo name={x.l} size={14} />
+                                </HubLink>
                                 <TeamLink name={x.l} />
                               </span>
                               {sw + sl > 0 && (

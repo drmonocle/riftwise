@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Crown, ClipboardCopy } from "lucide-react";
 import { tl, tn, regionName } from "../../i18n";
-import { loadLeague, loadLeagues, loadPatches } from "../../hub/data";
+import { loadLeague, loadLeagues, loadPatches, prettySlug } from "../../hub/data";
 import type { HubLeague, LeagueRow, LeagueStep, PatchMove, PatchRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import {
@@ -594,7 +594,9 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 <li key={t.t} className="space-y-0.5 min-w-0">
                   <div className="flex items-center justify-between gap-2 min-w-0">
                     <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                      <TeamLogo name={t.t} size={16} />
+                      <HubLink to={{ kind: "team", slug: t.u || prettySlug(t.t) }} title={t.t} className="shrink-0">
+                        <TeamLogo name={t.t} size={16} />
+                      </HubLink>
                       <TeamLink name={t.t} u={t.u} />
                     </span>
                     <HubLink
@@ -756,7 +758,9 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
           ) : (
             <span className="flex items-center gap-1.5">
               {!e.rs && <Crown className="w-3 h-3 text-rw-accent shrink-0" />}
-              <TeamLogo name={e.w} size={15} />
+              <HubLink to={{ kind: "team", slug: e.wu || prettySlug(e.w) }} title={e.w} className="shrink-0">
+                <TeamLogo name={e.w} size={15} />
+              </HubLink>
               <TeamLink name={e.w} u={e.wu} />
               {e.rs ? <StandingsFirst /> : null}
             </span>

@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
-import { loadRatings, loadRatingsHistory } from "../../hub/data";
+import { loadRatings, loadRatingsHistory, prettySlug } from "../../hub/data";
 import { hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
@@ -155,7 +155,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       value: (x) => x.r[1],
       render: (x) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <TeamLogo name={x.r[1]} size={16} />
+          <HubLink to={{ kind: "team", slug: x.r[0] || prettySlug(x.r[1]) }} title={x.r[1]} className="shrink-0">
+            <TeamLogo name={x.r[1]} size={16} />
+          </HubLink>
           <TeamLink
             name={x.r[1]}
             u={x.r[0]}
@@ -340,26 +342,29 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
             "Up to {date} · {n} games rated · teams with a game in the last 120 days",
             { date: fmtDate(d.asof), n: fmtNum(d.games) },
           )}{" "}
-          <span
-            className="underline decoration-dotted cursor-help"
+          <HubLink
+            to={{ kind: "about" }}
+            className="underline decoration-dotted hover:text-rw-accent"
             title={tl(
               "The ratings learn from every game Leaguepedia lists, academy and second-tier leagues included, so this is more than the pro games counted on the stats pages.",
             )}
           >
             {tl("Why more games?")}
-          </span>
+          </HubLink>
         </p>
         {t.all.n > 0 && (
           <p className="text-rw-text">
-            {tl(
-              "How good is it? Since {year}, the higher-rated team won {acc} of {n} games ({intl} at international events).",
-              {
-                year: t.from.slice(0, 4),
-                acc: pct(t.all.acc || 0),
-                n: fmtNum(t.all.n),
-                intl: pct(t.intl.acc || 0),
-              },
-            )}
+            <HubLink to={{ kind: "about" }} className="hover:text-rw-accent hover:underline">
+              {tl(
+                "How good is it? Since {year}, the higher-rated team won {acc} of {n} games ({intl} at international events).",
+                {
+                  year: t.from.slice(0, 4),
+                  acc: pct(t.all.acc || 0),
+                  n: fmtNum(t.all.n),
+                  intl: pct(t.intl.acc || 0),
+                },
+              )}
+            </HubLink>
           </p>
         )}
       </div>
@@ -589,7 +594,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                         <td className={`${td} text-rw-sub max-w-[9rem] truncate`} data-sort={best ? best[1] : ""}>
                           {best ? (
                             <span className="inline-flex items-center gap-1.5 min-w-0">
-                              <TeamLogo name={best[1]} size={15} />
+                              <HubLink to={{ kind: "team", slug: best[0] || prettySlug(best[1]) }} title={best[1]} className="shrink-0">
+                                <TeamLogo name={best[1]} size={15} />
+                              </HubLink>
                               <TeamLink name={best[1]} u={best[0]} />
                             </span>
                           ) : (

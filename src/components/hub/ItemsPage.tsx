@@ -269,7 +269,16 @@ const PlayerItemsView: React.FC<{
           {scope && <p className="text-[11px] text-rw-accent">{scope}</p>}
           <p className="text-sm text-rw-text">
             <span className="font-bold text-rw-red">{tl("No.")}</span>{" "}
-            {tl("None of {player}'s {n} pro games with a full scoreboard ended with {item}.", { player: name, n: fmtNum(counted), item: label })}
+            <HubLink
+              to={{
+                kind: "finder",
+                query: `player=${encodeURIComponent(slug)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+              }}
+              className="hover:text-rw-accent hover:underline"
+              title={tl("Game finder")}
+            >
+              {tl("None of {player}'s {n} pro games with a full scoreboard ended with {item}.", { player: name, n: fmtNum(counted), item: label })}
+            </HubLink>
           </p>
           {whoBuilt(label)}
         </Section>
@@ -555,7 +564,9 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
               <tr key={u} className="border-t border-rw-border">
                 <td className={td} data-sort={n}>
                   <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <PlayerPhoto name={n} team={teamBySlug.get(u)} slug={u} size={16} />
+                    <HubLink to={{ kind: "player", slug: u }} title={n} className="shrink-0">
+                      <PlayerPhoto name={n} team={teamBySlug.get(u)} slug={u} size={16} />
+                    </HubLink>
                     <PlayerLink name={n} u={u} />
                     {teamBySlug.get(u) && (
                       <HubLink to={{ kind: "team", slug: prettySlug(teamBySlug.get(u)!) }} title={teamBySlug.get(u)!}>
@@ -679,9 +690,15 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                       <td className={td} data-sort={p ? p[0] : ""}>
                         {p ? (
                           <span className="inline-flex items-center gap-1.5 min-w-0">
-                            <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
+                            <HubLink to={{ kind: "player", slug: u }} title={p[0]} className="shrink-0">
+                              <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
+                            </HubLink>
                             <PlayerLink name={p[0]} u={u} />
-                            {p[2] && <TeamLogo name={p[2]} size={13} />}
+                            {p[2] && (
+                              <HubLink to={{ kind: "team", slug: prettySlug(p[2]) }} title={p[2]} className="shrink-0">
+                                <TeamLogo name={p[2]} size={13} />
+                              </HubLink>
+                            )}
                           </span>
                         ) : (
                           "–"
@@ -775,7 +792,9 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
       ) : (
         <>
           <p className="text-[11px] text-rw-muted">
-            {tl("{g} pro games by {p} players ended with it.", { g: fmtNum(y.g), p: fmtNum(y.np) })}
+            <HubLink to={{ kind: "finder", query: `year=${encodeURIComponent(year)}` }} className="hover:text-rw-accent hover:underline">
+              {tl("{g} pro games by {p} players ended with it.", { g: fmtNum(y.g), p: fmtNum(y.np) })}
+            </HubLink>
             {y.np > y.p.length ? ` ${tl("The {n} with the most games:", { n: y.p.length })}` : ""}
           </p>
           <PickChips label={tl("Champions")} rows={y.c.slice(0, 24).map(([c, g]) => ({ key: c, champ: c, text: champName(c), n: g, pick: () => onChamp(c) }))} />
@@ -798,9 +817,15 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                       <td className={td} data-sort={p ? p[0] : ""}>
                         {p ? (
                           <span className="inline-flex items-center gap-1.5 min-w-0">
-                            <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
+                            <HubLink to={{ kind: "player", slug: u }} title={p[0]} className="shrink-0">
+                              <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
+                            </HubLink>
                             <PlayerLink name={p[0]} u={u} />
-                            {p[2] && <TeamLogo name={p[2]} size={13} />}
+                            {p[2] && (
+                              <HubLink to={{ kind: "team", slug: prettySlug(p[2]) }} title={p[2]} className="shrink-0">
+                                <TeamLogo name={p[2]} size={13} />
+                              </HubLink>
+                            )}
                           </span>
                         ) : (
                           "–"
@@ -1184,7 +1209,9 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                   ) : (
                     <span className="text-rw-muted shrink-0">{tl("vs")}</span>
                   )}
-                  <TeamLogo name={r[8]} size={13} />
+                  <HubLink to={{ kind: "team", slug: prettySlug(r[8]) }} title={r[8]} className="shrink-0">
+                    <TeamLogo name={r[8]} size={13} />
+                  </HubLink>
                   <TeamLink name={r[8]} className="truncate" />
                   <span className="text-rw-muted truncate">
                     {" · "}

@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { ROLES } from "../../hub/champAgg";
@@ -109,10 +109,14 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       value: (p) => p.n,
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-          <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
+          <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} title={p.n} className="shrink-0">
+            <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
+          </HubLink>
           <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent font-semibold" />
           <span className="inline-flex items-center gap-1 text-[10px] text-rw-muted">
-            <TeamLogo name={p.t} size={13} />
+            <HubLink to={{ kind: "team", slug: p.tu || prettySlug(p.t) }} title={p.t} className="shrink-0">
+              <TeamLogo name={p.t} size={13} />
+            </HubLink>
             <TeamLink name={p.t} u={p.tu} className="text-rw-muted hover:text-rw-accent" />
           </span>
         </span>
@@ -455,7 +459,9 @@ const LeaderSpotlight: React.FC<{
           }`}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <PlayerPhoto name={c.top.n} team={c.top.t} slug={c.top.u ?? undefined} size={22} />
+            <HubLink to={{ kind: "player", slug: c.top.u || prettySlug(c.top.n) }} title={c.top.n} className="shrink-0">
+              <PlayerPhoto name={c.top.n} team={c.top.t} slug={c.top.u ?? undefined} size={22} />
+            </HubLink>
             <div className="min-w-0">
               {onPickStat ? (
                 <button
@@ -472,7 +478,9 @@ const LeaderSpotlight: React.FC<{
                 <PlayerLink name={c.top.n} u={c.top.u} className="font-semibold text-rw-text hover:text-rw-accent" />
               </div>
               <div className="text-[10px] text-rw-muted flex items-center gap-1 min-w-0">
-                <TeamLogo name={c.top.t} size={12} />
+                <HubLink to={{ kind: "team", slug: c.top.tu || prettySlug(c.top.t) }} title={c.top.t} className="shrink-0">
+                  <TeamLogo name={c.top.t} size={12} />
+                </HubLink>
                 <TeamLink name={c.top.t} u={c.top.tu} className="text-rw-muted hover:text-rw-accent truncate" />
                 <span className="shrink-0">
                   ·{" "}
