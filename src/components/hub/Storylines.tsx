@@ -7,7 +7,7 @@ import { Sparkles } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
 import { load } from "../../stats";
-import { prettySlug } from "../../hub/data";
+import { bare, matchesChampSearch, prettySlug } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { ChampIcon, HubLink, PlayerPhoto, RevealButton, Section, TeamLogo, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -374,11 +374,21 @@ export const OwnStorylines: React.FC<{
                   >
                     {tl("Game finder")} →
                   </HubLink>
-                  <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  <HubLink
+                    to={{ kind: "rankings", query: `q=${encodeURIComponent(who.slug)}` }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
                     {tl("Power rankings")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "tiers", ...(noteYr ? { query: `key=y${encodeURIComponent(String(noteYr))}` } : {}) }}
+                    to={{
+                      kind: "tiers",
+                      ...(noteYr
+                        ? { query: `key=y${encodeURIComponent(String(noteYr))}` }
+                        : noteEv
+                          ? { query: `event=${encodeURIComponent(noteEv)}` }
+                          : {}),
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Pro tier list")} →
@@ -386,15 +396,12 @@ export const OwnStorylines: React.FC<{
                   <HubLink
                     to={{
                       kind: "leaders",
-                      ...(noteYr || noteEv || noteChamp
-                        ? {
-                            query: new URLSearchParams({
-                              ...(noteYr ? { year: String(noteYr) } : {}),
-                              ...(noteEv ? { event: noteEv } : {}),
-                              ...(noteChamp ? { champ: noteChamp } : {}),
-                            }).toString(),
-                          }
-                        : {}),
+                      query: new URLSearchParams({
+                        ...(noteYr ? { year: String(noteYr) } : {}),
+                        ...(noteEv ? { event: noteEv } : {}),
+                        ...(noteChamp ? { champ: noteChamp } : {}),
+                        q: who.team || who.slug,
+                      }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -466,25 +473,35 @@ export const OwnStorylines: React.FC<{
                   <HubLink
                     to={{
                       kind: "leaders",
-                      ...(noteYr || noteEv || noteChamp
-                        ? {
-                            query: new URLSearchParams({
-                              ...(noteYr ? { year: String(noteYr) } : {}),
-                              ...(noteEv ? { event: noteEv } : {}),
-                              ...(noteChamp ? { champ: noteChamp } : {}),
-                            }).toString(),
-                          }
-                        : {}),
+                      query: new URLSearchParams({
+                        ...(noteYr ? { year: String(noteYr) } : {}),
+                        ...(noteEv ? { event: noteEv } : {}),
+                        ...(noteChamp ? { champ: noteChamp } : {}),
+                        q: who.slug,
+                      }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Player leaderboards")} →
                   </HubLink>
-                  <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  <HubLink
+                    to={{
+                      kind: "rankings",
+                      ...(who.team ? { query: `q=${encodeURIComponent(prettySlug(who.team))}` } : {}),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
                     {tl("Power rankings")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "tiers", ...(noteYr ? { query: `key=y${encodeURIComponent(String(noteYr))}` } : {}) }}
+                    to={{
+                      kind: "tiers",
+                      ...(noteYr
+                        ? { query: `key=y${encodeURIComponent(String(noteYr))}` }
+                        : noteEv
+                          ? { query: `event=${encodeURIComponent(noteEv)}` }
+                          : {}),
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Pro tier list")} →
@@ -510,7 +527,11 @@ export const HomeStorylines: React.FC = () => {
   const rows = terms.length
     ? all.filter((r) => {
         const hay = `${r.name} ${r.u} ${r.c || ""} ${r.c ? champName(r.c) : ""} ${r.e || ""} ${notePlainText(r)}`.toLowerCase();
-        return terms.some((t) => hay.includes(t));
+        const hayBare = bare(hay);
+        return terms.some((t) => {
+          const tb = bare(t);
+          return hay.includes(t) || (tb.length >= 2 && hayBare.includes(tb)) || (r.c ? matchesChampSearch(r.c, t) : false);
+        });
       })
     : all.slice(0, 8 + (cols - 1) * 6);
   if (!all.length) return null;
@@ -607,11 +628,24 @@ export const HomeStorylines: React.FC = () => {
                     >
                       {tl("Game finder")} →
                     </HubLink>
-                    <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    <HubLink
+                      to={{
+                        kind: "rankings",
+                        query: `q=${encodeURIComponent(a)}${b ? `,${encodeURIComponent(b)}` : ""}`,
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
                       {tl("Power rankings")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "tiers", ...(filteredYr ? { query: `key=y${encodeURIComponent(String(filteredYr))}` } : {}) }}
+                      to={{
+                        kind: "tiers",
+                        ...(filteredYr
+                          ? { query: `key=y${encodeURIComponent(String(filteredYr))}` }
+                          : filteredEv
+                            ? { query: `event=${encodeURIComponent(filteredEv)}` }
+                            : {}),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
@@ -619,15 +653,12 @@ export const HomeStorylines: React.FC = () => {
                     <HubLink
                       to={{
                         kind: "leaders",
-                        ...(filteredYr || filteredEv || filteredChamp
-                          ? {
-                              query: new URLSearchParams({
-                                ...(filteredYr ? { year: String(filteredYr) } : {}),
-                                ...(filteredEv ? { event: filteredEv } : {}),
-                                ...(filteredChamp ? { champ: filteredChamp } : {}),
-                              }).toString(),
-                            }
-                          : {}),
+                        query: new URLSearchParams({
+                          ...(filteredYr ? { year: String(filteredYr) } : {}),
+                          ...(filteredEv ? { event: filteredEv } : {}),
+                          ...(filteredChamp ? { champ: filteredChamp } : {}),
+                          q: [a, b].filter(Boolean).join(","),
+                        }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -682,15 +713,12 @@ export const HomeStorylines: React.FC = () => {
                     <HubLink
                       to={{
                         kind: "leaders",
-                        ...(filteredYr || filteredEv || filteredChamp
-                          ? {
-                              query: new URLSearchParams({
-                                ...(filteredYr ? { year: String(filteredYr) } : {}),
-                                ...(filteredEv ? { event: filteredEv } : {}),
-                                ...(filteredChamp ? { champ: filteredChamp } : {}),
-                              }).toString(),
-                            }
-                          : {}),
+                        query: new URLSearchParams({
+                          ...(filteredYr ? { year: String(filteredYr) } : {}),
+                          ...(filteredEv ? { event: filteredEv } : {}),
+                          ...(filteredChamp ? { champ: filteredChamp } : {}),
+                          q: [playerSlugs[0], playerSlugs[1]].filter(Boolean).join(","),
+                        }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -700,7 +728,14 @@ export const HomeStorylines: React.FC = () => {
                       {tl("Power rankings")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "tiers", ...(filteredYr ? { query: `key=y${encodeURIComponent(String(filteredYr))}` } : {}) }}
+                      to={{
+                        kind: "tiers",
+                        ...(filteredYr
+                          ? { query: `key=y${encodeURIComponent(String(filteredYr))}` }
+                          : filteredEv
+                            ? { query: `event=${encodeURIComponent(filteredEv)}` }
+                            : {}),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →

@@ -117,7 +117,13 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                 {tl("Game finder")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings", ...(firstLg ? { query: `league=${encodeURIComponent(firstLg)}` } : {}) }}
+                to={{
+                  kind: "rankings",
+                  query: new URLSearchParams({
+                    ...(firstLg ? { league: firstLg } : {}),
+                    q: `${t.u},${first.opp}`,
+                  }).toString(),
+                }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Power rankings")} →
@@ -128,7 +134,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   ...((firstLg || firstYr)
                     ? {
                         query: new URLSearchParams({
-                          ...(firstLg ? { league: firstLg } : {}),
+                          ...(firstLg ? { scope: firstLg } : {}),
                           ...(firstYr ? { key: `y${firstYr}` } : {}),
                         }).toString(),
                       }
@@ -141,14 +147,11 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               <HubLink
                 to={{
                   kind: "leaders",
-                  ...((firstLg || firstYr)
-                    ? {
-                        query: new URLSearchParams({
-                          ...(firstLg ? { league: firstLg } : {}),
-                          ...(firstYr ? { year: firstYr } : {}),
-                        }).toString(),
-                      }
-                    : {}),
+                  query: new URLSearchParams({
+                    ...(firstLg ? { league: firstLg } : {}),
+                    ...(firstYr ? { year: firstYr } : {}),
+                    q: [t.name, sides(first)[1].name].filter(Boolean).join(","),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -367,7 +370,13 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px]">
           {chance != null && (
             <HubLink
-              to={{ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }}
+              to={{
+                kind: "rankings",
+                query: new URLSearchParams({
+                  ...(lg ? { league: lg } : {}),
+                  q: [t.u, c.opp].filter(Boolean).join(","),
+                }).toString(),
+              }}
               className="flex items-center gap-1.5 w-48 max-w-full hover:opacity-90"
               title={tl("Chance to win the series, from the power rankings (every pro game since 2011)")}
             >
@@ -461,7 +470,13 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           </>
         )}
         <HubLink
-          to={{ kind: "rankings", ...(lg ? { query: `league=${encodeURIComponent(lg)}` } : {}) }}
+          to={{
+            kind: "rankings",
+            query: new URLSearchParams({
+              ...(lg ? { league: lg } : {}),
+              q: [t.u, c.opp].filter(Boolean).join(","),
+            }).toString(),
+          }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
         >
           {tl("Power rankings")}
@@ -472,7 +487,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             ...((lg || period)
               ? {
                   query: new URLSearchParams({
-                    ...(lg ? { league: lg } : {}),
+                    ...(lg ? { scope: lg } : {}),
                     ...(period ? { key: period } : {}),
                   }).toString(),
                 }
@@ -485,14 +500,11 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         <HubLink
           to={{
             kind: "leaders",
-            ...((lg || (yr && /^\d{4}$/.test(yr)))
-              ? {
-                  query: new URLSearchParams({
-                    ...(lg ? { league: lg } : {}),
-                    ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
-                  }).toString(),
-                }
-              : {}),
+            query: new URLSearchParams({
+              ...(lg ? { league: lg } : {}),
+              ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
+              q: [t.name, them.name].filter(Boolean).join(","),
+            }).toString(),
           }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
         >

@@ -326,6 +326,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                     query: new URLSearchParams({
                       ...(periodKey?.startsWith("y") ? { year: periodKey.slice(1) } : {}),
                       ...(p.role ? { role: p.role } : {}),
+                      q: p.name,
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -362,7 +363,10 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                   {tl("Counters")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{
+                    kind: "rankings",
+                    ...(p.club ? { query: `q=${encodeURIComponent(prettySlug(p.club))}` } : {}),
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -650,14 +654,11 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
             <HubLink
               to={{
                 kind: "leaders",
-                ...(p.role || (sel?.date && /^\d{4}/.test(sel.date))
-                  ? {
-                      query: new URLSearchParams({
-                        ...(p.role ? { role: p.role } : {}),
-                        ...(sel?.date && /^\d{4}/.test(sel.date) ? { year: sel.date.slice(0, 4) } : {}),
-                      }).toString(),
-                    }
-                  : {}),
+                query: new URLSearchParams({
+                  ...(p.role ? { role: p.role } : {}),
+                  ...(sel?.date && /^\d{4}/.test(sel.date) ? { year: sel.date.slice(0, 4) } : {}),
+                  q: p.name,
+                }).toString(),
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -680,7 +681,12 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
               {tl("Pro tier list")} →
             </HubLink>
             <HubLink
-              to={{ kind: "rankings" }}
+              to={{
+                kind: "rankings",
+                query: new URLSearchParams({
+                  q: [sel?.team || p.club ? prettySlug((sel?.team || p.club)!) : "", sel?.opp ? prettySlug(sel.opp) : ""].filter(Boolean).join(","),
+                }).toString(),
+              }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Power rankings")} →
@@ -1048,6 +1054,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                             ...(selYr ? { year: selYr } : {}),
                             ...(p.role ? { role: p.role } : {}),
                             ...(sel.champ ? { champ: sel.champ } : {}),
+                            q: p.name,
                           }).toString(),
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1058,7 +1065,12 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   );
                 })()}
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{
+                    kind: "rankings",
+                    query: new URLSearchParams({
+                      q: [sel.team ? prettySlug(sel.team) : "", sel.opp ? prettySlug(sel.opp) : ""].filter(Boolean).join(","),
+                    }).toString(),
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")}
@@ -1162,6 +1174,7 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                     query: new URLSearchParams({
                       ...(p.role ? { role: p.role } : {}),
                       ...(topChamps[0]?.c ? { champ: topChamps[0].c } : {}),
+                      q: p.name,
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1169,7 +1182,10 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                   {tl("Player leaderboards")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings" }}
+                  to={{
+                    kind: "rankings",
+                    ...(p.club ? { query: `q=${encodeURIComponent(prettySlug(p.club))}` } : {}),
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -1357,7 +1373,10 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(t.rating?.league ? { query: `league=${encodeURIComponent(t.rating.league)}` } : {}),
+                        query: new URLSearchParams({
+                          ...(t.rating?.league ? { league: t.rating.league } : {}),
+                          q: `${t.u}${oppSlug ? `,${oppSlug}` : ""}`,
+                        }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1366,7 +1385,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     <HubLink
                       to={{
                         kind: "tiers",
-                        ...(t.rating?.league ? { query: `league=${encodeURIComponent(t.rating.league)}` } : {}),
+                        ...(t.rating?.league ? { query: `scope=${encodeURIComponent(resolveLeagueSlug(t.rating.league) || t.rating.league)}` } : {}),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1375,7 +1394,10 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     <HubLink
                       to={{
                         kind: "leaders",
-                        ...(t.rating?.league ? { query: `league=${encodeURIComponent(t.rating.league)}` } : {}),
+                        query: new URLSearchParams({
+                          ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
+                          q: `${t.name}${opp0 ? `,${opp0}` : ""}`,
+                        }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1630,7 +1652,13 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                               {tl("Pro tier list")}
                             </HubLink>
                             <HubLink
-                              to={{ kind: "rankings", ...(t.rating?.league ? { query: `league=${encodeURIComponent(t.rating.league)}` } : {}) }}
+                              to={{
+                                kind: "rankings",
+                                query: new URLSearchParams({
+                                  ...(t.rating?.league ? { league: t.rating.league } : {}),
+                                  q: `${t.u},${oppSlug}`,
+                                }).toString(),
+                              }}
                               className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
                             >
                               {tl("Power rankings")}
@@ -1638,15 +1666,12 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                             <HubLink
                               to={{
                                 kind: "leaders",
-                                ...(lg || selPeriod || sel.e
-                                  ? {
-                                      query: new URLSearchParams({
-                                        ...(lg ? { league: lg } : {}),
-                                        ...(selPeriod ? { year: selPeriod.slice(1) } : {}),
-                                        ...(sel.e ? { event: prettySlug(sel.e) } : {}),
-                                      }).toString(),
-                                    }
-                                  : {}),
+                                query: new URLSearchParams({
+                                  ...(lg ? { league: lg } : {}),
+                                  ...(selPeriod ? { year: selPeriod.slice(1) } : {}),
+                                  ...(sel.e ? { event: prettySlug(sel.e) } : {}),
+                                  q: `${t.name},${sel.opp}`,
+                                }).toString(),
                               }}
                               className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
                             >
@@ -1952,7 +1977,13 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "rankings" }}
+              to={{
+                kind: "rankings",
+                ...((() => {
+                  const rec0 = c.recent?.find((r) => r.team && r.opp);
+                  return rec0 ? { query: `q=${encodeURIComponent(prettySlug(rec0.team))},${encodeURIComponent(prettySlug(rec0.opp))}` } : {};
+                })()),
+              }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Power rankings")} →
@@ -2215,7 +2246,13 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </HubLink>{" "}
                     ·{" "}
                     <HubLink
-                      to={{ kind: "rankings" }}
+                      to={{
+                        kind: "rankings",
+                        ...((() => {
+                          const rec0 = c.recent?.find((r) => r.team && r.opp);
+                          return rec0 ? { query: `q=${encodeURIComponent(prettySlug(rec0.team))},${encodeURIComponent(prettySlug(rec0.opp))}` } : {};
+                        })()),
+                      }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Power rankings")} →
