@@ -1847,6 +1847,18 @@ const Scoreboard: React.FC<{
         {u && (
           <span className="ml-auto flex items-center gap-2 shrink-0 font-normal">
             <HubLink
+              to={{ kind: "prep", a: u, ...(period ? { period } : {}) }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Match prep")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "compare", mode: "team", a: u, ...(period ? { period } : {}) }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Compare")} →
+            </HubLink>
+            <HubLink
               to={{ kind: "team", slug: u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
               className="text-[11px] text-rw-accent hover:underline"
             >

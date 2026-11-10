@@ -499,6 +499,12 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                 {tl("Tournaments")} →
               </HubLink>
               <HubLink
+                to={{ kind: "draft", query: `p=e:${encodeURIComponent(e.u)}` }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
                 to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -831,6 +837,18 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
           {hiddenBySpoiler && !hideResult && played && <RevealButton onReveal={reveal} small />}
           {r.au && r.bu && (
             <>
+              <HubLink
+                to={{
+                  kind: "prep",
+                  a: r.au,
+                  b: r.bu,
+                  period: /^\d{4}$/.test((r.date || "").slice(0, 4)) ? `y${(r.date || "").slice(0, 4)}` : undefined,
+                }}
+                className="hidden sm:inline hover:text-rw-accent hover:underline"
+                title={tl("Match prep")}
+              >
+                {tl("Match prep")}
+              </HubLink>
               <HubLink
                 to={{
                   kind: "compare",
@@ -1416,6 +1434,19 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
       title={tl("Player leaders")}
       right={
         <span className="flex flex-wrap items-center gap-2">
+          {rows.length >= 1 && rows[0].t && (
+            <HubLink
+              to={{
+                kind: "prep",
+                a: prettySlug(rows[0].t),
+                ...(rows[1]?.t && rows[1].t !== rows[0].t ? { b: prettySlug(rows[1].t) } : {}),
+                period: `e:${e.u}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+            >
+              {tl("Match prep")} →
+            </HubLink>
+          )}
           {rows.length >= 2 && (
             <HubLink
               to={{

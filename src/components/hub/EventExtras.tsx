@@ -450,6 +450,30 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               {tl("Pentakills")}
             </span>
             <span className="flex items-center gap-2">
+              {o.pentas[0] && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "player",
+                      a: o.pentas[0].u || prettySlug(o.pentas[0].n),
+                      ...(o.pentas[1] && (o.pentas[1].u || prettySlug(o.pentas[1].n)) !== (o.pentas[0].u || prettySlug(o.pentas[0].n))
+                        ? { b: o.pentas[1].u || prettySlug(o.pentas[1].n) }
+                        : {}),
+                      ...(slug ? { period: `e:${slug}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "items", query: `player=${encodeURIComponent(o.pentas[0].u || prettySlug(o.pentas[0].n))}` }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                </>
+              )}
               {slug && (
                 <>
                   <HubLink to={{ kind: "leaders", query: `event=${encodeURIComponent(slug)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline">
@@ -510,13 +534,27 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; hidden?: bo
               {tl("Most Player of the Game awards")}
             </span>
             <span className="flex items-center gap-2">
-              {o.mvp.length >= 2 && o.mvp[0].u && o.mvp[1].u && (
-                <HubLink
-                  to={{ kind: "compare", mode: "player", a: o.mvp[0].u, b: o.mvp[1].u, period: slug ? `e:${slug}` : undefined }}
-                  className="text-[11px] text-rw-accent hover:underline"
-                >
-                  {tl("Compare")} →
-                </HubLink>
+              {o.mvp.length >= 1 && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "player",
+                      a: o.mvp[0].u || prettySlug(o.mvp[0].n),
+                      ...(o.mvp[1] ? { b: o.mvp[1].u || prettySlug(o.mvp[1].n) } : {}),
+                      period: slug ? `e:${slug}` : undefined,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "items", query: `player=${encodeURIComponent(o.mvp[0].u || prettySlug(o.mvp[0].n))}` }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                </>
               )}
               <HubLink
                 to={{ kind: "leaders", ...(slug ? { query: `event=${encodeURIComponent(slug)}` } : {}) }}

@@ -1017,8 +1017,34 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                     return terms.some((t) => hay.includes(t));
                   })
                 : allPlayers.slice(0, 25);
+              const t0 = pList[0] ? teamByPlayer.get(pList[0].u || pList[0].n) || "" : "";
+              const t1 = pList[1] ? teamByPlayer.get(pList[1].u || pList[1].n) || "" : "";
               return (
                 <>
+                  {t0 && (
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "prep",
+                          a: prettySlug(t0),
+                          ...(t1 && prettySlug(t1) !== prettySlug(t0) ? { b: prettySlug(t1) } : {}),
+                          ...(playersRecent ? { period: "12m" } : {}),
+                        }}
+                        className="text-[11px] text-rw-accent hover:underline"
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "draft",
+                          query: `teams=${encodeURIComponent(prettySlug(t0))}${t1 && prettySlug(t1) !== prettySlug(t0) ? `,${encodeURIComponent(prettySlug(t1))}` : ""}${playersRecent ? "&p=12m" : ""}`,
+                        }}
+                        className="text-[11px] text-rw-accent hover:underline"
+                      >
+                        {tl("Draft board")} →
+                      </HubLink>
+                    </>
+                  )}
                   {pList.length >= 2 && pList[0].u && pList[1].u && (
                     <HubLink
                       to={{ kind: "compare", mode: "player", a: pList[0].u, b: pList[1].u, period: playersRecent ? "12m" : undefined }}
@@ -1206,6 +1232,50 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                   {tl("With {name}", { name: usedName })} ✕
                 </button>
               )}
+              {(() => {
+                const rTerms = recentSearch
+                  .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                  .map((t) => normText(t))
+                  .filter(Boolean);
+                const r0 = c.recent.find((r) => {
+                  if (!usedIn(r)) return false;
+                  if (!rTerms.length) return true;
+                  const hay = `${normText(r.n)} ${normText(r.u || "")} ${normText(r.team)} ${normText(r.opp)} ${normText(r.en)}`;
+                  return rTerms.some((t) => hay.includes(t));
+                });
+                return r0?.team && r0?.opp ? (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: prettySlug(r0.team), b: prettySlug(r0.opp) }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: prettySlug(r0.team), b: prettySlug(r0.opp) }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(prettySlug(r0.team))},${encodeURIComponent(prettySlug(r0.opp))}`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                ) : (
+                  <HubLink
+                    to={{ kind: "draft" }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                );
+              })()}
               <HubLink
                 to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -1217,12 +1287,6 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Item history")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "draft" }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Draft board")} →
               </HubLink>
               <HubLink
                 to={{
@@ -1438,6 +1502,50 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
           title={tl("By pick order")}
           right={
             <span className="flex flex-wrap items-center gap-2">
+              {(() => {
+                const rTerms = recentSearch
+                  .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+                  .map((t) => normText(t))
+                  .filter(Boolean);
+                const r0 = c.recent.find((r) => {
+                  if (!usedIn(r)) return false;
+                  if (!rTerms.length) return true;
+                  const hay = `${normText(r.n)} ${normText(r.u || "")} ${normText(r.team)} ${normText(r.opp)} ${normText(r.en)}`;
+                  return rTerms.some((t) => hay.includes(t));
+                });
+                return r0?.team && r0?.opp ? (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: prettySlug(r0.team), b: prettySlug(r0.opp) }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: prettySlug(r0.team), b: prettySlug(r0.opp) }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(prettySlug(r0.team))},${encodeURIComponent(prettySlug(r0.opp))}`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                ) : (
+                  <HubLink
+                    to={{ kind: "draft" }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                );
+              })()}
               <HubLink
                 to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -1449,12 +1557,6 @@ const ChampView: React.FC<{ c: HubChamp }> = ({ c }) => {
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Item history")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "draft" }}
-                className="text-[11px] text-rw-accent hover:underline"
-              >
-                {tl("Draft board")} →
               </HubLink>
               <HubLink
                 to={{ kind: "tiers" }}

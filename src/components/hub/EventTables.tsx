@@ -236,6 +236,20 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
       share={`${e.u}-players`}
       right={
         <span className="flex flex-wrap items-center gap-2">
+          {rows.length >= 1 && rows[0].t && (
+            <HubLink
+              to={{
+                kind: "prep",
+                a: rows[0].tu || prettySlug(rows[0].t),
+                ...(rows[1]?.t && rows[1].t !== rows[0].t ? { b: rows[1].tu || prettySlug(rows[1].t) } : {}),
+                period: `e:${e.u}`,
+              }}
+              className="text-[11px] text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Match prep")} →
+            </HubLink>
+          )}
           {rows.length >= 2 && rows[0].u && rows[1].u && (
             <HubLink
               to={{ kind: "compare", mode: "player", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
@@ -299,7 +313,10 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean }> = ({ 
             {tl("Pro tier list")} →
           </HubLink>
           <HubLink
-            to={{ kind: "draft", query: `p=e:${encodeURIComponent(e.u)}` }}
+            to={{
+              kind: "draft",
+              query: `${rows[0]?.t ? `teams=${encodeURIComponent(rows[0].tu || prettySlug(rows[0].t))}${rows[1]?.t && rows[1].t !== rows[0].t ? `,${encodeURIComponent(rows[1].tu || prettySlug(rows[1].t))}` : ""}&` : ""}p=e:${encodeURIComponent(e.u)}`,
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >
@@ -604,13 +621,13 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
       share={`${e.u}-teams`}
       right={
         <span className="flex flex-wrap items-center gap-2">
-          {rows.length >= 2 && (
+          {rows.length >= 1 && (
             <>
               <HubLink
                 to={{
                   kind: "prep",
                   a: rows[0].u || prettySlug(rows[0].t),
-                  b: rows[1].u || prettySlug(rows[1].t),
+                  ...(rows[1] ? { b: rows[1].u || prettySlug(rows[1].t) } : {}),
                   period: `e:${e.u}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -623,7 +640,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
                   kind: "compare",
                   mode: "team",
                   a: rows[0].u || prettySlug(rows[0].t),
-                  b: rows[1].u || prettySlug(rows[1].t),
+                  ...(rows[1] ? { b: rows[1].u || prettySlug(rows[1].t) } : {}),
                   period: `e:${e.u}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -668,7 +685,10 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean }> = 
             {tl("Power rankings")} →
           </HubLink>
           <HubLink
-            to={{ kind: "draft", query: `p=e:${encodeURIComponent(e.u)}` }}
+            to={{
+              kind: "draft",
+              query: `${rows[0] ? `teams=${encodeURIComponent(rows[0].u || prettySlug(rows[0].t))}${rows[1] ? `,${encodeURIComponent(rows[1].u || prettySlug(rows[1].t))}` : ""}&` : ""}p=e:${encodeURIComponent(e.u)}`,
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >

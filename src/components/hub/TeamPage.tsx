@@ -147,10 +147,26 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             {overview && (
               <>
                 <HubLink
+                  to={{ kind: "prep", a: t.u, period: `y${activeRoster.y}` }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
                   to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}&p=y${encodeURIComponent(activeRoster.y)}` }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={
+                    activeRoster.p[0]?.u
+                      ? { kind: "items", query: `player=${encodeURIComponent(activeRoster.p[0].u)}&year=${encodeURIComponent(activeRoster.y)}` }
+                      : { kind: "items" }
+                  }
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
                 </HubLink>
                 <HubLink
                   to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&year=${encodeURIComponent(activeRoster.y)}` }}
@@ -1189,6 +1205,18 @@ const TeamChampionsTab: React.FC<{
               {shownChamps.length >= 1 && (
                 <>
                   <HubLink
+                    to={{ kind: "prep", a: t.u, ...(period !== "all" ? { period } : {}) }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "compare", mode: "team", a: t.u, ...(period !== "all" ? { period } : {}) }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
                     to={{
                       kind: "items",
                       query: `champ=${encodeURIComponent(prettySlug(shownChamps[0].c))}`,
@@ -1304,6 +1332,18 @@ const TeamChampionsTab: React.FC<{
               {shownBans.length >= 1 && (
                 <>
                   <HubLink
+                    to={{ kind: "prep", a: t.u, ...(period !== "all" ? { period } : {}) }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "compare", mode: "team", a: t.u, ...(period !== "all" ? { period } : {}) }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
                     to={{
                       kind: "counters",
                       query: `champ=${encodeURIComponent(prettySlug(shownBans[0].c))}${shownBans[1] ? `&vs=${encodeURIComponent(prettySlug(shownBans[1].c))}` : ""}`,
@@ -1410,6 +1450,18 @@ const TeamChampionsTab: React.FC<{
               <span className="flex flex-wrap items-center gap-2">
                 {shownBansVs.length >= 1 && (
                   <>
+                    <HubLink
+                      to={{ kind: "prep", a: t.u, ...(period !== "all" ? { period } : {}) }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: t.u, ...(period !== "all" ? { period } : {}) }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
                     <HubLink
                       to={{
                         kind: "counters",
@@ -1772,6 +1824,18 @@ const TeamChampGames: React.FC<{
           </select>
           <HubLink to={{ kind: "champ", slug: prettySlug(canonical) }} className="text-[11px] text-rw-accent hover:underline">
             {champName(canonical)} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "prep", a: t.u, ...(period !== "all" ? { period } : {}) }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Match prep")} →
+          </HubLink>
+          <HubLink
+            to={{ kind: "compare", mode: "team", a: t.u, ...(period !== "all" ? { period } : {}) }}
+            className="text-[11px] text-rw-accent hover:underline"
+          >
+            {tl("Compare")} →
           </HubLink>
           <HubLink to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(canonical))}` }} className="text-[11px] text-rw-accent hover:underline">
             {tl("Counter-picks")} →

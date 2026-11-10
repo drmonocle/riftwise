@@ -931,6 +931,29 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
           <RevealButton onReveal={reveal} small />
         ) : (
           <span className="flex items-center gap-2" data-nocapture="1">
+            {rows[0]?.t && (
+              <>
+                <HubLink
+                  to={{
+                    kind: "prep",
+                    a: prettySlug(rows[0].t),
+                    ...(rows[1]?.t && rows[1].t !== rows[0].t ? { b: prettySlug(rows[1].t) } : {}),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")}
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(prettySlug(rows[0].t))}${rows[1]?.t && rows[1].t !== rows[0].t ? `,${encodeURIComponent(prettySlug(rows[1].t))}` : ""}`,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")}
+                </HubLink>
+              </>
+            )}
             {rows.length >= 2 && (
               <HubLink
                 to={{

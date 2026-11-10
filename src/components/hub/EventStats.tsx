@@ -168,6 +168,32 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
           {f.rows.length >= 1 &&
             (f.rows[0].player ? (
               <>
+                {f.rows[0].team && (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: f.rows[0].team,
+                        ...(f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? { b: f.rows[1].team } : {}),
+                        ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
+                      }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
+                      data-nocapture="1"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(f.rows[0].team)}${f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? `,${encodeURIComponent(f.rows[1].team)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                      data-nocapture="1"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                  </>
+                )}
                 <HubLink
                   to={{
                     kind: "compare",
