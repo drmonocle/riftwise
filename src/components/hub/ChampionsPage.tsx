@@ -436,7 +436,7 @@ const LeagueTable: React.FC<{
           ...(eventSlug ? { event: eventSlug } : {}),
           ...(patchQ ? { patch: patchQ } : {}),
           ...(c.p > 0 && side ? { side } : {}),
-          ...(c.p > 0 && roleQ ? { role: roleQ } : {}),
+          ...(c.p > 0 && (roleQ || c.role >= 0) ? { role: roleQ || ROLES[c.role] } : {}),
         }).toString();
         return <PresenceCell presence={c.presence} p={c.p} b={c.b} games={result.games} to={c.p + c.b > 0 ? { kind: "finder", query: fq } : undefined} />;
       },
@@ -454,7 +454,7 @@ const LeagueTable: React.FC<{
           ...(eventSlug ? { event: eventSlug } : {}),
           ...(patchQ ? { patch: patchQ } : {}),
           ...(side ? { side } : {}),
-          ...(roleQ ? { role: roleQ } : {}),
+          ...(roleQ || c.role >= 0 ? { role: roleQ || ROLES[c.role] } : {}),
         }).toString();
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[2.5rem] tabular-nums">
@@ -512,7 +512,7 @@ const LeagueTable: React.FC<{
           ...(eventSlug ? { event: eventSlug } : {}),
           ...(patchQ ? { patch: patchQ } : {}),
           ...(side ? { side } : {}),
-          ...(roleQ ? { role: roleQ } : {}),
+          ...(roleQ || c.role >= 0 ? { role: roleQ || ROLES[c.role] } : {}),
         }).toString();
         return <WinRateCell wr={c.wr} p={c.p} minPicks={3} to={c.p > 0 ? { kind: "finder", query: fq } : undefined} />;
       },
@@ -695,7 +695,7 @@ const LeagueTable: React.FC<{
                 query: new URLSearchParams({
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                   ...(shownRows[1] ? { vs: resolveChampSlug(shownRows[1].c) } : {}),
-                  ...(roleQ ? { role: roleQ } : {}),
+                  ...(roleQ || (shownRows[0] && shownRows[0].role >= 0) ? { role: roleQ || ROLES[shownRows[0].role] } : {}),
                   ...(canonEventSlug ? { event: canonEventSlug } : patchQ ? { patch: patchQ } : year ? { patch: `y${year}`, year } : {}),
                 }).toString(),
               }}
@@ -728,7 +728,9 @@ const LeagueTable: React.FC<{
                 kind: "items",
                 query: new URLSearchParams({
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
+                  ...(roleQ || (shownRows[0] && shownRows[0].role >= 0) ? { role: roleQ || ROLES[shownRows[0].role] } : {}),
                   ...(year ? { year } : {}),
+                  ...(patchQ ? { patch: patchQ } : {}),
                   ...(canonEventSlug ? { event: canonEventSlug } : {}),
                 }).toString(),
               }}
@@ -742,7 +744,7 @@ const LeagueTable: React.FC<{
                 query: new URLSearchParams({
                   ...(canonEventSlug ? { p: `e:${canonEventSlug}` } : patchQ ? { p: `p:${patchQ}` } : year ? { p: `y${year}` } : {}),
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
-                  ...(roleQ ? { role: roleQ } : {}),
+                  ...(roleQ || (shownRows[0] && shownRows[0].role >= 0) ? { role: roleQ || ROLES[shownRows[0].role] } : {}),
                 }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -921,7 +923,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         const fq = new URLSearchParams({
           ...(c.p > 0 ? { champ: resolveChampSlug(c.c) } : { ban: resolveChampSlug(c.c) }),
           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
-          ...(c.p > 0 && roleQ ? { role: roleQ } : {}),
+          ...(c.p > 0 && (roleQ || c.role) ? { role: roleQ || c.role! } : {}),
         }).toString();
         return <PresenceCell presence={c.presence} p={c.p} b={c.b} games={block?.games || 1} to={c.p + c.b > 0 ? { kind: "finder", query: fq } : undefined} />;
       },
@@ -935,7 +937,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         const fq = new URLSearchParams({
           champ: resolveChampSlug(c.c),
           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
-          ...(roleQ ? { role: roleQ } : {}),
+          ...(roleQ || c.role ? { role: roleQ || c.role! } : {}),
         }).toString();
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem] tabular-nums">
@@ -986,7 +988,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         const fq = new URLSearchParams({
           champ: resolveChampSlug(c.c),
           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
-          ...(roleQ ? { role: roleQ } : {}),
+          ...(roleQ || c.role ? { role: roleQ || c.role! } : {}),
         }).toString();
         return <WinRateCell wr={c.wr} p={c.p} minPicks={10} to={c.p > 0 ? { kind: "finder", query: fq } : undefined} />;
       },
@@ -1070,7 +1072,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 query: new URLSearchParams({
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                   ...(shownRows[1] ? { vs: resolveChampSlug(shownRows[1].c) } : {}),
-                  ...(roleQ ? { role: roleQ } : {}),
+                  ...(roleQ || shownRows[0]?.role ? { role: roleQ || shownRows[0]!.role! } : {}),
                   ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { patch: key, year: key.slice(1) } : {}),
                 }).toString(),
               }}
@@ -1102,7 +1104,9 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 kind: "items",
                 query: new URLSearchParams({
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
-                  ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
+                  ...(roleQ || shownRows[0]?.role ? { role: roleQ || shownRows[0]!.role! } : {}),
+                  ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
+                  ...(key.startsWith("p") ? { patch: key.slice(1) } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -1115,7 +1119,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 query: new URLSearchParams({
                   ...(key.startsWith("p") ? { p: `p:${key.slice(1)}` } : key.startsWith("y") ? { p: key } : {}),
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
-                  ...(roleQ ? { role: roleQ } : {}),
+                  ...(roleQ || shownRows[0]?.role ? { role: roleQ || shownRows[0]!.role! } : {}),
                 }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -1127,7 +1131,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 kind: "finder",
                 query: new URLSearchParams({
                   ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
-                  ...(roleQ ? { role: roleQ } : {}),
+                  ...(roleQ ? { role: roleQ } : (search.trim() || shownRows.length === 1) && shownRows[0]?.role ? { role: shownRows[0].role } : {}),
                   ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                 }).toString(),
               }}
@@ -1139,8 +1143,8 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
-                  ...(roleQ ? { role: roleQ } : {}),
+                  ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
+                  ...(roleQ ? { role: roleQ } : (search.trim() || shownRows.length === 1) && shownRows[0]?.role ? { role: shownRows[0].role } : {}),
                   ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                 }).toString(),
               }}
@@ -1210,7 +1214,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
 
 /** 4-card meta spotlight strip above the Champions table (#1 Presence, Picks, Bans, and Win %). */
 const MetaSpotlight: React.FC<{
-  rows: { c: string; presence: number; p: number; b: number; wr: number | null }[];
+  rows: { c: string; role?: number | string | null; presence: number; p: number; b: number; wr: number | null }[];
   minWrPicks: number;
   league?: string;
   year?: string;
@@ -1228,10 +1232,10 @@ const MetaSpotlight: React.FC<{
     [rows, minWrPicks],
   );
   const cards = [
-    topPres ? { label: tl("Presence"), c: topPres.c, val: pct(topPres.presence), sub: `${topPres.p}P · ${topPres.b}B`, tone: "text-rw-accent" } : null,
-    topPicks ? { label: tl("Picks"), c: topPicks.c, val: fmtNum(topPicks.p), sub: topPicks.wr != null ? `${pct(topPicks.wr)} ${tl("Win %")}` : undefined, tone: "text-rw-text" } : null,
-    topBans && topBans.b > 0 ? { label: tl("Bans"), c: topBans.c, val: fmtNum(topBans.b), sub: `${pct(topBans.presence)} ${tl("Presence")}`, tone: "text-rw-red" } : null,
-    topWr && topWr.wr != null ? { label: tl("Win %"), c: topWr.c, val: pct(topWr.wr), sub: `${topWr.p} ${tl("Picks")}`, tone: "text-rw-teal" } : null,
+    topPres ? { label: tl("Presence"), c: topPres.c, r: topPres.role, val: pct(topPres.presence), sub: `${topPres.p}P · ${topPres.b}B`, tone: "text-rw-accent" } : null,
+    topPicks ? { label: tl("Picks"), c: topPicks.c, r: topPicks.role, val: fmtNum(topPicks.p), sub: topPicks.wr != null ? `${pct(topPicks.wr)} ${tl("Win %")}` : undefined, tone: "text-rw-text" } : null,
+    topBans && topBans.b > 0 ? { label: tl("Bans"), c: topBans.c, r: topBans.role, val: fmtNum(topBans.b), sub: `${pct(topBans.presence)} ${tl("Presence")}`, tone: "text-rw-red" } : null,
+    topWr && topWr.wr != null ? { label: tl("Win %"), c: topWr.c, r: topWr.role, val: pct(topWr.wr), sub: `${topWr.p} ${tl("Picks")}`, tone: "text-rw-teal" } : null,
   ].filter((x): x is NonNullable<typeof x> => !!x);
   if (cards.length < 2) return null;
   const canonEv = event ? resolveEventSlug(event) : "";
@@ -1239,7 +1243,9 @@ const MetaSpotlight: React.FC<{
   const draftP = canonEv ? `e:${canonEv}` : patch ? `p:${patch}` : year ? `y${year}` : keyParam?.startsWith("p") ? `p:${keyParam.slice(1)}` : keyParam?.startsWith("y") ? keyParam : "";
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-      {cards.map((item) => (
+      {cards.map((item) => {
+        const itemRole = role || (typeof item.r === "number" ? (item.r >= 0 ? ROLES[item.r] : "") : item.r || "");
+        return (
         <div key={item.label} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2">
           <div className="min-w-0">
             <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{item.label}</div>
@@ -1265,7 +1271,7 @@ const MetaSpotlight: React.FC<{
                     kind: "counters",
                     query: new URLSearchParams({
                       champ: resolveChampSlug(item.c),
-                      ...(role ? { role } : {}),
+                      ...(itemRole ? { role: itemRole } : {}),
                       ...(canonEv ? { event: canonEv } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
                     }).toString(),
                   }}
@@ -1279,7 +1285,9 @@ const MetaSpotlight: React.FC<{
                     kind: "items",
                     query: new URLSearchParams({
                       champ: resolveChampSlug(item.c),
+                      ...(itemRole ? { role: itemRole } : {}),
                       ...(year ? { year } : {}),
+                      ...(patch ? { patch } : {}),
                       ...(canonEv ? { event: canonEv } : {}),
                     }).toString(),
                   }}
@@ -1297,7 +1305,7 @@ const MetaSpotlight: React.FC<{
                       ...(year ? { year } : {}),
                       ...(canonEv ? { event: canonEv } : {}),
                       ...(patch ? { patch } : {}),
-                      ...(role ? { role } : {}),
+                      ...(itemRole ? { role: itemRole } : {}),
                     }).toString(),
                   }}
                   className="hover:text-rw-accent hover:underline"
@@ -1313,7 +1321,7 @@ const MetaSpotlight: React.FC<{
                       ...(tierKey ? { key: tierKey } : {}),
                       ...(patch ? { patch } : year ? { year } : {}),
                       ...(canonEv ? { event: canonEv } : {}),
-                      ...(role ? { role } : {}),
+                      ...(itemRole ? { role: itemRole } : {}),
                       q: resolveChampSlug(item.c),
                     }).toString(),
                   }}
@@ -1328,7 +1336,7 @@ const MetaSpotlight: React.FC<{
                     query: new URLSearchParams({
                       ...(draftP ? { p: draftP } : {}),
                       champ: resolveChampSlug(item.c),
-                      ...(role ? { role } : {}),
+                      ...(itemRole ? { role: itemRole } : {}),
                     }).toString(),
                   }}
                   className="hover:text-rw-accent hover:underline"
@@ -1344,7 +1352,7 @@ const MetaSpotlight: React.FC<{
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
                       ...(canonEv ? { event: canonEv } : {}),
-                      ...(role ? { role } : {}),
+                      ...(itemRole ? { role: itemRole } : {}),
                     }).toString(),
                   }}
                   className="hover:text-rw-accent hover:underline"
@@ -1355,7 +1363,8 @@ const MetaSpotlight: React.FC<{
             )}
           </div>
         </div>
-      ))}
+      );
+      })}
     </div>
   );
 };

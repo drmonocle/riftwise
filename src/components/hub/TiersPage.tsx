@@ -206,7 +206,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                         query: new URLSearchParams({
                           ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
                           ...(secondChamp && role ? { vs: resolveChampSlug(secondChamp.c) } : {}),
-                          ...(role ? { role } : {}),
+                          ...(role || topChamp?.role ? { role: role || topChamp!.role! } : {}),
                           ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { patch: key, year: key.slice(1) } : {}),
                         }).toString(),
                       }
@@ -228,7 +228,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                           ? { p: key }
                           : {}),
                     ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
-                    ...(role ? { role } : {}),
+                    ...(role || topChamp?.role ? { role: role || topChamp!.role! } : {}),
                   }).toString() || undefined,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -240,7 +240,9 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                   kind: "items",
                   query: new URLSearchParams({
                     ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
-                    ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
+                    ...(role || topChamp?.role ? { role: role || topChamp!.role! } : {}),
+                    ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
+                    ...(key.startsWith("p") ? { patch: key.slice(1) } : {}),
                     ...(canonEvSlug ? { event: canonEvSlug } : {}),
                   }).toString(),
                 }}
@@ -266,9 +268,9 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                   kind: "leaders",
                   query: new URLSearchParams({
                     ...(isLeague ? { league: rawScope } : {}),
-                    ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
+                    ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
                     ...(canonEvSlug ? { event: canonEvSlug } : {}),
-                    ...(role ? { role } : {}),
+                    ...(role || topChamp?.role ? { role: role || topChamp!.role! } : {}),
                     ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
                   }).toString(),
                 }}
@@ -292,7 +294,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     ...(isLeague ? { league: rawScope } : {}),
                     ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                     ...(canonEvSlug ? { event: canonEvSlug } : {}),
-                    ...(role ? { role } : {}),
+                    ...(role ? { role } : champFilter.trim() && topChamp?.role ? { role: topChamp.role } : {}),
                     ...(champFilter.trim() && topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
                   }).toString(),
                 }}
@@ -486,7 +488,13 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(byRole.get(r)![0].c))}${key.startsWith("y") ? `&year=${encodeURIComponent(key.slice(1))}` : ""}${canonEvSlug ? `&event=${encodeURIComponent(canonEvSlug)}` : ""}`,
+                        query: new URLSearchParams({
+                          champ: resolveChampSlug(byRole.get(r)![0].c),
+                          role: r,
+                          ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
+                          ...(key.startsWith("p") ? { patch: key.slice(1) } : {}),
+                          ...(canonEvSlug ? { event: canonEvSlug } : {}),
+                        }).toString(),
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
@@ -518,7 +526,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                           role: r,
                           champ: resolveChampSlug(byRole.get(r)![0].c),
                           ...(isLeague ? { league: rawScope } : {}),
-                          ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
+                          ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
                           ...(canonEvSlug ? { event: canonEvSlug } : {}),
                         }).toString(),
                       }}
@@ -628,7 +636,13 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                 <HubLink
                                   to={{
                                     kind: "items",
-                                    query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}${key.startsWith("y") ? `&year=${encodeURIComponent(key.slice(1))}` : ""}${canonEvSlug ? `&event=${encodeURIComponent(canonEvSlug)}` : ""}`,
+                                    query: new URLSearchParams({
+                                      champ: resolveChampSlug(c.c),
+                                      role: r,
+                                      ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
+                                      ...(key.startsWith("p") ? { patch: key.slice(1) } : {}),
+                                      ...(canonEvSlug ? { event: canonEvSlug } : {}),
+                                    }).toString(),
                                   }}
                                   className="text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
                                 >
