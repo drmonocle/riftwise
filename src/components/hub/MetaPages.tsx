@@ -411,6 +411,13 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                   const banPct = Math.min(100 - pickPct, Math.round((b / Math.max(p.g, 1)) * 100));
                   const wrPct = pk ? Math.round((w / pk) * 100) : null;
                   const cSlug = resolveChampSlug(c);
+                  const pYear = (p.to || p.from)?.slice(0, 4) || "";
+                  const cPatchQuery = new URLSearchParams({
+                    p: `p:${p.p}`,
+                    patch: p.p,
+                    ...(pYear ? { year: pYear } : {}),
+                  }).toString();
+                  const finderYearParam = pYear ? `&year=${encodeURIComponent(pYear)}` : "";
                   return (
                     <div
                       key={c}
@@ -422,9 +429,9 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                       })}
                     >
                       <div className="flex items-center justify-between gap-1 min-w-0">
-                        <ChampLink name={c} size={18} />
+                        <ChampLink name={c} size={18} query={cPatchQuery} />
                         <HubLink
-                          to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(cSlug)}` }}
+                          to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(cSlug)}${finderYearParam}` }}
                           className="text-rw-text font-semibold tabular-nums shrink-0 hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -438,14 +445,14 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                       <div className="flex items-center justify-between text-[10px] text-rw-muted tabular-nums">
                         <span>
                           <HubLink
-                            to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(cSlug)}` }}
+                            to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(cSlug)}${finderYearParam}` }}
                             className="hover:text-rw-accent hover:underline"
                           >
                             {pk} {tl("Picks")}
                           </HubLink>{" "}
                           ·{" "}
                           <HubLink
-                            to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&ban=${encodeURIComponent(cSlug)}` }}
+                            to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&ban=${encodeURIComponent(cSlug)}${finderYearParam}` }}
                             className="hover:text-rw-accent hover:underline"
                           >
                             {b} {tl("Bans")}
@@ -453,7 +460,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                         </span>
                         {wrPct != null && (
                           <HubLink
-                            to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(cSlug)}` }}
+                            to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(cSlug)}${finderYearParam}` }}
                             className={`hover:underline ${pk >= 5 ? (wrPct >= 52 ? "text-rw-teal font-semibold" : wrPct <= 48 ? "text-rw-red" : "text-rw-sub") : "hover:text-rw-accent"}`}
                             title={tl("Game finder")}
                           >
@@ -467,8 +474,8 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
               </div>
               {p.prev && ((p.up?.length || 0) > 0 || (p.down?.length || 0) > 0) && (
                 <div className="grid sm:grid-cols-2 gap-x-4 gap-y-2 mt-2 pt-2 border-t border-rw-border">
-                  <Movers title={tl("Rising since {patch}", { patch: p.prev })} list={p.up || []} patch={p.p} up />
-                  <Movers title={tl("Falling since {patch}", { patch: p.prev })} list={p.down || []} patch={p.p} />
+                  <Movers title={tl("Rising since {patch}", { patch: p.prev })} list={p.up || []} patch={p.p} year={(p.to || p.from)?.slice(0, 4)} up />
+                  <Movers title={tl("Falling since {patch}", { patch: p.prev })} list={p.down || []} patch={p.p} year={(p.to || p.from)?.slice(0, 4)} />
                 </div>
               )}
             </div>
@@ -491,7 +498,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
 };
 
 /** Patch movers: presence before -> now, and the win rate now (5+ picks). */
-const Movers: React.FC<{ title: string; list: PatchMove[]; patch: string; up?: boolean }> = ({ title, list, patch, up }) =>
+const Movers: React.FC<{ title: string; list: PatchMove[]; patch: string; year?: string; up?: boolean }> = ({ title, list, patch, year, up }) =>
   list.length ? (
     <div className="min-w-0">
       <div className={`text-[10px] uppercase tracking-wider font-bold mb-1 ${up ? "text-rw-teal" : "text-rw-red"}`}>{title}</div>
@@ -499,12 +506,17 @@ const Movers: React.FC<{ title: string; list: PatchMove[]; patch: string; up?: b
         {list.map(([c, now, was, w, pk]) => {
           const nowPct = Math.round(now * 100);
           const wrPct = pk ? Math.round((w / pk) * 100) : 0;
+          const moverChampQ = new URLSearchParams({
+            p: `p:${patch}`,
+            patch,
+            ...(year ? { year } : {}),
+          }).toString();
           return (
             <li key={c} className="space-y-0.5 min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">
-                <ChampLink name={c} size={18} />
+                <ChampLink name={c} size={18} query={moverChampQ} />
                 <HubLink
-                  to={{ kind: "finder", query: `patch=${encodeURIComponent(patch)}&champ=${encodeURIComponent(resolveChampSlug(c))}` }}
+                  to={{ kind: "finder", query: `patch=${encodeURIComponent(patch)}&champ=${encodeURIComponent(resolveChampSlug(c))}${year ? `&year=${encodeURIComponent(year)}` : ""}` }}
                   className="tabular-nums shrink-0 text-rw-sub hover:underline"
                   title={tl("Presence: picked or banned in this share of games")}
                 >
@@ -1095,7 +1107,17 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 label: tl("Most titles"),
                 value: `${l.titles[0].t} (${l.titles[0].n})`,
                 icon: <TeamLogo name={l.titles[0].t} size={20} />,
-                to: l.titles[0].u ? { kind: "team", slug: l.titles[0].u, ...(season ? { query: `p=y${encodeURIComponent(season)}` } : {}) } : undefined,
+                to: l.titles[0].u
+                  ? {
+                      kind: "team",
+                      slug: l.titles[0].u,
+                      query:
+                        new URLSearchParams({
+                          ...(season ? { p: `y${season}` } : {}),
+                          ...(l.titles[1] ? { q: l.titles[1].u || teamSlug(l.titles[1].t) } : {}),
+                        }).toString() || undefined,
+                    }
+                  : undefined,
               }
             : null,
         ]}
@@ -1233,17 +1255,25 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
             }
           >
             <ul className="text-xs space-y-1.5">
-              {l.titles.map((t) => (
+              {l.titles.map((t) => {
+                const tSlugVal = t.u || teamSlug(t.t);
+                const rival = l.titles.find((o) => (o.u || teamSlug(o.t)) !== tSlugVal);
+                const tQuery =
+                  new URLSearchParams({
+                    ...(season ? { p: `y${season}` } : {}),
+                    ...(rival ? { q: rival.u || teamSlug(rival.t) } : {}),
+                  }).toString() || undefined;
+                return (
                 <li key={t.t} className="space-y-0.5 min-w-0">
                   <div className="flex items-center justify-between gap-2 min-w-0">
                     <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                      <HubLink to={{ kind: "team", slug: t.u || teamSlug(t.t), ...(season ? { query: `p=y${encodeURIComponent(season)}` } : {}) }} title={t.t} className="shrink-0">
+                      <HubLink to={{ kind: "team", slug: tSlugVal, ...(tQuery ? { query: tQuery } : {}) }} title={t.t} className="shrink-0">
                         <TeamLogo name={t.t} size={16} />
                       </HubLink>
-                      <TeamLink name={t.t} u={t.u} />
+                      <TeamLink name={t.t} u={t.u} query={tQuery} />
                     </span>
                     <HubLink
-                      to={t.u ? { kind: "team", slug: t.u, tab: "history", ...(season ? { query: `p=y${encodeURIComponent(season)}` } : {}) } : { kind: "titles" }}
+                      to={t.u ? { kind: "team", slug: t.u, tab: "history", ...(tQuery ? { query: tQuery } : {}) } : { kind: "titles" }}
                       className="text-rw-accent font-bold tabular-nums shrink-0 hover:underline"
                     >
                       {t.n}
@@ -1253,7 +1283,8 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                     <div className="h-full rounded-full bg-rw-accent/75" style={{ width: `${Math.max(6, Math.round((t.n / maxTitles) * 100))}%` }} />
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
             <p className="text-[10px] text-rw-muted">
               {tl(
@@ -1580,10 +1611,13 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
   e,
 }) => {
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);
+  const wSlug = !hidden && e.w ? e.wu || resolveTeamAlias(e.w) || prettySlug(e.w) : undefined;
+  const evQ = wSlug ? `q=${encodeURIComponent(wSlug)}` : undefined;
+  const wTeamQ = `p=e:${encodeURIComponent(e.u)}`;
   return (
     <tr className="border-t border-rw-border">
       <td className={`${td} max-w-[12rem] sm:max-w-[16rem] truncate`} data-sort={e.n}>
-        <EventLink name={e.n} u={e.u} />
+        <EventLink name={e.n} u={e.u} query={evQ} />
       </td>
       <td
         className={`${td} text-rw-muted hidden sm:table-cell whitespace-nowrap`}
@@ -1592,6 +1626,7 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
         <EventLink
           name={`${fmtDate(e.st, false)}${e.en && e.en !== e.st ? ` – ${fmtDate(e.en)}` : ""}`}
           u={e.u}
+          query={evQ}
           className="text-rw-muted hover:text-rw-accent hover:underline"
         />
       </td>
@@ -1602,10 +1637,10 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
           ) : (
             <span className="flex items-center gap-1.5">
               {!e.rs && <Crown className="w-3 h-3 text-rw-accent shrink-0" />}
-              <HubLink to={{ kind: "team", slug: e.wu || resolveTeamAlias(e.w) || prettySlug(e.w), query: `p=e:${encodeURIComponent(e.u)}` }} title={e.w} className="shrink-0">
+              <HubLink to={{ kind: "team", slug: e.wu || resolveTeamAlias(e.w) || prettySlug(e.w), query: wTeamQ }} title={e.w} className="shrink-0">
                 <TeamLogo name={e.w} size={15} />
               </HubLink>
-              <TeamLink name={e.w} u={e.wu} />
+              <TeamLink name={e.w} u={e.wu} query={wTeamQ} />
               {e.rs ? <StandingsFirst /> : null}
             </span>
           )
