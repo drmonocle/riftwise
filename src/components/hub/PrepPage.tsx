@@ -216,6 +216,8 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
                       {(() => {
                         const topChamp = side?.team.champs[0]?.c;
                         const secChamp = side?.team.champs[1]?.c;
+                        const p0Slug = side?.players.find(Boolean)?.p.u || side?.team.starters?.[0]?.[1] || side?.team.roster[0]?.p?.find((x) => x.u)?.u;
+                        const p1Slug = side?.players.filter(Boolean)[1]?.p.u || side?.team.starters?.[1]?.[1];
                         const draftChamps = [
                           topChamp ? resolveChampSlug(topChamp) : "",
                           secChamp && secChamp !== topChamp ? resolveChampSlug(secChamp) : "",
@@ -255,7 +257,7 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
                             <HubLink
                               to={{
                                 kind: "items",
-                                query: `team=${encodeURIComponent(slug)}${topChamp ? `&champ=${encodeURIComponent(resolveChampSlug(topChamp))}` : ""}${
+                                query: `team=${encodeURIComponent(slug)}${p0Slug ? `&player=${encodeURIComponent(p0Slug)}${p1Slug && p1Slug !== p0Slug ? `&vsplayer=${encodeURIComponent(p1Slug)}` : ""}` : ""}${topChamp ? `&champ=${encodeURIComponent(resolveChampSlug(topChamp))}` : ""}${secChamp && secChamp !== topChamp ? `&vschamp=${encodeURIComponent(resolveChampSlug(secChamp))}` : ""}${
                                   route.period && route.period.startsWith("y") && route.period.length === 5
                                     ? `&year=${encodeURIComponent(route.period.slice(1))}`
                                     : route.period?.startsWith("e:")
@@ -283,7 +285,7 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
                             <HubLink
                               to={{
                                 kind: "finder",
-                                query: `team=${encodeURIComponent(slug)}${topChamp ? `&champ=${encodeURIComponent(resolveChampSlug(topChamp))}` : ""}${
+                                query: `team=${encodeURIComponent(slug)}${p0Slug ? `&player=${encodeURIComponent(p0Slug)}${p1Slug && p1Slug !== p0Slug ? `&vsplayer=${encodeURIComponent(p1Slug)}` : ""}` : ""}${topChamp ? `&champ=${encodeURIComponent(resolveChampSlug(topChamp))}` : ""}${secChamp && secChamp !== topChamp ? `&vschamp=${encodeURIComponent(resolveChampSlug(secChamp))}` : ""}${
                                   route.period && route.period.startsWith("y") && route.period.length === 5
                                     ? `&year=${encodeURIComponent(route.period.slice(1))}`
                                     : route.period?.startsWith("e:")
@@ -343,7 +345,7 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
                               to={{
                                 kind: "leaders",
                                 query: new URLSearchParams({
-                                  q: side?.team.u || slug,
+                                  q: [side?.team.u || slug, p0Slug, p1Slug].filter(Boolean).join(","),
                                   ...(topChamp ? { champ: resolveChampSlug(topChamp) } : {}),
                                   ...(side?.team.rating?.league ? { league: resolveLeagueSlug(side.team.rating.league) || side.team.rating.league } : {}),
                                   ...(route.period && route.period.startsWith("y") && route.period.length === 5
@@ -442,6 +444,8 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
             const topChampA = a.champs[0]?.c;
             const topChampB = b.champs[0]?.c;
             const vsChamp = topChampB && topChampB !== topChampA ? topChampB : a.champs[1]?.c || b.champs[1]?.c;
+            const pA = a.starters?.[0]?.[1] || a.roster[0]?.p?.find((x) => x.u)?.u;
+            const pB = b.starters?.[0]?.[1] || b.roster[0]?.p?.find((x) => x.u)?.u;
             const draftChamps = [
               topChampA ? resolveChampSlug(topChampA) : "",
               vsChamp && vsChamp !== topChampA ? resolveChampSlug(vsChamp) : "",
@@ -490,7 +494,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}${topChampA ? `&champ=${encodeURIComponent(resolveChampSlug(topChampA))}` : ""}${
+                    query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA ? `&champ=${encodeURIComponent(resolveChampSlug(topChampA))}` : ""}${vsChamp && vsChamp !== topChampA ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${
                       period && period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period?.startsWith("e:")
@@ -507,7 +511,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${
+                    query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${vsChamp && vsChamp !== (topChampA || topChampB) ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${
                       period && period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period?.startsWith("e:")
@@ -557,7 +561,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      q: `${a.u},${b.u}`,
+                      q: [a.u, b.u, pA, pB].filter(Boolean).join(","),
                       ...(topChampA || topChampB ? { champ: resolveChampSlug((topChampA || topChampB)!) } : {}),
                       ...(sharedLeague ? { league: sharedLeague } : {}),
                       ...(period && period.startsWith("y") && period.length === 5
@@ -1122,6 +1126,8 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
             const topChampA = A.picks[0]?.[0] || a.team.champs[0]?.c;
             const topChampB = B.picks[0]?.[0] || b.team.champs[0]?.c;
             const vsChamp = topChampB && topChampB !== topChampA ? topChampB : A.picks[1]?.[0] || a.team.champs[1]?.c || B.picks[1]?.[0] || b.team.champs[1]?.c;
+            const pA = a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1] || a.team.roster[0]?.p?.find((x) => x.u)?.u;
+            const pB = b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1] || b.team.roster[0]?.p?.find((x) => x.u)?.u;
             const draftChamps = [
               topChampA ? resolveChampSlug(topChampA) : "",
               vsChamp && vsChamp !== topChampA ? resolveChampSlug(vsChamp) : "",
@@ -1167,7 +1173,7 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${
+                    query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${vsChamp && vsChamp !== (topChampA || topChampB) ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${
                       period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period.startsWith("e:")
@@ -1184,7 +1190,7 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${
+                    query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${vsChamp && vsChamp !== (topChampA || topChampB) ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${
                       period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period.startsWith("e:")
@@ -1257,7 +1263,7 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      q: `${a.team.u},${b.team.u}`,
+                      q: [a.team.u, b.team.u, pA, pB].filter(Boolean).join(","),
                       ...(topChampA || topChampB ? { champ: resolveChampSlug((topChampA || topChampB)!) } : {}),
                       ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
                       ...(period.startsWith("y") && period.length === 5
@@ -1606,19 +1612,32 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <HubLink
             to={{
               kind: "items",
-              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                a.team.champs[0]?.c || b.team.champs[0]?.c
-                  ? `&champ=${encodeURIComponent(resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!))}`
-                  : ""
-              }${
-                period.startsWith("y") && period.length === 5
-                  ? `&year=${encodeURIComponent(period.slice(1))}`
-                  : period.startsWith("e:")
-                    ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                    : period.startsWith("p:")
-                      ? `&patch=${encodeURIComponent(period.slice(2))}`
-                      : ""
-              }`,
+              query: (() => {
+                const topC = a.team.champs[0]?.c || b.team.champs[0]?.c;
+                const vsC =
+                  b.team.champs[0]?.c && b.team.champs[0].c !== topC
+                    ? b.team.champs[0].c
+                    : a.team.champs[1]?.c && a.team.champs[1].c !== topC
+                      ? a.team.champs[1].c
+                      : b.team.champs[1]?.c && b.team.champs[1].c !== topC
+                        ? b.team.champs[1].c
+                        : "";
+                const pA = a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
+                const pB = b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
+                return `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                  pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""
+                }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
+                  vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
+                }${
+                  period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                      : period.startsWith("p:")
+                        ? `&patch=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                }`;
+              })(),
             }}
             className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:underline"
           >
@@ -1627,17 +1646,32 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                a.team.champs[0]?.c || b.team.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!))}` : ""
-              }${
-                period.startsWith("y") && period.length === 5
-                  ? `&year=${encodeURIComponent(period.slice(1))}`
-                  : period.startsWith("e:")
-                    ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                    : period.startsWith("p:")
-                      ? `&patch=${encodeURIComponent(period.slice(2))}`
-                      : ""
-              }`,
+              query: (() => {
+                const topC = a.team.champs[0]?.c || b.team.champs[0]?.c;
+                const vsC =
+                  b.team.champs[0]?.c && b.team.champs[0].c !== topC
+                    ? b.team.champs[0].c
+                    : a.team.champs[1]?.c && a.team.champs[1].c !== topC
+                      ? a.team.champs[1].c
+                      : b.team.champs[1]?.c && b.team.champs[1].c !== topC
+                        ? b.team.champs[1].c
+                        : "";
+                const pA = a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
+                const pB = b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
+                return `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                  pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""
+                }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
+                  vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
+                }${
+                  period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                      : period.startsWith("p:")
+                        ? `&patch=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                }`;
+              })(),
             }}
             className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:underline"
           >
@@ -1702,7 +1736,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             to={{
               kind: "leaders",
               query: new URLSearchParams({
-                q: `${a.team.u},${b.team.u}`,
+                q: [a.team.u, b.team.u, a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1], b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1]].filter(Boolean).join(","),
                 ...(a.team.champs[0]?.c || b.team.champs[0]?.c ? { champ: resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!) } : {}),
                 ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
                 ...(period.startsWith("y") && period.length === 5
@@ -1772,6 +1806,8 @@ const Tendencies: React.FC<{ side: Side; other?: Side; rows: TeamGameRow[]; peri
     other?.team.champs[0]?.c && other.team.champs[0].c !== topPick
       ? other.team.champs[0].c
       : t.picks[1]?.[0] || side.team.champs[1]?.c || other?.team.champs[1]?.c;
+  const p0Slug = side.players.find(Boolean)?.p.u || side.team.starters?.[0]?.[1];
+  const p1Slug = other?.players.find(Boolean)?.p.u || other?.team.starters?.[0]?.[1] || side.players.filter(Boolean)[1]?.p.u;
   const draftChamps = [
     topPick ? resolveChampSlug(topPick) : "",
     oppPick && oppPick !== topPick ? resolveChampSlug(oppPick) : "",
@@ -1839,9 +1875,9 @@ const Tendencies: React.FC<{ side: Side; other?: Side; rows: TeamGameRow[]; peri
           <HubLink
             to={{
               kind: "items",
-              query: `team=${encodeURIComponent(side.team.u)}${other ? `&vs=${encodeURIComponent(other.team.u)}` : ""}${
+              query: `team=${encodeURIComponent(side.team.u)}${other ? `&vs=${encodeURIComponent(other.team.u)}` : ""}${p0Slug ? `&player=${encodeURIComponent(p0Slug)}${p1Slug && p1Slug !== p0Slug ? `&vsplayer=${encodeURIComponent(p1Slug)}` : ""}` : ""}${
                 topPick ? `&champ=${encodeURIComponent(resolveChampSlug(topPick))}` : ""
-              }${
+              }${oppPick && oppPick !== topPick ? `&vschamp=${encodeURIComponent(resolveChampSlug(oppPick))}` : ""}${
                 period.startsWith("y") && period.length === 5
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
@@ -1886,7 +1922,7 @@ const Tendencies: React.FC<{ side: Side; other?: Side; rows: TeamGameRow[]; peri
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(side.team.u)}${other ? `&vs=${encodeURIComponent(other.team.u)}` : ""}${topPick ? `&champ=${encodeURIComponent(resolveChampSlug(topPick))}` : ""}${
+              query: `team=${encodeURIComponent(side.team.u)}${other ? `&vs=${encodeURIComponent(other.team.u)}` : ""}${p0Slug ? `&player=${encodeURIComponent(p0Slug)}${p1Slug && p1Slug !== p0Slug ? `&vsplayer=${encodeURIComponent(p1Slug)}` : ""}` : ""}${topPick ? `&champ=${encodeURIComponent(resolveChampSlug(topPick))}` : ""}${oppPick && oppPick !== topPick ? `&vschamp=${encodeURIComponent(resolveChampSlug(oppPick))}` : ""}${
                 period.startsWith("y") && period.length === 5
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
@@ -1928,7 +1964,7 @@ const Tendencies: React.FC<{ side: Side; other?: Side; rows: TeamGameRow[]; peri
             to={{
               kind: "leaders",
               query: new URLSearchParams({
-                q: other ? `${side.team.u},${other.team.u}` : side.team.u,
+                q: [side.team.u, other?.team.u, p0Slug, p1Slug].filter(Boolean).join(","),
                 ...(topPick ? { champ: resolveChampSlug(topPick) } : {}),
                 ...(side.team.rating?.league ? { league: resolveLeagueSlug(side.team.rating.league) || side.team.rating.league } : {}),
                 ...(period.startsWith("y") && period.length === 5
@@ -2101,6 +2137,16 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
   const sharedLeague = a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? resolveLeagueSlug(a.team.rating.league) || a.team.rating.league : undefined;
   const topChampA = a.team.champs[0]?.c;
   const topChampB = b.team.champs[0]?.c;
+  const vsChampForm =
+    topChampB && topChampB !== (topChampA || topChampB)
+      ? topChampB
+      : a.team.champs[1]?.c && a.team.champs[1].c !== (topChampA || topChampB)
+        ? a.team.champs[1].c
+        : b.team.champs[1]?.c && b.team.champs[1].c !== (topChampA || topChampB)
+          ? b.team.champs[1].c
+          : "";
+  const pAForm = a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
+  const pBForm = b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
   return (
     <Section
       title={tl("Form: last 10 series")}
@@ -2112,7 +2158,9 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
               to={{
                 kind: "finder",
                 query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                  topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""
+                  pAForm ? `&player=${encodeURIComponent(pAForm)}${pBForm && pBForm !== pAForm ? `&vsplayer=${encodeURIComponent(pBForm)}` : ""}` : ""
+                }${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${
+                  vsChampForm ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChampForm))}` : ""
                 }${
                   period && period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -2162,18 +2210,7 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
                 to={{
                   kind: "counters",
                   query: `champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}${
-                    (() => {
-                      const topC = (topChampA || topChampB)!;
-                      const vsC =
-                        topChampB && topChampB !== topC
-                          ? topChampB
-                          : a.team.champs[1]?.c && a.team.champs[1].c !== topC
-                            ? a.team.champs[1].c
-                            : b.team.champs[1]?.c && b.team.champs[1].c !== topC
-                              ? b.team.champs[1].c
-                              : "";
-                      return vsC ? `&vs=${encodeURIComponent(resolveChampSlug(vsC))}` : "";
-                    })()
+                    vsChampForm ? `&vs=${encodeURIComponent(resolveChampSlug(vsChampForm))}` : ""
                   }${
                     period && period.startsWith("y") && period.length === 5
                       ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}`
@@ -2193,7 +2230,9 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
               to={{
                 kind: "items",
                 query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                  topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""
+                  pAForm ? `&player=${encodeURIComponent(pAForm)}${pBForm && pBForm !== pAForm ? `&vsplayer=${encodeURIComponent(pBForm)}` : ""}` : ""
+                }${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${
+                  vsChampForm ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChampForm))}` : ""
                 }${
                   period && period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -2256,7 +2295,7 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: `${a.team.u},${b.team.u}`,
+                  q: [a.team.u, b.team.u, pAForm, pBForm].filter(Boolean).join(","),
                   ...(topChampA || topChampB ? { champ: resolveChampSlug((topChampA || topChampB)!) } : {}),
                   ...(sharedLeague ? { league: sharedLeague } : {}),
                   ...(period && period.startsWith("y") && period.length === 5
@@ -2566,19 +2605,32 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
           <HubLink
             to={{
               kind: "items",
-              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                a.team.champs[0]?.c || b.team.champs[0]?.c
-                  ? `&champ=${encodeURIComponent(resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!))}`
-                  : ""
-              }${
-                period.startsWith("y") && period.length === 5
-                  ? `&year=${encodeURIComponent(period.slice(1))}`
-                  : period.startsWith("e:")
-                    ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                    : period.startsWith("p:")
-                      ? `&patch=${encodeURIComponent(period.slice(2))}`
-                      : ""
-              }`,
+              query: (() => {
+                const topC = a.team.champs[0]?.c || b.team.champs[0]?.c;
+                const vsC =
+                  b.team.champs[0]?.c && b.team.champs[0].c !== topC
+                    ? b.team.champs[0].c
+                    : a.team.champs[1]?.c && a.team.champs[1].c !== topC
+                      ? a.team.champs[1].c
+                      : b.team.champs[1]?.c && b.team.champs[1].c !== topC
+                        ? b.team.champs[1].c
+                        : "";
+                const pA = a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
+                const pB = b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
+                return `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                  pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""
+                }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
+                  vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
+                }${
+                  period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                      : period.startsWith("p:")
+                        ? `&patch=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                }`;
+              })(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -2588,17 +2640,32 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                a.team.champs[0]?.c || b.team.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!))}` : ""
-              }${
-                period.startsWith("y") && period.length === 5
-                  ? `&year=${encodeURIComponent(period.slice(1))}`
-                  : period.startsWith("e:")
-                    ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                    : period.startsWith("p:")
-                      ? `&patch=${encodeURIComponent(period.slice(2))}`
-                      : ""
-              }`,
+              query: (() => {
+                const topC = a.team.champs[0]?.c || b.team.champs[0]?.c;
+                const vsC =
+                  b.team.champs[0]?.c && b.team.champs[0].c !== topC
+                    ? b.team.champs[0].c
+                    : a.team.champs[1]?.c && a.team.champs[1].c !== topC
+                      ? a.team.champs[1].c
+                      : b.team.champs[1]?.c && b.team.champs[1].c !== topC
+                        ? b.team.champs[1].c
+                        : "";
+                const pA = a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
+                const pB = b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
+                return `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                  pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""
+                }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
+                  vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
+                }${
+                  period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                      : period.startsWith("p:")
+                        ? `&patch=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                }`;
+              })(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -2651,7 +2718,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
             to={{
               kind: "leaders",
               query: new URLSearchParams({
-                q: `${a.team.u},${b.team.u}`,
+                q: [a.team.u, b.team.u, a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1], b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1]].filter(Boolean).join(","),
                 ...(a.team.champs[0]?.c || b.team.champs[0]?.c ? { champ: resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!) } : {}),
                 ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
                 ...(period.startsWith("y") && period.length === 5
@@ -2863,7 +2930,18 @@ const Lanes: React.FC<{
               <HubLink
                 to={{
                   kind: "items",
-                  query: `player=${encodeURIComponent(pa.p.u)}${pb.p.u !== pa.p.u ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : ""}&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&role=${encodeURIComponent(r)}${sa?.champs[0]?.c || sb?.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug((sa?.champs[0]?.c || sb?.champs[0]?.c)!))}` : ""}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+                  query: (() => {
+                    const topC = sa?.champs[0]?.c || sb?.champs[0]?.c;
+                    const vsC =
+                      sb?.champs[0]?.c && sb.champs[0].c !== topC
+                        ? sb.champs[0].c
+                        : sa?.champs[1]?.c && sa.champs[1].c !== topC
+                          ? sa.champs[1].c
+                          : sb?.champs[1]?.c && sb.champs[1].c !== topC
+                            ? sb.champs[1].c
+                            : "";
+                    return `player=${encodeURIComponent(pa.p.u)}${pb.p.u !== pa.p.u ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : ""}&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&role=${encodeURIComponent(r)}${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`;
+                  })(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
               >
@@ -2873,7 +2951,7 @@ const Lanes: React.FC<{
                 to={{
                   kind: "leaders",
                   query: new URLSearchParams({
-                    q: `${pa.p.u},${pb.p.u}`,
+                    q: [pa.p.u, pb.p.u, a.team.u, b.team.u].filter(Boolean).join(","),
                     role: r,
                     ...(sa?.champs[0]?.c || sb?.champs[0]?.c ? { champ: resolveChampSlug((sa?.champs[0]?.c || sb?.champs[0]?.c)!) } : {}),
                     ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
@@ -2891,15 +2969,26 @@ const Lanes: React.FC<{
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `player=${encodeURIComponent(pa.p.u)}${h2h && h2h.g > 0 ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : `&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}`}&role=${encodeURIComponent(r)}${sa?.champs[0]?.c || sb?.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug((sa?.champs[0]?.c || sb?.champs[0]?.c)!))}` : ""}${
-                    period.startsWith("y") && period.length === 5
-                      ? `&year=${encodeURIComponent(period.slice(1))}`
-                      : period.startsWith("e:")
-                        ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                        : period.startsWith("p:")
-                          ? `&patch=${encodeURIComponent(period.slice(2))}`
-                          : ""
-                  }`,
+                  query: (() => {
+                    const topC = sa?.champs[0]?.c || sb?.champs[0]?.c;
+                    const vsC =
+                      sb?.champs[0]?.c && sb.champs[0].c !== topC
+                        ? sb.champs[0].c
+                        : sa?.champs[1]?.c && sa.champs[1].c !== topC
+                          ? sa.champs[1].c
+                          : sb?.champs[1]?.c && sb.champs[1].c !== topC
+                            ? sb.champs[1].c
+                            : "";
+                    return `player=${encodeURIComponent(pa.p.u)}${pb.p.u !== pa.p.u ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : ""}&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&role=${encodeURIComponent(r)}${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""}${
+                      period.startsWith("y") && period.length === 5
+                        ? `&year=${encodeURIComponent(period.slice(1))}`
+                        : period.startsWith("e:")
+                          ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                          : period.startsWith("p:")
+                            ? `&patch=${encodeURIComponent(period.slice(2))}`
+                            : ""
+                    }`;
+                  })(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
               >
@@ -3201,19 +3290,32 @@ const Lanes: React.FC<{
           <HubLink
             to={{
               kind: "items",
-              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                a.team.champs[0]?.c || b.team.champs[0]?.c
-                  ? `&champ=${encodeURIComponent(resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!))}`
-                  : ""
-              }${
-                period.startsWith("y") && period.length === 5
-                  ? `&year=${encodeURIComponent(period.slice(1))}`
-                  : period.startsWith("e:")
-                    ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                    : period.startsWith("p:")
-                      ? `&patch=${encodeURIComponent(period.slice(2))}`
-                      : ""
-              }`,
+              query: (() => {
+                const topC = a.team.champs[0]?.c || b.team.champs[0]?.c;
+                const vsC =
+                  b.team.champs[0]?.c && b.team.champs[0].c !== topC
+                    ? b.team.champs[0].c
+                    : a.team.champs[1]?.c && a.team.champs[1].c !== topC
+                      ? a.team.champs[1].c
+                      : b.team.champs[1]?.c && b.team.champs[1].c !== topC
+                        ? b.team.champs[1].c
+                        : "";
+                const pA = a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
+                const pB = b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
+                return `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                  pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""
+                }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
+                  vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
+                }${
+                  period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                      : period.startsWith("p:")
+                        ? `&patch=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                }`;
+              })(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -3224,7 +3326,7 @@ const Lanes: React.FC<{
             to={{
               kind: "leaders",
               query: new URLSearchParams({
-                q: `${a.team.u},${b.team.u}`,
+                q: [a.team.u, b.team.u, a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1], b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1]].filter(Boolean).join(","),
                 ...(a.team.champs[0]?.c || b.team.champs[0]?.c ? { champ: resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!) } : {}),
                 ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
                 ...(period.startsWith("y") && period.length === 5
@@ -3267,17 +3369,32 @@ const Lanes: React.FC<{
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                a.team.champs[0]?.c || b.team.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!))}` : ""
-              }${
-                period.startsWith("y") && period.length === 5
-                  ? `&year=${encodeURIComponent(period.slice(1))}`
-                  : period.startsWith("e:")
-                    ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                    : period.startsWith("p:")
-                      ? `&patch=${encodeURIComponent(period.slice(2))}`
-                      : ""
-              }`,
+              query: (() => {
+                const topC = a.team.champs[0]?.c || b.team.champs[0]?.c;
+                const vsC =
+                  b.team.champs[0]?.c && b.team.champs[0].c !== topC
+                    ? b.team.champs[0].c
+                    : a.team.champs[1]?.c && a.team.champs[1].c !== topC
+                      ? a.team.champs[1].c
+                      : b.team.champs[1]?.c && b.team.champs[1].c !== topC
+                        ? b.team.champs[1].c
+                        : "";
+                const pA = a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
+                const pB = b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
+                return `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                  pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""
+                }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
+                  vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
+                }${
+                  period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                      : period.startsWith("p:")
+                        ? `&patch=${encodeURIComponent(period.slice(2))}`
+                        : ""
+                }`;
+              })(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -3644,8 +3761,10 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
           {(bansByA[0] || picksA[0] || bansByB[0] || picksB[0]) && (() => {
             const topObj = (bansByA[0] || picksA[0] || bansByB[0] || picksB[0])!;
             const cA = topObj.c;
-            const cB = (bansByB[0] || picksB[0])?.c;
+            const cB = (bansByB[0] || picksB[0])?.c && (bansByB[0] || picksB[0])?.c !== cA ? (bansByB[0] || picksB[0])?.c : (picksA[0] || bansByA[1] || picksB[1])?.c;
             const roleStr = topObj.role != null ? ROLES[topObj.role] : "";
+            const pA = (topObj.role != null ? a.players[topObj.role]?.p.u : undefined) || a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
+            const pB = (topObj.role != null ? b.players[topObj.role]?.p.u : undefined) || b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
             return (
               <>
                 <HubLink
@@ -3670,7 +3789,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&champ=${encodeURIComponent(resolveChampSlug(cA))}${
+                    query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}&champ=${encodeURIComponent(resolveChampSlug(cA))}${cB && cB !== cA ? `&vschamp=${encodeURIComponent(resolveChampSlug(cB))}` : ""}${
                       roleStr ? `&role=${encodeURIComponent(roleStr)}` : ""
                     }${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period && period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period && period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
                   }}
@@ -3736,23 +3855,26 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
           <HubLink
             to={{
               kind: "leaders",
-              query: new URLSearchParams({
-                q: `${a.team.u},${b.team.u}`,
-                ...((bansByA[0] || picksA[0] || bansByB[0] || picksB[0])
-                  ? {
-                      champ: resolveChampSlug((bansByA[0] || picksA[0] || bansByB[0] || picksB[0]).c),
-                      ...((bansByA[0] || picksA[0] || bansByB[0] || picksB[0]).role != null
-                        ? { role: ROLES[(bansByA[0] || picksA[0] || bansByB[0] || picksB[0]).role!] }
-                        : {}),
-                    }
-                  : {}),
-                ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
-                ...(period && period.startsWith("y") && period.length === 5
-                  ? { year: period.slice(1) }
-                  : period && period.startsWith("e:")
-                    ? { event: resolveEventSlug(period.slice(2)) }
+              query: (() => {
+                const topObj = bansByA[0] || picksA[0] || bansByB[0] || picksB[0];
+                const pA = (topObj?.role != null ? a.players[topObj.role]?.p.u : undefined) || a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
+                const pB = (topObj?.role != null ? b.players[topObj.role]?.p.u : undefined) || b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
+                return new URLSearchParams({
+                  q: [a.team.u, b.team.u, pA, pB].filter(Boolean).join(","),
+                  ...(topObj
+                    ? {
+                        champ: resolveChampSlug(topObj.c),
+                        ...(topObj.role != null ? { role: ROLES[topObj.role] } : {}),
+                      }
                     : {}),
-              }).toString(),
+                  ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
+                  ...(period && period.startsWith("y") && period.length === 5
+                    ? { year: period.slice(1) }
+                    : period && period.startsWith("e:")
+                      ? { event: resolveEventSlug(period.slice(2)) }
+                      : {}),
+                }).toString();
+              })(),
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
@@ -3761,23 +3883,30 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                (bansByA[0] || picksA[0] || bansByB[0] || picksB[0])
-                  ? `&champ=${encodeURIComponent(resolveChampSlug((bansByA[0] || picksA[0] || bansByB[0] || picksB[0]).c))}${
-                      (bansByA[0] || picksA[0] || bansByB[0] || picksB[0]).role != null
-                        ? `&role=${encodeURIComponent(ROLES[(bansByA[0] || picksA[0] || bansByB[0] || picksB[0]).role!])}`
+              query: (() => {
+                const topObj = bansByA[0] || picksA[0] || bansByB[0] || picksB[0];
+                const cA = topObj?.c;
+                const cB = (bansByB[0] || picksB[0])?.c && (bansByB[0] || picksB[0])?.c !== cA ? (bansByB[0] || picksB[0])?.c : (picksA[0] || bansByA[1] || picksB[1])?.c;
+                const pA = (topObj?.role != null ? a.players[topObj.role]?.p.u : undefined) || a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
+                const pB = (topObj?.role != null ? b.players[topObj.role]?.p.u : undefined) || b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
+                return `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
+                  pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""
+                }${
+                  topObj
+                    ? `&champ=${encodeURIComponent(resolveChampSlug(topObj.c))}${cB && cB !== cA ? `&vschamp=${encodeURIComponent(resolveChampSlug(cB))}` : ""}${
+                        topObj.role != null ? `&role=${encodeURIComponent(ROLES[topObj.role])}` : ""
+                      }`
+                    : ""
+                }${
+                  period && period.startsWith("y") && period.length === 5
+                    ? `&year=${encodeURIComponent(period.slice(1))}`
+                    : period && period.startsWith("e:")
+                      ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                      : period && period.startsWith("p:")
+                        ? `&patch=${encodeURIComponent(period.slice(2))}`
                         : ""
-                    }`
-                  : ""
-              }${
-                period && period.startsWith("y") && period.length === 5
-                  ? `&year=${encodeURIComponent(period.slice(1))}`
-                  : period && period.startsWith("e:")
-                    ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                    : period && period.startsWith("p:")
-                      ? `&patch=${encodeURIComponent(period.slice(2))}`
-                      : ""
-              }`,
+                }`;
+              })(),
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
