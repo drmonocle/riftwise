@@ -10,7 +10,7 @@ import { champName } from "../../champions";
 import { ChampRow, ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
-import { ROLES, champAgg, matchedEventLabel, matchEventIndices } from "../../hub/champAgg";
+import { normalizeRole, ROLES, champAgg, matchedEventLabel, matchEventIndices } from "../../hub/champAgg";
 import { card, ChampIcon, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
 import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, prettySlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
 import { SectionCard } from "./BroadcastCard";
@@ -70,7 +70,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
       : aliases.data?.league[askedScope.toLowerCase()] || resolveLeagueSlug(askedScope);
   const isLeague = rawScope !== "major" && rawScope !== "all";
   const scope: "major" | "all" = rawScope === "all" ? "all" : "major";
-  const role = ROLES.includes(q.get("role") || "") ? q.get("role")! : "";
+  const role = normalizeRole(q.get("role"));
   const mainLeagues = leagues.filter((l) => l.pr);
   const otherLeagues = leagues.filter((l) => !l.pr && Object.values(l.y).reduce((s, n) => s + n, 0) >= 100);
   const state = useLoad<ChampionStats>(() => (isLeague ? Promise.resolve({ games: 0, all: { games: 0, champs: [] }, major: { games: 0, champs: [] } }) : loadChampionStats(key)), [key, isLeague]);

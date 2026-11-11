@@ -5,6 +5,7 @@ import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { bare, loadAliases, loadHubChamp, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveItemSlug, resolvePlayerSlug } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
+import { normalizeRole } from "../../hub/champAgg";
 import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import type { HubChamp } from "../../hub/types";
 import { isFinishedItem, useDDragon } from "../../hub/ddragon";
@@ -101,7 +102,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
   const ddReady = useDDragon();
   const aliases = useLoad(loadAliases, []);
   const qParams = useMemo(() => new URLSearchParams(query || ""), [query]);
-  const qRole = qParams.get("role") || "";
+  const qRole = normalizeRole(qParams.get("role"));
   const qVs = qParams.get("vs") || "";
   const qFilter = qParams.get("player") || qParams.get("q") || "";
   const qSpan = qParams.get("span") || "";

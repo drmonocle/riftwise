@@ -9,7 +9,7 @@ import { champName } from "../../champions";
 import { bare, loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
-import { ROLES } from "../../hub/champAgg";
+import { normalizeRole, ROLES } from "../../hub/champAgg";
 import { card, ChampIcon, HubLink, Loading, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad, usePageTitle } from "./ui";
 import { SortTable, type Column } from "./SortTable";
 import { PLAYER_METRICS } from "./Ranks";
@@ -42,7 +42,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const evYear = event ? (ev.data?.year || (ev.data?.start || ev.data?.end || "").slice(0, 4) || (/(?:^|-)(20\d{2})(?:-|$)/.exec(event)?.[1] ?? "")) : "";
   const askedYear = q.get("year") || (/^\d{4}$/.test(evYear) ? evYear : "");
   const year = (askedYear && (!row?.sy?.length || row.sy.includes(askedYear)) ? askedYear : "") || years[0] || row?.to || String(new Date().getFullYear());
-  const role = q.get("role") || "";
+  const role = normalizeRole(q.get("role"));
   const statParam = q.get("stat") || "";
   const statMetric = PLAYER_METRICS.find((m) => m.key === statParam);
   const waitingForLeagues = !askedYear && league !== DEFAULT_LEAGUE && leagues.loading && !leagues.data;

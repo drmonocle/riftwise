@@ -51,13 +51,21 @@ const LEAGUE_SLUG_ALIASES: Record<string, string> = {
   fst: "first-stand",
   lck: "lol-champions-korea",
   ogn: "lol-champions-korea",
+  kr: "lol-champions-korea",
+  korea: "lol-champions-korea",
   lpl: "tencent-lol-pro-league",
+  cn: "tencent-lol-pro-league",
+  china: "tencent-lol-pro-league",
   lec: "lol-emea-championship",
   "eu-lcs": "lol-emea-championship",
   eulcs: "lol-emea-championship",
+  eu: "lol-emea-championship",
+  europe: "lol-emea-championship",
+  emea: "lol-emea-championship",
   lcs: "league-of-legends-championship-series",
   "na-lcs": "league-of-legends-championship-series",
   nalcs: "league-of-legends-championship-series",
+  na: "league-of-legends-championship-series",
   pcs: "pacific-championship-series",
   vcs: "vietnam-championship-series",
   cblol: "circuit-brazilian-league-of-legends",
@@ -71,6 +79,88 @@ const LEAGUE_SLUG_ALIASES: Record<string, string> = {
   ldl: "lol-development-league",
 };
 export const resolveLeagueSlug = (slug: string): string => LEAGUE_SLUG_ALIASES[slug.toLowerCase()] || slug;
+
+const TEAM_SLUG_ALIASES: Record<string, string> = {
+  skt: "t1",
+  sktt1: "t1",
+  "sk-telecom-t1": "t1",
+  dwg: "dplus-kia",
+  damwon: "dplus-kia",
+  "damwon-gaming": "dplus-kia",
+  "dwg-kia": "dplus-kia",
+  dk: "dplus-kia",
+  geng: "gen-g",
+  ssg: "gen-g",
+  ssw: "gen-g",
+  ssb: "gen-g",
+  samsung: "gen-g",
+  "samsung-galaxy": "gen-g",
+  "samsung-white": "gen-g",
+  "samsung-blue": "gen-g",
+  ksv: "gen-g",
+  "ksv-esports": "gen-g",
+  hle: "hanwha-life-esports",
+  rox: "hanwha-life-esports",
+  "rox-tigers": "hanwha-life-esports",
+  "koo-tigers": "hanwha-life-esports",
+  "ge-tigers": "hanwha-life-esports",
+  kt: "kt-rolster",
+  ktrolster: "kt-rolster",
+  kz: "drx",
+  kingzone: "drx",
+  "kingzone-dragonx": "drx",
+  lz: "drx",
+  longzhu: "drx",
+  "longzhu-gaming": "drx",
+  blg: "bilibili-gaming",
+  tes: "top-esports",
+  topesports: "top-esports",
+  jdg: "jd-gaming",
+  jdgaming: "jd-gaming",
+  wbg: "weibo-gaming",
+  weibo: "weibo-gaming",
+  sn: "weibo-gaming",
+  suning: "weibo-gaming",
+  lng: "lng-esports",
+  edg: "edward-gaming",
+  rng: "royal-never-give-up",
+  ig: "invictus-gaming",
+  fpx: "funplus-phoenix",
+  we: "team-we",
+  omg: "oh-my-god",
+  g2: "g2-esports",
+  fnc: "fnatic",
+  koi: "movistar-koi",
+  mkoi: "movistar-koi",
+  mad: "movistar-koi",
+  "mad-lions": "movistar-koi",
+  splyce: "movistar-koi",
+  kc: "karmine-corp",
+  kcorp: "karmine-corp",
+  bds: "team-bds",
+  vit: "team-vitality",
+  vitality: "team-vitality",
+  tl: "team-liquid",
+  liquid: "team-liquid",
+  c9: "cloud9",
+  fly: "flyquest",
+  "100t": "100-thieves",
+  psg: "psg-talon",
+  gam: "gam-esports",
+  cfo: "ctbc-flying-oyster",
+};
+/** Resolve a team shorthand or historical org name ("skt" -> "t1", "dwg" -> "dplus-kia", "ssg" -> "gen-g") synchronously. */
+export function resolveTeamAlias(slug: string, teamAliases?: Record<string, string>): string {
+  const raw = (slug || "").trim().toLowerCase();
+  if (!raw) return "";
+  const p = prettySlug(raw);
+  const b = raw.replace(/[^a-z0-9]+/g, "");
+  if (teamAliases) {
+    const hit = teamAliases[raw] || teamAliases[p] || teamAliases[b];
+    if (hit) return hit;
+  }
+  return TEAM_SLUG_ALIASES[raw] || TEAM_SLUG_ALIASES[p] || TEAM_SLUG_ALIASES[b] || p || raw;
+}
 
 /** A page file; for an old team slug or a league's short name ("lck", "worlds"), the current page's. */
 const withAlias =

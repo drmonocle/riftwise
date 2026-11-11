@@ -5,6 +5,35 @@
 import type { ChampGame } from "./types";
 
 export const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
+const ROLE_ALIASES: Record<string, string> = {
+  top: "Top",
+  toplane: "Top",
+  jg: "Jungle",
+  jng: "Jungle",
+  jung: "Jungle",
+  jungle: "Jungle",
+  jungler: "Jungle",
+  mid: "Mid",
+  middle: "Mid",
+  midlane: "Mid",
+  bot: "Bot",
+  bottom: "Bot",
+  adc: "Bot",
+  ad: "Bot",
+  marksman: "Bot",
+  carry: "Bot",
+  sup: "Support",
+  supp: "Support",
+  support: "Support",
+  utility: "Support",
+};
+/** Normalize a role URL parameter or shorthand ("adc" -> "Bot", "sup" -> "Support", "jg" -> "Jungle", "mid" -> "Mid"). */
+export function normalizeRole(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (ROLES.includes(trimmed)) return trimmed;
+  return ROLE_ALIASES[trimmed.toLowerCase()] || "";
+}
 /** overall draft position of each team's 1st..5th pick */
 const PICK_POS = { b: [1, 4, 5, 8, 9], r: [2, 3, 6, 7, 10] };
 

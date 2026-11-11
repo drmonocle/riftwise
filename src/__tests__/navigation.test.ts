@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { hubPath, parseHubPath } from "../hub/route";
-import { matchesChampSearch, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, sameChamp, searchHub } from "../hub/data";
+import { matchesChampSearch, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchHub } from "../hub/data";
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
 import { filterBuiltSeasons } from "../components/hub/Ranks";
 import { matchSide } from "../components/hub/FinderPage";
-import { champAgg, matchedEventLabel, matchEventIndices } from "../hub/champAgg";
+import { champAgg, matchedEventLabel, matchEventIndices, normalizeRole } from "../hub/champAgg";
 import { inPeriod, matchesPeriodEvent, periodOptions, withRequestedPeriod } from "../hub/period";
 import { champPairShortcuts, matchupShortcuts, pageShortcuts } from "../components/hub/HubSearch";
 import { groupOf, MENU, MENU_ITEMS } from "../components/hub/menu";
@@ -230,6 +230,17 @@ describe("search shortcuts", () => {
     expect(matchSide(g, new URLSearchParams("player=canyon&vsplayer=oner"), null)).toBe(1);
     expect(matchSide(g, new URLSearchParams("champ=monkeyking&vschamp=j4"), null)).toBe(0);
     expect(matchSide(g, new URLSearchParams("ban=k-sante"), null)).toBe(0);
+    expect(matchSide(g, new URLSearchParams("team=skt&vs=ssg&role=jg"), null)).toBe(0);
+    expect(matchSide(g, new URLSearchParams("team=samsung&vs=sk-telecom-t1&role=jng"), null)).toBe(1);
+    expect(normalizeRole("adc")).toBe("Bot");
+    expect(normalizeRole("sup")).toBe("Support");
+    expect(normalizeRole("jg")).toBe("Jungle");
+    expect(resolveTeamAlias("dwg")).toBe("dplus-kia");
+    expect(resolveTeamAlias("skt")).toBe("t1");
+    expect(resolveTeamAlias("ssg")).toBe("gen-g");
+    expect(resolveLeagueSlug("kr")).toBe("lol-champions-korea");
+    expect(resolveLeagueSlug("cn")).toBe("tencent-lol-pro-league");
+    expect(resolveLeagueSlug("eu")).toBe("lol-emea-championship");
   });
   it("matches champion shorthand and aliases across search and filters", () => {
     expect(sameChamp("Jarvan IV", "j4")).toBe(true);

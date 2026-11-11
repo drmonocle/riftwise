@@ -10,7 +10,7 @@ import { ChampionStats, StatsMeta, loadChampionStats } from "../../stats";
 import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, normText, prettySlug, resolveEventSlug, resolveLeagueSlug, sameChamp } from "../../hub/data";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
-import { ChampAggRow, ROLES, champAgg, matchedEventLabel, matchEventIndices, patchCompare } from "../../hub/champAgg";
+import { ChampAggRow, normalizeRole, ROLES, champAgg, matchedEventLabel, matchEventIndices, patchCompare } from "../../hub/champAgg";
 import { SortTable, type Column } from "./SortTable";
 import { card, ChampLink, Failed, fmtNum, HubLink, Loading, useLoad, usePageTitle } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -300,25 +300,29 @@ const LeagueFilters: React.FC<{ league: string; years: string[]; q: URLSearchPar
   );
 };
 
-const SideRole: React.FC<{ q: URLSearchParams; setQ: (p: Record<string, string | undefined>) => void; noSide?: boolean }> = ({ q, setQ, noSide }) => (
-  <>
-    {!noSide && (
-      <select value={q.get("side") || ""} onChange={(e) => setQ({ side: e.target.value || undefined })} aria-label={tl("Side")} className={sel}>
-        <option value="">{tl("Both sides")}</option>
-        <option value="b">{tl("Blue side")}</option>
-        <option value="r">{tl("Red side")}</option>
+const SideRole: React.FC<{ q: URLSearchParams; setQ: (p: Record<string, string | undefined>) => void; noSide?: boolean }> = ({ q, setQ, noSide }) => {
+  const rawSide = (q.get("side") || "").toLowerCase();
+  const sideVal = rawSide === "b" || rawSide === "blue" ? "b" : rawSide === "r" || rawSide === "red" ? "r" : "";
+  return (
+    <>
+      {!noSide && (
+        <select value={sideVal} onChange={(e) => setQ({ side: e.target.value || undefined })} aria-label={tl("Side")} className={sel}>
+          <option value="">{tl("Both sides")}</option>
+          <option value="b">{tl("Blue side")}</option>
+          <option value="r">{tl("Red side")}</option>
+        </select>
+      )}
+      <select value={normalizeRole(q.get("role"))} onChange={(e) => setQ({ role: e.target.value || undefined })} aria-label={tl("Role")} className={sel}>
+        <option value="">{tl("All roles")}</option>
+        {ROLES.map((r) => (
+          <option key={r} value={r}>
+            {roleName(r)}
+          </option>
+        ))}
       </select>
-    )}
-    <select value={q.get("role") || ""} onChange={(e) => setQ({ role: e.target.value || undefined })} aria-label={tl("Role")} className={sel}>
-      <option value="">{tl("All roles")}</option>
-      {ROLES.map((r) => (
-        <option key={r} value={r}>
-          {roleName(r)}
-        </option>
-      ))}
-    </select>
-  </>
-);
+    </>
+  );
+};
 
 const LeagueTable: React.FC<{
   league: string;
@@ -346,8 +350,8 @@ const LeagueTable: React.FC<{
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const eventSlug = q.get("event") || "";
   const canonEventSlug = eventSlug ? resolveEventSlug(eventSlug) : "";
-  const roleQ = q.get("role") || "";
-  const rawSide = q.get("side");
+  const roleQ = normalizeRole(q.get("role"));
+  const rawSide = (q.get("side") || "").toLowerCase();
   const side: "b" | "r" | undefined = rawSide === "b" || rawSide === "blue" ? "b" : rawSide === "r" || rawSide === "red" ? "r" : undefined;
   const patchQ = q.get("patch") || (q.get("key")?.startsWith("p") ? q.get("key")!.slice(1) : undefined);
   const rawVs = q.get("vs") || "";
@@ -832,7 +836,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   const key = askedKey && meta.champions.includes(askedKey) ? askedKey : meta.champions.find((k) => k.startsWith("p")) || meta.champions[0];
   const state = useLoad<ChampionStats>(() => loadChampionStats(key), [key]);
   const block = state.data?.[scope] || state.data?.all;
-  const roleQ = q.get("role") || "";
+  const roleQ = normalizeRole(q.get("role"));
   const patchKeys = meta.champions.filter((k) => k.startsWith("p"));
   const vs = q.get("vs") && meta.champions.includes(q.get("vs")!) ? q.get("vs")! : "";
   const then = useLoad<ChampionStats | null>(() => (vs ? loadChampionStats(vs) : Promise.resolve(null)), [vs]);

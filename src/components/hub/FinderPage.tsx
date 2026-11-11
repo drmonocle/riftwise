@@ -7,11 +7,11 @@
 import React, { useMemo, useRef, useState } from "react";
 import { tl, tn, tc, fmtDec, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, sameChamp } from "../../hub/data";
+import { bare, loadAliases, loadChampGames, loadChampIndex, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp } from "../../hub/data";
 import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
-import { matchedEventLabel, matchEventIndices, patchCompare, ROLES } from "../../hub/champAgg";
+import { matchedEventLabel, matchEventIndices, normalizeRole, patchCompare, ROLES } from "../../hub/champAgg";
 import { TableExport } from "./SortTable";
 import {
   card,
@@ -54,6 +54,8 @@ const patchSort = (p: string) => {
 
 const eqSlug = (a: string | null | undefined, b: string | null | undefined) =>
   !!a && !!b && (a === b || bare(a) === bare(b));
+const eqTeam = (a: string | null | undefined, b: string | null | undefined) =>
+  eqSlug(a, b) || (!!a && !!b && eqSlug(resolveTeamAlias(a), resolveTeamAlias(b)));
 const eqChamp = (a: string | null | undefined, b: string | null | undefined) =>
   eqSlug(a, b) || (!!a && !!b && (sameChamp(a, b) || eqSlug(resolveChampSlug(a), resolveChampSlug(b))));
 const eqPlayer = (a: string | null | undefined, b: string | null | undefined) =>
@@ -71,7 +73,7 @@ export function matchSide(g: ChampGame, q: Q, eventIdx: number | Set<number> | n
   if (ban && !g[7].some((c) => eqChamp(c, ban)) && !g[8].some((c) => eqChamp(c, ban))) return -1;
   const team = q.get("team");
   const vs = q.get("vs") || q.get("vsteam");
-  const rawSide = q.get("side");
+  const rawSide = (q.get("side") || "").toLowerCase();
   const side = rawSide === "blue" ? "b" : rawSide === "red" ? "r" : rawSide;
   const rawResult = (q.get("result") || "").toLowerCase();
   const result = rawResult === "win" ? "w" : rawResult === "loss" ? "l" : rawResult;
@@ -79,8 +81,8 @@ export function matchSide(g: ChampGame, q: Q, eventIdx: number | Set<number> | n
   const vsChamp = q.get("vschamp");
   const player = q.get("player");
   const vsPlayer = q.get("vsplayer");
-  const roleQ = q.get("role") || "";
-  const roleIdx = roleQ ? ROLES.findIndex((r) => r.toLowerCase() === roleQ.toLowerCase()) : -1;
+  const roleQ = normalizeRole(q.get("role"));
+  const roleIdx = roleQ ? ROLES.indexOf(roleQ) : -1;
   // "won" / "lost" only means something for a side picked by another filter
   const sided = !!(team || vs || side || champs.length || vsChamp || player || vsPlayer || roleIdx >= 0);
   for (const s of [0, 1]) {
@@ -90,8 +92,8 @@ export function matchSide(g: ChampGame, q: Q, eventIdx: number | Set<number> | n
     const theirTeam = teamKey(g, 1 - s);
     const won = s === 0 ? g[3] === 1 : g[3] === 0;
     // a team filter is the team's page (one entry across a rename), or a name from an older link
-    if (team && !eqSlug(myTeam, team) && !eqSlug(s === 0 ? g[10] : g[11], team)) continue;
-    if (vs && !eqSlug(theirTeam, vs) && !eqSlug(s === 0 ? g[11] : g[10], vs)) continue;
+    if (team && !eqTeam(myTeam, team) && !eqTeam(s === 0 ? g[10] : g[11], team)) continue;
+    if (vs && !eqTeam(theirTeam, vs) && !eqTeam(s === 0 ? g[11] : g[10], vs)) continue;
     if (side && side !== (s === 0 ? "b" : "r")) continue;
     if (result && sided && (result === "w") !== won) continue;
     if (champs.length) {
@@ -234,11 +236,11 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
             {(() => {
               const qEvent = q.get("event") || "";
               const qPatch = q.get("patch") || "";
-              const qRole = q.get("role") || "";
+              const qRole = normalizeRole(q.get("role"));
               const qChamp = (q.get("champ") || "").split(",").map((s) => s.trim()).filter(Boolean)[0] || "";
               const qVsChamp = (q.get("vschamp") || "").split(",").map((s) => s.trim()).filter(Boolean)[0] || "";
-              const qTeam = q.get("team") || "";
-              const qVs = q.get("vs") || "";
+              const qTeam = resolveTeamAlias(q.get("team") || "", aliases.data?.team);
+              const qVs = resolveTeamAlias(q.get("vs") || "", aliases.data?.team);
               const qPlayer = q.get("player") || "";
               const qVsPlayer = q.get("vsplayer") || "";
               return (
@@ -484,9 +486,9 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
 
 /** The dropdown entry for a team filter: its page, or (older links) its name. */
 const teamOption = (teams: [string, string][], v: string | null) =>
-  !v ? "" : (teams.find(([k, n]) => eqSlug(k, v) || eqSlug(n, v))?.[0] ?? v);
+  !v ? "" : (teams.find(([k, n]) => eqTeam(k, v) || eqTeam(n, v))?.[0] ?? v);
 const teamLabel = (teams: [string, string][], v: string | null) =>
-  !v ? "" : (teams.find(([k, n]) => eqSlug(k, v) || eqSlug(n, v))?.[1] ?? v);
+  !v ? "" : (teams.find(([k, n]) => eqTeam(k, v) || eqTeam(n, v))?.[1] ?? v);
 const champOption = (champs: string[], v: string | null) =>
   !v ? "" : (champs.find((c) => eqChamp(c, v)) ?? v);
 const playerOption = (players: [string, string][], v: string | null) =>
@@ -771,7 +773,7 @@ const FinderBody: React.FC<{
             </>
           )}
           <select
-            value={q.get("role") || ""}
+            value={normalizeRole(q.get("role"))}
             onChange={(e) => setQ({ role: e.target.value || undefined })}
             aria-label={tl("Role")}
             className={sel}

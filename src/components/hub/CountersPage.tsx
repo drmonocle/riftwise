@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, matchesChampSearch, normText, prettySlug, resolveChampSlug, sameChamp } from "../../hub/data";
-import { ROLES } from "../../hub/champAgg";
+import { normalizeRole, ROLES } from "../../hub/champAgg";
 import type { HubChamp, HubMatchups } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
@@ -27,7 +27,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const rawSlug = q.get("champ") || "";
   const slug = rawSlug ? resolveChampSlug(rawSlug) : "";
   const vsParam = q.get("vs") || "";
-  const role = q.get("role") || "";
+  const role = normalizeRole(q.get("role"));
   const spanParam = q.get("span") || "";
   const index = useLoad(loadHubIndexQuick, []);
   const data = useLoad(
