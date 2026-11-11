@@ -8,7 +8,7 @@ import React, { useEffect, useId, useMemo, useState } from "react";
 import { tl, tc, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadPlayerGames, loadPlayerGames2y, prettySlug, resolveEventSlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+import { loadPlayerGames, loadPlayerGames2y, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
 import type { HubChamp, HubPlayer, HubTeam, PlayerGameRow, PlayerTimeline } from "../../hub/types";
 import { playerAgg, type PlayerAgg } from "../../hub/period";
 import { playerRowLine, rateLine } from "../../hub/playerRating";
@@ -293,7 +293,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(p.u)}${agg.champs[0] ? `&champ=${encodeURIComponent(prettySlug(agg.champs[0].c))}` : ""}${periodKey?.startsWith("y") ? `&year=${encodeURIComponent(periodKey.slice(1))}` : ""}`,
+                    query: `player=${encodeURIComponent(p.u)}${agg.champs[0] ? `&champ=${encodeURIComponent(resolveChampSlug(agg.champs[0].c))}` : ""}${periodKey?.startsWith("y") ? `&year=${encodeURIComponent(periodKey.slice(1))}` : ""}`,
                   }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
@@ -318,7 +318,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                           teams: teamSlug(p.club, p.clubU),
                           ...(periodKey ? { p: periodKey } : {}),
                           ...(p.role ? { role: p.role } : {}),
-                          ...(agg.champs[0] ? { champ: agg.champs[0].c } : {}),
+                          ...(agg.champs[0] ? { champ: resolveChampSlug(agg.champs[0].c) } : {}),
                         }).toString(),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -363,7 +363,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                     agg.champs[0]
                       ? {
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(prettySlug(agg.champs[0].c))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(agg.champs[0].c))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
                         }
                       : { kind: "counters", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }
                   }
@@ -627,7 +627,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                       teams: [sel?.team ? teamSlug(sel.team) : teamSlug(p.club, p.clubU), sel?.opp ? teamSlug(sel.opp) : ""].filter(Boolean).join(","),
                       ...(sel?.date && /^\d{4}/.test(sel.date) ? { p: `y${sel.date.slice(0, 4)}` } : {}),
                       ...(p.role ? { role: p.role } : {}),
-                      ...(sel?.champ ? { champ: sel.champ } : {}),
+                      ...(sel?.champ ? { champ: resolveChampSlug(sel.champ) } : {}),
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -640,7 +640,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${prettySlug(sel.champ)}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(sel.champ))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -650,7 +650,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
             <HubLink
               to={{
                 kind: "items",
-                query: `player=${encodeURIComponent(p.u)}${sel?.champ ? `&champ=${encodeURIComponent(prettySlug(sel.champ))}` : ""}${sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
+                query: `player=${encodeURIComponent(p.u)}${sel?.champ ? `&champ=${encodeURIComponent(resolveChampSlug(sel.champ))}` : ""}${sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -659,7 +659,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
             <HubLink
               to={{
                 kind: "finder",
-                query: `player=${encodeURIComponent(p.u)}${sel?.champ ? `&champ=${encodeURIComponent(sel.champ)}` : ""}${sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
+                query: `player=${encodeURIComponent(p.u)}${sel?.champ ? `&champ=${encodeURIComponent(resolveChampSlug(sel.champ))}` : ""}${sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -916,7 +916,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   {sel.won ? tc("short result", "W") : tc("short result", "L")}
                 </span>
                 <HubLink
-                  to={{ kind: "champ", slug: prettySlug(sel.champ) }}
+                  to={{ kind: "champ", slug: resolveChampSlug(sel.champ) }}
                   className="inline-flex items-center gap-1.5 font-semibold text-rw-text hover:text-rw-accent hover:underline"
                 >
                   <ChampIcon name={sel.champ} size={18} />
@@ -986,7 +986,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${prettySlug(sel.champ)}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(sel.champ))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1001,7 +1001,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                           kind: "items",
                           query: new URLSearchParams({
                             player: p.u,
-                            champ: prettySlug(sel.champ),
+                            champ: resolveChampSlug(sel.champ),
                             ...(selYr ? { year: selYr } : {}),
                           }).toString(),
                         }}
@@ -1020,7 +1020,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                           kind: "finder",
                           query: new URLSearchParams({
                             player: p.u,
-                            champ: sel.champ,
+                            champ: resolveChampSlug(sel.champ),
                             ...(selYr ? { year: selYr } : {}),
                           }).toString(),
                         }}
@@ -1043,7 +1043,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                                 teams: `${teamSlug(sel.team)},${teamSlug(sel.opp)}`,
                                 ...(selYr ? { p: `y${selYr}` } : {}),
                                 ...(p.role ? { role: p.role } : {}),
-                                ...(sel.champ ? { champ: sel.champ } : {}),
+                                ...(sel.champ ? { champ: resolveChampSlug(sel.champ) } : {}),
                               }).toString(),
                             }}
                             className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1144,20 +1144,20 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${prettySlug(topChamps[0].c)}${topChamps[1] ? `&vs=${encodeURIComponent(topChamps[1].c)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0].c))}${topChamps[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topChamps[1].c))}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
                   }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
                   {tl("Counters")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(prettySlug(topChamps[0].c))}` }}
+                  to={{ kind: "items", query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(resolveChampSlug(topChamps[0].c))}` }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
                   {tl("Item history")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(topChamps[0].c)}` }}
+                  to={{ kind: "finder", query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(resolveChampSlug(topChamps[0].c))}` }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
                   {tl("Game finder")} →
@@ -1182,7 +1182,7 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                         query: new URLSearchParams({
                           teams: teamSlug(p.club, p.clubU),
                           ...(p.role ? { role: p.role } : {}),
-                          ...(topChamps[0]?.c ? { champ: topChamps[0].c } : {}),
+                          ...(topChamps[0]?.c ? { champ: resolveChampSlug(topChamps[0].c) } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -2238,7 +2238,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${prettySlug(c.name)}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}`,
+                        query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}`,
                       }}
                       className="text-rw-accent hover:underline font-semibold"
                     >

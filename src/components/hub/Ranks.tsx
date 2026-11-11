@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tk, roleName, fmtDec } from "../../i18n";
-import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug, resolveChampSlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { EventPlayer, EventTeamStats, LeagueRow, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { hubShareUrl, type HubRoute } from "../../hub/route";
@@ -824,7 +824,7 @@ export const PlayerRanks: React.FC<{
                       ...(me?.t ? { teams: me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) } : {}),
                       ...(year ? { p: `y${year}` } : {}),
                       ...(me?.r ? { role: me.r } : {}),
-                      ...(games?.[0]?.[2] ? { champ: games[0][2] } : {}),
+                      ...(games?.[0]?.[2] ? { champ: resolveChampSlug(games[0][2]) } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -852,7 +852,7 @@ export const PlayerRanks: React.FC<{
                   ...((games?.[0]?.[2] || me?.r)
                     ? {
                         query: new URLSearchParams({
-                          ...(games?.[0]?.[2] ? { champ: prettySlug(games[0][2]) } : {}),
+                          ...(games?.[0]?.[2] ? { champ: resolveChampSlug(games[0][2]) } : {}),
                           ...(me?.r ? { role: me.r } : {}),
                         }).toString(),
                       }

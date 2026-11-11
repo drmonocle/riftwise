@@ -9,7 +9,7 @@
 import React, { useEffect, useId, useMemo, useState } from "react";
 import { tl, tc, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadPlayerGames, loadPlayerGames2y, matchesChampSearch, normText, prettySlug, resolveTeamAlias } from "../../hub/data";
+import { bare, loadPlayerGames, loadPlayerGames2y, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import { currentHubRoute } from "../../hub/route";
 import { playerRowLine, rateLine, type RatingFile } from "../../hub/playerRating";
@@ -438,20 +438,20 @@ const ColoredOpponentGraph: React.FC<{
         {active && (
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-rw-sub ml-auto">
             <span className="inline-flex items-center gap-1 font-semibold text-rw-text">
-              <HubLink to={{ kind: "team", slug: active.u || prettySlug(active.opp) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+              <HubLink to={{ kind: "team", slug: resolveOppSlug(active.opp, active.u) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                 <TeamLogo name={active.opp} size={16} />
               </HubLink>
               <TeamLink name={active.opp} u={active.u} />
             </span>
             <HubLink
-              to={{ kind: "team", slug: active.u || prettySlug(active.opp) }}
+              to={{ kind: "team", slug: resolveOppSlug(active.opp, active.u) }}
               className="tabular-nums font-bold hover:underline"
               style={{ color: toneColor(active.tone) }}
             >
               {active.fmt}
             </HubLink>
             <HubLink
-              to={{ kind: "team", slug: active.u || prettySlug(active.opp) }}
+              to={{ kind: "team", slug: resolveOppSlug(active.opp, active.u) }}
               className="text-rw-muted tabular-nums hover:text-rw-accent hover:underline"
             >
               {active.sub}
@@ -461,7 +461,7 @@ const ColoredOpponentGraph: React.FC<{
                 {active.champs.slice(0, 3).map((c) => (
                   <HubLink
                     key={c.c}
-                    to={{ kind: "champ", slug: prettySlug(c.c) }}
+                    to={{ kind: "champ", slug: resolveChampSlug(c.c) }}
                     title={`${champName(c.c)} (${c.w}–${c.g - c.w})`}
                   >
                     <ChampIcon name={c.c} size={15} />
@@ -472,9 +472,9 @@ const ColoredOpponentGraph: React.FC<{
             <HubLink
               to={{
                 kind: "prep",
-                a: subjectTeamSlug || (active.u || prettySlug(active.opp)),
-                ...(subjectTeamSlug && subjectTeamSlug !== (active.u || prettySlug(active.opp))
-                  ? { b: active.u || prettySlug(active.opp) }
+                a: subjectTeamSlug || resolveOppSlug(active.opp, active.u),
+                ...(subjectTeamSlug && subjectTeamSlug !== resolveOppSlug(active.opp, active.u)
+                  ? { b: resolveOppSlug(active.opp, active.u) }
                   : {}),
                 ...(period && period !== "all" ? { period } : {}),
               }}
@@ -485,9 +485,9 @@ const ColoredOpponentGraph: React.FC<{
             <HubLink
               to={{
                 kind: "draft",
-                query: `teams=${encodeURIComponent(subjectTeamSlug || (active.u || prettySlug(active.opp)))}${
-                  subjectTeamSlug && subjectTeamSlug !== (active.u || prettySlug(active.opp))
-                    ? `,${encodeURIComponent(active.u || prettySlug(active.opp))}`
+                query: `teams=${encodeURIComponent(subjectTeamSlug || resolveOppSlug(active.opp, active.u))}${
+                  subjectTeamSlug && subjectTeamSlug !== resolveOppSlug(active.opp, active.u)
+                    ? `,${encodeURIComponent(resolveOppSlug(active.opp, active.u))}`
                     : ""
                 }${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
               }}
@@ -499,9 +499,9 @@ const ColoredOpponentGraph: React.FC<{
               to={{
                 kind: "compare",
                 mode: "team",
-                a: subjectTeamSlug || (active.u || prettySlug(active.opp)),
-                ...(subjectTeamSlug && subjectTeamSlug !== (active.u || prettySlug(active.opp))
-                  ? { b: active.u || prettySlug(active.opp) }
+                a: subjectTeamSlug || resolveOppSlug(active.opp, active.u),
+                ...(subjectTeamSlug && subjectTeamSlug !== resolveOppSlug(active.opp, active.u)
+                  ? { b: resolveOppSlug(active.opp, active.u) }
                   : {}),
                 ...(period && period !== "all" ? { period } : {}),
               }}
@@ -512,9 +512,9 @@ const ColoredOpponentGraph: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `team=${encodeURIComponent(subjectTeamSlug || (active.u || prettySlug(active.opp)))}${
-                  subjectTeamSlug && subjectTeamSlug !== (active.u || prettySlug(active.opp))
-                    ? `&vs=${encodeURIComponent(active.u || prettySlug(active.opp))}`
+                query: `team=${encodeURIComponent(subjectTeamSlug || resolveOppSlug(active.opp, active.u))}${
+                  subjectTeamSlug && subjectTeamSlug !== resolveOppSlug(active.opp, active.u)
+                    ? `&vs=${encodeURIComponent(resolveOppSlug(active.opp, active.u))}`
                     : ""
                 }${periodQuerySuffix(period)}`,
               }}
@@ -526,7 +526,7 @@ const ColoredOpponentGraph: React.FC<{
               to={{
                 kind: "rankings",
                 query: new URLSearchParams({
-                  q: [subjectTeamSlug, active.u || prettySlug(active.opp)].filter(Boolean).join(","),
+                  q: [subjectTeamSlug, resolveOppSlug(active.opp, active.u)].filter(Boolean).join(","),
                 }).toString(),
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -801,9 +801,11 @@ export const PlayerOpponents: React.FC<{
       const canonOpp = resolveTeamAlias(o.u || o.opp);
       return terms.some((t) => {
         const tb = bare(t);
+        const ta = searchAlias(t);
         return (
           hay.includes(t) ||
           (tb.length >= 2 && hayBare.includes(tb)) ||
+          (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
           (canonOpp ? resolveTeamAlias(t) === canonOpp : false) ||
           o.champs.some((c) => matchesChampSearch(c.c, t))
         );
@@ -949,7 +951,7 @@ export const PlayerOpponents: React.FC<{
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(slug)}${topChamp ? `&champ=${encodeURIComponent(prettySlug(topChamp))}` : ""}${periodQuerySuffix(period || scope)}`,
+                    query: `player=${encodeURIComponent(slug)}${topChamp ? `&champ=${encodeURIComponent(resolveChampSlug(topChamp))}` : ""}${periodQuerySuffix(period || scope)}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -990,8 +992,8 @@ export const PlayerOpponents: React.FC<{
                     kind: "counters",
                     ...(topChamp
                       ? {
-                          query: `champ=${encodeURIComponent(prettySlug(topChamp))}${
-                            secondChamp && secondChamp !== topChamp ? `&vs=${encodeURIComponent(secondChamp)}` : ""
+                          query: `champ=${encodeURIComponent(resolveChampSlug(topChamp))}${
+                            secondChamp && secondChamp !== topChamp ? `&vs=${encodeURIComponent(resolveChampSlug(secondChamp))}` : ""
                           }`,
                         }
                       : {}),
@@ -1248,7 +1250,7 @@ export const PlayerOpponents: React.FC<{
                     <span className={`w-3.5 shrink-0 font-bold ${won ? "text-rw-teal" : "text-rw-red"}`}>
                       {won ? tc("short result", "W") : tc("short result", "L")}
                     </span>
-                    <HubLink to={{ kind: "champ", slug: prettySlug(g[2]) }} title={champName(g[2])} className="shrink-0">
+                    <HubLink to={{ kind: "champ", slug: resolveChampSlug(g[2]) }} title={champName(g[2])} className="shrink-0">
                       <ChampIcon name={g[2]} size={17} />
                     </HubLink>
                     {g[1] ? (
@@ -1496,9 +1498,11 @@ export const TeamOpponentsChart: React.FC<{
       const canonOpp = resolveTeamAlias(o.u || o.n);
       return terms.some((t) => {
         const tb = bare(t);
+        const ta = searchAlias(t);
         return (
           hay.includes(t) ||
           (tb.length >= 2 && hayBare.includes(tb)) ||
+          (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
           (canonOpp ? resolveTeamAlias(t) === canonOpp : false)
         );
       });
@@ -1845,9 +1849,11 @@ export const TeamPeriodOpponents: React.FC<{
         const canonOpp = resolveTeamAlias(o.u || o.opp);
         return terms.some((t) => {
           const tb = bare(t);
+          const ta = searchAlias(t);
           return (
             hay.includes(t) ||
             (tb.length >= 2 && hayBare.includes(tb)) ||
+            (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
             (canonOpp ? resolveTeamAlias(t) === canonOpp : false)
           );
         });
@@ -2095,7 +2101,7 @@ export const TeamPeriodOpponents: React.FC<{
                     </HubLink>
                     <span className="inline-flex items-center gap-0.5 shrink-0">
                       {(g[20] || []).slice(0, 5).map((ch) => (
-                        <HubLink key={ch} to={{ kind: "champ", slug: prettySlug(ch) }} title={champName(ch)}>
+                        <HubLink key={ch} to={{ kind: "champ", slug: resolveChampSlug(ch) }} title={champName(ch)}>
                           <ChampIcon name={ch} size={15} />
                         </HubLink>
                       ))}

@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { tl } from "../../i18n";
-import { bare, loadEventLines, matchesChampSearch, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
+import { bare, loadEventLines, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { moreEventFacts } from "../../hub/eventStats";
@@ -67,19 +67,26 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
     if (!terms.length) return facts;
     return facts
       .map((f) => {
-        const cardMatch = terms.some((t) => normText(`${f.title} ${f.headline}`).includes(t));
+        const cardMatch = terms.some((t) => {
+          const hay = normText(`${f.title} ${f.headline}`);
+          const ta = searchAlias(t);
+          return hay.includes(t) || (ta ? hay.includes(ta) : false);
+        });
         if (cardMatch) return f;
         const matchingRows = f.rows.filter((r) => {
           const hay = normText(`${r.label} ${r.value} ${r.sub || ""} ${r.player || ""} ${r.team || ""} ${r.champ || ""}`);
           const canonTeam = resolveTeamAlias(r.team || r.label || "");
-          return terms.some(
-            (t) =>
+          return terms.some((t) => {
+            const ta = searchAlias(t);
+            return (
               hay.includes(t) ||
               (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+              (ta ? hay.includes(ta) || bare(hay).includes(bare(ta)) : false) ||
               (r.champ ? matchesChampSearch(r.champ, t) : false) ||
               (r.player ? resolvePlayerSlug(t) === r.player : false) ||
-              (canonTeam ? resolveTeamAlias(t) === canonTeam : false),
-          );
+              (canonTeam ? resolveTeamAlias(t) === canonTeam : false)
+            );
+          });
         });
         if (!matchingRows.length) return null;
         return { ...f, rows: matchingRows };
@@ -155,7 +162,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(prettySlug(topChamps[0]))}${topChamps[1] ? `&vs=${encodeURIComponent(prettySlug(topChamps[1]))}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0]))}${topChamps[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topChamps[1]))}` : ""}`,
                   }}
                   className="text-rw-accent hover:underline"
                 >
@@ -164,7 +171,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `champ=${encodeURIComponent(prettySlug(topChamps[0]))}${evYr ? `&year=${evYr}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0]))}${evYr ? `&year=${evYr}` : ""}`,
                   }}
                   className="text-rw-accent hover:underline"
                 >
@@ -371,7 +378,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(f.rows[0].player)}${f.rows[0].champ ? `&champ=${encodeURIComponent(prettySlug(f.rows[0].champ))}` : ""}${evYr ? `&year=${evYr}` : ""}`,
+                    query: `player=${encodeURIComponent(f.rows[0].player)}${f.rows[0].champ ? `&champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}` : ""}${evYr ? `&year=${evYr}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -382,7 +389,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(prettySlug(f.rows[0].champ))}${f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? `&vs=${encodeURIComponent(prettySlug(f.rows[1].champ))}` : ""}`,
+                      query: `champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}${f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? `&vs=${encodeURIComponent(resolveChampSlug(f.rows[1].champ))}` : ""}`,
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                     data-nocapture="1"
@@ -559,7 +566,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${prettySlug(f.rows[0].champ)}${f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? `&vs=${encodeURIComponent(f.rows[1].champ)}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}${f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? `&vs=${encodeURIComponent(resolveChampSlug(f.rows[1].champ))}` : ""}`,
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -569,7 +576,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `champ=${encodeURIComponent(prettySlug(f.rows[0].champ))}${evYr ? `&year=${evYr}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}${evYr ? `&year=${evYr}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -737,7 +744,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 )}
                 {!f.plain && <span className="relative w-4 text-rw-muted text-right shrink-0">{i + 1}.</span>}
                 {r.champ ? (
-                  <HubLink to={{ kind: "champ", slug: prettySlug(r.champ) }} className="relative shrink-0">
+                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ) }} className="relative shrink-0">
                     <ChampIcon name={r.champ} size={18} />
                   </HubLink>
                 ) : r.player ? (
@@ -760,7 +767,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                   ) : r.team ? (
                     <TeamLink name={r.label} u={r.team} />
                   ) : r.champ ? (
-                    <HubLink to={{ kind: "champ", slug: prettySlug(r.champ) }} className="hover:text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ) }} className="hover:text-rw-accent hover:underline">
                       {r.label}
                     </HubLink>
                   ) : r.match ? (
@@ -804,7 +811,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     {r.value}
                   </HubLink>
                 ) : r.champ ? (
-                  <HubLink to={{ kind: "champ", slug: prettySlug(r.champ) }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
+                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ) }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
                     {r.value}
                   </HubLink>
                 ) : eventSlug ? (

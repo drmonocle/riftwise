@@ -7,7 +7,7 @@ import { tl, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
-import { bare, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug, resolveEventSlug, resolveTeamAlias } from "../../hub/data";
+import { bare, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveTeamAlias } from "../../hub/data";
 import type { PlayerGameRow, TeamGameRow } from "../../hub/types";
 import {
   PeriodKey,
@@ -991,7 +991,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   kind: "items",
                   query: new URLSearchParams({
                     player: slug,
-                    ...(agg.champs.length === 1 ? { champ: prettySlug(agg.champs[0].c) } : {}),
+                    ...(agg.champs.length === 1 ? { champ: resolveChampSlug(agg.champs[0].c) } : {}),
                     ...(/^y\d{4}$/.test(period)
                       ? { year: period.slice(1) }
                       : period.startsWith("e:")
@@ -1024,7 +1024,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${prettySlug(agg.champs[0].c)}${agg.champs[1] ? `&vs=${encodeURIComponent(agg.champs[1].c)}` : ""}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(agg.champs[0].c))}${agg.champs[1] ? `&vs=${encodeURIComponent(resolveChampSlug(agg.champs[1].c))}` : ""}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1050,7 +1050,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                         teams: teamSlug(who.club),
                         ...(period !== "all" ? { p: period } : {}),
                         ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
-                        ...(agg.champs[0] ? { champ: agg.champs[0].c } : {}),
+                        ...(agg.champs[0] ? { champ: resolveChampSlug(agg.champs[0].c) } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1234,7 +1234,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${prettySlug(filteredChamps[0].c)}${filteredChamps[1] ? `&vs=${encodeURIComponent(filteredChamps[1].c)}` : ""}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
+                      query: `champ=${encodeURIComponent(resolveChampSlug(filteredChamps[0].c))}${filteredChamps[1] ? `&vs=${encodeURIComponent(resolveChampSlug(filteredChamps[1].c))}` : ""}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
                     }}
                     className="text-rw-accent hover:underline font-semibold"
                   >
@@ -1244,7 +1244,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(slug)}${filteredChamps[0] ? `&champ=${encodeURIComponent(prettySlug(filteredChamps[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
+                    query: `player=${encodeURIComponent(slug)}${filteredChamps[0] ? `&champ=${encodeURIComponent(resolveChampSlug(filteredChamps[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1253,7 +1253,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `player=${encodeURIComponent(slug)}${filteredChamps.length === 1 ? `&champ=${encodeURIComponent(filteredChamps[0].c)}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+                    query: `player=${encodeURIComponent(slug)}${filteredChamps.length === 1 ? `&champ=${encodeURIComponent(resolveChampSlug(filteredChamps[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1322,7 +1322,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                           teams: teamSlug(who.club),
                           ...(period !== "all" ? { p: period } : {}),
                           ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
-                          ...(filteredChamps[0] ? { champ: filteredChamps[0].c } : {}),
+                          ...(filteredChamps[0] ? { champ: resolveChampSlug(filteredChamps[0].c) } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1523,7 +1523,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                   query: new URLSearchParams({
                     teams: slug,
                     ...(period !== "all" ? { p: period } : {}),
-                    ...(t.picks[0] ? { champ: t.picks[0][0] } : {}),
+                    ...(t.picks[0] ? { champ: resolveChampSlug(t.picks[0][0]) } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -1566,7 +1566,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(prettySlug(t.picks[0][0]))}${t.picks[1] ? `&vs=${encodeURIComponent(t.picks[1][0])}` : ""}`,
+                      query: `champ=${encodeURIComponent(resolveChampSlug(t.picks[0][0]))}${t.picks[1] ? `&vs=${encodeURIComponent(resolveChampSlug(t.picks[1][0]))}` : ""}`,
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -1575,7 +1575,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                   <HubLink
                     to={{
                       kind: "items",
-                      query: `champ=${encodeURIComponent(prettySlug(t.picks[0][0]))}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
+                      query: `champ=${encodeURIComponent(resolveChampSlug(t.picks[0][0]))}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
