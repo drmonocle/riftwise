@@ -6,10 +6,11 @@
  *   zoom into a single split/tournament (e.g. LEC 2026 Versus, Worlds, EMEA Masters) with one click.
  * - Inline visual Win % and KDA bars (`WinBar`, `KdaBar`) for instant stat recognition across tables.
  */
-import React, { useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import { tl, tc, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadPlayerGames, loadPlayerGames2y, normText, prettySlug } from "../../hub/data";
+import { bare, loadPlayerGames, loadPlayerGames2y, matchesChampSearch, normText, prettySlug, resolveTeamAlias } from "../../hub/data";
+import { currentHubRoute } from "../../hub/route";
 import { playerRowLine, rateLine, type RatingFile } from "../../hub/playerRating";
 import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { smoothPath } from "../../useWidth";
@@ -661,7 +662,17 @@ export const PlayerOpponents: React.FC<{
           ? "kda"
           : metric;
 
-  const [search, setSearch] = useState("");
+  const nowRoute = currentHubRoute();
+  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
+  const [search, setSearch] = useState(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return p.get("vs") || "";
+  });
+  useEffect(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    const v = p.get("vs") || "";
+    if (v) setSearch(v);
+  }, [routeQuery]);
   const [showAll, setShowAll] = useState(false);
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
 
@@ -756,9 +767,15 @@ export const PlayerOpponents: React.FC<{
     return opps.filter((o) => {
       const hay = normText(`${o.opp} ${o.u || ""} ${o.champs.map((c) => `${c.c} ${champName(c.c)}`).join(" ")}`);
       const hayBare = bare(hay);
+      const canonOpp = resolveTeamAlias(o.u || o.opp);
       return terms.some((t) => {
         const tb = bare(t);
-        return hay.includes(t) || (tb.length >= 2 && hayBare.includes(tb));
+        return (
+          hay.includes(t) ||
+          (tb.length >= 2 && hayBare.includes(tb)) ||
+          (canonOpp ? resolveTeamAlias(t) === canonOpp : false) ||
+          o.champs.some((c) => matchesChampSearch(c.c, t))
+        );
       });
     });
   }, [opps, search]);
@@ -1240,7 +1257,7 @@ export const PlayerOpponents: React.FC<{
       )}
 
       {/* Search filter when many opponents */}
-      {opps.length > 8 && (
+      {(opps.length > 8 || Boolean(search.trim())) && (
         <div className="flex items-center gap-2" data-nocapture="1">
           <input
             type="search"
@@ -1397,8 +1414,18 @@ export const TeamOpponentsChart: React.FC<{
   cardSub?: string;
   compact?: boolean;
 }> = ({ teamSlug, teamName, opps, cardSub, compact }) => {
+  const nowRoute = currentHubRoute();
+  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return p.get("vs") || "";
+  });
+  useEffect(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    const v = p.get("vs") || "";
+    if (v) setSearch(v);
+  }, [routeQuery]);
   const [showAll, setShowAll] = useState(false);
 
   const chartOpps = useMemo(() => {
@@ -1435,9 +1462,14 @@ export const TeamOpponentsChart: React.FC<{
     return opps.filter((o) => {
       const hay = normText(`${o.n} ${o.u || ""}`);
       const hayBare = bare(hay);
+      const canonOpp = resolveTeamAlias(o.u || o.n);
       return terms.some((t) => {
         const tb = bare(t);
-        return hay.includes(t) || (tb.length >= 2 && hayBare.includes(tb));
+        return (
+          hay.includes(t) ||
+          (tb.length >= 2 && hayBare.includes(tb)) ||
+          (canonOpp ? resolveTeamAlias(t) === canonOpp : false)
+        );
       });
     });
   }, [opps, search]);
@@ -1454,7 +1486,7 @@ export const TeamOpponentsChart: React.FC<{
       share={`${teamSlug}-opponents`}
       right={
         <span className="flex flex-wrap items-center gap-2">
-          {compact && opps.length > 8 && (
+          {compact && (opps.length > 8 || Boolean(search.trim())) && (
             <input
               type="search"
               value={search}
@@ -1566,7 +1598,7 @@ export const TeamOpponentsChart: React.FC<{
         />
       )}
 
-      {!compact && opps.length > 10 && (
+      {!compact && (opps.length > 10 || Boolean(search.trim())) && (
         <div className="flex items-center gap-2" data-nocapture="1">
           <input
             type="search"
@@ -1695,10 +1727,20 @@ export const TeamPeriodOpponents: React.FC<{
   const pVal = period && period !== "all" ? period : undefined;
   const pSuffix = periodQuerySuffix(period);
   const hiddenCheck = useHiddenCheck();
+  const nowRoute = currentHubRoute();
+  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
   const [metric, setMetric] = useState<"wr" | "gd15">("wr");
   const [showAll, setShowAll] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return p.get("vs") || "";
+  });
+  useEffect(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    const v = p.get("vs") || "";
+    if (v) setSearch(v);
+  }, [routeQuery]);
 
   const opps = useMemo(() => {
     const byOpp = new Map<string, { opp: string; u: string | null; g: number; w: number; k: number; d: number; gd15Sum: number; gd15N: number; last: string; games: TeamGameRow[] }>();
@@ -1773,9 +1815,14 @@ export const TeamPeriodOpponents: React.FC<{
     ? opps.filter((o) => {
         const hay = normText(`${o.opp} ${o.u || ""}`);
         const hayBare = bare(hay);
+        const canonOpp = resolveTeamAlias(o.u || o.opp);
         return terms.some((t) => {
           const tb = bare(t);
-          return hay.includes(t) || (tb.length >= 2 && hayBare.includes(tb));
+          return (
+            hay.includes(t) ||
+            (tb.length >= 2 && hayBare.includes(tb)) ||
+            (canonOpp ? resolveTeamAlias(t) === canonOpp : false)
+          );
         });
       })
     : opps;
@@ -1787,7 +1834,7 @@ export const TeamPeriodOpponents: React.FC<{
       title={tl("Against other teams")}
       right={
         <span className="flex flex-wrap items-center gap-2">
-          {opps.length > 8 && (
+          {(opps.length > 8 || Boolean(search.trim())) && (
             <input
               type="search"
               value={search}

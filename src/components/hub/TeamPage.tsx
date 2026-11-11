@@ -1352,7 +1352,7 @@ const TeamChampionsTab: React.FC<{
           title={tl("Most picked champions")}
           right={
             <span className="flex flex-wrap items-center gap-2">
-              {champs.length >= 12 && (
+              {(champs.length >= 12 || Boolean(search.trim())) && (
                 <input
                   type="search"
                   value={search}
@@ -1879,10 +1879,12 @@ const TeamChampGames: React.FC<{
   const [year, setYear] = useState("all");
   const [sideFilter, setSideFilter] = useState<"all" | "b" | "r">("all");
   const [playerFilter, setPlayerFilter] = useState("all");
+  const [q, setQ] = useState("");
   const [limit, setLimit] = useState(25);
 
   useEffect(() => {
     setPlayerFilter("all");
+    setQ("");
     setLimit(25);
   }, [champ]);
 
@@ -2066,9 +2068,34 @@ const TeamChampGames: React.FC<{
           const who = gamePlayerMap.get(e.r);
           if ((who?.u || who?.n || "") !== playerFilter) return false;
         }
+        if (q.trim()) {
+          const terms = q
+            .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+            .map((s) => normText(s))
+            .filter(Boolean);
+          if (terms.length) {
+            const who = gamePlayerMap.get(e.r);
+            const hay = normText(
+              `${e.r[4] || ""} ${e.r[5] || ""} ${e.r[3] || ""} ${e.r[2] || ""} ${who?.n || ""} ${who?.u || ""} ${(e.r[20] || []).map((c) => `${c} ${champName(c)}`).join(" ")}`,
+            );
+            const hayBare = bare(hay);
+            const canonOpp = resolveTeamAlias(e.r[5] || e.r[4] || "");
+            if (
+              !terms.some(
+                (term) =>
+                  hay.includes(term) ||
+                  (bare(term).length >= 2 && hayBare.includes(bare(term))) ||
+                  (canonOpp ? resolveTeamAlias(term) === canonOpp : false) ||
+                  matchesPeriodEvent(e.r[2] || "", e.r[3] || "", term) ||
+                  (e.r[20] || []).some((c) => matchesChampSearch(c, term)),
+              )
+            )
+              return false;
+          }
+        }
         return true;
       }),
-    [pickEntries, year, sideFilter, playerFilter, gamePlayerMap],
+    [pickEntries, year, sideFilter, playerFilter, q, gamePlayerMap],
   );
 
   const [hidden, reveal] = useHidden(`teamchamp:${t.u}:${canonical}:${year}`, filtered.find((e) => isFresh(e.r[0]))?.r[0]);
@@ -2498,6 +2525,19 @@ const TeamChampGames: React.FC<{
                     </option>
                   ))}
                 </select>
+              )}
+              {(pickEntries.length > 5 || Boolean(q.trim())) && (
+                <input
+                  type="search"
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value);
+                    setLimit(25);
+                  }}
+                  placeholder={tl("Filter by opponent or tournament…")}
+                  aria-label={tl("Filter by opponent or tournament…")}
+                  className={`${select} w-48 placeholder-rw-muted`}
+                />
               )}
               <HubLink
                 to={{

@@ -6,8 +6,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { tl } from "../../i18n";
-import { bare, loadEventLines, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
-import { hubShareUrl } from "../../hub/route";
+import { bare, loadEventLines, matchesChampSearch, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
+import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { eventFacts, factText, gamesOf, type Fact } from "../../hub/worldsFacts";
 import { moreEventFacts } from "../../hub/eventStats";
 import { SectionCard } from "./BroadcastCard";
@@ -33,7 +33,17 @@ const groupOf = (f: Fact): Group => GROUP_OF[f.id] || "players";
 
 /** The cards under a heading per group (a group with no cards is left out). */
 export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fact) => string; eventSlug?: string }> = ({ facts, link, shareId, eventSlug }) => {
-  const [search, setSearch] = useState("");
+  const nowRoute = currentHubRoute();
+  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
+  const [search, setSearch] = useState(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return p.get("q") || p.get("team") || p.get("player") || p.get("champ") || "";
+  });
+  useEffect(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    const next = p.get("q") || p.get("team") || p.get("player") || p.get("champ") || "";
+    if (next) setSearch(next);
+  }, [routeQuery]);
   const titles: Record<Group, string> = {
     event: tl("The event"),
     teams: tl("Teams"),
@@ -61,12 +71,14 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
         if (cardMatch) return f;
         const matchingRows = f.rows.filter((r) => {
           const hay = normText(`${r.label} ${r.value} ${r.sub || ""} ${r.player || ""} ${r.team || ""} ${r.champ || ""}`);
+          const canonTeam = resolveTeamAlias(r.team || r.label || "");
           return terms.some(
             (t) =>
               hay.includes(t) ||
               (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
               (r.champ ? matchesChampSearch(r.champ, t) : false) ||
-              (r.player ? resolvePlayerSlug(t) === r.player : false),
+              (r.player ? resolvePlayerSlug(t) === r.player : false) ||
+              (canonTeam ? resolveTeamAlias(t) === canonTeam : false),
           );
         });
         if (!matchingRows.length) return null;
@@ -102,7 +114,7 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
   const evYr = eventSlug && /\d{4}/.test(eventSlug) ? /\d{4}/.exec(eventSlug)![0] : undefined;
   return (
     <div className="space-y-4">
-      {facts.length > 6 && (
+      {(facts.length > 6 || Boolean(search.trim())) && (
         <div className="flex flex-wrap items-center justify-between gap-2" data-nocapture="1">
           <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-semibold">
             {topTeams.length >= 1 && (

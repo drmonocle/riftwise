@@ -1606,7 +1606,7 @@ const PlayerChampionsTab: React.FC<{
         title={tl("Champion pool")}
         right={
           <span className="flex flex-wrap items-center gap-2">
-            {champs.length >= 12 && (
+            {(champs.length >= 12 || Boolean(search.trim())) && (
               <input
                 type="search"
                 value={search}
