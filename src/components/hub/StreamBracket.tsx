@@ -194,10 +194,34 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             );
           })()}
           <HubLink
-            to={{ kind: "finder", query: `event=${encodeURIComponent(ev.u)}${lgSlug ? `&league=${encodeURIComponent(lgSlug)}` : ""}${which.year ? `&year=${encodeURIComponent(which.year)}` : ""}` }}
+            to={{
+              kind: "finder",
+              query: new URLSearchParams({
+                ...(topSlugs[0] ? { team: topSlugs[0] } : {}),
+                ...(topSlugs[1] && topSlugs[1] !== topSlugs[0] ? { vs: topSlugs[1] } : {}),
+                event: ev.u,
+                ...(lgSlug ? { league: lgSlug } : {}),
+                ...(which.year ? { year: which.year } : {}),
+              }).toString(),
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Game finder")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "items",
+              query: new URLSearchParams({
+                ...(topSlugs[0] ? { team: topSlugs[0] } : {}),
+                ...(topSlugs[1] && topSlugs[1] !== topSlugs[0] ? { vs: topSlugs[1] } : {}),
+                event: ev.u,
+                ...(lgSlug ? { league: lgSlug } : {}),
+                ...(which.year ? { year: which.year } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Item history")} →
           </HubLink>
           <HubLink
             to={{
@@ -206,6 +230,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
                 ...(lgSlug ? { league: lgSlug } : {}),
                 event: ev.u,
                 ...(which.year ? { year: which.year } : {}),
+                ...(topSlugs.length >= 1 ? { q: topSlugs.join(",") } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -393,6 +418,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
               ...(lgSlug ? { league: lgSlug } : {}),
               event: ev.u,
               ...(which.year ? { year: which.year } : {}),
+              ...(topSlugs.length >= 1 ? { q: topSlugs.join(",") } : {}),
             }).toString(),
           }}
           className="text-rw-accent hover:underline"
@@ -416,7 +442,32 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
         </HubLink>
         {" · "}
         <HubLink
-          to={{ kind: "finder", query: `event=${encodeURIComponent(ev.u)}${lgSlug ? `&league=${encodeURIComponent(lgSlug)}` : ""}${which.year ? `&year=${encodeURIComponent(which.year)}` : ""}` }}
+          to={{
+            kind: "items",
+            query: new URLSearchParams({
+              ...(topSlugs[0] ? { team: topSlugs[0] } : {}),
+              ...(topSlugs[1] && topSlugs[1] !== topSlugs[0] ? { vs: topSlugs[1] } : {}),
+              event: ev.u,
+              ...(lgSlug ? { league: lgSlug } : {}),
+              ...(which.year ? { year: which.year } : {}),
+            }).toString(),
+          }}
+          className="text-rw-accent hover:underline"
+        >
+          {tl("Item history")}
+        </HubLink>
+        {" · "}
+        <HubLink
+          to={{
+            kind: "finder",
+            query: new URLSearchParams({
+              ...(topSlugs[0] ? { team: topSlugs[0] } : {}),
+              ...(topSlugs[1] && topSlugs[1] !== topSlugs[0] ? { vs: topSlugs[1] } : {}),
+              event: ev.u,
+              ...(lgSlug ? { league: lgSlug } : {}),
+              ...(which.year ? { year: which.year } : {}),
+            }).toString(),
+          }}
           className="text-rw-accent hover:underline"
         >
           {tl("Game finder")}

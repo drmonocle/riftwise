@@ -509,7 +509,10 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
             },
             {
               key: `top-c-items-${c.u}`,
-              route: { kind: "items", query: `champ=${encodeURIComponent(c.u)}` },
+              route: {
+                kind: "items",
+                query: `champ=${encodeURIComponent(c.u)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}`,
+              },
               label: `${champName(c.name)} · ${tl("Item history")}`,
               sub: tl("Has a pro ever built it?"),
               icon: <Package className="w-3.5 h-3.5" />,
@@ -526,7 +529,10 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
             },
             {
               key: `top-c-finder-${c.u}`,
-              route: { kind: "finder", query: `champ=${encodeURIComponent(c.u)}` },
+              route: {
+                kind: "finder",
+                query: `champ=${encodeURIComponent(c.u)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}`,
+              },
               label: `${champName(c.name)} · ${tl("Game finder")}`,
               sub: tl("Any game by team, champion, player"),
               icon: <Compass className="w-3.5 h-3.5" />,
@@ -557,21 +563,42 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
             },
             {
               key: `top-p-leaders-${p.u}`,
-              route: { kind: "leaders", query: `q=${encodeURIComponent(p.u)}` },
+              route: {
+                kind: "leaders",
+                query: new URLSearchParams({
+                  q: p.u,
+                  ...(p.role ? { role: p.role } : {}),
+                  ...(p.champs[0]?.c ? { champ: resolveChampSlug(p.champs[0].c) } : {}),
+                }).toString(),
+              },
               label: `${p.name} · ${tl("Player leaderboards")}`,
               sub: tl("Every player on every stat, by league and role"),
               icon: <ListOrdered className="w-3.5 h-3.5" />,
             },
             {
               key: `top-p-items-${p.u}`,
-              route: { kind: "items", query: `player=${encodeURIComponent(p.u)}` },
+              route: {
+                kind: "items",
+                query: new URLSearchParams({
+                  player: p.u,
+                  ...(p.role ? { role: p.role } : {}),
+                  ...(p.champs[0]?.c ? { champ: resolveChampSlug(p.champs[0].c) } : {}),
+                }).toString(),
+              },
               label: `${p.name} · ${tl("Item history")}`,
               sub: tl("Has a pro ever built it?"),
               icon: <Package className="w-3.5 h-3.5" />,
             },
             {
               key: `top-p-finder-${p.u}`,
-              route: { kind: "finder", query: `player=${encodeURIComponent(p.u)}` },
+              route: {
+                kind: "finder",
+                query: new URLSearchParams({
+                  player: p.u,
+                  ...(p.role ? { role: p.role } : {}),
+                  ...(p.champs[0]?.c ? { champ: resolveChampSlug(p.champs[0].c) } : {}),
+                }).toString(),
+              },
               label: `${p.name} · ${tl("Game finder")}`,
               sub: tl("Any game by team, champion, player"),
               icon: <Compass className="w-3.5 h-3.5" />,
@@ -635,8 +662,27 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               icon: <ListOrdered className="w-3.5 h-3.5" />,
             },
             {
+              key: `top-t-items-${t.u}`,
+              route: {
+                kind: "items",
+                query: new URLSearchParams({
+                  team: t.u,
+                  ...(t.champs[0]?.c ? { champ: resolveChampSlug(t.champs[0].c) } : {}),
+                }).toString(),
+              },
+              label: `${t.name} · ${tl("Item history")}`,
+              sub: tl("Has a pro ever built it?"),
+              icon: <Package className="w-3.5 h-3.5" />,
+            },
+            {
               key: `top-t-finder-${t.u}`,
-              route: { kind: "finder", query: `team=${encodeURIComponent(t.u)}` },
+              route: {
+                kind: "finder",
+                query: new URLSearchParams({
+                  team: t.u,
+                  ...(t.champs[0]?.c ? { champ: resolveChampSlug(t.champs[0].c) } : {}),
+                }).toString(),
+              },
               label: `${t.name} · ${tl("Game finder")}`,
               sub: tl("Any game by team, champion, player"),
               icon: <Compass className="w-3.5 h-3.5" />,

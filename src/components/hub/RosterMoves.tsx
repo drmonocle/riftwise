@@ -174,7 +174,16 @@ export const RosterMoves: React.FC = () => {
                     ? {
                         query: new URLSearchParams({
                           player: list[0].u,
-                          ...(twoPlayers ? { vsplayer: list[1].u } : { team: list[0].to.u }),
+                          ...(twoPlayers
+                            ? {
+                                vsplayer: list[1].u,
+                                team: list[0].to.u,
+                                ...(list[1].to.u && list[1].to.u !== list[0].to.u ? { vs: list[1].to.u } : {}),
+                              }
+                            : {
+                                team: list[0].to.u,
+                                ...(list[0].from.u && list[0].from.u !== list[0].to.u ? { vs: list[0].from.u } : {}),
+                              }),
                           ...(role0 ? { role: role0 } : {}),
                           ...(yr0 ? { year: yr0 } : {}),
                           ...(lg0 ? { league: lg0 } : {}),
@@ -187,6 +196,33 @@ export const RosterMoves: React.FC = () => {
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "items",
+                  ...(terms.length > 0 && list[0]
+                    ? {
+                        query: new URLSearchParams({
+                          player: list[0].u,
+                          ...(twoPlayers ? { vsplayer: list[1].u } : {}),
+                          team: list[0].to.u,
+                          ...(twoPlayers && list[1].to.u && list[1].to.u !== list[0].to.u
+                            ? { vs: list[1].to.u }
+                            : list[0].from.u && list[0].from.u !== list[0].to.u
+                              ? { vs: list[0].from.u }
+                              : {}),
+                          ...(lg0 ? { league: lg0 } : {}),
+                          ...(yr0 ? { year: yr0 } : {}),
+                          ...(role0 ? { role: role0 } : {}),
+                        }).toString(),
+                      }
+                    : yr0
+                      ? { query: `year=${encodeURIComponent(yr0)}` }
+                      : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
               </HubLink>
               {terms.length > 0 && list[0] && (
                 <>
@@ -208,29 +244,12 @@ export const RosterMoves: React.FC = () => {
                 </>
               )}
               {terms.length > 0 && list.length === 1 && list[0] && (
-                <>
-                  <HubLink
-                    to={{ kind: "compare", mode: "player", a: list[0].u, ...(yr0 ? { period: `y${yr0}` } : {}) }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Compare")} →
-                  </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "items",
-                      query: new URLSearchParams({
-                        player: list[0].u,
-                        team: list[0].to.u,
-                        ...(lg0 ? { league: lg0 } : {}),
-                        ...(yr0 ? { year: yr0 } : {}),
-                        ...(role0 ? { role: role0 } : {}),
-                      }).toString(),
-                    }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Item history")} →
-                  </HubLink>
-                </>
+                <HubLink
+                  to={{ kind: "compare", mode: "player", a: list[0].u, ...(yr0 ? { period: `y${yr0}` } : {}) }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
               )}
               {terms.length > 0 && list.length >= 2 && list[0].u !== list[1].u && (
                 <HubLink
@@ -285,6 +304,7 @@ export const RosterMoves: React.FC = () => {
                 query: new URLSearchParams({
                   player: pSlug,
                   team: toSlug,
+                  ...(fromSlug && fromSlug !== toSlug ? { vs: fromSlug } : {}),
                   ...(m.r ? { role: normalizeRole(m.r) || m.r } : {}),
                   ...(myr ? { year: myr } : {}),
                   ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
@@ -355,6 +375,7 @@ export const RosterMoves: React.FC = () => {
                   query: new URLSearchParams({
                     player: pSlug,
                     team: toSlug,
+                    ...(fromSlug && fromSlug !== toSlug ? { vs: fromSlug } : {}),
                     ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
                     ...(myr ? { year: myr } : {}),
                     ...(m.r ? { role: normalizeRole(m.r) || m.r } : {}),
@@ -371,7 +392,7 @@ export const RosterMoves: React.FC = () => {
                     ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
                     ...(myr ? { year: myr } : {}),
                     ...(m.r ? { role: normalizeRole(m.r) || m.r } : {}),
-                    q: pSlug,
+                    q: [pSlug, toSlug, fromSlug].filter((s, i, a): s is string => Boolean(s) && a.indexOf(s) === i).join(","),
                   }).toString(),
                 }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"

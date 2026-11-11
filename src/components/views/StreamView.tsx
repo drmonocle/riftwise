@@ -256,6 +256,23 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
               type="button"
               onClick={() =>
                 navigateHub({
+                  kind: "items",
+                  query: new URLSearchParams({
+                    team: aSlug,
+                    vs: bSlug,
+                    ...(year ? { year } : {}),
+                    ...(lg ? { league: lg } : {}),
+                  }).toString(),
+                })
+              }
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-rw-border bg-rw-bg hover:border-rw-accent/60 text-xs font-semibold text-rw-sub hover:text-rw-accent"
+            >
+              {tl("Item history")}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                navigateHub({
                   kind: "rankings",
                   query: new URLSearchParams({
                     ...(lg ? { league: lg } : {}),
@@ -637,6 +654,23 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                       type="button"
                       onClick={() =>
                         navigateHub({
+                          kind: "items",
+                          query: new URLSearchParams({
+                            team: aSlug,
+                            vs: bSlug,
+                            ...(yr ? { year: yr } : {}),
+                            ...(lg ? { league: lg } : {}),
+                          }).toString(),
+                        })
+                      }
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateHub({
                           kind: "rankings",
                           query: new URLSearchParams({
                             ...(lg ? { league: lg } : {}),
@@ -813,6 +847,26 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                                 className="hidden lg:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
                               >
                                 {tl("Game finder")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  const y = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
+                                  const lg = streamEventLeague(e);
+                                  navigateHub({
+                                    kind: "items",
+                                    query: new URLSearchParams({
+                                      team: teamSlug(e.team1!),
+                                      vs: teamSlug(e.team2!),
+                                      ...(lg ? { league: lg } : {}),
+                                      ...(y ? { year: y } : {}),
+                                    }).toString(),
+                                  });
+                                }}
+                                className="hidden xl:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Item history")}
                               </button>
                             </>
                           )}
