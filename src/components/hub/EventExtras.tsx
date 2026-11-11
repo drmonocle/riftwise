@@ -249,6 +249,22 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                 </HubLink>
                 <HubLink
                   to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      event: slug,
+                      ...(featGame?.a ? { team: tSlug(featGame.a) } : {}),
+                      ...(featGame?.b ? { vs: tSlug(featGame.b) } : {}),
+                      ...(normLg ? { league: normLg } : {}),
+                      ...(yr ? { year: yr } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{
                     kind: "finder",
                     query: `event=${encodeURIComponent(slug)}${featGame?.a ? `&team=${encodeURIComponent(tSlug(featGame.a))}${featGame.b ? `&vs=${encodeURIComponent(tSlug(featGame.b))}` : ""}` : ""}`,
                   }}
@@ -889,6 +905,22 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               >
                 {tl("Compare")} →
               </HubLink>
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                    team: tSlug(filteredRosters[0].t, filteredRosters[0].u),
+                    ...(filteredRosters[1] ? { vs: tSlug(filteredRosters[1].t, filteredRosters[1].u) } : {}),
+                    ...(qRole ? { role: qRole } : {}),
+                    ...(normLg ? { league: normLg } : {}),
+                    ...(yr ? { year: yr } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
             </>
           )}
           {filteredRosters.length > 0 && (
@@ -1163,6 +1195,20 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             data-nocapture="1"
           >
             {tl("Best games")} →
+          </HubLink>
+          <HubLink
+            to={{
+              kind: "items",
+              query: new URLSearchParams({
+                ...(lgSlug ? { league: lgSlug } : {}),
+                ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                event: e.u,
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Item history")} →
           </HubLink>
           <HubLink
             to={{

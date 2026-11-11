@@ -246,6 +246,26 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                         ...(e.lu ? { league: e.lu } : {}),
                         ...(e.u ? { event: e.u } : {}),
                         ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                        ...(!resultsHidden && e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
+                        ...(!resultsHidden && e.results?.[0]
+                          ? {
+                              q: [
+                                tSlug(e.results[0].t, e.results[0].u),
+                                e.results[1] ? tSlug(e.results[1].t, e.results[1].u) : "",
+                              ]
+                                .filter(Boolean)
+                                .join(","),
+                            }
+                          : e.teams?.[0]
+                            ? {
+                                q: [
+                                  tSlug(e.teams[0].t, e.teams[0].u),
+                                  e.teams[1] ? tSlug(e.teams[1].t, e.teams[1].u) : "",
+                                ]
+                                  .filter(Boolean)
+                                  .join(","),
+                              }
+                            : {}),
                       }).toString(),
                     }}
                     className={heroBtn()}
@@ -261,6 +281,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                           ? { year: (e.start || e.end || "").slice(0, 4), key: `y${(e.start || e.end || "").slice(0, 4)}` }
                           : {}),
                         ...(e.u ? { event: e.u } : {}),
+                        ...(!resultsHidden && e.champs?.[0]?.c ? { q: resolveChampSlug(e.champs[0].c) } : {}),
                       }).toString() || undefined,
                     }}
                     className={heroBtn()}
@@ -270,11 +291,78 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                   <HubLink
                     to={{
                       kind: "draft",
-                      query: `p=e:${encodeURIComponent(e.u)}`,
+                      query: new URLSearchParams({
+                        p: `e:${e.u}`,
+                        ...(!resultsHidden && e.results?.[0]
+                          ? {
+                              teams: [
+                                tSlug(e.results[0].t, e.results[0].u),
+                                e.results[1] ? tSlug(e.results[1].t, e.results[1].u) : "",
+                              ]
+                                .filter(Boolean)
+                                .join(","),
+                            }
+                          : e.teams?.[0]
+                            ? {
+                                teams: [
+                                  tSlug(e.teams[0].t, e.teams[0].u),
+                                  e.teams[1] ? tSlug(e.teams[1].t, e.teams[1].u) : "",
+                                ]
+                                  .filter(Boolean)
+                                  .join(","),
+                              }
+                            : {}),
+                        ...(!resultsHidden && e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
+                      }).toString(),
                     }}
                     className={heroBtn()}
                   >
                     {tl("Draft board")}
+                  </HubLink>
+                  {!resultsHidden && e.champs?.[0]?.c && (
+                    <HubLink
+                      to={{
+                        kind: "counters",
+                        query: new URLSearchParams({
+                          champ: resolveChampSlug(e.champs[0].c),
+                          ...(e.champs[1]?.c ? { vs: resolveChampSlug(e.champs[1].c) } : {}),
+                          event: e.u,
+                          ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                            ? { patch: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) }
+                            : {}),
+                        }).toString(),
+                      }}
+                      className={heroBtn()}
+                    >
+                      {tl("Counters")}
+                    </HubLink>
+                  )}
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        event: e.u,
+                        ...(e.lu ? { league: e.lu } : {}),
+                        ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                          ? { year: (e.start || e.end || "").slice(0, 4) }
+                          : {}),
+                        ...(!resultsHidden && e.results?.[0]
+                          ? {
+                              team: tSlug(e.results[0].t, e.results[0].u),
+                              ...(e.results[1] ? { vs: tSlug(e.results[1].t, e.results[1].u) } : {}),
+                            }
+                          : e.teams?.[0]
+                            ? {
+                                team: tSlug(e.teams[0].t, e.teams[0].u),
+                                ...(e.teams[1] ? { vs: tSlug(e.teams[1].t, e.teams[1].u) } : {}),
+                              }
+                            : {}),
+                        ...(!resultsHidden && e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
+                      }).toString(),
+                    }}
+                    className={heroBtn()}
+                  >
+                    {tl("Item history")}
                   </HubLink>
                   <HubLink
                     to={{
@@ -426,6 +514,21 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                     >
                       {tl("Compare")} →
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          event: e.u,
+                          team: tSlug(e.results[0].t, e.results[0].u),
+                          ...(e.results[1] ? { vs: tSlug(e.results[1].t, e.results[1].u) } : {}),
+                          ...(e.lu ? { league: e.lu } : {}),
+                          ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                        }).toString(),
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
                   </>
                 )}
                 <HubLink
@@ -448,7 +551,14 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
+                  to={{
+                    kind: "finder",
+                    query: new URLSearchParams({
+                      event: e.u,
+                      ...(e.results[0] ? { team: tSlug(e.results[0].t, e.results[0].u) } : {}),
+                      ...(e.results[1] ? { vs: tSlug(e.results[1].t, e.results[1].u) } : {}),
+                    }).toString(),
+                  }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Game finder")} →
@@ -624,10 +734,58 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                 {tl("Tournaments")} →
               </HubLink>
               <HubLink
-                to={{ kind: "draft", query: `p=e:${encodeURIComponent(e.u)}` }}
+                to={{
+                  kind: "draft",
+                  query: new URLSearchParams({
+                    p: `e:${e.u}`,
+                    ...(!resultsHidden && e.results?.[0]
+                      ? {
+                          teams: [
+                            tSlug(e.results[0].t, e.results[0].u),
+                            e.results[1] ? tSlug(e.results[1].t, e.results[1].u) : "",
+                          ]
+                            .filter(Boolean)
+                            .join(","),
+                        }
+                      : e.teams?.[0]
+                        ? {
+                            teams: [
+                              tSlug(e.teams[0].t, e.teams[0].u),
+                              e.teams[1] ? tSlug(e.teams[1].t, e.teams[1].u) : "",
+                            ]
+                              .filter(Boolean)
+                              .join(","),
+                          }
+                        : {}),
+                  }).toString(),
+                }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    event: e.u,
+                    ...(e.lu ? { league: e.lu } : {}),
+                    ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                    ...(!resultsHidden && e.results?.[0]
+                      ? {
+                          team: tSlug(e.results[0].t, e.results[0].u),
+                          ...(e.results[1] ? { vs: tSlug(e.results[1].t, e.results[1].u) } : {}),
+                        }
+                      : e.teams?.[0]
+                        ? {
+                            team: tSlug(e.teams[0].t, e.teams[0].u),
+                            ...(e.teams[1] ? { vs: tSlug(e.teams[1].t, e.teams[1].u) } : {}),
+                          }
+                        : {}),
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
               </HubLink>
               <HubLink
                 to={{
@@ -823,6 +981,21 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                           className="text-[11px] text-rw-accent hover:underline"
                         >
                           {tl("Compare")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "items",
+                            query: new URLSearchParams({
+                              event: e.u,
+                              team: tSlug(filteredTeams[0].t, filteredTeams[0].u),
+                              ...(filteredTeams[1] ? { vs: tSlug(filteredTeams[1].t, filteredTeams[1].u) } : {}),
+                              ...(e.lu ? { league: e.lu } : {}),
+                              ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                            }).toString(),
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Item history")} →
                         </HubLink>
                       </>
                     )}
@@ -1277,6 +1450,21 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
               </HubLink>
               <HubLink
                 to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                    team: fTeamA,
+                    ...(fTeamB ? { vs: fTeamB } : {}),
+                    ...(leagueSlug ? { league: leagueSlug } : {}),
+                    ...(/^\d{4}$/.test((finalS?.date || "").slice(0, 4)) ? { year: (finalS?.date || "").slice(0, 4) } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
                   kind: "rankings",
                   query:
                     new URLSearchParams({
@@ -1464,6 +1652,21 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
               </HubLink>
               <HubLink
                 to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                    team: s0First,
+                    ...(s0Second ? { vs: s0Second } : {}),
+                    ...(leagueSlug ? { league: leagueSlug } : {}),
+                    ...(/^\d{4}$/.test((shown[0].date || "").slice(0, 4)) ? { year: (shown[0].date || "").slice(0, 4) } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
                   kind: "rankings",
                   query:
                     new URLSearchParams({
@@ -1641,6 +1844,21 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Compare")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      ...(eventSlug ? { event: eventSlug } : {}),
+                      team: tSlug(rows[0].t, rows[0].u),
+                      ...(rows[1] ? { vs: tSlug(rows[1].t, rows[1].u) } : {}),
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(yr ? { year: yr } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
                 </HubLink>
               </>
             )}
@@ -1872,7 +2090,13 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
               <HubLink
                 to={{
                   kind: "items",
-                  query: `player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}${/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? `&year=${(e.start || e.end || "").slice(0, 4)}` : ""}`,
+                  query: new URLSearchParams({
+                    event: e.u,
+                    player: pSlug(rows[0].n, rows[0].u),
+                    ...(rows[0].t ? { team: tSlug(rows[0].t) } : {}),
+                    ...(e.lu ? { league: e.lu } : {}),
+                    ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1881,7 +2105,14 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}`,
+                  query: new URLSearchParams({
+                    event: e.u,
+                    player: pSlug(rows[0].n, rows[0].u),
+                    ...(rows[0].t ? { team: tSlug(rows[0].t) } : {}),
+                    ...(rows[1] && pSlug(rows[1].n, rows[1].u) !== pSlug(rows[0].n, rows[0].u)
+                      ? { vsplayer: pSlug(rows[1].n, rows[1].u) }
+                      : {}),
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
