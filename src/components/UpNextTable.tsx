@@ -126,7 +126,7 @@ export const UpNextTable: React.FC<{
             const yr = matches[0]?.startTimeUtc?.slice(0, 4);
             const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
             const q = new URLSearchParams({
-              ...(lg ? { scope: lg } : {}),
+              ...(lg ? { scope: lg, league: lg } : {}),
               ...(yr ? { key: `y${yr}` } : {}),
             }).toString();
             navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -241,7 +241,14 @@ const UpNextRow: React.FC<{
   const logo = (name: string, code: string, image: string | undefined) => (
     <button
       type="button"
-      onClick={() => (onSelectTeam ? onSelectTeam(code, name) : navigateHub({ kind: "team", slug: teamSlug(name, code) }))}
+      onClick={() => {
+        if (onSelectTeam) {
+          onSelectTeam(code, name);
+          return;
+        }
+        const yr = m.startTimeUtc?.slice(0, 4);
+        navigateHub({ kind: "team", slug: teamSlug(name, code), ...(yr ? { query: `p=y${yr}` } : {}) });
+      }}
       className="w-5 h-5 shrink-0 inline-flex items-center justify-center rounded hover:ring-1 hover:ring-rw-accent transition-all"
       title={tl("View {team} roster", { team: name })}
     >
@@ -417,7 +424,10 @@ const FormCell: React.FC<{ m: Match; schedule: Match[]; hidden: boolean }> = ({ 
   const row = (f: ("W" | "L")[], code: string, name: string) => (
     <button
       type="button"
-      onClick={() => navigateHub({ kind: "team", slug: teamSlug(name, code), tab: "matches" })}
+      onClick={() => {
+        const yr = m.startTimeUtc?.slice(0, 4);
+        navigateHub({ kind: "team", slug: teamSlug(name, code), tab: "matches", ...(yr ? { query: `p=y${yr}` } : {}) });
+      }}
       className="flex gap-px hover:opacity-80"
       title={`${code}: ${f.join(" ")}`}
     >

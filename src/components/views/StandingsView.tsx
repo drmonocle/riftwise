@@ -195,7 +195,10 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
             activeLeague ? (
               <button
                 type="button"
-                onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(activeLeague) })}
+                onClick={() => {
+                  const yr = tournamentInfo.startDate?.slice(0, 4);
+                  navigateHub({ kind: "league", slug: resolveLeagueSlug(activeLeague), ...(yr ? { year: yr } : {}) });
+                }}
                 className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tournamentStatus(tournamentInfo)}
@@ -213,7 +216,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               <span className="flex flex-wrap items-center gap-2 text-[11px]">
                 <button
                   type="button"
-                  onClick={() => navigateHub({ kind: "league", slug: lg })}
+                  onClick={() => navigateHub({ kind: "league", slug: lg, ...(yr ? { year: yr } : {}) })}
                   className="font-semibold text-rw-accent hover:underline"
                 >
                   {tl("Full history and stats")} →
@@ -225,6 +228,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       kind: "champions",
                       query: new URLSearchParams({
                         scope: lg,
+                        league: lg,
                         ...(yr ? { key: `y${yr}` } : {}),
                       }).toString(),
                     })
@@ -240,6 +244,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       kind: "tiers",
                       query: new URLSearchParams({
                         scope: lg,
+                        league: lg,
                         ...(yr ? { key: `y${yr}` } : {}),
                       }).toString(),
                     })
@@ -456,6 +461,20 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             <button
                               type="button"
                               onClick={() => {
+                                const lg = activeLeague ? resolveLeagueSlug(activeLeague) : "";
+                                const q = new URLSearchParams({
+                                  ...(lg ? { scope: lg, league: lg } : {}),
+                                  ...(yr ? { key: `y${yr}` } : {}),
+                                }).toString();
+                                navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
+                              }}
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Pro tier list")} →
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
                                 const q = new URLSearchParams({
                                   ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                   ...(yr ? { year: yr } : {}),
@@ -536,8 +555,9 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => {
+                              const lg = activeLeague ? resolveLeagueSlug(activeLeague) : "";
                               const q = new URLSearchParams({
-                                ...(activeLeague ? { scope: resolveLeagueSlug(activeLeague) } : {}),
+                                ...(lg ? { scope: lg, league: lg } : {}),
                                 ...(yr ? { key: `y${yr}` } : {}),
                               }).toString();
                               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -633,7 +653,10 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 )}
                                 <button
                                   type="button"
-                                  onClick={() => navigateHub({ kind: "team", slug: teamSlug(team.name, team.code) })}
+                                  onClick={() => {
+                                    const yr = tournamentInfo?.startDate?.slice(0, 4);
+                                    navigateHub({ kind: "team", slug: teamSlug(team.name, team.code), ...(yr ? { query: `p=y${yr}` } : {}) });
+                                  }}
                                   className="hidden sm:inline text-[11px] font-mono text-rw-sub hover:text-rw-accent hover:underline"
                                 >
                                   {team.code}
@@ -646,7 +669,10 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => navigateHub({ kind: "team", slug: teamSlug(team.name, team.code), tab: "matches" })}
+                                  onClick={() => {
+                                    const yr = tournamentInfo?.startDate?.slice(0, 4);
+                                    navigateHub({ kind: "team", slug: teamSlug(team.name, team.code), tab: "matches", ...(yr ? { query: `p=y${yr}` } : {}) });
+                                  }}
                                   className="inline-flex flex-col items-center gap-0.5 hover:opacity-80"
                                   title={tl("Full history and stats")}
                                 >
@@ -681,7 +707,10 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                   </span>
                                   <button
                                     type="button"
-                                    onClick={() => navigateHub({ kind: "team", slug: teamSlug(team.name, team.code), tab: "stats" })}
+                                    onClick={() => {
+                                      const yr = tournamentInfo?.startDate?.slice(0, 4);
+                                      navigateHub({ kind: "team", slug: teamSlug(team.name, team.code), tab: "stats", ...(yr ? { query: `p=y${yr}` } : {}) });
+                                    }}
                                     className="hover:text-rw-accent hover:underline"
                                     title={tl("Stats")}
                                   >
@@ -777,8 +806,9 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => {
+                              const lg = activeLeague ? resolveLeagueSlug(activeLeague) : "";
                               const q = new URLSearchParams({
-                                ...(activeLeague ? { scope: resolveLeagueSlug(activeLeague) } : {}),
+                                ...(lg ? { scope: lg, league: lg } : {}),
                                 ...(yr ? { key: `y${yr}` } : {}),
                               }).toString();
                               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });

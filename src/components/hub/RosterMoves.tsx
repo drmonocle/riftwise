@@ -145,7 +145,7 @@ export const RosterMoves: React.FC = () => {
                   ...((lg0 || yr0 || role0)
                     ? {
                         query: new URLSearchParams({
-                          ...(lg0 ? { scope: lg0 } : {}),
+                          ...(lg0 ? { scope: lg0, league: lg0 } : {}),
                           ...(yr0 ? { key: `y${yr0}` } : {}),
                           ...(role0 ? { role: role0 } : {}),
                         }).toString(),
@@ -175,6 +175,7 @@ export const RosterMoves: React.FC = () => {
                         query: new URLSearchParams({
                           player: list[0].u,
                           ...(twoPlayers ? { vsplayer: list[1].u } : { team: list[0].to.u }),
+                          ...(role0 ? { role: role0 } : {}),
                           ...(yr0 ? { year: yr0 } : {}),
                           ...(lg0 ? { league: lg0 } : {}),
                         }).toString(),
@@ -219,6 +220,8 @@ export const RosterMoves: React.FC = () => {
                       kind: "items",
                       query: new URLSearchParams({
                         player: list[0].u,
+                        team: list[0].to.u,
+                        ...(lg0 ? { league: lg0 } : {}),
                         ...(yr0 ? { year: yr0 } : {}),
                         ...(role0 ? { role: role0 } : {}),
                       }).toString(),
@@ -278,8 +281,9 @@ export const RosterMoves: React.FC = () => {
                 query: new URLSearchParams({
                   player: m.u,
                   team: m.to.u,
+                  ...(m.r ? { role: normalizeRole(m.r) || m.r } : {}),
                   ...(myr ? { year: myr } : {}),
-                  ...(m.lu ? { league: m.lu } : {}),
+                  ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
                 }).toString(),
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline tabular-nums w-20 shrink-0"
@@ -301,7 +305,7 @@ export const RosterMoves: React.FC = () => {
             </span>
             <span className="flex items-center gap-1.5 min-w-0 text-rw-sub">
               <span className="inline-flex items-center gap-1 min-w-0">
-                <HubLink to={{ kind: "team", slug: m.from.u }} className="shrink-0">
+                <HubLink to={{ kind: "team", slug: m.from.u, ...(myr ? { query: `p=y${encodeURIComponent(myr)}` } : {}) }} className="shrink-0">
                   <TeamLogo name={m.from.n} sizeClass="w-3.5 h-3.5" />
                 </HubLink>
                 <TeamLink name={m.from.n} u={m.from.u} className="hover:text-rw-accent truncate" />
@@ -314,14 +318,14 @@ export const RosterMoves: React.FC = () => {
                 <ArrowRight className="w-3 h-3" />
               </HubLink>
               <span className="inline-flex items-center gap-1 min-w-0">
-                <HubLink to={{ kind: "team", slug: m.to.u }} className="shrink-0">
+                <HubLink to={{ kind: "team", slug: m.to.u, ...(myr ? { query: `p=y${encodeURIComponent(myr)}` } : {}) }} className="shrink-0">
                   <TeamLogo name={m.to.n} sizeClass="w-3.5 h-3.5" />
                 </HubLink>
                 <TeamLink name={m.to.n} u={m.to.u} className="text-rw-text hover:text-rw-accent truncate" />
               </span>
             </span>
             {m.lu && name.get(m.lu) && (
-              <HubLink to={{ kind: "league", slug: m.lu, ...(myr ? { year: myr } : {}) }} className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
+              <HubLink to={{ kind: "league", slug: resolveLeagueSlug(m.lu), ...(myr ? { year: myr } : {}) }} className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
                 {name.get(m.lu)}
               </HubLink>
             )}
@@ -346,6 +350,8 @@ export const RosterMoves: React.FC = () => {
                   kind: "items",
                   query: new URLSearchParams({
                     player: m.u,
+                    team: m.to.u,
+                    ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
                     ...(myr ? { year: myr } : {}),
                     ...(m.r ? { role: normalizeRole(m.r) || m.r } : {}),
                   }).toString(),

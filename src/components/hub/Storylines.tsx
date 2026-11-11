@@ -94,13 +94,19 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
         {plain}
       </HubLink>
     ) : (
-      <HubLink to={{ kind: "champ", slug: resolveChampSlug(nt.c) }} className="hover:text-rw-accent hover:underline">
+      <HubLink
+        to={{ kind: "champ", slug: resolveChampSlug(nt.c), ...(nt.y ? { query: `p=y${encodeURIComponent(nt.y)}` } : {}) }}
+        className="hover:text-rw-accent hover:underline"
+      >
         {plain}
       </HubLink>
     );
     return (
       <span className="inline-flex items-center gap-1 flex-wrap">
-        <HubLink to={{ kind: "champ", slug: resolveChampSlug(nt.c) }} title={champName(nt.c)}>
+        <HubLink
+          to={{ kind: "champ", slug: resolveChampSlug(nt.c), ...(nt.y ? { query: `p=y${encodeURIComponent(nt.y)}` } : {}) }}
+          title={champName(nt.c)}
+        >
           <ChampIcon name={nt.c} size={16} />
         </HubLink>
         {textNode}
@@ -135,7 +141,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
       <span className="inline-flex items-center gap-1.5 flex-wrap">
         {who ? (
           <HubLink
-            to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}` }}
+            to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${nt.y ? `&year=${encodeURIComponent(nt.y)}` : ""}` }}
             className="hover:text-rw-accent hover:underline"
           >
             {plain}
@@ -174,7 +180,10 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
   }
   if (nt.k === "streak" && who) {
     return (
-      <HubLink to={{ kind: who.kind, slug: who.slug, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+      <HubLink
+        to={{ kind: who.kind, slug: who.slug, tab: "matches", ...(nt.y ? { query: `p=y${encodeURIComponent(nt.y)}` } : {}) }}
+        className="hover:text-rw-accent hover:underline"
+      >
         {plain}
       </HubLink>
     );
@@ -183,7 +192,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     if (nt.s === "games" || nt.s === "wins") {
       return (
         <HubLink
-          to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${nt.s === "wins" ? "&result=w" : ""}` }}
+          to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${nt.s === "wins" ? "&result=w" : ""}${nt.y ? `&year=${encodeURIComponent(nt.y)}` : ""}` }}
           className="hover:text-rw-accent hover:underline"
         >
           {plain}
@@ -191,7 +200,10 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
       );
     }
     return (
-      <HubLink to={{ kind: who.kind, slug: who.slug, tab: "stats" }} className="hover:text-rw-accent hover:underline">
+      <HubLink
+        to={{ kind: who.kind, slug: who.slug, tab: "stats", ...(nt.y ? { query: `p=y${encodeURIComponent(nt.y)}` } : {}) }}
+        className="hover:text-rw-accent hover:underline"
+      >
         {plain}
       </HubLink>
     );
@@ -201,7 +213,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
 
 export interface StoryLine {
   key: string;
-  who?: { name: string; team?: string; to: { kind: "team" | "player"; slug: string } };
+  who?: { name: string; team?: string; to: { kind: "team" | "player"; slug: string; query?: string } };
   text: React.ReactNode;
   plain?: string;
   champ?: string;
@@ -880,7 +892,7 @@ export const HomeStorylines: React.FC = () => {
         const entitySlug = r.t === "team" ? r.u || resolveTeamAlias(r.name) || prettySlug(r.name) : r.u || resolvePlayerSlug(r.name) || prettySlug(r.name);
         return {
           key: `${entitySlug}-${i}`,
-          who: { name: r.name, to: { kind: r.t, slug: entitySlug } },
+          who: { name: r.name, to: { kind: r.t, slug: entitySlug, ...(r.y ? { query: `p=y${encodeURIComponent(r.y)}` } : {}) } },
           text: noteText(r, { kind: r.t, slug: entitySlug }),
           plain: notePlainText(r),
           champ: r.c,

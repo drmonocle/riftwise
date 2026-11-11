@@ -69,7 +69,12 @@ export const MatchOverview: React.FC<{ match: Match; a: string; b: string; onClo
               type="button"
               onClick={() => {
                 onClose();
-                navigateHub({ kind: "league", slug: resolveLeagueSlug(match.leagueSlug || match.leagueName) });
+                const yr = match.startTimeUtc?.slice(0, 4);
+                navigateHub({
+                  kind: "league",
+                  slug: resolveLeagueSlug(match.leagueSlug || match.leagueName),
+                  ...(yr ? { year: yr } : {}),
+                });
               }}
               className="hover:text-rw-accent hover:underline uppercase font-semibold"
             >
@@ -141,7 +146,8 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
         type="button"
         onClick={() => {
           onClose();
-          navigateHub({ kind: "team", slug: s.team.u });
+          const yr = match.startTimeUtc?.slice(0, 4);
+          navigateHub({ kind: "team", slug: s.team.u, ...(yr ? { query: `p=y${yr}` } : {}) });
         }}
         className={`w-full text-sm font-extrabold flex items-center gap-1.5 min-w-0 hover:underline transition-colors ${right ? "flex-row-reverse text-rw-side-b" : "text-rw-side-a"}`}
       >
@@ -173,7 +179,8 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
             type="button"
             onClick={() => {
               onClose();
-              navigateHub({ kind: "team", slug: s.team.u, tab: "matches" });
+              const yr = match.startTimeUtc?.slice(0, 4);
+              navigateHub({ kind: "team", slug: s.team.u, tab: "matches", ...(yr ? { query: `p=y${yr}` } : {}) });
             }}
             className="hover:text-rw-accent hover:underline"
           >
@@ -294,7 +301,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
                   const yr = match.startTimeUtc?.slice(0, 4);
                   const q = new URLSearchParams({
-                    ...(lg ? { scope: lg } : {}),
+                    ...(lg ? { scope: lg, league: lg } : {}),
                     ...(yr ? { key: `y${yr}` } : {}),
                   }).toString();
                   onClose();
@@ -402,8 +409,9 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   <button
                     type="button"
                     onClick={() => {
+                      const yr = match.startTimeUtc?.slice(0, 4);
                       onClose();
-                      navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u });
+                      navigateHub({ kind: "compare", mode: "team", a: x.team.u, b: y.team.u, ...(yr ? { period: `y${yr}` } : {}) });
                     }}
                     className="hover:underline"
                     title={tl("Compare")}
@@ -596,7 +604,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               const yr = match.startTimeUtc?.slice(0, 4);
               const q = new URLSearchParams({
-                ...(lg ? { scope: lg } : {}),
+                ...(lg ? { scope: lg, league: lg } : {}),
                 ...(yr ? { key: `y${yr}` } : {}),
               }).toString();
               onClose();
