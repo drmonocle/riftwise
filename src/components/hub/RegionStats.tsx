@@ -154,7 +154,13 @@ export function regionStats(files: (EventLines | null)[], years: string[]) {
  * regions, edition by edition, as shaded percentages (teal above 50%, red below; the record on hover). Regions in at
  * least three editions, the most series against other regions first.
  */
-const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; name: string; league?: string }> = ({ files, years, name, league }) => {
+const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; name: string; league?: string; topTeams?: string[] }> = ({
+  files,
+  years,
+  name,
+  league,
+  topTeams,
+}) => {
   const intlLeague = useMemo(
     () =>
       resolveLeagueSlug(
@@ -186,36 +192,118 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
     return { cols, rows, cells };
   }, [files, years]);
   if (t.cols.length < 3 || !t.rows.length) return null;
+  const tA = topTeams?.[0];
+  const tB = topTeams?.[1];
+  const tJoin = topTeams?.filter(Boolean).join(",");
   return (
     <Section
       title={tl("Region strength over time")}
       right={
         <span className="flex flex-wrap items-center gap-2">
+          {tA && (
+            <>
+              <HubLink
+                to={{ kind: "prep", a: tA, ...(tB && tB !== tA ? { b: tB } : {}) }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Match prep")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "draft", query: `teams=${encodeURIComponent(tJoin || tA)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Draft board")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "compare", mode: "team", a: tA, ...(tB && tB !== tA ? { b: tB } : {}) }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Compare")} →
+              </HubLink>
+            </>
+          )}
           <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
             {tl("Leagues")} →
           </HubLink>
           <HubLink to={{ kind: "tournaments", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Tournaments")} →
           </HubLink>
-          <HubLink to={{ kind: "titles" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+          <HubLink
+            to={{ kind: "titles", ...(tJoin ? { query: `q=${encodeURIComponent(tJoin)}` } : {}) }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
             {tl("Titles")} →
           </HubLink>
-          <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+          <HubLink
+            to={{
+              kind: "rankings",
+              query: new URLSearchParams({
+                league: intlLeague,
+                ...(tJoin ? { q: tJoin } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
             {tl("Power rankings")} →
           </HubLink>
-          <HubLink to={{ kind: "items", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+          <HubLink
+            to={{
+              kind: "items",
+              query: new URLSearchParams({
+                league: intlLeague,
+                ...(tA ? { team: tA, ...(tB && tB !== tA ? { vs: tB } : {}) } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
             {tl("Item history")} →
           </HubLink>
-          <HubLink to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+          <HubLink
+            to={{
+              kind: "finder",
+              query: new URLSearchParams({
+                league: intlLeague,
+                ...(tA ? { team: tA, ...(tB && tB !== tA ? { vs: tB } : {}) } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
             {tl("Game finder")} →
           </HubLink>
           <HubLink to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Pro tier list")} →
           </HubLink>
-          <HubLink to={{ kind: "best", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+          <HubLink
+            to={{
+              kind: "best",
+              query: new URLSearchParams({
+                league: intlLeague,
+                ...(tJoin ? { q: tJoin } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
             {tl("Best games")} →
           </HubLink>
-          <HubLink to={{ kind: "leaders", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+          <HubLink
+            to={{
+              kind: "leaders",
+              query: new URLSearchParams({
+                league: intlLeague,
+                ...(tJoin ? { q: tJoin } : {}),
+              }).toString(),
+            }}
+            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
             {tl("Player leaderboards")} →
           </HubLink>
           <CopyRegionStatsPost
@@ -443,7 +531,11 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             <HubLink
               to={{
                 kind: "titles",
-                ...(topRegTeamA ? { query: `q=${encodeURIComponent(topRegTeamA)}` } : {}),
+                ...(topRegTeamA
+                  ? {
+                      query: `q=${encodeURIComponent(`${topRegTeamA}${topRegTeamB && topRegTeamB !== topRegTeamA ? `,${topRegTeamB}` : ""}`)}`,
+                    }
+                  : {}),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
@@ -977,7 +1069,15 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
         </Section>
       )}
     </div>
-    {all && <RegionTrend files={files} years={years} name={name} league={intlLeague} />}
+    {all && (
+      <RegionTrend
+        files={files}
+        years={years}
+        name={name}
+        league={intlLeague}
+        topTeams={[topRegTeamA, topRegTeamB].filter((x): x is string => Boolean(x))}
+      />
+    )}
     </>
   );
 };

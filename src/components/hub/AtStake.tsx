@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, locale } from "../../i18n";
 import { load } from "../../stats";
 import type { Match } from "../../types";
-import { bare, findHubTeam, loadHubIndexQuick, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, type HubIndex } from "../../hub/data";
+import { bare, findHubTeam, loadHubIndexQuick, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, type HubIndex } from "../../hub/data";
 import { searchAlias } from "../../searchAliases";
 import { MatchOverviewButton } from "../MatchOverviewButton";
 import { MatchPrepButton } from "../MatchPrepButton";
@@ -193,14 +193,25 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 const a = teamSlug(data.index, m0.team1Name, m0.team1Code);
                 const b = teamSlug(data.index, m0.team2Name, m0.team2Code);
                 const rawYr = m0.startTimeUtc?.slice(0, 4);
-                const p = rawYr && /^\d{4}$/.test(rawYr) ? `y${rawYr}` : undefined;
+                const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : undefined;
+                const p = yr ? `y${yr}` : undefined;
+                const lg = m0.leagueSlug || m0.leagueName ? resolveLeagueSlug(m0.leagueSlug || m0.leagueName) : undefined;
+                const topChamps = Array.from(new Set(blocks[0].lines.map((l) => (l.champ ? resolveChampSlug(l.champ) : "")).filter(Boolean))).slice(0, 2);
+                const topPlayers = Array.from(
+                  new Set(blocks[0].lines.map((l) => (l.who?.to.kind === "player" ? l.who.to.slug : "")).filter(Boolean)),
+                ).slice(0, 2);
                 return (
                   <>
                     <HubLink to={{ kind: "prep", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
                       {tl("Match prep")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${p ? `&p=${encodeURIComponent(p)}` : ""}` }}
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${p ? `&p=${encodeURIComponent(p)}` : ""}${
+                          topChamps.length >= 1 ? `&champ=${encodeURIComponent(topChamps.join(","))}` : ""
+                        }`,
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
@@ -214,8 +225,10 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                         query: new URLSearchParams({
                           team: a,
                           vs: b,
-                          ...(m0.leagueSlug || m0.leagueName ? { league: resolveLeagueSlug(m0.leagueSlug || m0.leagueName) } : {}),
-                          ...(rawYr && /^\d{4}$/.test(rawYr) ? { year: rawYr } : {}),
+                          ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                          ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                          ...(lg ? { league: lg } : {}),
+                          ...(yr ? { year: yr } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -225,7 +238,19 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   </>
                 );
               })()}
-              <HubLink to={{ kind: "records" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "records",
+                  ...(blocks[0]?.m
+                    ? {
+                        query: `q=${encodeURIComponent(
+                          `${teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code)},${teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code)}`,
+                        )}`,
+                      }
+                    : {}),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Records")} →
               </HubLink>
               <HubLink
@@ -266,18 +291,25 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               <HubLink
                 to={{
                   kind: "tiers",
-                  query:
-                    new URLSearchParams({
-                      ...(blocks[0]?.m && (blocks[0].m.leagueSlug || blocks[0].m.leagueName)
-                        ? {
-                            scope: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName),
-                            league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName),
-                          }
-                        : {}),
-                      ...(blocks[0]?.m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4))
-                        ? { key: `y${blocks[0].m.startTimeUtc.slice(0, 4)}`, year: blocks[0].m.startTimeUtc.slice(0, 4) }
-                        : {}),
-                    }).toString() || undefined,
+                  query: (() => {
+                    const cs = blocks[0]
+                      ? Array.from(new Set(blocks[0].lines.map((l) => (l.champ ? resolveChampSlug(l.champ) : "")).filter(Boolean))).slice(0, 2)
+                      : [];
+                    return (
+                      new URLSearchParams({
+                        ...(blocks[0]?.m && (blocks[0].m.leagueSlug || blocks[0].m.leagueName)
+                          ? {
+                              scope: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName),
+                              league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName),
+                            }
+                          : {}),
+                        ...(blocks[0]?.m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4))
+                          ? { key: `y${blocks[0].m.startTimeUtc.slice(0, 4)}`, year: blocks[0].m.startTimeUtc.slice(0, 4) }
+                          : {}),
+                        ...(cs.length >= 1 ? { q: cs.join(",") } : {}),
+                      }).toString() || undefined
+                    );
+                  })(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -311,13 +343,22 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
             const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : undefined;
             const p = yr ? `y${yr}` : undefined;
             const lg = m0.leagueSlug || m0.leagueName ? resolveLeagueSlug(m0.leagueSlug || m0.leagueName) : undefined;
+            const topChamps = Array.from(new Set(blocks[0].lines.map((l) => (l.champ ? resolveChampSlug(l.champ) : "")).filter(Boolean))).slice(0, 2);
+            const topPlayers = Array.from(
+              new Set(blocks[0].lines.map((l) => (l.who?.to.kind === "player" ? l.who.to.slug : "")).filter(Boolean)),
+            ).slice(0, 2);
             return (
               <span className="flex items-center gap-2" data-nocapture="1">
                 <HubLink to={{ kind: "prep", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Match prep")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${p ? `&p=${encodeURIComponent(p)}` : ""}` }}
+                  to={{
+                    kind: "draft",
+                    query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${p ? `&p=${encodeURIComponent(p)}` : ""}${
+                      topChamps.length >= 1 ? `&champ=${encodeURIComponent(topChamps.join(","))}` : ""
+                    }`,
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Draft board")} →
@@ -331,6 +372,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     query: new URLSearchParams({
                       team: a,
                       vs: b,
+                      ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                      ...(topChamps[0] ? { champ: topChamps[0] } : {}),
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
                     }).toString(),
@@ -345,6 +388,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     query: new URLSearchParams({
                       team: a,
                       vs: b,
+                      ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                      ...(topChamps[0] ? { champ: topChamps[0] } : {}),
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
                     }).toString(),
@@ -372,6 +417,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       new URLSearchParams({
                         ...(lg ? { scope: lg, league: lg } : {}),
                         ...(p && yr ? { key: p, year: yr } : {}),
+                        ...(topChamps.length >= 1 ? { q: topChamps.join(",") } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -385,7 +431,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       new URLSearchParams({
                         ...(lg ? { league: lg } : {}),
                         ...(yr ? { year: yr } : {}),
-                        q: `${a},${b}`,
+                        ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                        q: topPlayers.length >= 1 ? topPlayers.join(",") : `${a},${b}`,
                       }).toString() || undefined,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -423,6 +470,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
           const t2Slug = teamSlug(data.index, m.team2Name, m.team2Code);
           const mYr = m.startTimeUtc?.slice(0, 4);
           const mPeriodQ = mYr && /^\d{4}$/.test(mYr) ? `p=y${encodeURIComponent(mYr)}` : undefined;
+          const mChamps = Array.from(new Set(lines.map((l) => (l.champ ? resolveChampSlug(l.champ) : "")).filter(Boolean))).slice(0, 2);
+          const mPlayers = Array.from(new Set(lines.map((l) => (l.who?.to.kind === "player" ? l.who.to.slug : "")).filter(Boolean))).slice(0, 2);
           return (
           <div key={m.matchId} className="space-y-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs border-b border-rw-border pb-1">
@@ -490,7 +539,9 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(t1Slug)},${encodeURIComponent(t2Slug)}${mPeriodQ ? `&${mPeriodQ}` : ""}`,
+                    query: `teams=${encodeURIComponent(t1Slug)},${encodeURIComponent(t2Slug)}${mPeriodQ ? `&${mPeriodQ}` : ""}${
+                      mChamps.length >= 1 ? `&champ=${encodeURIComponent(mChamps.join(","))}` : ""
+                    }`,
                   }}
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >
@@ -514,6 +565,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     query: new URLSearchParams({
                       team: t1Slug,
                       vs: t2Slug,
+                      ...(mPlayers[0] ? { player: mPlayers[0], ...(mPlayers[1] ? { vsplayer: mPlayers[1] } : {}) } : {}),
+                      ...(mChamps[0] ? { champ: mChamps[0] } : {}),
                       ...(m.leagueSlug || m.leagueName ? { league: resolveLeagueSlug(m.leagueSlug || m.leagueName) } : {}),
                       ...(mYr && /^\d{4}$/.test(mYr) ? { year: mYr } : {}),
                     }).toString(),
@@ -528,6 +581,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     query: new URLSearchParams({
                       team: t1Slug,
                       vs: t2Slug,
+                      ...(mPlayers[0] ? { player: mPlayers[0], ...(mPlayers[1] ? { vsplayer: mPlayers[1] } : {}) } : {}),
+                      ...(mChamps[0] ? { champ: mChamps[0] } : {}),
                       ...(m.leagueSlug || m.leagueName ? { league: resolveLeagueSlug(m.leagueSlug || m.leagueName) } : {}),
                       ...(mYr && /^\d{4}$/.test(mYr) ? { year: mYr } : {}),
                     }).toString(),
