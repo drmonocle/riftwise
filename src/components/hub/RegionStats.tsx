@@ -219,13 +219,32 @@ const RegionTrend: React.FC<{
       byYear.get(yy)!.push(i);
     });
     const cols = [...byYear.keys()].sort();
-    const cells = new Map<string, Map<string, [number, number]>>();
+    const cells = new Map<string, Map<string, [number, number, string]>>();
     for (const y of cols) {
       const idx = byYear.get(y)!;
-      for (const r of regionStats(idx.map((i) => files[i]), idx.map((i) => years[i])).list) {
+      const yFiles = idx.map((i) => files[i]);
+      const wins = new Map<string, Map<string, number>>();
+      yFiles.forEach((f) => {
+        if (!f?.rg) return;
+        const rg = (u: string) => (f.rg?.[u] ? regionKey(f.rg[u]) : null);
+        for (const [u, code] of Object.entries(f.rg)) {
+          const rc = regionKey(code);
+          if (!wins.has(rc)) wins.set(rc, new Map());
+          if (!wins.get(rc)!.has(u)) wins.get(rc)!.set(u, 0);
+        }
+        for (const s of f.s) {
+          const [, , , , ua, , , ub, , wa, wb] = s;
+          const ra = rg(ua);
+          const rb = rg(ub);
+          if (ra && ua && wa != null) wins.get(ra)?.set(ua, (wins.get(ra)?.get(ua) || 0) + wa);
+          if (rb && ub && wb != null) wins.get(rb)?.set(ub, (wins.get(rb)?.get(ub) || 0) + wb);
+        }
+      });
+      for (const r of regionStats(yFiles, idx.map((i) => years[i])).list) {
         if (r.ow + r.ol === 0) continue;
         if (!cells.has(r.code)) cells.set(r.code, new Map());
-        cells.get(r.code)!.set(y, [r.ow, r.ol]);
+        const topTeam = [...(wins.get(r.code)?.entries() || [])].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+        cells.get(r.code)!.set(y, [r.ow, r.ol, topTeam]);
       }
     }
     const total = (c: string) => [...cells.get(c)!.values()].reduce((n, [w, l]) => n + w + l, 0);
@@ -449,7 +468,12 @@ const RegionTrend: React.FC<{
                   return (
                     <td key={y} data-sort={Math.round(p * 100)} className="px-0.5 py-0.5 text-center">
                       <HubLink
-                        to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(y)}` }}
+                        to={{
+                          kind: "finder",
+                          query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(y)}${
+                            wl[2] ? `&team=${encodeURIComponent(wl[2])}` : ""
+                          }`,
+                        }}
                         className={`block min-w-[2.5rem] rounded-sm px-1 py-0.5 tabular-nums text-rw-text hover:ring-1 hover:ring-rw-accent/60 ${wl[0] + wl[1] < 3 ? "opacity-45" : ""}`}
                         style={chanceShade(p)}
                         title={tl("{region} {year}: {w}-{l} in series against other regions", { region: regionLabel(c), year: y, w: wl[0], l: wl[1] })}

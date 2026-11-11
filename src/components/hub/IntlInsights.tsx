@@ -870,7 +870,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         </HubLink>
                         <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />
                         <HubLink
-                          to={{ kind: "finder", query: `team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}` }}
+                          to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}` }}
                           className="text-rw-muted hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -920,7 +920,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <span className="flex items-center gap-2 shrink-0">
                   {chip(r.path)}
                   <HubLink
-                    to={{ kind: "finder", query: `team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}` }}
+                    to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}` }}
                     className={`tabular-nums font-bold w-8 text-right hover:underline ${r.wins === 3 ? "text-rw-teal" : r.losses === 3 ? "text-rw-red" : "text-rw-sub"}`}
                     title={tl("Game finder")}
                   >
@@ -946,7 +946,17 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
         </span>
       }
-      sub={`${all ? yearOnly(r.year) + " · " : ""}${placeText(r.place)}${r.chance != null ? ` · ${tl("avg. chance {p}%", { p: r.chance })}` : ""}`}
+      sub={
+        <HubLink
+          to={{
+            kind: "finder",
+            query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}`,
+          }}
+          className="hover:text-rw-accent hover:underline"
+        >
+          {`${all ? yearOnly(r.year) + " · " : ""}${placeText(r.place)}${r.chance != null ? ` · ${tl("avg. chance {p}%", { p: r.chance })}` : ""}`}
+        </HubLink>
+      }
       right={
         r.u ? (
           <HubLink to={{ kind: "team", slug: r.u, tab: "history" }} className="hover:underline">
@@ -1330,7 +1340,14 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     <TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
                   </span>
                 }
-                sub={tl("{w} won · {l} lost", { w: r.won, l: r.n - r.won })}
+                sub={
+                  <HubLink
+                    to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u)}` }}
+                    className="hover:text-rw-accent hover:underline"
+                  >
+                    {tl("{w} won · {l} lost", { w: r.won, l: r.n - r.won })}
+                  </HubLink>
+                }
                 right={
                   <span className="inline-flex items-center gap-1.5">
                     {r.n > 0 && (
@@ -1365,7 +1382,14 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         <TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
                       </span>
                     }
-                    sub={r.years.map(yearOnly).join(", ")}
+                    sub={
+                      <HubLink
+                        to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u)}` }}
+                        className="hover:text-rw-accent hover:underline"
+                      >
+                        {r.years.map(yearOnly).join(", ")}
+                      </HubLink>
+                    }
                     right={
                       <span className="inline-flex items-center gap-1.5">
                         <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
@@ -1643,7 +1667,17 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     <PlayerLink name={p.name} u={p.u} className="text-rw-text hover:text-rw-accent truncate" />
                   </span>
                 }
-                sub={`${p.titles.map(yearOnly).sort().join(", ")} · ${tl("{n} finals", { n: p.finals })}`}
+                sub={
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: `league=${encodeURIComponent(intlLeague)}&player=${encodeURIComponent(p.u || prettySlug(p.name))}`,
+                    }}
+                    className="hover:text-rw-accent hover:underline"
+                  >
+                    {`${p.titles.map(yearOnly).sort().join(", ")} · ${tl("{n} finals", { n: p.finals })}`}
+                  </HubLink>
+                }
                 right={
                   <span className="inline-flex items-center gap-1.5">
                     <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
@@ -1834,7 +1868,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <li key={h.year} className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1.5 min-w-0">
                 <HubLink
-                  to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(yearOnly(h.year))}` }}
+                  to={{
+                    kind: "finder",
+                    query: `league=${encodeURIComponent(intlLeague)}${
+                      h.team ? `&team=${encodeURIComponent(h.teamU || teamSlug(h.team))}` : ""
+                    }&year=${encodeURIComponent(yearOnly(h.year))}`,
+                  }}
                   className="tabular-nums text-rw-muted hover:text-rw-accent hover:underline w-9"
                 >
                   {yearOnly(h.year)}
