@@ -365,7 +365,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
             type="button"
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
-              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               navigateHub({
                 kind: "finder",
                 query: new URLSearchParams({
@@ -383,7 +383,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
           <button
             type="button"
             onClick={() => {
-              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 q: `${teamSlug(left.name, left.code)},${teamSlug(right.name, right.code)}`,
@@ -398,7 +398,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
             type="button"
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
-              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               const patchKey = win.gameMetadata.patchVersion
                 ? `p${win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".")}`
                 : yr
@@ -418,7 +418,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
             type="button"
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
-              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
@@ -475,7 +475,14 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
           {win.gameMetadata.patchVersion && (
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "champions", query: `key=p${win.gameMetadata.patchVersion!.split(".").slice(0, 2).join(".")}` })}
+              onClick={() => {
+                const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
+                const q = new URLSearchParams({
+                  ...(lg ? { scope: lg, league: lg } : {}),
+                  key: `p${win.gameMetadata.patchVersion!.split(".").slice(0, 2).join(".")}`,
+                }).toString();
+                navigateHub({ kind: "champions", query: q });
+              }}
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
             >
               {tl("Patch {patch}", { patch: win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".") })}
@@ -493,7 +500,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
         <ChanceNow leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} minute={elapsed / 60_000} lead={lead} year={match.startTimeUtc?.slice(0, 4)} />
       )}
       {!finished && elapsed != null && elapsed > 3 * 60_000 && ratings?.game != null && (
-        <UpsetMeter leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} before={ratings.game} now={winChanceFromGold(elapsed / 60_000, lead)} league={match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : undefined} year={match.startTimeUtc?.slice(0, 4)} />
+        <UpsetMeter leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} before={ratings.game} now={winChanceFromGold(elapsed / 60_000, lead)} league={resolveLeagueSlug(match.leagueSlug || match.leagueName) || undefined} year={match.startTimeUtc?.slice(0, 4)} />
       )}
       {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} year={match.startTimeUtc?.slice(0, 4)} />}
       {finished && history && <GameStory points={history} left={left.code} right={right.code} blueIsLeft={blueIsTeam1} />}
@@ -515,7 +522,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
 
       {open && (
         <div className="space-y-3">
-          <Players left={left} right={right} details={state.details} year={match.startTimeUtc?.slice(0, 4)} league={match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : undefined} />
+          <Players left={left} right={right} details={state.details} year={match.startTimeUtc?.slice(0, 4)} league={resolveLeagueSlug(match.leagueSlug || match.leagueName) || undefined} />
           {!finished && <p className="text-[10px] text-rw-muted">{tl("From Riot's live stats feed, about a minute behind the broadcast.")}</p>}
         </div>
       )}
@@ -850,7 +857,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                       onClick={() =>
                         navigateHub({
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(l[i].meta!.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(r[i].meta!.championId)))}&role=${encodeURIComponent(ROLE_LABEL[role])}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(l[i].meta!.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(r[i].meta!.championId)))}&role=${encodeURIComponent(ROLE_LABEL[role])}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
                         })
                       }
                       className="block w-full text-[9px] normal-case text-rw-muted hover:text-rw-accent hover:underline mt-0.5"
@@ -1283,7 +1290,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
             type="button"
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
-              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               navigateHub({
                 kind: "finder",
                 query: new URLSearchParams({
@@ -1301,7 +1308,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
           <button
             type="button"
             onClick={() => {
-              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 q: `${teamSlug(left.name, left.code)},${teamSlug(right.name, right.code)}`,
@@ -1316,7 +1323,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
             type="button"
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
-              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               const patchKey = win.gameMetadata.patchVersion
                 ? `p${win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".")}`
                 : yr
@@ -1336,7 +1343,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
             type="button"
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
-              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
@@ -1449,7 +1456,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                     onClick={() =>
                       navigateHub({
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(p.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(q.championId)))}&role=${encodeURIComponent(ROLE_LABEL[p.role] || p.role)}`,
+                        query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(p.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(q.championId)))}&role=${encodeURIComponent(ROLE_LABEL[p.role] || p.role)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
                       })
                     }
                     className="text-[8px] text-rw-sub hover:text-rw-accent hover:underline text-center"

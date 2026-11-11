@@ -69,7 +69,7 @@ export const MatchOverviewButton: React.FC<{ match: Match; compact?: boolean; on
             onPrep={() => {
               setOpen(null);
               const yr = match.startTimeUtc?.slice(0, 4);
-              navigateHub({ kind: "prep", a: open.a, b: open.b, ...(yr ? { period: `y${yr}` } : {}) });
+              navigateHub({ kind: "prep", a: open.a, b: open.b, ...(yr && /^\d{4}$/.test(yr) ? { period: `y${yr}` } : {}) });
               onDone?.();
             }}
           />

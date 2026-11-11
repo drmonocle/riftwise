@@ -2947,7 +2947,7 @@ dependencies = [
 
 [[package]]
 name = "riftwise-tauri"
-version = "1.4.79"
+version = "1.4.80"
 dependencies = [
  "serde",
  "serde_json",

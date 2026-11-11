@@ -373,7 +373,7 @@ export const LiveNextGamePreview: React.FC<{
                 query: new URLSearchParams({
                   team: draftIntel.slugA,
                   vs: draftIntel.slugB,
-                  ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
+                  ...(resolveLeagueSlug(match.leagueSlug || match.leagueName) ? { league: resolveLeagueSlug(match.leagueSlug || match.leagueName) } : {}),
                   ...(draftIntel.period.startsWith("y") ? { year: draftIntel.period.slice(1) } : {}),
                   ...(draftIntel.period.startsWith("e:") ? { event: draftIntel.period.slice(2) } : {}),
                   ...(draftIntel.period.startsWith("p:") ? { patch: draftIntel.period.slice(2) } : {}),
@@ -387,7 +387,7 @@ export const LiveNextGamePreview: React.FC<{
               to={{
                 kind: "rankings",
                 query: new URLSearchParams({
-                  ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
+                  ...(resolveLeagueSlug(match.leagueSlug || match.leagueName) ? { league: resolveLeagueSlug(match.leagueSlug || match.leagueName) } : {}),
                   q: `${draftIntel.slugA},${draftIntel.slugB}`,
                 }).toString(),
               }}
@@ -400,7 +400,9 @@ export const LiveNextGamePreview: React.FC<{
                 kind: "tiers",
                 query:
                   new URLSearchParams({
-                    ...(match.leagueSlug ? { scope: resolveLeagueSlug(match.leagueSlug) } : {}),
+                    ...(resolveLeagueSlug(match.leagueSlug || match.leagueName)
+                      ? { scope: resolveLeagueSlug(match.leagueSlug || match.leagueName), league: resolveLeagueSlug(match.leagueSlug || match.leagueName) }
+                      : {}),
                     ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5
                       ? { key: draftIntel.period }
                       : draftIntel.period.startsWith("e:")
@@ -422,7 +424,7 @@ export const LiveNextGamePreview: React.FC<{
                 kind: "leaders",
                 query:
                   new URLSearchParams({
-                    ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
+                    ...(resolveLeagueSlug(match.leagueSlug || match.leagueName) ? { league: resolveLeagueSlug(match.leagueSlug || match.leagueName) } : {}),
                     ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5
                       ? { year: draftIntel.period.slice(1) }
                       : draftIntel.period.startsWith("e:")
@@ -456,7 +458,14 @@ export const LiveNextGamePreview: React.FC<{
             </span>
           </div>
           <div className="grid gap-1.5 sm:grid-cols-2">
-            {earlier.map((g) => (
+            {earlier.map((g) => {
+              const pQuery =
+                draftIntel?.period && draftIntel.period !== "all"
+                  ? `p=${encodeURIComponent(draftIntel.period)}`
+                  : match.startTimeUtc?.slice(0, 4)
+                    ? `p=y${encodeURIComponent(match.startTimeUtc.slice(0, 4))}`
+                    : undefined;
+              return (
               <div
                 key={g.number}
                 className="flex items-center justify-between gap-2 rounded border border-rw-border/70 bg-rw-surface/70 px-2.5 py-1.5"
@@ -467,7 +476,7 @@ export const LiveNextGamePreview: React.FC<{
                 <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1">
                     <HubLink
-                      to={{ kind: "team", slug: draftIntel?.slugA || teamSlug(match.team1Name, match.team1Code) }}
+                      to={{ kind: "team", slug: draftIntel?.slugA || teamSlug(match.team1Name, match.team1Code), ...(pQuery ? { query: pQuery } : {}) }}
                       className="inline-flex items-center gap-1 text-[10px] font-bold text-rw-side-a hover:underline"
                     >
                       <TeamLogo name={match.team1Name} code={match.team1Code} src={match.team1Image} size={14} className="shrink-0" />
@@ -476,7 +485,7 @@ export const LiveNextGamePreview: React.FC<{
                     {g.team1.map((p) => (
                       <HubLink
                         key={p.c}
-                        to={{ kind: "champ", slug: resolveChampSlug(p.c) }}
+                        to={{ kind: "champ", slug: resolveChampSlug(p.c), ...(pQuery ? { query: pQuery } : {}) }}
                         title={`${champName(p.c)} (${p.player})`}
                         className="opacity-75 grayscale-[35%] hover:opacity-100 hover:grayscale-0 transition-all"
                       >
@@ -487,7 +496,7 @@ export const LiveNextGamePreview: React.FC<{
                   <span className="text-rw-border">·</span>
                   <span className="inline-flex items-center gap-1">
                     <HubLink
-                      to={{ kind: "team", slug: draftIntel?.slugB || teamSlug(match.team2Name, match.team2Code) }}
+                      to={{ kind: "team", slug: draftIntel?.slugB || teamSlug(match.team2Name, match.team2Code), ...(pQuery ? { query: pQuery } : {}) }}
                       className="inline-flex items-center gap-1 text-[10px] font-bold text-rw-side-b hover:underline"
                     >
                       <TeamLogo name={match.team2Name} code={match.team2Code} src={match.team2Image} size={14} className="shrink-0" />
@@ -496,7 +505,7 @@ export const LiveNextGamePreview: React.FC<{
                     {g.team2.map((p) => (
                       <HubLink
                         key={p.c}
-                        to={{ kind: "champ", slug: resolveChampSlug(p.c) }}
+                        to={{ kind: "champ", slug: resolveChampSlug(p.c), ...(pQuery ? { query: pQuery } : {}) }}
                         title={`${champName(p.c)} (${p.player})`}
                         className="opacity-75 grayscale-[35%] hover:opacity-100 hover:grayscale-0 transition-all"
                       >
@@ -506,7 +515,8 @@ export const LiveNextGamePreview: React.FC<{
                   </span>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -670,7 +680,7 @@ export const LiveNextGamePreview: React.FC<{
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(ra.open[0].c))}&vs=${encodeURIComponent(resolveChampSlug(rb.open[0].c))}&role=${encodeURIComponent(rLabel)}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(ra.open[0].c))}&vs=${encodeURIComponent(resolveChampSlug(rb.open[0].c))}&role=${encodeURIComponent(rLabel)}${draftIntel.period.startsWith("y") && draftIntel.period.length === 5 ? `&year=${encodeURIComponent(draftIntel.period.slice(1))}` : ""}`,
                         }}
                         className="text-[8px] text-rw-sub hover:text-rw-accent hover:underline text-center"
                         title={tl("Counters")}
@@ -745,6 +755,7 @@ export const LiveGameDraftLink: React.FC<{ match: Match; gameNum: number; win: L
     ? buildGameDraftQuery({
         blueSlug: blueIsTeam1 ? slugs.a : slugs.b,
         redSlug: blueIsTeam1 ? slugs.b : slugs.a,
+        period: match.startTimeUtc?.slice(0, 4) ? `y${match.startTimeUtc.slice(0, 4)}` : undefined,
         gameNum,
         current: cur
           ? {

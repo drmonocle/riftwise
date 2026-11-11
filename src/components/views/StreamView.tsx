@@ -140,7 +140,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
       <span className={`flex items-center ${big ? "gap-3" : "gap-1.5"} min-w-0`}>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(e.team1!) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(e.team1!), ...(year ? { query: `p=y${year}` } : {}) })}
           className={`flex items-center ${big ? "gap-2" : "gap-1.5"} hover:text-rw-accent transition-colors`}
         >
           <Logo code={e.team1} size={big ? 36 : 16} />
@@ -170,7 +170,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(e.team2!) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(e.team2!), ...(year ? { query: `p=y${year}` } : {}) })}
           className={`flex items-center ${big ? "gap-2" : "gap-1.5"} hover:text-rw-accent transition-colors`}
         >
           <Logo code={e.team2} size={big ? 36 : 16} />
@@ -275,7 +275,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   ...((lg || year)
                     ? {
                         query: new URLSearchParams({
-                          ...(lg ? { scope: lg } : {}),
+                          ...(lg ? { scope: lg, league: lg } : {}),
                           ...(year ? { key: `y${year}` } : {}),
                         }).toString(),
                       }
@@ -361,7 +361,10 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   <>
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "team", slug: teamSlug(phase.lastAired!.team1!) })}
+                      onClick={() => {
+                        const y = /\b(20\d\d)\b/.exec(phase.lastAired!.season || "")?.[1];
+                        navigateHub({ kind: "team", slug: teamSlug(phase.lastAired!.team1!), ...(y ? { query: `p=y${y}` } : {}) });
+                      }}
                       className="text-rw-text hover:text-rw-accent hover:underline font-medium"
                     >
                       {phase.lastAired.team1}
@@ -385,7 +388,10 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                     </button>{" "}
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "team", slug: teamSlug(phase.lastAired!.team2!) })}
+                      onClick={() => {
+                        const y = /\b(20\d\d)\b/.exec(phase.lastAired!.season || "")?.[1];
+                        navigateHub({ kind: "team", slug: teamSlug(phase.lastAired!.team2!), ...(y ? { query: `p=y${y}` } : {}) });
+                      }}
                       className="text-rw-text hover:text-rw-accent hover:underline font-medium"
                     >
                       {phase.lastAired.team2}

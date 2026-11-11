@@ -546,7 +546,10 @@ const LiveMatchBlock: React.FC<{
               ·{" "}
               <button
                 type="button"
-                onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) })}
+                onClick={() => {
+                  const yr = m.startTimeUtc?.slice(0, 4);
+                  navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) });
+                }}
                 className="hover:text-rw-accent hover:underline"
               >
                 {m.leagueName}
@@ -699,7 +702,7 @@ const LiveMatchBlock: React.FC<{
                   type="button"
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
-                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     navigateHub({
                       kind: "finder",
                       query: new URLSearchParams({
@@ -717,7 +720,7 @@ const LiveMatchBlock: React.FC<{
                 <button
                   type="button"
                   onClick={() => {
-                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     navigateHub({
                       kind: "rankings",
                       query: new URLSearchParams({
@@ -734,9 +737,9 @@ const LiveMatchBlock: React.FC<{
                   type="button"
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
-                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     const q = new URLSearchParams({
-                      ...(lg ? { scope: lg } : {}),
+                      ...(lg ? { scope: lg, league: lg } : {}),
                       ...(yr ? { key: `y${yr}` } : {}),
                     }).toString();
                     navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -749,7 +752,7 @@ const LiveMatchBlock: React.FC<{
                   type="button"
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
-                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     const tq = `${teamSlug(m.team1Name, m.team1Code)},${teamSlug(m.team2Name, m.team2Code)}`;
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
@@ -970,7 +973,10 @@ const NextMatchCard: React.FC<{
         {m.blockName && (
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) })}
+            onClick={() => {
+              const yr = m.startTimeUtc?.slice(0, 4);
+              navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) });
+            }}
             className="text-xs text-rw-sub hover:text-rw-accent hover:underline font-medium"
           >
             {m.blockName}
@@ -982,7 +988,10 @@ const NextMatchCard: React.FC<{
         <div className="flex items-center gap-2 text-xs text-rw-sub mb-4 font-medium">
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) })}
+            onClick={() => {
+              const yr = m.startTimeUtc?.slice(0, 4);
+              navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) });
+            }}
             className="font-semibold text-rw-accent hover:underline"
           >
             {m.leagueName}
@@ -1123,7 +1132,7 @@ const NextMatchCard: React.FC<{
                   type="button"
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
-                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     navigateHub({
                       kind: "finder",
                       query: new URLSearchParams({
@@ -1141,7 +1150,7 @@ const NextMatchCard: React.FC<{
                 <button
                   type="button"
                   onClick={() => {
-                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     navigateHub({
                       kind: "rankings",
                       query: new URLSearchParams({
@@ -1158,9 +1167,9 @@ const NextMatchCard: React.FC<{
                   type="button"
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
-                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     const q = new URLSearchParams({
-                      ...(lg ? { scope: lg } : {}),
+                      ...(lg ? { scope: lg, league: lg } : {}),
                       ...(yr ? { key: `y${yr}` } : {}),
                     }).toString();
                     navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -1173,7 +1182,7 @@ const NextMatchCard: React.FC<{
                   type="button"
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
-                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
+                    const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     const tq = `${teamSlug(m.team1Name, m.team1Code)},${teamSlug(m.team2Name, m.team2Code)}`;
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),

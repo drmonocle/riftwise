@@ -1002,6 +1002,12 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               const a = playerSlug(filteredPlayers[0].name);
               const tA = teamSlug(filteredPlayers[0].teamName, filteredPlayers[0].teamCode);
               const r0 = normalizeRole(filteredPlayers[0]?.role) || "";
+              const teamObj = catalog.teams?.find(
+                (t) =>
+                  (filteredPlayers[0].teamSlug && t.slug === filteredPlayers[0].teamSlug) ||
+                  t.code.toUpperCase() === filteredPlayers[0].teamCode.toUpperCase(),
+              );
+              const lg0 = teamObj?.league ? resolveLeagueSlug(teamObj.league) : "";
               return (
                 <span className="flex items-center gap-2">
                   {tA && (
@@ -1045,6 +1051,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         query: new URLSearchParams({
                           player: a,
                           ...(tA ? { team: tA } : {}),
+                          ...(lg0 ? { league: lg0 } : {}),
                         }).toString(),
                       })
                     }
@@ -1061,6 +1068,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           player: a,
                           ...(tA ? { team: tA } : {}),
                           ...(r0 ? { role: r0 } : {}),
+                          ...(lg0 ? { league: lg0 } : {}),
                         }).toString(),
                       })
                     }
@@ -1068,10 +1076,18 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   >
                     {tl("Game finder")} →
                   </button>
-                  {r0 && (
+                  {(r0 || lg0) && (
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "tiers", query: `role=${encodeURIComponent(r0)}` })}
+                      onClick={() =>
+                        navigateHub({
+                          kind: "tiers",
+                          query: new URLSearchParams({
+                            ...(lg0 ? { scope: lg0, league: lg0 } : {}),
+                            ...(r0 ? { role: r0 } : {}),
+                          }).toString(),
+                        })
+                      }
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
@@ -1082,7 +1098,11 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     onClick={() => {
                       navigateHub({
                         kind: "leaders",
-                        query: `q=${encodeURIComponent(a)}${r0 ? `&role=${encodeURIComponent(r0)}` : ""}`,
+                        query: new URLSearchParams({
+                          ...(lg0 ? { league: lg0 } : {}),
+                          ...(r0 ? { role: r0 } : {}),
+                          q: a,
+                        }).toString(),
                       });
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1100,6 +1120,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               const tB = teamSlug(filteredPlayers[1].teamName, filteredPlayers[1].teamCode);
               const r0 = normalizeRole(filteredPlayers[0]?.role);
               const sameRole = r0 && filteredPlayers.every((p) => normalizeRole(p.role) === r0) ? r0 : "";
+              const playerLeague = (p: PlayerEntry) => {
+                const t = catalog.teams?.find(
+                  (tm) => (p.teamSlug && tm.slug === p.teamSlug) || tm.code.toUpperCase() === p.teamCode.toUpperCase(),
+                );
+                return t?.league ? resolveLeagueSlug(t.league) : "";
+              };
+              const lg0 = playerLeague(filteredPlayers[0]);
+              const sameLg = lg0 && filteredPlayers.every((p) => playerLeague(p) === lg0) ? lg0 : "";
               return (
                 <span className="flex items-center gap-2">
                   {tA && tB && tA !== tB && (
@@ -1140,6 +1168,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         query: new URLSearchParams({
                           player: a,
                           ...(tA ? { team: tA } : {}),
+                          ...(sameLg ? { league: sameLg } : {}),
                         }).toString(),
                       })
                     }
@@ -1156,6 +1185,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           player: a,
                           vsplayer: b,
                           ...(sameRole ? { role: sameRole } : {}),
+                          ...(sameLg ? { league: sameLg } : {}),
                         }).toString(),
                       })
                     }
@@ -1163,10 +1193,18 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   >
                     {tl("Game finder")} →
                   </button>
-                  {sameRole && (
+                  {(sameRole || sameLg) && (
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "tiers", query: `role=${encodeURIComponent(sameRole)}` })}
+                      onClick={() =>
+                        navigateHub({
+                          kind: "tiers",
+                          query: new URLSearchParams({
+                            ...(sameLg ? { scope: sameLg, league: sameLg } : {}),
+                            ...(sameRole ? { role: sameRole } : {}),
+                          }).toString(),
+                        })
+                      }
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
@@ -1177,7 +1215,11 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                     onClick={() => {
                       navigateHub({
                         kind: "leaders",
-                        query: `q=${encodeURIComponent(`${a},${b}`)}${sameRole ? `&role=${encodeURIComponent(sameRole)}` : ""}`,
+                        query: new URLSearchParams({
+                          ...(sameLg ? { league: sameLg } : {}),
+                          ...(sameRole ? { role: sameRole } : {}),
+                          q: `${a},${b}`,
+                        }).toString(),
                       });
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1278,12 +1320,17 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         const rNorm = normalizeRole(player.role);
+                        const tm = catalog.teams?.find(
+                          (t) => (player.teamSlug && t.slug === player.teamSlug) || t.code.toUpperCase() === player.teamCode.toUpperCase(),
+                        );
+                        const lg = tm?.league ? resolveLeagueSlug(tm.league) : "";
                         navigateHub({
                           kind: "finder",
                           query: new URLSearchParams({
                             player: pSlug,
                             ...(tSlug ? { team: tSlug } : {}),
                             ...(rNorm ? { role: rNorm } : {}),
+                            ...(lg ? { league: lg } : {}),
                           }).toString(),
                         });
                       }}
@@ -1295,11 +1342,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        const tm = catalog.teams?.find(
+                          (t) => (player.teamSlug && t.slug === player.teamSlug) || t.code.toUpperCase() === player.teamCode.toUpperCase(),
+                        );
+                        const lg = tm?.league ? resolveLeagueSlug(tm.league) : "";
                         navigateHub({
                           kind: "items",
                           query: new URLSearchParams({
                             player: pSlug,
                             ...(tSlug ? { team: tSlug } : {}),
+                            ...(lg ? { league: lg } : {}),
                           }).toString(),
                         });
                       }}

@@ -503,16 +503,20 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   <span className="text-rw-text">
                     {l.who && (
                       <>
-                        {l.who.to.kind === "team" ? (
-                          <span className="inline-flex items-center gap-1 align-baseline font-semibold">
-                            <HubLink to={l.who.to} className="shrink-0">
-                              <TeamLogo name={l.who.name} size={13} />
-                            </HubLink>
-                            <TeamLink name={l.who.name} u={l.who.to.slug} />
-                          </span>
-                        ) : (
-                          <PlayerLink name={l.who.name} u={l.who.to.slug} />
-                        )}
+                        {(() => {
+                          const yr = match.startTimeUtc?.slice(0, 4);
+                          const q = l.who.to.query || (yr && /^\d{4}$/.test(yr) ? `p=y${yr}` : undefined);
+                          return l.who.to.kind === "team" ? (
+                            <span className="inline-flex items-center gap-1 align-baseline font-semibold">
+                              <HubLink to={{ ...l.who.to, ...(q ? { query: q } : {}) }} className="shrink-0">
+                                <TeamLogo name={l.who.name} size={13} />
+                              </HubLink>
+                              <TeamLink name={l.who.name} u={l.who.to.slug} query={q} />
+                            </span>
+                          ) : (
+                            <PlayerLink name={l.who.name} u={l.who.to.slug} query={q} />
+                          );
+                        })()}
                         {": "}
                       </>
                     )}
@@ -541,7 +545,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               onClose();
               navigateHub({
                 kind: "draft",
-                query: `teams=${encodeURIComponent(x.team.u)},${encodeURIComponent(y.team.u)}${yr ? `&p=y${yr}` : ""}`,
+                query: `teams=${encodeURIComponent(x.team.u)},${encodeURIComponent(y.team.u)}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
               });
             }}
             className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"

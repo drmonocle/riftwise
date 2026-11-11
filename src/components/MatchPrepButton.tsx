@@ -24,7 +24,7 @@ export const MatchPrepButton: React.FC<{ match: Match; compact?: boolean; onDone
         if (!a || !b) return setState("missing");
         setState("");
         const yr = match.startTimeUtc?.slice(0, 4);
-        navigateHub({ kind: "prep", a, b, ...(yr ? { period: `y${yr}` } : {}) });
+        navigateHub({ kind: "prep", a, b, ...(yr && /^\d{4}$/.test(yr) ? { period: `y${yr}` } : {}) });
         onDone?.();
       })
       .catch(() => setState("missing"));

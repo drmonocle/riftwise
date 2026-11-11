@@ -265,11 +265,13 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                       <button
                         type="button"
                         onClick={() => {
+                          const yr = meetings[0]?.date && /^\d{4}/.test(meetings[0].date) ? meetings[0].date.slice(0, 4) : undefined;
                           navigateHub({
                             kind: "compare",
                             mode: "team",
                             a: teamSlug(t1.name, c1),
                             b: teamSlug(t2.name, c2),
+                            ...(yr ? { period: `y${yr}` } : {}),
                           });
                           onClose();
                         }}
@@ -582,10 +584,11 @@ const PrepButton: React.FC<{
             openRoute(() =>
               navigateHub({
                 kind: "tiers",
-                ...((lg || year)
+                ...((lg || event || year)
                   ? {
                       query: new URLSearchParams({
                         ...(lg ? { scope: lg, league: lg } : {}),
+                        ...(event ? { event } : {}),
                         ...(year ? { key: `y${year}` } : {}),
                       }).toString(),
                     }

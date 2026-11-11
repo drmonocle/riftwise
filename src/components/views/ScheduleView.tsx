@@ -281,7 +281,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "tiers", ...(league ? { query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
+            onClick={() =>
+              navigateHub({
+                kind: "tiers",
+                ...(league
+                  ? { query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}&league=${encodeURIComponent(resolveLeagueSlug(league))}` }
+                  : {}),
+              })
+            }
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")} →
@@ -349,14 +356,24 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "champions", query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "champions",
+                        query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}&league=${encodeURIComponent(resolveLeagueSlug(league))}`,
+                      })
+                    }
                     className="hidden sm:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Champions")} →
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "tiers",
+                        query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}&league=${encodeURIComponent(resolveLeagueSlug(league))}`,
+                      })
+                    }
                     className="hidden md:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Pro tier list")} →
@@ -441,11 +458,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       ? teamSlug(singleMatch.team1Name, singleMatch.team1Code)
                       : teamSlug(singleMatch.team2Name, singleMatch.team2Code);
                   const sYr = singleMatch.startTimeUtc?.slice(0, 4);
-                  const sLg = singleMatch.leagueSlug
-                    ? resolveLeagueSlug(singleMatch.leagueSlug)
-                    : league
-                      ? resolveLeagueSlug(league)
-                      : "";
+                  const sLg = resolveLeagueSlug(singleMatch.leagueSlug || singleMatch.leagueName || league || "");
                   return (
                     <div className="flex items-center gap-2 text-[11px]">
                       <button
@@ -506,7 +519,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           navigateHub({
                             kind: "tiers",
                             query: new URLSearchParams({
-                              ...(sLg ? { scope: sLg } : {}),
+                              ...(sLg ? { scope: sLg, league: sLg } : {}),
                               ...(sYr ? { key: `y${sYr}` } : {}),
                             }).toString(),
                           })
@@ -537,11 +550,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 const a = teamSlug(topPair.team1Name, topPair.team1Code);
                 const b = teamSlug(topPair.team2Name, topPair.team2Code);
                 const pYr = topPair.startTimeUtc?.slice(0, 4);
-                const pLg = topPair.leagueSlug
-                  ? resolveLeagueSlug(topPair.leagueSlug)
-                  : league
-                    ? resolveLeagueSlug(league)
-                    : "";
+                const pLg = resolveLeagueSlug(topPair.leagueSlug || topPair.leagueName || league || "");
                 return (
                   <div className="flex items-center gap-2 text-[11px]">
                     <button
@@ -603,7 +612,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         navigateHub({
                           kind: "tiers",
                           query: new URLSearchParams({
-                            ...(pLg ? { scope: pLg } : {}),
+                            ...(pLg ? { scope: pLg, league: pLg } : {}),
                             ...(pYr ? { key: `y${pYr}` } : {}),
                           }).toString(),
                         })
