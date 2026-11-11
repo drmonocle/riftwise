@@ -631,13 +631,46 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                       ...(normLg ? { scope: normLg, league: normLg } : {}),
                       ...(yr ? { key: `y${yr}`, year: yr } : {}),
                       ...(slug ? { event: slug } : {}),
-                      ...(o.pentas[0]?.c ? { q: resolveChampSlug(o.pentas[0].c) } : {}),
+                      ...(o.pentas[0]?.c
+                        ? {
+                            q: [
+                              resolveChampSlug(o.pentas[0].c),
+                              o.pentas[1]?.c && o.pentas[1].c !== o.pentas[0].c ? resolveChampSlug(o.pentas[1].c) : "",
+                            ]
+                              .filter(Boolean)
+                              .join(","),
+                          }
+                        : {}),
                     }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
               </HubLink>
+              {(slug || yr || o.pentas[0]?.c) && (
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: new URLSearchParams({
+                      ...(slug ? { p: `e:${slug}` } : yr ? { p: `y${yr}` } : {}),
+                      ...(featGame?.a ? { teams: [tSlug(featGame.a), featGame.b ? tSlug(featGame.b) : ""].filter(Boolean).join(",") } : {}),
+                      ...(o.pentas[0]?.c
+                        ? {
+                            champ: [
+                              resolveChampSlug(o.pentas[0].c),
+                              o.pentas[1]?.c && o.pentas[1].c !== o.pentas[0].c ? resolveChampSlug(o.pentas[1].c) : "",
+                            ]
+                              .filter(Boolean)
+                              .join(","),
+                          }
+                        : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+              )}
               <HubLink
                 to={{
                   kind: "rankings",
@@ -867,6 +900,14 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
   const shownRosters = open || q ? filteredRosters : filteredRosters.slice(0, 4);
   const qRole = q ? normalizeRole(q) || (searchAlias(q) ? normalizeRole(searchAlias(q)) : null) : null;
   const normLg = leagueSlug ? resolveLeagueSlug(leagueSlug) : "";
+  const pickPlayer = (tr?: EventRoster) => {
+    if (!tr) return null;
+    const byRole = qRole ? tr.p.find(([, , r]) => normalizeRole(r) === qRole) : null;
+    const starter = byRole || tr.p.find(([, , r]) => !/coach/i.test(r || ""));
+    return starter ? pSlug(starter[0], starter[1]) : null;
+  };
+  const topRosterP1 = (q || filteredRosters.length <= 2) ? pickPlayer(filteredRosters[0]) : null;
+  const topRosterP2 = (q || filteredRosters.length <= 2) ? pickPlayer(filteredRosters[1]) : null;
   return (
     <Section
       title={tl("Team rosters")}
@@ -921,6 +962,8 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                   kind: "items",
                   query: new URLSearchParams({
                     ...(eventSlug ? { event: eventSlug } : {}),
+                    ...(topRosterP1 ? { player: topRosterP1 } : {}),
+                    ...(topRosterP2 && topRosterP2 !== topRosterP1 ? { vsplayer: topRosterP2 } : {}),
                     team: tSlug(filteredRosters[0].t, filteredRosters[0].u),
                     ...(filteredRosters[1] ? { vs: tSlug(filteredRosters[1].t, filteredRosters[1].u) } : {}),
                     ...(qRole ? { role: qRole } : {}),
@@ -1007,6 +1050,8 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                   to={{
                     kind: "finder",
                     query: `event=${encodeURIComponent(eventSlug)}${qRole ? `&role=${encodeURIComponent(qRole)}` : ""}${
+                      topRosterP1 ? `&player=${encodeURIComponent(topRosterP1)}${topRosterP2 && topRosterP2 !== topRosterP1 ? `&vsplayer=${encodeURIComponent(topRosterP2)}` : ""}` : ""
+                    }${
                       filteredRosters.length >= 1
                         ? `&team=${encodeURIComponent(tSlug(filteredRosters[0].t, filteredRosters[0].u))}${
                             filteredRosters[1] && tSlug(filteredRosters[1].t, filteredRosters[1].u) !== tSlug(filteredRosters[0].t, filteredRosters[0].u)

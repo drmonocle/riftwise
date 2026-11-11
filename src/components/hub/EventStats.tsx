@@ -265,7 +265,7 @@ export const FactGroups: React.FC<{
                 query: new URLSearchParams({
                   ...(topTeams.length >= 1 ? { teams: topTeams.join(",") } : {}),
                   ...(eventSlug ? { p: `e:${eventSlug}` } : evYr ? { p: `y${evYr}` } : {}),
-                  ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                  ...(topChamps.length >= 1 ? { champ: topChamps.map(resolveChampSlug).join(",") } : {}),
                 }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
@@ -296,10 +296,10 @@ export const FactGroups: React.FC<{
                     ...(terms.length > 0 && topPlayers[0]
                       ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) }
                       : {}),
-                    ...(terms.length > 0 && !topPlayers[0] && topTeams[0]
+                    ...((!terms.length || !topPlayers[0]) && topTeams[0]
                       ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) }
                       : {}),
-                    ...(terms.length > 0 && topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                    ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
                   }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
@@ -414,7 +414,18 @@ export const FactCard: React.FC<{
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(f.rows[0].team)}${f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? `,${encodeURIComponent(f.rows[1].team)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : evYr ? `&p=y${evYr}` : ""}${f.rows[0].champ ? `&champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}` : ""}`,
+                        query: `teams=${encodeURIComponent(f.rows[0].team)}${f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? `,${encodeURIComponent(f.rows[1].team)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : evYr ? `&p=y${evYr}` : ""}${
+                          f.rows[0].champ
+                            ? `&champ=${encodeURIComponent(
+                                [
+                                  resolveChampSlug(f.rows[0].champ),
+                                  f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? resolveChampSlug(f.rows[1].champ) : "",
+                                ]
+                                  .filter(Boolean)
+                                  .join(","),
+                              )}`
+                            : ""
+                        }`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                       data-nocapture="1"
@@ -484,6 +495,7 @@ export const FactCard: React.FC<{
                       player: f.rows[0].player,
                       ...(f.rows[1]?.player && f.rows[1].player !== f.rows[0].player ? { vsplayer: f.rows[1].player } : {}),
                       ...(f.rows[0].team ? { team: f.rows[0].team } : {}),
+                      ...(f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? { vs: f.rows[1].team } : {}),
                       ...(f.rows[0].champ ? { champ: resolveChampSlug(f.rows[0].champ) } : {}),
                       ...(normLg ? { league: normLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
@@ -503,7 +515,16 @@ export const FactCard: React.FC<{
                         ...(normLg ? { league: normLg, scope: normLg } : {}),
                         ...(evYr ? { key: `y${evYr}`, year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
-                        ...(f.rows[0].champ ? { q: resolveChampSlug(f.rows[0].champ) } : {}),
+                        ...(f.rows[0].champ
+                          ? {
+                              q: [
+                                resolveChampSlug(f.rows[0].champ),
+                                f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? resolveChampSlug(f.rows[1].champ) : "",
+                              ]
+                                .filter(Boolean)
+                                .join(","),
+                            }
+                          : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -698,7 +719,12 @@ export const FactCard: React.FC<{
                     kind: "draft",
                     query: new URLSearchParams({
                       ...(eventSlug ? { p: `e:${eventSlug}` } : evYr ? { p: `y${evYr}` } : {}),
-                      champ: resolveChampSlug(f.rows[0].champ),
+                      champ: [
+                        resolveChampSlug(f.rows[0].champ),
+                        f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? resolveChampSlug(f.rows[1].champ) : "",
+                      ]
+                        .filter(Boolean)
+                        .join(","),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
