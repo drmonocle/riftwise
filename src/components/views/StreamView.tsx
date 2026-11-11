@@ -6,7 +6,7 @@ import { tl, tn, locale, stageName } from "../../i18n";
 import { lazyPart } from "../../lazyPart";
 import { PartBoundary } from "../PartBoundary";
 import { navigateHub, type HubRoute } from "../../hub/route";
-import { prettySlug, resolveTeamAlias } from "../../hub/data";
+import { prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { useTeamLogo } from "../hub/ui";
 import { SectionCard } from "../hub/BroadcastCard";
 // Loaded with the stats hub code, only when the 24/7 tab is opened
@@ -105,8 +105,22 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
     return (found?.name && resolveTeamAlias(found.name)) || resolveTeamAlias(mapped) || resolveTeamAlias(code) || prettySlug(found?.name || mapped);
   };
 
+  const starterSlug = (code?: string) => {
+    if (!code) return "";
+    const norm = normalizeTeamCode(code);
+    const mapped = STREAM_CODE[norm] || STREAM_CODE[code.toUpperCase()] || norm;
+    const p = catalog?.players?.find((x) => {
+      const tc = normalizeTeamCode(x.teamCode);
+      return tc === norm || tc === normalizeTeamCode(mapped);
+    });
+    const handle = p?.name || "";
+    return handle ? resolvePlayerSlug(handle) || prettySlug(handle) : "";
+  };
+
   const EventTitleLink: React.FC<{ e: StreamEvent; className?: string }> = ({ e, className }) => {
-    const route = streamEventRoute(e);
+    const baseRoute = streamEventRoute(e);
+    const pairQ = e.team1 && e.team2 ? [teamSlug(e.team1), teamSlug(e.team2)].filter(Boolean).join(",") : "";
+    const route = baseRoute && pairQ ? ({ ...baseRoute, query: `q=${encodeURIComponent(pairQ)}` } as HubRoute) : baseRoute;
     const text = `${streamEventTitle(e)}${e.stage ? ` · ${stageName(e.stage)}` : ""}`;
     return route ? (
       <button type="button" onClick={() => navigateHub(route)} className={`hover:underline text-left ${className || ""}`}>
@@ -136,11 +150,21 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
 
   const Matchup: React.FC<{ e: StreamEvent; big?: boolean }> = ({ e, big }) => {
     const year = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
+    const t1U = e.team1 ? teamSlug(e.team1) : "";
+    const t2U = e.team2 ? teamSlug(e.team2) : "";
+    const t1Q = new URLSearchParams({
+      ...(year ? { p: `y${year}` } : {}),
+      ...(t2U && t2U !== t1U ? { q: t2U } : {}),
+    }).toString();
+    const t2Q = new URLSearchParams({
+      ...(year ? { p: `y${year}` } : {}),
+      ...(t1U && t1U !== t2U ? { q: t1U } : {}),
+    }).toString();
     return e.team1 && e.team2 ? (
       <span className={`flex items-center ${big ? "gap-3" : "gap-1.5"} min-w-0`}>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(e.team1!), ...(year ? { query: `p=y${year}` } : {}) })}
+          onClick={() => navigateHub({ kind: "team", slug: t1U, ...(t1Q ? { query: t1Q } : {}) })}
           className={`flex items-center ${big ? "gap-2" : "gap-1.5"} hover:text-rw-accent transition-colors`}
         >
           <Logo code={e.team1} size={big ? 36 : 16} />
@@ -158,8 +182,8 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
             navigateHub({
               kind: "compare",
               mode: "team",
-              a: teamSlug(e.team1!),
-              b: teamSlug(e.team2!),
+              a: t1U,
+              b: t2U,
               period: year ? `y${year}` : undefined,
             })
           }
@@ -170,7 +194,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(e.team2!), ...(year ? { query: `p=y${year}` } : {}) })}
+          onClick={() => navigateHub({ kind: "team", slug: t2U, ...(t2Q ? { query: t2Q } : {}) })}
           className={`flex items-center ${big ? "gap-2" : "gap-1.5"} hover:text-rw-accent transition-colors`}
         >
           <Logo code={e.team2} size={big ? 36 : 16} />
@@ -191,6 +215,8 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
   const WatchButtons: React.FC<{ active?: StreamEvent | null }> = ({ active }) => {
     const aSlug = active?.team1 ? teamSlug(active.team1) : "";
     const bSlug = active?.team2 ? teamSlug(active.team2) : "";
+    const pA = starterSlug(active?.team1);
+    const pB = starterSlug(active?.team2);
     const year = /\b(20\d\d)\b/.exec(active?.season || "")?.[1];
     const lg = streamEventLeague(active);
     return (
@@ -243,6 +269,8 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   query: new URLSearchParams({
                     team: aSlug,
                     vs: bSlug,
+                    ...(pA ? { player: pA } : {}),
+                    ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                     ...(year ? { year } : {}),
                     ...(lg ? { league: lg } : {}),
                   }).toString(),
@@ -260,6 +288,8 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   query: new URLSearchParams({
                     team: aSlug,
                     vs: bSlug,
+                    ...(pA ? { player: pA } : {}),
+                    ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                     ...(year ? { year } : {}),
                     ...(lg ? { league: lg } : {}),
                   }).toString(),
@@ -311,7 +341,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                   query: new URLSearchParams({
                     ...(lg ? { league: lg } : {}),
                     ...(year ? { year } : {}),
-                    ...(aSlug && bSlug ? { q: `${aSlug},${bSlug}` } : {}),
+                    ...(aSlug && bSlug ? { q: [pA, pB, aSlug, bSlug].filter(Boolean).join(",") } : {}),
                   }).toString(),
                 })
               }
@@ -380,7 +410,13 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                       type="button"
                       onClick={() => {
                         const y = /\b(20\d\d)\b/.exec(phase.lastAired!.season || "")?.[1];
-                        navigateHub({ kind: "team", slug: teamSlug(phase.lastAired!.team1!), ...(y ? { query: `p=y${y}` } : {}) });
+                        const t1U = teamSlug(phase.lastAired!.team1!);
+                        const t2U = teamSlug(phase.lastAired!.team2!);
+                        const q = new URLSearchParams({
+                          ...(y ? { p: `y${y}` } : {}),
+                          ...(t2U && t2U !== t1U ? { q: t2U } : {}),
+                        }).toString();
+                        navigateHub({ kind: "team", slug: t1U, ...(q ? { query: q } : {}) });
                       }}
                       className="text-rw-text hover:text-rw-accent hover:underline font-medium"
                     >
@@ -407,7 +443,13 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                       type="button"
                       onClick={() => {
                         const y = /\b(20\d\d)\b/.exec(phase.lastAired!.season || "")?.[1];
-                        navigateHub({ kind: "team", slug: teamSlug(phase.lastAired!.team2!), ...(y ? { query: `p=y${y}` } : {}) });
+                        const t1U = teamSlug(phase.lastAired!.team1!);
+                        const t2U = teamSlug(phase.lastAired!.team2!);
+                        const q = new URLSearchParams({
+                          ...(y ? { p: `y${y}` } : {}),
+                          ...(t1U && t1U !== t2U ? { q: t1U } : {}),
+                        }).toString();
+                        navigateHub({ kind: "team", slug: t2U, ...(q ? { query: q } : {}) });
                       }}
                       className="text-rw-text hover:text-rw-accent hover:underline font-medium"
                     >
@@ -602,6 +644,8 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                 if (!first?.team1 || !first?.team2) return null;
                 const aSlug = teamSlug(first.team1);
                 const bSlug = teamSlug(first.team2);
+                const pA = starterSlug(first.team1);
+                const pB = starterSlug(first.team2);
                 const yr = /\b(20\d\d)\b/.exec(first.season || "")?.[1];
                 const lg = streamEventLeague(first);
                 if (!aSlug || !bSlug) return null;
@@ -641,6 +685,8 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                           query: new URLSearchParams({
                             team: aSlug,
                             vs: bSlug,
+                            ...(pA ? { player: pA } : {}),
+                            ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                             ...(yr ? { year: yr } : {}),
                             ...(lg ? { league: lg } : {}),
                           }).toString(),
@@ -658,6 +704,8 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                           query: new URLSearchParams({
                             team: aSlug,
                             vs: bSlug,
+                            ...(pA ? { player: pA } : {}),
+                            ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                             ...(yr ? { year: yr } : {}),
                             ...(lg ? { league: lg } : {}),
                           }).toString(),
@@ -709,7 +757,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                           query: new URLSearchParams({
                             ...(lg ? { league: lg } : {}),
                             ...(yr ? { year: yr } : {}),
-                            q: `${aSlug},${bSlug}`,
+                            q: [pA, pB, aSlug, bSlug].filter(Boolean).join(","),
                           }).toString(),
                         })
                       }
@@ -834,11 +882,15 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                                 onClick={() => {
                                   const y = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
                                   const lg = streamEventLeague(e);
+                                  const pA = starterSlug(e.team1);
+                                  const pB = starterSlug(e.team2);
                                   navigateHub({
                                     kind: "finder",
                                     query: new URLSearchParams({
                                       team: teamSlug(e.team1!),
                                       vs: teamSlug(e.team2!),
+                                      ...(pA ? { player: pA } : {}),
+                                      ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                                       ...(lg ? { league: lg } : {}),
                                       ...(y ? { year: y } : {}),
                                     }).toString(),
@@ -854,11 +906,15 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                                   ev.stopPropagation();
                                   const y = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
                                   const lg = streamEventLeague(e);
+                                  const pA = starterSlug(e.team1);
+                                  const pB = starterSlug(e.team2);
                                   navigateHub({
                                     kind: "items",
                                     query: new URLSearchParams({
                                       team: teamSlug(e.team1!),
                                       vs: teamSlug(e.team2!),
+                                      ...(pA ? { player: pA } : {}),
+                                      ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                                       ...(lg ? { league: lg } : {}),
                                       ...(y ? { year: y } : {}),
                                     }).toString(),

@@ -82,9 +82,11 @@ export const TeamRatingSub: React.FC<{ match: Match; side: "a" | "b"; align?: "l
               e.stopPropagation();
               const lg = s.world == null && (match.leagueSlug || match.leagueName) ? resolveLeagueSlug(match.leagueSlug || match.leagueName) : "";
               const tSlug = side === "a" ? teamSlug(match.team1Name, match.team1Code) : teamSlug(match.team2Name, match.team2Code);
+              const oppSlug = side === "a" ? teamSlug(match.team2Name, match.team2Code) : teamSlug(match.team1Name, match.team1Code);
+              const qStr = [tSlug, oppSlug].filter(Boolean).join(",");
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
-                ...(tSlug ? { q: tSlug } : {}),
+                ...(qStr ? { q: qStr } : {}),
               }).toString();
               navigateHub({
                 kind: "rankings",

@@ -17,7 +17,8 @@ import { tl, tc, locale, regionName } from "../../i18n";
 import { STable } from "../STable";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
-import { bare, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+import { bare, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
+import { normalizeTeamCode } from "../../helpers";
 
 const teamSlug = (name?: string, code?: string) =>
   (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
@@ -132,6 +133,46 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
   const tournamentInfo = tournaments.find((t) => t.id === selectedTournament);
   const revealKey = `${selectedTournament}:${stageIndex}`;
   const hideResults = settings.spoilerMode && !revealedStages[revealKey];
+  const starterSlug = (code?: string) => {
+    if (!code || code === "TBD") return "";
+    const norm = normalizeTeamCode(code);
+    const p = catalog?.players?.find((x) => normalizeTeamCode(x.teamCode) === norm);
+    const handle = p?.name || "";
+    return handle ? resolvePlayerSlug(handle) || prettySlug(handle) : "";
+  };
+  const topStageTeamEntries = useMemo(() => {
+    if (!stage) return [];
+    const seen = new Set<string>();
+    const out: { code: string; slug: string }[] = [];
+    for (const sec of stage.sections) {
+      if (sec.type === "group") {
+        for (const r of sec.rows) {
+          for (const t of r.teams) {
+            if (!t.code || t.code === "TBD") continue;
+            const u = teamSlug(t.name, t.code);
+            if (u && !seen.has(u)) {
+              seen.add(u);
+              out.push({ code: t.code, slug: u });
+            }
+          }
+        }
+      } else {
+        for (const rd of sec.rounds) {
+          for (const m of rd.matches) {
+            for (const t of m.teams) {
+              if (!t.code || t.code === "TBD") continue;
+              const u = teamSlug(t.name, t.code);
+              if (u && !seen.has(u)) {
+                seen.add(u);
+                out.push({ code: t.code, slug: u });
+              }
+            }
+          }
+        }
+      }
+    }
+    return out.slice(0, 2);
+  }, [stage]);
 
   return (
     <div className="space-y-4 select-none">
@@ -197,7 +238,13 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                 type="button"
                 onClick={() => {
                   const yr = tournamentInfo.startDate?.slice(0, 4);
-                  navigateHub({ kind: "league", slug: resolveLeagueSlug(activeLeague), ...(yr ? { year: yr } : {}) });
+                  const tQ = topStageTeamEntries.map((x) => x.slug).filter(Boolean).join(",");
+                  navigateHub({
+                    kind: "league",
+                    slug: resolveLeagueSlug(activeLeague),
+                    ...(yr ? { year: yr } : {}),
+                    ...(tQ ? { query: `q=${encodeURIComponent(tQ)}` } : {}),
+                  });
                 }}
                 className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
               >
@@ -212,11 +259,20 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
           {activeLeague && (() => {
             const lg = resolveLeagueSlug(activeLeague);
             const yr = tournamentInfo?.startDate?.slice(0, 4);
+            const stTeams = topStageTeamEntries.map((x) => x.slug).filter(Boolean);
+            const stPlayers = topStageTeamEntries.map((x) => starterSlug(x.code)).filter(Boolean);
             return (
               <span className="flex flex-wrap items-center gap-2 text-[11px]">
                 <button
                   type="button"
-                  onClick={() => navigateHub({ kind: "league", slug: lg, ...(yr ? { year: yr } : {}) })}
+                  onClick={() =>
+                    navigateHub({
+                      kind: "league",
+                      slug: lg,
+                      ...(yr ? { year: yr } : {}),
+                      ...(stTeams.length ? { query: `q=${encodeURIComponent(stTeams.join(","))}` } : {}),
+                    })
+                  }
                   className="font-semibold text-rw-accent hover:underline"
                 >
                   {tl("Full history and stats")} →
@@ -261,6 +317,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       query: new URLSearchParams({
                         league: lg,
                         ...(yr ? { year: yr } : {}),
+                        ...(stPlayers.length || stTeams.length ? { q: [...stPlayers, ...stTeams].join(",") } : {}),
                       }).toString(),
                     })
                   }
@@ -270,7 +327,15 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigateHub({ kind: "rankings", query: `league=${encodeURIComponent(lg)}` })}
+                  onClick={() =>
+                    navigateHub({
+                      kind: "rankings",
+                      query: new URLSearchParams({
+                        league: lg,
+                        ...(stTeams.length ? { q: stTeams.join(",") } : {}),
+                      }).toString(),
+                    })
+                  }
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -283,6 +348,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       query: new URLSearchParams({
                         league: lg,
                         ...(yr ? { year: yr } : {}),
+                        ...(stTeams.length ? { q: stTeams.join(",") } : {}),
                       }).toString(),
                     })
                   }
@@ -298,6 +364,10 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       query: new URLSearchParams({
                         league: lg,
                         ...(yr ? { year: yr } : {}),
+                        ...(stTeams[0] ? { team: stTeams[0] } : {}),
+                        ...(stTeams[1] ? { vs: stTeams[1] } : {}),
+                        ...(stPlayers[0] ? { player: stPlayers[0] } : {}),
+                        ...(stPlayers[1] && stPlayers[1] !== stPlayers[0] ? { vsplayer: stPlayers[1] } : {}),
                       }).toString(),
                     })
                   }
@@ -313,6 +383,10 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       query: new URLSearchParams({
                         league: lg,
                         ...(yr ? { year: yr } : {}),
+                        ...(stTeams[0] ? { team: stTeams[0] } : {}),
+                        ...(stTeams[1] ? { vs: stTeams[1] } : {}),
+                        ...(stPlayers[0] ? { player: stPlayers[0] } : {}),
+                        ...(stPlayers[1] && stPlayers[1] !== stPlayers[0] ? { vsplayer: stPlayers[1] } : {}),
                       }).toString(),
                     })
                   }
@@ -414,11 +488,15 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       const yr = tournamentInfo?.startDate?.slice(0, 4);
                       if (groupTeams.length === 1 && groupTerms.length > 0) {
                         const a = teamSlug(groupTeams[0].name, groupTeams[0].code);
+                        const rivalT = allGroupTeams.map((e) => e.team).find((t) => t.code && t.code !== "TBD" && teamSlug(t.name, t.code) !== a);
+                        const vsT = rivalT ? teamSlug(rivalT.name, rivalT.code) : "";
+                        const pA = starterSlug(groupTeams[0].code);
+                        const pB = rivalT ? starterSlug(rivalT.code) : "";
                         return (
                           <>
                             <button
                               type="button"
-                              onClick={() => navigateHub({ kind: "prep", a, period: yr ? `y${yr}` : undefined })}
+                              onClick={() => navigateHub({ kind: "prep", a, ...(vsT ? { b: vsT } : {}), period: yr ? `y${yr}` : undefined })}
                               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                             >
                               {tl("Match prep")} →
@@ -428,7 +506,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               onClick={() =>
                                 navigateHub({
                                   kind: "draft",
-                                  query: `teams=${encodeURIComponent(a)}${yr ? `&p=${encodeURIComponent(`y${yr}`)}` : ""}`,
+                                  query: `teams=${encodeURIComponent(a)}${vsT ? `,${encodeURIComponent(vsT)}` : ""}${yr ? `&p=${encodeURIComponent(`y${yr}`)}` : ""}`,
                                 })
                               }
                               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -437,7 +515,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             </button>
                             <button
                               type="button"
-                              onClick={() => navigateHub({ kind: "compare", mode: "team", a, period: yr ? `y${yr}` : undefined })}
+                              onClick={() => navigateHub({ kind: "compare", mode: "team", a, ...(vsT ? { b: vsT } : {}), period: yr ? `y${yr}` : undefined })}
                               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                             >
                               {tl("Compare")} →
@@ -449,6 +527,9 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                   kind: "finder",
                                   query: new URLSearchParams({
                                     team: a,
+                                    ...(vsT ? { vs: vsT } : {}),
+                                    ...(pA ? { player: pA } : {}),
+                                    ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                                     ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                     ...(yr ? { year: yr } : {}),
                                   }).toString(),
@@ -465,6 +546,9 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                   kind: "items",
                                   query: new URLSearchParams({
                                     team: a,
+                                    ...(vsT ? { vs: vsT } : {}),
+                                    ...(pA ? { player: pA } : {}),
+                                    ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                                     ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                     ...(yr ? { year: yr } : {}),
                                   }).toString(),
@@ -481,7 +565,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                   kind: "rankings",
                                   query: new URLSearchParams({
                                     ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
-                                    q: a,
+                                    q: [a, vsT].filter(Boolean).join(","),
                                   }).toString(),
                                 })
                               }
@@ -509,7 +593,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 const q = new URLSearchParams({
                                   ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                   ...(yr ? { year: yr } : {}),
-                                  q: a,
+                                  q: [pA, pB, a, vsT].filter(Boolean).join(","),
                                 }).toString();
                                 navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
                               }}
@@ -523,6 +607,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       if (groupTeams.length < 2) return null;
                       const a = teamSlug(groupTeams[0].name, groupTeams[0].code);
                       const b = teamSlug(groupTeams[1].name, groupTeams[1].code);
+                      const pA = starterSlug(groupTeams[0].code);
+                      const pB = starterSlug(groupTeams[1].code);
                       return (
                         <>
                           <button
@@ -559,6 +645,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 query: new URLSearchParams({
                                   team: a,
                                   vs: b,
+                                  ...(pA ? { player: pA } : {}),
+                                  ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                                   ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                   ...(yr ? { year: yr } : {}),
                                 }).toString(),
@@ -576,6 +664,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 query: new URLSearchParams({
                                   team: a,
                                   vs: b,
+                                  ...(pA ? { player: pA } : {}),
+                                  ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                                   ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                   ...(yr ? { year: yr } : {}),
                                 }).toString(),
@@ -620,7 +710,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               const q = new URLSearchParams({
                                 ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                 ...(yr ? { year: yr } : {}),
-                                q: `${a},${b}`,
+                                q: [pA, pB, a, b].filter(Boolean).join(","),
                               }).toString();
                               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
                             }}
@@ -664,10 +754,20 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-rw-border/60">
-                    {filteredGroupEntries.map(({ rank, team }) => {
+                    {filteredGroupEntries.map(({ rank, team }, idx) => {
                         const row = { rank };
                         const isFollowed = settings.followedTeams.includes(team.code);
                         const played = team.wins + team.losses + team.ties;
+                        const myTU = teamSlug(team.name, team.code);
+                        const rivalEntry =
+                          filteredGroupEntries[idx === 0 ? 1 : 0]?.team ||
+                          allGroupTeams.map((e) => e.team).find((t) => t.code && t.code !== "TBD" && teamSlug(t.name, t.code) !== myTU);
+                        const vsTU = rivalEntry ? teamSlug(rivalEntry.name, rivalEntry.code) : "";
+                        const yrRow = tournamentInfo?.startDate?.slice(0, 4);
+                        const rowTeamQ = new URLSearchParams({
+                          ...(yrRow ? { p: `y${yrRow}` } : {}),
+                          ...(vsTU && vsTU !== myTU ? { q: vsTU } : {}),
+                        }).toString();
                         return (
                           <tr key={`${row.rank}-${team.code}`} className={`hover:bg-rw-raised/60 transition-colors group ${isFollowed ? "bg-rw-accent/5" : ""}`}>
                             <td className="py-2.5 px-3 text-center font-bold font-mono" data-sort={row.rank}>
@@ -702,8 +802,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const yr = tournamentInfo?.startDate?.slice(0, 4);
-                                    navigateHub({ kind: "team", slug: teamSlug(team.name, team.code), ...(yr ? { query: `p=y${yr}` } : {}) });
+                                    navigateHub({ kind: "team", slug: myTU, ...(rowTeamQ ? { query: rowTeamQ } : {}) });
                                   }}
                                   className="hidden sm:inline text-[11px] font-mono text-rw-sub hover:text-rw-accent hover:underline"
                                 >
@@ -718,8 +817,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const yr = tournamentInfo?.startDate?.slice(0, 4);
-                                    navigateHub({ kind: "team", slug: teamSlug(team.name, team.code), tab: "matches", ...(yr ? { query: `p=y${yr}` } : {}) });
+                                    navigateHub({ kind: "team", slug: myTU, tab: "matches", ...(rowTeamQ ? { query: rowTeamQ } : {}) });
                                   }}
                                   className="inline-flex flex-col items-center gap-0.5 hover:opacity-80"
                                   title={tl("Full history and stats")}
@@ -756,8 +854,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      const yr = tournamentInfo?.startDate?.slice(0, 4);
-                                      navigateHub({ kind: "team", slug: teamSlug(team.name, team.code), tab: "stats", ...(yr ? { query: `p=y${yr}` } : {}) });
+                                      navigateHub({ kind: "team", slug: myTU, tab: "stats", ...(rowTeamQ ? { query: rowTeamQ } : {}) });
                                     }}
                                     className="hover:text-rw-accent hover:underline"
                                     title={tl("Stats")}
@@ -789,6 +886,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       const featured = bracketMatches[bracketMatches.length - 1] ?? bracketMatches[0];
                       const a = featured ? teamSlug(featured.teams[0].name, featured.teams[0].code) : "";
                       const b = featured ? teamSlug(featured.teams[1].name, featured.teams[1].code) : "";
+                      const pA = featured ? starterSlug(featured.teams[0].code) : "";
+                      const pB = featured ? starterSlug(featured.teams[1].code) : "";
                       return (
                         <>
                           {a && b && (
@@ -827,6 +926,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                     query: new URLSearchParams({
                                       team: a,
                                       vs: b,
+                                      ...(pA ? { player: pA } : {}),
+                                      ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                                       ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                       ...(yr ? { year: yr } : {}),
                                     }).toString(),
@@ -844,6 +945,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                     query: new URLSearchParams({
                                       team: a,
                                       vs: b,
+                                      ...(pA ? { player: pA } : {}),
+                                      ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                                       ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                       ...(yr ? { year: yr } : {}),
                                     }).toString(),
@@ -888,7 +991,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               const q = new URLSearchParams({
                                 ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
                                 ...(yr ? { year: yr } : {}),
-                                ...(a && b ? { q: `${a},${b}` } : {}),
+                                ...(a && b ? { q: [pA, pB, a, b].filter(Boolean).join(",") } : {}),
                               }).toString();
                               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
                             }}
@@ -943,7 +1046,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                           key: m.id,
                           teams: m.teams.map((t) => t.code),
                           winner: shown ? m.teams.find((t) => t.outcome === "win")?.code ?? null : null,
-                          node: <MatchCard match={m} hideResults={hideResults} onSelectTeam={onSelectTeam} year={tournamentInfo?.startDate?.slice(0, 4)} league={activeLeague ? resolveLeagueSlug(activeLeague) : undefined} />,
+                          node: <MatchCard match={m} hideResults={hideResults} onSelectTeam={onSelectTeam} year={tournamentInfo?.startDate?.slice(0, 4)} league={activeLeague ? resolveLeagueSlug(activeLeague) : undefined} starterSlug={starterSlug} />,
                         };
                       }),
                     }))}
@@ -1041,14 +1144,24 @@ const TeamLogo: React.FC<{ code: string; name?: string; image?: string; onClick?
   );
 };
 
-const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectTeam: (code: string, name?: string) => void; year?: string; league?: string }> = ({
+const MatchCard: React.FC<{
+  match: BracketMatch;
+  hideResults: boolean;
+  onSelectTeam: (code: string, name?: string) => void;
+  year?: string;
+  league?: string;
+  starterSlug?: (code?: string) => string;
+}> = ({
   match,
   hideResults,
   onSelectTeam,
   year,
   league,
+  starterSlug,
 }) => {
   const masked = hideResults && match.state !== "unstarted";
+  const pA = starterSlug ? starterSlug(match.teams[0]?.code) : "";
+  const pB = starterSlug ? starterSlug(match.teams[1]?.code) : "";
   return (
     <div
       className={`rounded-lg border bg-rw-bg px-2.5 py-2 space-y-1 ${
@@ -1087,6 +1200,8 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
                 query: new URLSearchParams({
                   team: teamSlug(match.teams[0].name, match.teams[0].code),
                   vs: teamSlug(match.teams[1].name, match.teams[1].code),
+                  ...(pA ? { player: pA } : {}),
+                  ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                   ...(league ? { league } : {}),
                   ...(year ? { year } : {}),
                 }).toString(),
@@ -1156,6 +1271,8 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
                     query: new URLSearchParams({
                       team: teamSlug(match.teams[0].name, match.teams[0].code),
                       vs: teamSlug(match.teams[1].name, match.teams[1].code),
+                      ...(pA ? { player: pA } : {}),
+                      ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
                     }).toString(),

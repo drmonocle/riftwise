@@ -48,7 +48,12 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
           <button
             type="button"
             onClick={() => {
-              navigateHub({ kind: "worlds", ...(wy ? { year: wy } : {}) });
+              const pairQ = d.rows.length >= 2 ? `${d.rows[0].u},${d.rows[1].u}` : "";
+              navigateHub({
+                kind: "worlds",
+                ...(wy ? { year: wy } : {}),
+                ...(pairQ ? { query: `q=${encodeURIComponent(pairQ)}` } : {}),
+              });
               onOpen();
             }}
             className="hover:text-rw-accent hover:underline"
@@ -184,7 +189,12 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
           <button
             type="button"
             onClick={() => {
-              navigateHub({ kind: "worlds", ...(wy ? { year: wy } : {}) });
+              const pairQ = d.rows.length >= 2 ? `${d.rows[0].u},${d.rows[1].u}` : "";
+              navigateHub({
+                kind: "worlds",
+                ...(wy ? { year: wy } : {}),
+                ...(pairQ ? { query: `q=${encodeURIComponent(pairQ)}` } : {}),
+              });
               onOpen();
             }}
             className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -194,37 +204,47 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
         </div>
       </div>
       <div className={`grid grid-cols-2 ${narrow ? "" : "sm:grid-cols-4"} gap-x-4 px-3 py-2`}>
-        {d.rows.map((r) => (
-          <button
-            key={r.u}
-            type="button"
-            onClick={() => {
-              navigateHub({ kind: "team", slug: r.u, ...(wy ? { query: `p=y${encodeURIComponent(wy)}` } : {}) });
-              onOpen();
-            }}
-            className="flex items-center gap-1.5 py-0.5 border-b border-rw-border/40 min-w-0 text-left hover:text-rw-accent transition-colors"
-            title={r.name}
-          >
-            <TeamLogo name={r.name} code={r.code} size={14} />
-            <span className="font-semibold text-rw-text hover:text-rw-accent truncate flex-1 min-w-0">{r.code}</span>
-            <span className="inline-flex items-center gap-1 font-mono tabular-nums text-rw-sub">
-              <span className="hidden sm:inline-flex items-center gap-0.5" aria-hidden="true">
-                {Array.from({ length: r.w }).map((_, i) => (
-                  <span key={`w${i}`} className="w-1.5 h-1.5 rounded-full bg-rw-teal/85" />
-                ))}
-                {Array.from({ length: r.l }).map((_, i) => (
-                  <span key={`l${i}`} className="w-1.5 h-1.5 rounded-full bg-rw-rose/75" />
-                ))}
+        {d.rows.map((r) => {
+          const rivalU =
+            d.rows.find((x) => x.u && x.u !== r.u && x.w === r.w && x.l === r.l)?.u ||
+            d.rows.find((x) => x.u && x.u !== r.u)?.u ||
+            "";
+          const rowQ = new URLSearchParams({
+            ...(wy ? { p: `y${wy}` } : {}),
+            ...(rivalU ? { q: rivalU } : {}),
+          }).toString();
+          return (
+            <button
+              key={r.u}
+              type="button"
+              onClick={() => {
+                navigateHub({ kind: "team", slug: r.u, ...(rowQ ? { query: rowQ } : {}) });
+                onOpen();
+              }}
+              className="flex items-center gap-1.5 py-0.5 border-b border-rw-border/40 min-w-0 text-left hover:text-rw-accent transition-colors"
+              title={r.name}
+            >
+              <TeamLogo name={r.name} code={r.code} size={14} />
+              <span className="font-semibold text-rw-text hover:text-rw-accent truncate flex-1 min-w-0">{r.code}</span>
+              <span className="inline-flex items-center gap-1 font-mono tabular-nums text-rw-sub">
+                <span className="hidden sm:inline-flex items-center gap-0.5" aria-hidden="true">
+                  {Array.from({ length: r.w }).map((_, i) => (
+                    <span key={`w${i}`} className="w-1.5 h-1.5 rounded-full bg-rw-teal/85" />
+                  ))}
+                  {Array.from({ length: r.l }).map((_, i) => (
+                    <span key={`l${i}`} className="w-1.5 h-1.5 rounded-full bg-rw-rose/75" />
+                  ))}
+                </span>
+                <span>
+                  {r.w}–{r.l}
+                </span>
               </span>
-              <span>
-                {r.w}–{r.l}
+              <span className="font-mono tabular-nums text-[11px] w-10 text-center rounded-sm text-rw-text" style={chanceShade(r.adv)}>
+                {Math.round(r.adv * 100)}%
               </span>
-            </span>
-            <span className="font-mono tabular-nums text-[11px] w-10 text-center rounded-sm text-rw-text" style={chanceShade(r.adv)}>
-              {Math.round(r.adv * 100)}%
-            </span>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
       <p className="px-3 pb-2 text-[10px] text-rw-muted">
         {tl("Chance to make the top 8: the rest of the stage played {n} times, each match rolled by the power ratings (3 wins go through, 3 losses go home).", {

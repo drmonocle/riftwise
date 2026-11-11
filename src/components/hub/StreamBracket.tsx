@@ -158,6 +158,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           <EventLink
             name={tl("{event}: bracket and standings", { event: streamEventTitle({ event: which.event, season: which.season } as StreamEvent) })}
             u={ev.u}
+            query={topSlugs.length >= 1 ? `q=${encodeURIComponent(topSlugs.join(","))}` : undefined}
             className="hover:text-rw-accent hover:underline"
           />
         </h3>
@@ -357,12 +358,21 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
         </div>
       ))}
       <p className="text-[11px] text-rw-muted">
-        <EventLink name={tl("Full stats for {event}", { event: ev.n })} u={ev.u} className="text-rw-accent hover:underline" />
+        <EventLink
+          name={tl("Full stats for {event}", { event: ev.n })}
+          u={ev.u}
+          query={topSlugs.length >= 1 ? `q=${encodeURIComponent(topSlugs.join(","))}` : undefined}
+          className="text-rw-accent hover:underline"
+        />
         {(which.event === "Worlds" || which.event === "MSI" || which.event === "First Stand") && (
           <>
             {" · "}
             <HubLink
-              to={{ kind: which.event === "Worlds" ? "worlds" : which.event === "MSI" ? "msi" : "first-stand", year: which.year }}
+              to={{
+                kind: which.event === "Worlds" ? "worlds" : which.event === "MSI" ? "msi" : "first-stand",
+                year: which.year,
+                ...(topSlugs.length >= 1 ? { query: `q=${encodeURIComponent(topSlugs.join(","))}` } : {}),
+              }}
               className="text-rw-accent hover:underline"
             >
               {`${which.event} ${which.year}`}
@@ -433,7 +443,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
               ...(lgSlug ? { league: lgSlug } : {}),
               ...(which.year ? { year: which.year } : {}),
               event: ev.u,
-              q: ev.u,
+              q: [ev.u, ...topSlugs].filter(Boolean).join(","),
             }).toString(),
           }}
           className="text-rw-accent hover:underline"

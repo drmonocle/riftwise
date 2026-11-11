@@ -314,32 +314,50 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
             <ol className="text-xs space-y-1">
               {teams.slice(0, 12).map((t, i) => {
                 const wrPct = Math.round((t.w / Math.max(1, t.g)) * 100);
+                const myTeamU = tSlug(t.t, t.u);
+                const rivalRow = teams[i === 0 ? 1 : 0] || allTeams.find((x) => tSlug(x.t, x.u) !== myTeamU);
+                const vsTeamU = rivalRow ? tSlug(rivalRow.t, rivalRow.u) : "";
+                const myP = [...regular, ...allRegular].find((p) => tSlug(p.t, p.tu) === myTeamU);
+                const vsP = vsTeamU ? [...regular, ...allRegular].find((p) => tSlug(p.t, p.tu) === vsTeamU) : undefined;
+                const myPU = myP ? pSlug(myP.n, myP.u) : "";
+                const vsPU = vsP ? pSlug(vsP.n, vsP.u) : "";
+                const teamQ = new URLSearchParams({
+                  p: `y${year}`,
+                  ...(vsTeamU && vsTeamU !== myTeamU ? { q: vsTeamU } : {}),
+                }).toString();
                 return (
                   <li key={t.u || t.t} className="flex items-center justify-between gap-2 min-w-0">
                     <span className="inline-flex items-center gap-1.5 truncate min-w-0">
                       <span className="text-rw-muted tabular-nums w-4 inline-block shrink-0">{i + 1}</span>
                       <HubLink
-                        to={{ kind: "team", slug: tSlug(t.t, t.u), query: `p=y${encodeURIComponent(year)}` }}
+                        to={{ kind: "team", slug: myTeamU, query: teamQ }}
                         className="shrink-0 hover:opacity-80"
                         title={t.t}
                       >
                         <TeamLogo name={t.t} size={15} />
                       </HubLink>
-                      <TeamLink name={t.t} u={t.u} query={`p=y${encodeURIComponent(year)}`} className="text-rw-text hover:text-rw-accent truncate" />
+                      <TeamLink name={t.t} u={t.u} query={teamQ} className="text-rw-text hover:text-rw-accent truncate" />
                     </span>
                     <span className="inline-flex items-center gap-1.5 tabular-nums text-rw-sub shrink-0">
                       <span>
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}&team=${encodeURIComponent(tSlug(t.t, t.u))}`,
+                            query: new URLSearchParams({
+                              league: lgSlug,
+                              year,
+                              team: myTeamU,
+                              ...(vsTeamU && vsTeamU !== myTeamU ? { vs: vsTeamU } : {}),
+                              ...(myPU ? { player: myPU } : {}),
+                              ...(vsPU && vsPU !== myPU ? { vsplayer: vsPU } : {}),
+                            }).toString(),
                           }}
                           className="hover:text-rw-accent hover:underline"
                         >
                           {t.w}-{t.g - t.w}
                         </HubLink>{" "}
                         <HubLink
-                          to={{ kind: "team", slug: tSlug(t.t, t.u), tab: "stats", query: `p=y${encodeURIComponent(year)}` }}
+                          to={{ kind: "team", slug: myTeamU, tab: "stats", query: teamQ }}
                           className={`hover:underline ${wrPct >= 55 ? "text-rw-teal font-semibold" : wrPct <= 45 ? "text-rw-red" : "text-rw-muted"}`}
                         >
                           ({wrPct}%)
@@ -539,20 +557,53 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 return (
                   <div key={m.key} className="min-w-0">
                     <div className="text-[11px] font-semibold text-rw-accent truncate" title={m.label}>
-                      <HubLink to={{ kind: "leaders", query: `league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}&stat=${encodeURIComponent(m.key)}` }} className="hover:underline">
+                      <HubLink
+                        to={{
+                          kind: "leaders",
+                          query: new URLSearchParams({
+                            league: lgSlug,
+                            year,
+                            stat: m.key,
+                            ...(qRole ? { role: qRole } : {}),
+                            ...(topChampsList[0] ? { champ: topChampsList[0] } : {}),
+                            q: top.map(({ p }) => pSlug(p.n, p.u)).filter(Boolean).slice(0, 2).join(","),
+                          }).toString(),
+                        }}
+                        className="hover:underline"
+                      >
                         {m.label}
                       </HubLink>
                     </div>
                     <ol className="text-xs space-y-0.5">
                       {(() => {
                         const maxV = Math.max(0.01, ...top.map((x) => Math.abs(x.v)));
-                        return top.map(({ p, v }) => {
+                        return top.map(({ p, v }, idx) => {
                           const barPct = Math.max(12, Math.min(100, Math.round((Math.abs(v) / maxV) * 100)));
+                          const myPU = pSlug(p.n, p.u);
+                          const myTU = p.t ? tSlug(p.t, p.tu) : "";
+                          const myChamp = p.c?.[0] ? resolveChampSlug(p.c[0]) : "";
+                          const vsEntry = top[idx === 0 ? 1 : 0]?.p;
+                          const vsPU = vsEntry ? pSlug(vsEntry.n, vsEntry.u) : "";
+                          const vsTU =
+                            vsEntry?.t && tSlug(vsEntry.t, vsEntry.tu) !== myTU
+                              ? tSlug(vsEntry.t, vsEntry.tu)
+                              : topTeams.find((u) => u && u !== myTU) || "";
+                          const vsChamp = vsEntry?.c?.[0] ? resolveChampSlug(vsEntry.c[0]) : "";
+                          const pQuery = new URLSearchParams({
+                            p: `y${year}`,
+                            ...(vsPU && vsPU !== myPU ? { q: vsPU } : {}),
+                            ...(myChamp ? { champ: myChamp } : {}),
+                          }).toString();
+                          const tQuery = new URLSearchParams({
+                            p: `y${year}`,
+                            ...(vsTU && vsTU !== myTU ? { q: vsTU } : {}),
+                            ...(myChamp ? { champ: myChamp } : {}),
+                          }).toString();
                           return (
                             <li key={`${p.u || p.n}-${p.t}`} className="flex items-center justify-between gap-2 min-w-0">
                               <span className="inline-flex items-center gap-1.5 truncate min-w-0">
                                 <HubLink
-                                  to={{ kind: "player", slug: pSlug(p.n, p.u), query: `p=y${encodeURIComponent(year)}` }}
+                                  to={{ kind: "player", slug: myPU, query: pQuery }}
                                   className="shrink-0 hover:opacity-80"
                                   title={p.n}
                                 >
@@ -560,17 +611,17 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                                 </HubLink>
                                 {p.t && (
                                   <HubLink
-                                    to={{ kind: "team", slug: tSlug(p.t, p.tu), query: `p=y${encodeURIComponent(year)}` }}
+                                    to={{ kind: "team", slug: myTU, query: tQuery }}
                                     className="shrink-0 hover:opacity-80"
                                     title={p.t}
                                   >
                                     <TeamLogo name={p.t} size={13} />
                                   </HubLink>
                                 )}
-                                <PlayerLink name={p.n} u={p.u} query={`p=y${encodeURIComponent(year)}`} className="text-rw-text hover:text-rw-accent truncate" />{" "}
+                                <PlayerLink name={p.n} u={p.u} query={pQuery} className="text-rw-text hover:text-rw-accent truncate" />{" "}
                                 {p.u ? (
                                   <HubLink
-                                    to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${encodeURIComponent(year)}` }}
+                                    to={{ kind: "player", slug: p.u, tab: "stats", query: pQuery }}
                                     className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline shrink-0"
                                   >
                                     {roleName(p.r)}
@@ -583,7 +634,17 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                                 <HubLink
                                   to={{
                                     kind: "finder",
-                                    query: `league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(pSlug(p.n, p.u))}${p.t ? `&team=${encodeURIComponent(tSlug(p.t, p.tu))}` : ""}${p.r ? `&role=${encodeURIComponent(p.r)}` : ""}${p.c?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(p.c[0]))}` : ""}`,
+                                    query: new URLSearchParams({
+                                      league: lgSlug,
+                                      year,
+                                      player: myPU,
+                                      ...(vsPU && vsPU !== myPU ? { vsplayer: vsPU } : {}),
+                                      ...(myTU ? { team: myTU } : {}),
+                                      ...(vsTU && vsTU !== myTU ? { vs: vsTU } : {}),
+                                      ...(p.r ? { role: p.r } : {}),
+                                      ...(myChamp ? { champ: myChamp } : {}),
+                                      ...(vsChamp && vsChamp !== myChamp ? { vschamp: vsChamp } : {}),
+                                    }).toString(),
                                   }}
                                   className="hover:text-rw-accent hover:underline"
                                 >
@@ -604,7 +665,16 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
             </div>
             <p className="text-[10px] text-rw-muted mt-1">
               <HubLink
-                to={{ kind: "leaders", query: `league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}` }}
+                to={{
+                  kind: "leaders",
+                  query: new URLSearchParams({
+                    league: lgSlug,
+                    year,
+                    ...(qRole ? { role: qRole } : {}),
+                    ...(topChampsList[0] ? { champ: topChampsList[0] } : {}),
+                    ...(topPlayers.length || topTeams.length ? { q: [...topPlayers, ...topTeams].join(",") } : {}),
+                  }).toString(),
+                }}
                 className="hover:text-rw-accent hover:underline"
               >
                 {tl("Players with {n}+ games.", { n: minG })}

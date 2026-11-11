@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList, GitCompare } from "lucide-react";
-import { findHubTeam, loadHubIndexQuick, prettySlug, resolveEventSlug, resolveLeagueSlug, resolveTeamAlias } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { RIOT_PREFIX } from "../hub/riotMatch";
 import { findSeriesSlug } from "../hub/seriesLookup";
@@ -123,6 +123,14 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
   const h2h = computeHeadToHead(c1, c2, schedule, matchId, countThisMatch);
   const t1 = teamInfo(catalog, team1Code);
   const t2 = teamInfo(catalog, team2Code);
+  const starterSlug = (code: string) => {
+    const norm = normalizeTeamCode(code);
+    const p = catalog?.players?.find((x) => normalizeTeamCode(x.teamCode) === norm);
+    const handle = p?.name || "";
+    return handle ? resolvePlayerSlug(handle) || prettySlug(handle) : "";
+  };
+  const p1Slug = starterSlug(team1Code);
+  const p2Slug = starterSlug(team2Code);
   const total = h2h ? h2h.team1Wins + h2h.team2Wins : 0;
   const t1Pct = total > 0 ? Math.round((h2h!.team1Wins / total) * 100) : 50;
 
@@ -293,6 +301,8 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                         query: new URLSearchParams({
                           team: teamSlug(t1.name, c1),
                           vs: teamSlug(t2.name, c2),
+                          ...(p1Slug ? { player: p1Slug } : {}),
+                          ...(p2Slug && p2Slug !== p1Slug ? { vsplayer: p2Slug } : {}),
                           ...(sameLg ? { league: sameLg } : {}),
                         }).toString(),
                       });
@@ -323,7 +333,12 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                 onClick={() => {
                   navigateHub({
                     kind: "finder",
-                    query: new URLSearchParams({ team: teamSlug(t1.name, c1), vs: teamSlug(t2.name, c2) }).toString(),
+                    query: new URLSearchParams({
+                      team: teamSlug(t1.name, c1),
+                      vs: teamSlug(t2.name, c2),
+                      ...(p1Slug ? { player: p1Slug } : {}),
+                      ...(p2Slug && p2Slug !== p1Slug ? { vsplayer: p2Slug } : {}),
+                    }).toString(),
                   });
                   onClose();
                 }}
@@ -341,6 +356,8 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                     query: new URLSearchParams({
                       team: teamSlug(t1.name, c1),
                       vs: teamSlug(t2.name, c2),
+                      ...(p1Slug ? { player: p1Slug } : {}),
+                      ...(p2Slug && p2Slug !== p1Slug ? { vsplayer: p2Slug } : {}),
                       ...(sameLg ? { league: sameLg } : {}),
                     }).toString(),
                   });
@@ -391,7 +408,12 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            navigateHub({ kind: "event", slug: resolveEventSlug(m.tournament) || prettySlug(m.tournament) });
+                            const pairQ = [teamSlug(t1.name, c1), teamSlug(t2.name, c2)].filter(Boolean).join(",");
+                            navigateHub({
+                              kind: "event",
+                              slug: resolveEventSlug(m.tournament) || prettySlug(m.tournament),
+                              ...(pairQ ? { query: `q=${encodeURIComponent(pairQ)}` } : {}),
+                            });
                             onClose();
                           }}
                           className="text-rw-text hover:text-rw-accent hover:underline truncate block max-w-full text-left"
@@ -432,6 +454,8 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                                     query: new URLSearchParams({
                                       team: teamSlug(t1.name, c1),
                                       vs: teamSlug(t2.name, c2),
+                                      ...(p1Slug ? { player: p1Slug } : {}),
+                                      ...(p2Slug && p2Slug !== p1Slug ? { vsplayer: p2Slug } : {}),
                                       ...(m.tournament ? { event: resolveEventSlug(m.tournament) } : {}),
                                       ...(m.date.length >= 4 ? { year: m.date.slice(0, 4) } : {}),
                                     }).toString(),
@@ -471,6 +495,8 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
           <PrepButton
             t1={{ code: team1Code, name: t1.name, league: t1.league }}
             t2={{ code: team2Code, name: t2.name, league: t2.league }}
+            p1={p1Slug}
+            p2={p2Slug}
             year={meetings[0]?.date && /^\d{4}/.test(meetings[0].date) ? meetings[0].date.slice(0, 4) : undefined}
             event={meetings[0]?.tournament ? resolveEventSlug(meetings[0].tournament) || undefined : undefined}
             onDone={onClose}
@@ -485,10 +511,12 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
 const PrepButton: React.FC<{
   t1: { code: string; name: string; league?: string };
   t2: { code: string; name: string; league?: string };
+  p1?: string;
+  p2?: string;
   year?: string;
   event?: string;
   onDone: () => void;
-}> = ({ t1, t2, year, event, onDone }) => {
+}> = ({ t1, t2, p1, p2, year, event, onDone }) => {
   const [state, setState] = useState<"" | "busy" | "missing">("");
   if (state === "missing") return null;
   const lg = t1.league && t1.league === t2.league ? resolveLeagueSlug(t1.league) : undefined;
@@ -551,6 +579,8 @@ const PrepButton: React.FC<{
                 query: new URLSearchParams({
                   team: a,
                   vs: b,
+                  ...(p1 ? { player: p1 } : {}),
+                  ...(p2 && p2 !== p1 ? { vsplayer: p2 } : {}),
                   ...(lg ? { league: lg } : {}),
                   ...(event ? { event } : {}),
                   ...(year ? { year } : {}),
@@ -574,6 +604,8 @@ const PrepButton: React.FC<{
                 query: new URLSearchParams({
                   team: a,
                   vs: b,
+                  ...(p1 ? { player: p1 } : {}),
+                  ...(p2 && p2 !== p1 ? { vsplayer: p2 } : {}),
                   ...(lg ? { league: lg } : {}),
                   ...(event ? { event } : {}),
                   ...(year ? { year } : {}),
@@ -634,7 +666,7 @@ const PrepButton: React.FC<{
               navigateHub({
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: `${a},${b}`,
+                  q: [p1, p2, a, b].filter(Boolean).join(","),
                   ...(lg ? { league: lg } : {}),
                   ...(event ? { event } : {}),
                   ...(year ? { year } : {}),

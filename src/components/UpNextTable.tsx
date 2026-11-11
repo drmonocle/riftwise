@@ -264,7 +264,7 @@ const UpNextRow: React.FC<{
       </span>
     );
   };
-  const logo = (name: string, code: string, image: string | undefined) => (
+  const logo = (name: string, code: string, image: string | undefined, oppName?: string, oppCode?: string) => (
     <button
       type="button"
       onClick={() => {
@@ -274,7 +274,13 @@ const UpNextRow: React.FC<{
         }
         const rawYr = m.startTimeUtc?.slice(0, 4);
         const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
-        navigateHub({ kind: "team", slug: teamSlug(name, code), ...(yr ? { query: `p=y${encodeURIComponent(yr)}` } : {}) });
+        const tU = teamSlug(name, code);
+        const oppU = oppName || oppCode ? teamSlug(oppName || "", oppCode || "") : "";
+        const q = new URLSearchParams({
+          ...(yr ? { p: `y${yr}` } : {}),
+          ...(oppU && oppU !== tU ? { q: oppU } : {}),
+        }).toString();
+        navigateHub({ kind: "team", slug: tU, ...(q ? { query: q } : {}) });
       }}
       className="w-5 h-5 shrink-0 inline-flex items-center justify-center rounded hover:ring-1 hover:ring-rw-accent transition-all"
       title={tl("View {team} roster", { team: name })}
@@ -290,7 +296,13 @@ const UpNextRow: React.FC<{
           onClick={() => {
             const rawYr = m.startTimeUtc?.slice(0, 4);
             const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
-            navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) });
+            const pairQ = [teamSlug(m.team1Name, m.team1Code), teamSlug(m.team2Name, m.team2Code)].filter(Boolean).join(",");
+            navigateHub({
+              kind: "league",
+              slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
+              ...(yr ? { year: yr } : {}),
+              ...(pairQ ? { query: `q=${encodeURIComponent(pairQ)}` } : {}),
+            });
           }}
           className="font-bold text-rw-accent hover:underline text-[11px] truncate text-left"
           title={m.leagueName}
@@ -317,7 +329,7 @@ const UpNextRow: React.FC<{
       </span>
       <span className="flex items-center gap-1.5 min-w-0 @max-[900px]:order-last @max-[900px]:basis-full @min-[900px]:grid @min-[900px]:grid-cols-[minmax(0,1fr)_auto_auto_auto_minmax(0,1fr)]">
         {team(m.team1Code, m.team1Name, true)}
-        {logo(m.team1Name, m.team1Code, m.team1Image)}
+        {logo(m.team1Name, m.team1Code, m.team1Image, m.team2Name, m.team2Code)}
         <button
           type="button"
           onClick={() => {
@@ -336,7 +348,7 @@ const UpNextRow: React.FC<{
         >
           {tl("vs")}
         </button>
-        {logo(m.team2Name, m.team2Code, m.team2Image)}
+        {logo(m.team2Name, m.team2Code, m.team2Image, m.team1Name, m.team1Code)}
         {team(m.team2Code, m.team2Name, false)}
       </span>
       <span className="@max-[900px]:order-last @max-[900px]:basis-full @min-[900px]:contents">
@@ -457,13 +469,19 @@ const FormCell: React.FC<{ m: Match; schedule: Match[]; hidden: boolean }> = ({ 
   }, [m.matchId, hidden]);
   if (hidden) return <span className="text-rw-muted text-[10px]" title={tl("Hidden while spoiler mode is on.")}>–</span>;
   if (!form || (!form[0].length && !form[1].length)) return <span className="text-rw-muted">–</span>;
-  const row = (f: ("W" | "L")[], code: string, name: string) => (
+  const row = (f: ("W" | "L")[], code: string, name: string, oppCode: string, oppName: string) => (
     <button
       type="button"
       onClick={() => {
         const rawYr = m.startTimeUtc?.slice(0, 4);
         const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
-        navigateHub({ kind: "team", slug: teamSlug(name, code), tab: "matches", ...(yr ? { query: `p=y${encodeURIComponent(yr)}` } : {}) });
+        const tU = teamSlug(name, code);
+        const oppU = teamSlug(oppName, oppCode);
+        const q = new URLSearchParams({
+          ...(yr ? { p: `y${yr}` } : {}),
+          ...(oppU && oppU !== tU ? { q: oppU } : {}),
+        }).toString();
+        navigateHub({ kind: "team", slug: tU, tab: "matches", ...(q ? { query: q } : {}) });
       }}
       className="flex gap-px hover:opacity-80"
       title={`${code}: ${f.join(" ")}`}
@@ -480,8 +498,8 @@ const FormCell: React.FC<{ m: Match; schedule: Match[]; hidden: boolean }> = ({ 
   );
   return (
     <span className="flex flex-col gap-px" aria-label={tl("Last five series, newest first")}>
-      {row(form[0], m.team1Code, m.team1Name)}
-      {row(form[1], m.team2Code, m.team2Name)}
+      {row(form[0], m.team1Code, m.team1Name, m.team2Code, m.team2Name)}
+      {row(form[1], m.team2Code, m.team2Name, m.team1Code, m.team1Name)}
     </span>
   );
 };

@@ -62,6 +62,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
   const [first, ...rest] = list;
   const firstYr = first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4)) ? first.m.startTimeUtc.slice(0, 4) : "";
   const firstLg = first.m.leagueSlug || first.m.leagueName ? resolveLeagueSlug(first.m.leagueSlug || first.m.leagueName) : "";
+  const ourStarter = ROLES.map((r) => teamStarter(t, r)).find(Boolean);
   return (
     <Section
       title={tl("Next match")}
@@ -108,6 +109,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   query: new URLSearchParams({
                     team: t.u,
                     vs: first.opp,
+                    ...(ourStarter?.u ? { player: ourStarter.u } : {}),
                     ...(firstYr ? { year: firstYr } : {}),
                     ...(firstLg ? { league: firstLg } : {}),
                   }).toString(),
@@ -122,6 +124,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   query: new URLSearchParams({
                     team: t.u,
                     vs: first.opp,
+                    ...(ourStarter?.u ? { player: ourStarter.u } : {}),
                     ...(firstYr ? { year: firstYr } : {}),
                     ...(firstLg ? { league: firstLg } : {}),
                   }).toString(),
@@ -164,7 +167,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   query: new URLSearchParams({
                     ...(firstLg ? { league: firstLg } : {}),
                     ...(firstYr ? { year: firstYr } : {}),
-                    q: [t.u, first.opp || resolveTeamAlias(sides(first)[1].name) || resolveTeamAlias(sides(first)[1].code) || prettySlug(sides(first)[1].name)].filter(Boolean).join(","),
+                    q: [ourStarter?.u, t.u, first.opp || resolveTeamAlias(sides(first)[1].name) || resolveTeamAlias(sides(first)[1].code) || prettySlug(sides(first)[1].name)].filter(Boolean).join(","),
                   }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
@@ -218,13 +221,24 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                     to={{
                       kind: "team",
                       slug: c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name),
-                      ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                      query: new URLSearchParams({
+                        ...(period ? { p: period } : {}),
+                        q: t.u,
+                      }).toString(),
                     }}
                     className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
                   >
                     <TeamLogo name={them.name} code={them.code} src={them.img} size={15} className="shrink-0" />
                   </HubLink>
-                  <TeamLink name={them.name} u={c.opp} query={period ? `p=${encodeURIComponent(period)}` : undefined} className="truncate hover:text-rw-accent" />
+                  <TeamLink
+                    name={them.name}
+                    u={c.opp}
+                    query={new URLSearchParams({
+                      ...(period ? { p: period } : {}),
+                      q: t.u,
+                    }).toString()}
+                    className="truncate hover:text-rw-accent"
+                  />
                   <span className="text-rw-muted truncate">
                     ·{" "}
                     <HubLink
@@ -232,6 +246,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                         kind: "league",
                         slug: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName),
                         ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
+                        query: `q=${encodeURIComponent([t.u, c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name)].filter(Boolean).join(","))}`,
                       }}
                       className="hover:text-rw-accent hover:underline"
                     >
@@ -262,6 +277,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                           query: new URLSearchParams({
                             team: t.u,
                             vs: c.opp,
+                            ...(ourStarter?.u ? { player: ourStarter.u } : {}),
                             ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
                             ...(c.m.leagueSlug || c.m.leagueName ? { league: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName) } : {}),
                           }).toString(),
@@ -276,6 +292,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                           query: new URLSearchParams({
                             team: t.u,
                             vs: c.opp,
+                            ...(ourStarter?.u ? { player: ourStarter.u } : {}),
                             ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
                             ...(c.m.leagueSlug || c.m.leagueName ? { league: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName) } : {}),
                           }).toString(),
@@ -342,6 +359,15 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
   const yr = m.startTimeUtc?.slice(0, 4);
   const period = yr && /^\d{4}$/.test(yr) ? `y${yr}` : undefined;
   const lg = m.leagueSlug || m.leagueName ? resolveLeagueSlug(m.leagueSlug || m.leagueName) : "";
+  const themSlug = c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name);
+  const ourQ = new URLSearchParams({
+    ...(period ? { p: period } : {}),
+    ...(themSlug && themSlug !== t.u ? { q: themSlug } : {}),
+  }).toString();
+  const themQ = new URLSearchParams({
+    ...(period ? { p: period } : {}),
+    ...(t.u ? { q: t.u } : {}),
+  }).toString();
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
@@ -351,6 +377,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
               kind: "league",
               slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
               ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
+              query: `q=${encodeURIComponent([t.u, themSlug].filter(Boolean).join(","))}`,
             }}
             className="font-bold text-rw-accent hover:underline"
           >
@@ -383,13 +410,13 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         {/* short names on a phone ("Movistar KOI" didn't fit beside its logo) */}
         <span className="flex items-center gap-2 min-w-0 justify-end flex-1">
           <span className="font-bold text-sm text-rw-text truncate max-sm:hidden">
-            <TeamLink name={t.name} u={t.u} query={period ? `p=${encodeURIComponent(period)}` : undefined} />
+            <TeamLink name={t.name} u={t.u} query={ourQ || undefined} />
           </span>
           <span className="font-bold text-sm text-rw-text sm:hidden">
-            <TeamLink name={ours.code || t.name} u={t.u} query={period ? `p=${encodeURIComponent(period)}` : undefined} />
+            <TeamLink name={ours.code || t.name} u={t.u} query={ourQ || undefined} />
           </span>
           <HubLink
-            to={{ kind: "team", slug: t.u, ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+            to={{ kind: "team", slug: t.u, ...(ourQ ? { query: ourQ } : {}) }}
             className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
           >
             <TeamLogo name={t.name} code={ours.code} src={ours.img} size={32} className="shrink-0" />
@@ -410,18 +437,18 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           <HubLink
             to={{
               kind: "team",
-              slug: c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name),
-              ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}),
+              slug: themSlug,
+              ...(themQ ? { query: themQ } : {}),
             }}
             className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
           >
             <TeamLogo name={them.name} code={them.code} src={them.img} size={32} className="shrink-0" />
           </HubLink>
           <span className="font-bold text-sm truncate min-w-0 max-sm:hidden">
-            <TeamLink name={them.name} u={c.opp} query={period ? `p=${encodeURIComponent(period)}` : undefined} />
+            <TeamLink name={them.name} u={c.opp} query={themQ || undefined} />
           </span>
           <span className="font-bold text-sm sm:hidden">
-            <TeamLink name={them.code || them.name} u={c.opp} query={period ? `p=${encodeURIComponent(period)}` : undefined} />
+            <TeamLink name={them.code || them.name} u={c.opp} query={themQ || undefined} />
           </span>
         </span>
       </div>
