@@ -208,6 +208,20 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     <HubLink to={{ kind: "compare", mode: "team", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
                       {tl("Compare")} →
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          team: a,
+                          vs: b,
+                          ...(m0.leagueSlug || m0.leagueName ? { league: resolveLeagueSlug(m0.leagueSlug || m0.leagueName) } : {}),
+                          ...(rawYr && /^\d{4}$/.test(rawYr) ? { year: rawYr } : {}),
+                        }).toString(),
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
                   </>
                 );
               })()}
@@ -260,7 +274,9 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                             league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName),
                           }
                         : {}),
-                      ...(blocks[0]?.m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4)) ? { key: `y${blocks[0].m.startTimeUtc.slice(0, 4)}` } : {}),
+                      ...(blocks[0]?.m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4))
+                        ? { key: `y${blocks[0].m.startTimeUtc.slice(0, 4)}`, year: blocks[0].m.startTimeUtc.slice(0, 4) }
+                        : {}),
                     }).toString() || undefined,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -311,6 +327,20 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 </HubLink>
                 <HubLink
                   to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      team: a,
+                      vs: b,
+                      ...(lg ? { league: lg } : {}),
+                      ...(yr ? { year: yr } : {}),
+                    }).toString(),
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{
                     kind: "finder",
                     query: new URLSearchParams({
                       team: a,
@@ -341,7 +371,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     query:
                       new URLSearchParams({
                         ...(lg ? { scope: lg, league: lg } : {}),
-                        ...(p ? { key: p } : {}),
+                        ...(p && yr ? { key: p, year: yr } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -477,6 +507,20 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >
                   {tl("Compare")}
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      team: t1Slug,
+                      vs: t2Slug,
+                      ...(m.leagueSlug || m.leagueName ? { league: resolveLeagueSlug(m.leagueSlug || m.leagueName) } : {}),
+                      ...(mYr && /^\d{4}$/.test(mYr) ? { year: mYr } : {}),
+                    }).toString(),
+                  }}
+                  className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
+                >
+                  {tl("Item history")}
                 </HubLink>
                 <HubLink
                   to={{

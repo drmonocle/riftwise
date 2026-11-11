@@ -129,6 +129,21 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 >
                   {tl("Compare")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      league: intlLeague,
+                      ...(singleYear ? { year: singleYear } : {}),
+                      team: teamSlug(up.games[0].winner),
+                      vs: teamSlug(up.games[0].loser),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Item history")} →
+                </HubLink>
               </>
             )}
             <HubLink
@@ -340,6 +355,21 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 >
                   {tl("Compare")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      league: intlLeague,
+                      ...(singleYear ? { year: singleYear } : {}),
+                      team: teamSlug(cb[0].winner),
+                      vs: teamSlug(cb[0].loser),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Item history")} →
+                </HubLink>
               </>
             )}
             <HubLink
@@ -546,8 +576,36 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             )}
             <HubLink
               to={{
+                kind: "items",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(!all && sorted[0] ? { year: yearOnly(sorted[0].year) } : {}),
+                  ...(sorted[0]
+                    ? {
+                        team: sorted[0].u || teamSlug(sorted[0].team),
+                        ...(sorted[1] ? { vs: sorted[1].u || teamSlug(sorted[1].team) } : {}),
+                      }
+                    : {}),
+                }).toString(),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Item history")} →
+            </HubLink>
+            <HubLink
+              to={{
                 kind: "finder",
-                query: `league=${encodeURIComponent(intlLeague)}${!all && sorted[0] ? `&year=${encodeURIComponent(yearOnly(sorted[0].year))}` : ""}`,
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(!all && sorted[0] ? { year: yearOnly(sorted[0].year) } : {}),
+                  ...(sorted[0]
+                    ? {
+                        team: sorted[0].u || teamSlug(sorted[0].team),
+                        ...(sorted[1] ? { vs: sorted[1].u || teamSlug(sorted[1].team) } : {}),
+                      }
+                    : {}),
+                }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
@@ -756,6 +814,21 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 >
                   {tl("Compare")} →
                 </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      league: intlLeague,
+                      ...(singleYear ? { year: singleYear } : {}),
+                      team: u0,
+                      ...(u1 ? { vs: u1 } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Item history")} →
+                </HubLink>
               </>
             ) : null}
             <HubLink
@@ -896,6 +969,20 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Compare")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      league: intlLeague,
+                      team: fin.mostReached[0].u,
+                      ...(fin.mostReached[1]?.u ? { vs: fin.mostReached[1].u } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Item history")} →
                 </HubLink>
               </>
             )}
@@ -1099,6 +1186,20 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           {tl("Draft board")}
                         </HubLink>
                         <HubLink
+                          to={{ kind: "items", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(wSlug)}&vs=${encodeURIComponent(lSlug)}` }}
+                          className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                          title={tl("Item history")}
+                        >
+                          {tl("Item history")}
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(wSlug)}&vs=${encodeURIComponent(lSlug)}` }}
+                          className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                          title={tl("Game finder")}
+                        >
+                          {tl("Game finder")}
+                        </HubLink>
+                        <HubLink
                           to={{ kind: "compare", mode: "team", a: wSlug, b: lSlug }}
                           className="hover:underline"
                           title={tl("Compare")}
@@ -1133,7 +1234,14 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   {tl("Compare")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "items", query: `player=${encodeURIComponent(titles[0].u)}` }}
+                  to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      player: titles[0].u,
+                      ...(titles[1]?.u && titles[1].u !== titles[0].u ? { vsplayer: titles[1].u } : {}),
+                      league: intlLeague,
+                    }).toString(),
+                  }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Item history")} →
@@ -1323,6 +1431,20 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     data-nocapture="1"
                   >
                     {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        league: intlLeague,
+                        team: u0,
+                        ...(u1 ? { vs: u1 } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    data-nocapture="1"
+                  >
+                    {tl("Item history")} →
                   </HubLink>
                 </>
               ) : null;
@@ -1709,6 +1831,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 data-nocapture="1"
               >
                 {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{ kind: "items", query: `league=${encodeURIComponent(intlLeague)}` }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Item history")} →
               </HubLink>
               <HubLink
                 to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}` }}

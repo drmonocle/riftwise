@@ -203,6 +203,9 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
           <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Power rankings")} →
           </HubLink>
+          <HubLink to={{ kind: "items", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+            {tl("Item history")} →
+          </HubLink>
           <HubLink to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Game finder")} →
           </HubLink>
@@ -462,11 +465,35 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             </HubLink>
             <HubLink
               to={{
+                kind: "items",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(singleYear ? { year: singleYear } : {}),
+                  ...(topRegTeamA
+                    ? {
+                        team: topRegTeamA,
+                        ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { vs: topRegTeamB } : {}),
+                      }
+                    : {}),
+                }).toString(),
+              }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Item history")} →
+            </HubLink>
+            <HubLink
+              to={{
                 kind: "finder",
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
-                  ...(topRegTeamA ? { team: topRegTeamA } : {}),
+                  ...(topRegTeamA
+                    ? {
+                        team: topRegTeamA,
+                        ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { vs: topRegTeamB } : {}),
+                      }
+                    : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -786,6 +813,25 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 data-nocapture="1"
               >
                 {tl("Power rankings")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    league: intlLeague,
+                    ...(singleYear ? { year: singleYear } : {}),
+                    ...(pairTeamA
+                      ? {
+                          team: pairTeamA,
+                          ...(pairTeamB && pairTeamB !== pairTeamA ? { vs: pairTeamB } : {}),
+                        }
+                      : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Item history")} →
               </HubLink>
               <HubLink
                 to={{

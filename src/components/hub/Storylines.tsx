@@ -344,7 +344,7 @@ export const OwnStorylines: React.FC<{
               return who.kind === "team" ? (
                 <>
                   <HubLink
-                    to={{ kind: "prep", a: who.slug, ...(noteYr ? { period: `y${noteYr}` } : {}) }}
+                    to={{ kind: "prep", a: who.slug, ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}) }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Match prep")} →
@@ -369,35 +369,33 @@ export const OwnStorylines: React.FC<{
                     {tl("Compare")} →
                   </HubLink>
                   {noteChamp && (
-                    <>
-                      <HubLink
-                        to={{
-                          kind: "counters",
-                          query: new URLSearchParams({
-                            champ: resolveChampSlug(noteChamp),
-                            ...(noteYr ? { patch: `y${noteYr}`, year: String(noteYr) } : noteEv ? { event: noteEv } : {}),
-                          }).toString(),
-                        }}
-                        className="text-rw-sub hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Counters")} →
-                      </HubLink>
-                      <HubLink
-                        to={{
-                          kind: "items",
-                          query: new URLSearchParams({
-                            team: who.slug,
-                            champ: resolveChampSlug(noteChamp),
-                            ...(noteYr ? { year: String(noteYr) } : {}),
-                            ...(noteEv ? { event: noteEv } : {}),
-                          }).toString(),
-                        }}
-                        className="text-rw-sub hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Item history")} →
-                      </HubLink>
-                    </>
+                    <HubLink
+                      to={{
+                        kind: "counters",
+                        query: new URLSearchParams({
+                          champ: resolveChampSlug(noteChamp),
+                          ...(noteYr ? { patch: `y${noteYr}`, year: String(noteYr) } : noteEv ? { event: noteEv } : {}),
+                        }).toString(),
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Counters")} →
+                    </HubLink>
                   )}
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        team: who.slug,
+                        ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
+                        ...(noteYr ? { year: String(noteYr) } : {}),
+                        ...(noteEv ? { event: noteEv } : {}),
+                      }).toString(),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
                   <HubLink
                     to={{
                       kind: "finder",
@@ -502,6 +500,7 @@ export const OwnStorylines: React.FC<{
                       kind: "items",
                       query: new URLSearchParams({
                         player: who.slug,
+                        ...(who.team ? { team: resolveTeamAlias(who.team) || prettySlug(who.team) } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
@@ -516,6 +515,7 @@ export const OwnStorylines: React.FC<{
                       kind: "finder",
                       query: new URLSearchParams({
                         player: who.slug,
+                        ...(who.team ? { team: resolveTeamAlias(who.team) || prettySlug(who.team) } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
@@ -643,6 +643,37 @@ export const HomeStorylines: React.FC = () => {
                       </HubLink>
                     </>
                   )}
+                  {topChamps[0] && (
+                    <HubLink
+                      to={{
+                        kind: "counters",
+                        query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0]))}${topChamps[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topChamps[1]))}` : ""}`,
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Counters")} →
+                    </HubLink>
+                  )}
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      ...(topTeams[0] || topPlayers[0] || topChamps[0]
+                        ? {
+                            query: new URLSearchParams({
+                              ...(topTeams[0]
+                                ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) }
+                                : topPlayers[0]
+                                  ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) }
+                                  : {}),
+                              ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                            }).toString(),
+                          }
+                        : {}),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
                   <HubLink
                     to={{
                       kind: "records",
@@ -771,6 +802,35 @@ export const HomeStorylines: React.FC = () => {
                     >
                       {tl("Compare")} →
                     </HubLink>
+                    {filteredChamp && (
+                      <HubLink
+                        to={{
+                          kind: "counters",
+                          query: new URLSearchParams({
+                            champ: resolveChampSlug(filteredChamp),
+                            ...(filteredYr ? { patch: `y${filteredYr}`, year: String(filteredYr) } : filteredEv ? { event: filteredEv } : {}),
+                          }).toString(),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Counters")} →
+                      </HubLink>
+                    )}
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          team: a,
+                          ...(b ? { vs: b } : {}),
+                          ...(filteredYr ? { year: String(filteredYr) } : {}),
+                          ...(filteredEv ? { event: filteredEv } : {}),
+                          ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
+                        }).toString(),
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
                     <HubLink
                       to={{
                         kind: "finder",
@@ -844,11 +904,26 @@ export const HomeStorylines: React.FC = () => {
                     >
                       {tl("Compare")} →
                     </HubLink>
+                    {filteredChamp && (
+                      <HubLink
+                        to={{
+                          kind: "counters",
+                          query: new URLSearchParams({
+                            champ: resolveChampSlug(filteredChamp),
+                            ...(filteredYr ? { patch: `y${filteredYr}`, year: String(filteredYr) } : filteredEv ? { event: filteredEv } : {}),
+                          }).toString(),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Counters")} →
+                      </HubLink>
+                    )}
                     <HubLink
                       to={{
                         kind: "items",
                         query: new URLSearchParams({
                           player: playerSlugs[0],
+                          ...(playerSlugs[1] ? { vsplayer: playerSlugs[1] } : {}),
                           ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
