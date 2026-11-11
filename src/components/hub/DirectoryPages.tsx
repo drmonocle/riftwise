@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, roleName, regionName } from "../../i18n";
-import { bare, loadAliases, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias } from "../../hub/data";
+import { bare, loadAliases, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { normalizeRole } from "../../hub/champAgg";
 import { navigateHub, hubShareUrl, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
@@ -118,6 +118,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
     return regions.find((r) => cands.includes(r.toLowerCase()) || resolveRegionFilter(r) === canon) || rawRegion;
   }, [rawRegion, regions]);
   const years = useMemo(() => yearChoices(rows.map((t) => t[3])), [rows]);
+  const teamRowSlug = (t: SearchTeamRow) => t[1] || resolveTeamAlias(t[0], aliases.data?.team) || prettySlug(t[0]);
   const list = useMemo(() => {
     const terms = words
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -127,15 +128,17 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       if (region && t[6] !== region) return false;
       if (since !== "all" && (t[3] || "") < since) return false;
       if (!terms.length) return true;
-      const u = (t[1] || prettySlug(t[0])).toLowerCase();
-      const rowCanon = resolveTeamAlias(u) || resolveTeamAlias(t[0]);
+      const u = teamRowSlug(t).toLowerCase();
+      const rowCanon = resolveTeamAlias(u, aliases.data?.team) || resolveTeamAlias(t[0], aliases.data?.team);
       const rowRegCanon = t[6] ? resolveRegionFilter(t[6]) : null;
       const hay = normText(`${t[0]} | ${t[1] || ""} | ${t[3] || ""} | ${t[4]} | ${t[5]} | ${t[6] || ""} | ${t[6] ? regionName(t[6], t[6]) : ""}`);
       const hayBare = bare(hay);
       return terms.some((term) => {
+        const qAlias = searchAlias(term);
         if (hay.includes(term) || (term.length >= 2 && hayBare.includes(bare(term)))) return true;
-        if (rowRegCanon && resolveRegionFilter(term) === rowRegCanon) return true;
-        const canonTeam = aliases.data?.team[term] || resolveTeamAlias(term) || prettySlug(term);
+        if (qAlias && (hay.includes(qAlias) || (bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias))))) return true;
+        if (rowRegCanon && (resolveRegionFilter(term) === rowRegCanon || (qAlias && resolveRegionFilter(qAlias) === rowRegCanon))) return true;
+        const canonTeam = aliases.data?.team[term] || resolveTeamAlias(term, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "") || prettySlug(term);
         return Boolean(canonTeam && (canonTeam === u || (rowCanon && canonTeam === rowCanon)));
       });
     });
@@ -148,10 +151,10 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       value: (t) => t[0].toLowerCase(),
       render: (t) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "team", slug: t[1] || prettySlug(t[0]) }} title={t[0]} className="shrink-0">
+          <HubLink to={{ kind: "team", slug: teamRowSlug(t) }} title={t[0]} className="shrink-0">
             <TeamLogo name={t[0]} code={(t[5] || "").split(" | ")[0] || undefined} size={16} />
           </HubLink>
-          <TeamLink name={t[0]} u={t[1] || prettySlug(t[0])} />
+          <TeamLink name={t[0]} u={teamRowSlug(t)} />
         </span>
       ),
     },
@@ -162,7 +165,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       render: (t) => {
         const c = (t[5] || "").split(" | ")[0];
         return c ? (
-          <HubLink to={{ kind: "team", slug: t[1] || prettySlug(t[0]) }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "team", slug: teamRowSlug(t) }} className="hover:text-rw-accent hover:underline">
             {c}
           </HubLink>
         ) : null;
@@ -210,7 +213,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(t[1] || prettySlug(t[0]))}${since !== "all" ? `&year=${encodeURIComponent(since)}` : ""}`,
+              query: `team=${encodeURIComponent(teamRowSlug(t))}${since !== "all" ? `&year=${encodeURIComponent(since)}` : ""}`,
             }}
             className="tabular-nums text-rw-text hover:text-rw-accent hover:underline block"
             title={tl("Game finder")}
@@ -231,7 +234,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       render: (t) =>
         t[4] ? (
           <HubLink
-            to={{ kind: "team", slug: t[1] || prettySlug(t[0]), tab: "history" }}
+            to={{ kind: "team", slug: teamRowSlug(t), tab: "history" }}
             className="text-rw-muted hover:text-rw-accent hover:underline"
           >
             {t[4].split(" | ").slice(0, 2).join(", ")}
@@ -244,7 +247,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       label: "",
       value: () => null,
       render: (t) => {
-        const u = t[1] || prettySlug(t[0]);
+        const u = teamRowSlug(t);
         const yr = since !== "all" ? since : undefined;
         return (
           <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">
@@ -302,8 +305,8 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             <HubLink
               to={{
                 kind: "prep",
-                a: list[0][1] || prettySlug(list[0][0]),
-                ...(list[1] ? { b: list[1][1] || prettySlug(list[1][0]) } : {}),
+                a: teamRowSlug(list[0]),
+                ...(list[1] ? { b: teamRowSlug(list[1]) } : {}),
                 ...(since !== "all" ? { period: `y${since}` } : {}),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -313,7 +316,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             <HubLink
               to={{
                 kind: "draft",
-                query: `teams=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}${list[1] ? `,${encodeURIComponent(list[1][1] || prettySlug(list[1][0]))}` : ""}${since !== "all" ? `&p=y${encodeURIComponent(since)}` : ""}`,
+                query: `teams=${encodeURIComponent(teamRowSlug(list[0]))}${list[1] ? `,${encodeURIComponent(teamRowSlug(list[1]))}` : ""}${since !== "all" ? `&p=y${encodeURIComponent(since)}` : ""}`,
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -323,8 +326,8 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
               to={{
                 kind: "compare",
                 mode: "team",
-                a: list[0][1] || prettySlug(list[0][0]),
-                ...(list[1] ? { b: list[1][1] || prettySlug(list[1][0]) } : {}),
+                a: teamRowSlug(list[0]),
+                ...(list[1] ? { b: teamRowSlug(list[1]) } : {}),
                 ...(since !== "all" ? { period: `y${since}` } : {}),
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -341,8 +344,8 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                 ...(region ? { league: region } : {}),
                 ...(list[0]
                   ? {
-                      q: `${list[0][1] || prettySlug(list[0][0])}${
-                        list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                      q: `${teamRowSlug(list[0])}${
+                        list[1] ? `,${teamRowSlug(list[1])}` : ""
                       }`,
                     }
                   : {}),
@@ -369,8 +372,8 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             kind: "titles",
             query: list[0]
               ? `q=${encodeURIComponent(
-                  `${list[0][1] || prettySlug(list[0][0])}${
-                    list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                  `${teamRowSlug(list[0])}${
+                    list[1] ? `,${teamRowSlug(list[1])}` : ""
                   }`,
                 )}`
               : undefined,
@@ -387,8 +390,8 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                 ...(since !== "all" ? { year: since } : {}),
                 ...(list[0]
                   ? {
-                      q: `${list[0][1] || prettySlug(list[0][0])}${
-                        list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                      q: `${teamRowSlug(list[0])}${
+                        list[1] ? `,${teamRowSlug(list[1])}` : ""
                       }`,
                     }
                   : {}),
@@ -404,14 +407,14 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             query:
               new URLSearchParams({
                 ...(list.length === 1
-                  ? { team: list[0][1] || prettySlug(list[0][0]) }
+                  ? { team: teamRowSlug(list[0]) }
                   : words.trim() && list.length >= 2
                     ? {
-                        team: list[0][1] || prettySlug(list[0][0]),
-                        vs: list[1][1] || prettySlug(list[1][0]),
+                        team: teamRowSlug(list[0]),
+                        vs: teamRowSlug(list[1]),
                       }
                     : list[0]
-                      ? { team: list[0][1] || prettySlug(list[0][0]) }
+                      ? { team: teamRowSlug(list[0]) }
                       : {}),
                 ...(since !== "all" ? { year: since } : {}),
               }).toString() || undefined,
@@ -428,8 +431,8 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                 ...(since !== "all" ? { year: since } : {}),
                 ...(list[0]
                   ? {
-                      q: `${list[0][1] || prettySlug(list[0][0])}${
-                        list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                      q: `${teamRowSlug(list[0])}${
+                        list[1] ? `,${teamRowSlug(list[1])}` : ""
                       }`,
                     }
                   : {}),
@@ -521,6 +524,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
   const since = q.get("since") || (words.trim() ? "all" : THIS_YEAR);
   const shown = Number(q.get("n")) || STEP;
   const teamSlugOf = (t: string) => aliases.data?.team[t.toLowerCase()] || resolveTeamAlias(t) || prettySlug(t);
+  const playerRowSlug = (p: SearchPlayerRow) => p[1] || resolvePlayerSlug(p[0]);
   const years = useMemo(() => yearChoices(rows.map((p) => p[4])), [rows]);
   const list = useMemo(() => {
     const terms = words
@@ -531,19 +535,24 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       if (role && ROLE_OF[p[5]] !== role) return false;
       if (since !== "all" && (p[4] || "") < since) return false;
       if (!terms.length) return true;
-      const u = p[1] || prettySlug(p[0]);
+      const u = playerRowSlug(p);
       const pRole = ROLE_OF[p[5]] || "";
       const pTeamSlug = p[2] ? teamSlugOf(p[2]) : "";
       const hay = normText(`${p[0]} | ${u} | ${p[2]} | ${p[4] || ""} | ${pRole} | ${pRole ? roleName(pRole) : ""} | ${p[6]}`);
       const hayBare = bare(hay);
-      return terms.some(
-        (term) =>
+      return terms.some((term) => {
+        const qAlias = searchAlias(term);
+        return (
           hay.includes(term) ||
+          Boolean(qAlias && hay.includes(qAlias)) ||
           resolvePlayerSlug(term) === u ||
-          (pRole && (ROLE_ALIASES[term] === pRole || normalizeRole(term) === pRole)) ||
-          (pTeamSlug && teamSlugOf(term) === pTeamSlug) ||
-          (term.length >= 2 && hayBare.includes(bare(term))),
-      );
+          Boolean(qAlias && resolvePlayerSlug(qAlias) === u) ||
+          (pRole && (ROLE_ALIASES[term] === pRole || normalizeRole(term) === pRole || Boolean(qAlias && normalizeRole(qAlias) === pRole))) ||
+          (pTeamSlug && (teamSlugOf(term) === pTeamSlug || Boolean(qAlias && teamSlugOf(qAlias) === pTeamSlug))) ||
+          (term.length >= 2 && hayBare.includes(bare(term))) ||
+          Boolean(qAlias && bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias)))
+        );
+      });
     });
   }, [rows, role, since, words, aliases.data]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((p) => p[3] || 0)), [list]);
@@ -554,10 +563,10 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       value: (p) => p[0].toLowerCase(),
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "player", slug: p[1] || prettySlug(p[0]) }} title={p[0]} className="shrink-0">
-            <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={p[1] || prettySlug(p[0])} size={18} />
+          <HubLink to={{ kind: "player", slug: playerRowSlug(p) }} title={p[0]} className="shrink-0">
+            <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={playerRowSlug(p)} size={18} />
           </HubLink>
-          <PlayerLink name={p[0]} u={p[1] || prettySlug(p[0])} />
+          <PlayerLink name={p[0]} u={playerRowSlug(p)} />
         </span>
       ),
     },
@@ -617,7 +626,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
           <HubLink
             to={{
               kind: "finder",
-              query: `player=${encodeURIComponent(p[1] || prettySlug(p[0]))}${since !== "all" ? `&year=${encodeURIComponent(since)}` : ""}`,
+              query: `player=${encodeURIComponent(playerRowSlug(p))}${since !== "all" ? `&year=${encodeURIComponent(since)}` : ""}`,
             }}
             className="tabular-nums text-rw-text hover:text-rw-accent hover:underline block"
             title={tl("Game finder")}
@@ -637,7 +646,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       value: (p) => p[6] || null,
       render: (p) =>
         p[6] ? (
-          <HubLink to={{ kind: "player", slug: p[1] || prettySlug(p[0]) }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "player", slug: playerRowSlug(p) }} className="hover:text-rw-accent hover:underline">
             {p[6]}
           </HubLink>
         ) : null,
@@ -648,7 +657,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       label: "",
       value: () => null,
       render: (p) => {
-        const u = p[1] || prettySlug(p[0]);
+        const u = playerRowSlug(p);
         const teamSlug = p[2] ? teamSlugOf(p[2]) : "";
         const yr = since !== "all" ? since : undefined;
         return (
@@ -719,8 +728,8 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
               to={{
                 kind: "compare",
                 mode: "player",
-                a: list[0][1] || prettySlug(list[0][0]),
-                ...(list[1] ? { b: list[1][1] || prettySlug(list[1][0]) } : {}),
+                a: playerRowSlug(list[0]),
+                ...(list[1] ? { b: playerRowSlug(list[1]) } : {}),
                 ...(since !== "all" ? { period: `y${since}` } : {}),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -730,7 +739,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             <HubLink
               to={{
                 kind: "items",
-                query: `player=${encodeURIComponent(list[0][1] || prettySlug(list[0][0]))}${since !== "all" ? `&year=${encodeURIComponent(since)}` : ""}`,
+                query: `player=${encodeURIComponent(playerRowSlug(list[0]))}${since !== "all" ? `&year=${encodeURIComponent(since)}` : ""}`,
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -775,8 +784,8 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                 ...(since !== "all" ? { year: since } : {}),
                 ...(list[0]
                   ? {
-                      q: `${list[0][1] || prettySlug(list[0][0])}${
-                        list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                      q: `${playerRowSlug(list[0])}${
+                        list[1] ? `,${playerRowSlug(list[1])}` : ""
                       }`,
                     }
                   : {}),
@@ -810,8 +819,8 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             kind: "records",
             query: list[0]
               ? `q=${encodeURIComponent(
-                  `${list[0][1] || prettySlug(list[0][0])}${
-                    list[1] ? `,${list[1][1] || prettySlug(list[1][0])}` : ""
+                  `${playerRowSlug(list[0])}${
+                    list[1] ? `,${playerRowSlug(list[1])}` : ""
                   }`,
                 )}`
               : undefined,
@@ -828,9 +837,9 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                 ...(role ? { role } : {}),
                 ...(list[0]
                   ? {
-                      player: list[0][1] || prettySlug(list[0][0]),
-                      ...(words.trim() && list[1] && (list[1][1] || prettySlug(list[1][0])) !== (list[0][1] || prettySlug(list[0][0]))
-                        ? { vsplayer: list[1][1] || prettySlug(list[1][0]) }
+                      player: playerRowSlug(list[0]),
+                      ...(words.trim() && list[1] && playerRowSlug(list[1]) !== playerRowSlug(list[0])
+                        ? { vsplayer: playerRowSlug(list[1]) }
                         : {}),
                     }
                   : {}),

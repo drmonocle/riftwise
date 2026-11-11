@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn, tc, roleName, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadPlayerGames, loadPlayerItems, loadTeamSeries, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveTeamAlias, sameChamp } from "../../hub/data";
+import { bare, loadAliases, loadPlayerGames, loadPlayerItems, loadTeamSeries, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveChampSlug, resolveItemSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { inPeriod, matchesPeriodEvent, playerRowRef, type PeriodKey } from "../../hub/period";
 import { normalizeRole } from "../../hub/champAgg";
@@ -228,14 +228,17 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: stri
         (year === "all" || r[0].startsWith(year)) &&
         (!terms.length ||
           terms.some((qq) => {
+            const qAlias = searchAlias(qq);
             const hay = normText(`${r[1]} ${r[2] || ""} ${r[5]} ${r[6] || ""} ${r[8] || ""} ${r[9] || ""}`);
-            const canonTeam = resolveTeamAlias(qq, aliases.data?.team);
+            const canonTeam = resolveTeamAlias(qq, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "");
             return (
               hay.includes(qq) ||
+              Boolean(qAlias && hay.includes(qAlias)) ||
               (bare(qq).length >= 2 && bare(hay).includes(bare(qq))) ||
-              Boolean((r[2] || r[1]) && canonTeam === resolveTeamAlias(r[2] || r[1], aliases.data?.team)) ||
-              Boolean(r[9] && canonTeam === resolveTeamAlias(r[9], aliases.data?.team)) ||
-              Boolean(r[6] && matchesPeriodEvent(r[6], r[5], qq))
+              Boolean(qAlias && bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias))) ||
+              Boolean((r[2] || r[1]) && canonTeam && canonTeam === resolveTeamAlias(r[2] || r[1], aliases.data?.team)) ||
+              Boolean(r[9] && canonTeam && canonTeam === resolveTeamAlias(r[9], aliases.data?.team)) ||
+              Boolean(r[6] && (matchesPeriodEvent(r[6], r[5], qq) || (qAlias ? matchesPeriodEvent(r[6], r[5], qAlias) : false)))
             );
           })),
     );
@@ -749,18 +752,21 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
         (opp === "all" || r[8] === opp) &&
         (!terms.length ||
           terms.some((term) => {
+            const qAlias = searchAlias(term);
             const hay = normText(`${r[2] || ""} ${champName(r[2] || "")} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""} ${r[10] || ""} ${r[11] || ""} ${r[24] || ""}`);
-            const canonTeam = resolveTeamAlias(term, aliases.data?.team);
-            const roleHit = normalizeRole(term);
+            const canonTeam = resolveTeamAlias(term, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "");
+            const roleHit = normalizeRole(term) || (qAlias ? normalizeRole(qAlias) : null);
             return (
               hay.includes(term) ||
+              Boolean(qAlias && hay.includes(qAlias)) ||
               (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
+              Boolean(qAlias && bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias))) ||
               Boolean(roleHit && r[10] === roleHit) ||
-              Boolean(r[2] && matchesChampSearch(r[2], term)) ||
-              Boolean(r[8] && canonTeam === resolveTeamAlias(r[8], aliases.data?.team)) ||
-              Boolean(r[7] && canonTeam === resolveTeamAlias(r[7], aliases.data?.team)) ||
-              Boolean(r[11] && matchesPeriodEvent(r[11], r[9], term)) ||
-              (itemsOf.get(r) || []).some((it) => matchesItemSearch(it, itemName(it), term))
+              Boolean(r[2] && (matchesChampSearch(r[2], term) || (qAlias ? matchesChampSearch(r[2], qAlias) : false))) ||
+              Boolean(r[8] && canonTeam && canonTeam === resolveTeamAlias(r[8], aliases.data?.team)) ||
+              Boolean(r[7] && canonTeam && canonTeam === resolveTeamAlias(r[7], aliases.data?.team)) ||
+              Boolean(r[11] && (matchesPeriodEvent(r[11], r[9], term) || (qAlias ? matchesPeriodEvent(r[11], r[9], qAlias) : false))) ||
+              (itemsOf.get(r) || []).some((it) => matchesItemSearch(it, itemName(it), term) || Boolean(qAlias && matchesItemSearch(it, itemName(it), qAlias)))
             );
           })),
     );
@@ -847,7 +853,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                 kind: "items",
                 query: new URLSearchParams({
                   player: slug,
-                  ...(champ !== "all" ? { champ: prettySlug(champ) } : champs[0] ? { champ: prettySlug(champs[0][0]) } : {}),
+                  ...(champ !== "all" ? { champ: resolveChampSlug(champ) } : champs[0] ? { champ: resolveChampSlug(champs[0][0]) } : {}),
                   ...(year !== "all" ? { year } : {}),
                 }).toString(),
               }}
@@ -859,7 +865,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${prettySlug(champ !== "all" ? champ : champs[0][0])}${champ === "all" && champs[1] ? `&vs=${encodeURIComponent(champs[1][0])}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(champ !== "all" ? champ : champs[0][0]))}${champ === "all" && champs[1] ? `&vs=${encodeURIComponent(resolveChampSlug(champs[1][0]))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -996,7 +1002,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
                   </span>
                 )}
-                <HubLink to={{ kind: "champ", slug: prettySlug(r[2]) }} className="hover:opacity-80" title={champName(r[2])}>
+                <HubLink to={{ kind: "champ", slug: resolveChampSlug(r[2]) }} className="hover:opacity-80" title={champName(r[2])}>
                   <ChampIcon name={r[2]} size={18} />
                 </HubLink>
                 <span className="truncate min-w-0">
@@ -1078,7 +1084,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(prettySlug(r[2]))}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}`,
+                        query: `champ=${encodeURIComponent(resolveChampSlug(r[2]))}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}`,
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Counters")}
@@ -1088,7 +1094,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(prettySlug(r[2]))}${/^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
+                        query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(resolveChampSlug(r[2]))}${/^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Item history")}
@@ -1157,8 +1163,8 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                       kind: "items",
                       query: new URLSearchParams({
                         player: slug,
-                        item: prettySlug(it),
-                        ...(r[2] ? { champ: prettySlug(r[2]) } : {}),
+                        item: resolveItemSlug(it),
+                        ...(r[2] ? { champ: resolveChampSlug(r[2]) } : {}),
                         ...(/^\d{4}/.test(r[0]) ? { year: r[0].slice(0, 4) } : {}),
                       }).toString(),
                     }}
@@ -1255,13 +1261,13 @@ export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; cha
         >
           {tl("Compare")} →
         </HubLink>
-        <HubLink to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(champ))}` }} className="text-rw-accent hover:underline">
+        <HubLink to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(champ))}` }} className="text-rw-accent hover:underline">
           {tl("Counters")} →
         </HubLink>
         <HubLink
           to={{
             kind: "items",
-            query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(prettySlug(champ))}${year ? `&year=${encodeURIComponent(year)}` : period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
+            query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(resolveChampSlug(champ))}${year ? `&year=${encodeURIComponent(year)}` : period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
           }}
           className="text-rw-accent hover:underline"
         >
