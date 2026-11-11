@@ -373,6 +373,10 @@ export const LiveNextGamePreview: React.FC<{
                 query: new URLSearchParams({
                   team: draftIntel.slugA,
                   vs: draftIntel.slugB,
+                  ...(draftIntel.rolesA[0]?.player ? { player: playerSlug(draftIntel.rolesA[0].player, draftIntel.rolesA[0].u) } : {}),
+                  ...(draftIntel.rolesB[0]?.player ? { vsplayer: playerSlug(draftIntel.rolesB[0].player, draftIntel.rolesB[0].u) } : {}),
+                  ...(draftIntel.rolesA[0]?.open[0]?.c ? { champ: resolveChampSlug(draftIntel.rolesA[0].open[0].c) } : {}),
+                  ...(draftIntel.rolesB[0]?.open[0]?.c ? { vschamp: resolveChampSlug(draftIntel.rolesB[0].open[0].c) } : {}),
                   ...(resolveLeagueSlug(match.leagueSlug || match.leagueName) ? { league: resolveLeagueSlug(match.leagueSlug || match.leagueName) } : {}),
                   ...(draftIntel.period.startsWith("y") ? { year: draftIntel.period.slice(1) } : {}),
                   ...(draftIntel.period.startsWith("e:") ? { event: draftIntel.period.slice(2) } : {}),
@@ -382,6 +386,26 @@ export const LiveNextGamePreview: React.FC<{
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "items",
+                query: new URLSearchParams({
+                  team: draftIntel.slugA,
+                  vs: draftIntel.slugB,
+                  ...(draftIntel.rolesA[0]?.player ? { player: playerSlug(draftIntel.rolesA[0].player, draftIntel.rolesA[0].u) } : {}),
+                  ...(draftIntel.rolesB[0]?.player ? { vsplayer: playerSlug(draftIntel.rolesB[0].player, draftIntel.rolesB[0].u) } : {}),
+                  ...(draftIntel.rolesA[0]?.open[0]?.c ? { champ: resolveChampSlug(draftIntel.rolesA[0].open[0].c) } : {}),
+                  ...(draftIntel.rolesB[0]?.open[0]?.c ? { vschamp: resolveChampSlug(draftIntel.rolesB[0].open[0].c) } : {}),
+                  ...(resolveLeagueSlug(match.leagueSlug || match.leagueName) ? { league: resolveLeagueSlug(match.leagueSlug || match.leagueName) } : {}),
+                  ...(draftIntel.period.startsWith("y") ? { year: draftIntel.period.slice(1) } : {}),
+                  ...(draftIntel.period.startsWith("e:") ? { event: draftIntel.period.slice(2) } : {}),
+                  ...(draftIntel.period.startsWith("p:") ? { patch: draftIntel.period.slice(2) } : {}),
+                }).toString(),
+              }}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
             </HubLink>
             <HubLink
               to={{
@@ -430,7 +454,14 @@ export const LiveNextGamePreview: React.FC<{
                       : draftIntel.period.startsWith("e:")
                         ? { event: draftIntel.period.slice(2) }
                         : {}),
-                    q: `${draftIntel.slugA},${draftIntel.slugB}`,
+                    q: [
+                      draftIntel.slugA,
+                      draftIntel.slugB,
+                      draftIntel.rolesA[0]?.player ? playerSlug(draftIntel.rolesA[0].player, draftIntel.rolesA[0].u) : "",
+                      draftIntel.rolesB[0]?.player ? playerSlug(draftIntel.rolesB[0].player, draftIntel.rolesB[0].u) : "",
+                    ]
+                      .filter(Boolean)
+                      .join(","),
                   }).toString() || undefined,
               }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"

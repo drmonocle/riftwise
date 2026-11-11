@@ -200,6 +200,28 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
               const lg = done[0] ? resolveLeagueSlug(done[0].leagueSlug || done[0].leagueName) : "";
               const q = new URLSearchParams({
+                ...(done[0]
+                  ? {
+                      team: teamSlug(done[0].team1Name, done[0].team1Code),
+                      vs: teamSlug(done[0].team2Name, done[0].team2Code),
+                    }
+                  : {}),
+                ...(lg ? { league: lg } : {}),
+                ...(yr ? { year: yr } : {}),
+              }).toString();
+              navigateHub({ kind: "items", ...(q ? { query: q } : {}) });
+            }}
+            className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+          >
+            {tl("Item history")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const rawYr = done[0]?.startTimeUtc?.slice(0, 4);
+              const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+              const lg = done[0] ? resolveLeagueSlug(done[0].leagueSlug || done[0].leagueName) : "";
+              const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
                 ...(done[0]
@@ -424,6 +446,20 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
                 title={tl("Game finder")}
               >
                 {tl("Game finder")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigateHub({
+                    kind: "items",
+                    query: `team=${encodeURIComponent(top[0][0])}&vs=${encodeURIComponent(top[1][0])}${topLg ? `&league=${encodeURIComponent(topLg)}` : ""}`,
+                  });
+                  onSelectTab("stats");
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
+                title={tl("Item history")}
+              >
+                {tl("Item history")}
               </button>
             </>
           )}

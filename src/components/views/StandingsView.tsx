@@ -305,6 +305,21 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                 >
                   {tl("Game finder")} →
                 </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "items",
+                      query: new URLSearchParams({
+                        league: lg,
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
+                    })
+                  }
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </button>
               </span>
             );
           })()}
@@ -447,6 +462,22 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               type="button"
                               onClick={() =>
                                 navigateHub({
+                                  kind: "items",
+                                  query: new URLSearchParams({
+                                    team: a,
+                                    ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                    ...(yr ? { year: yr } : {}),
+                                  }).toString(),
+                                })
+                              }
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Item history")} →
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                navigateHub({
                                   kind: "rankings",
                                   query: new URLSearchParams({
                                     ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
@@ -536,6 +567,23 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
                             {tl("Game finder")} →
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigateHub({
+                                kind: "items",
+                                query: new URLSearchParams({
+                                  team: a,
+                                  vs: b,
+                                  ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                  ...(yr ? { year: yr } : {}),
+                                }).toString(),
+                              })
+                            }
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Item history")} →
                           </button>
                           <button
                             type="button"
@@ -787,6 +835,23 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                               >
                                 {tl("Game finder")} →
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigateHub({
+                                    kind: "items",
+                                    query: new URLSearchParams({
+                                      team: a,
+                                      vs: b,
+                                      ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                      ...(yr ? { year: yr } : {}),
+                                    }).toString(),
+                                  })
+                                }
+                                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Item history")} →
                               </button>
                             </>
                           )}
@@ -1081,6 +1146,24 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Compare")}
+              </button>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                onClick={() =>
+                  navigateHub({
+                    kind: "items",
+                    query: new URLSearchParams({
+                      team: teamSlug(match.teams[0].name, match.teams[0].code),
+                      vs: teamSlug(match.teams[1].name, match.teams[1].code),
+                      ...(league ? { league } : {}),
+                      ...(year ? { year } : {}),
+                    }).toString(),
+                  })
+                }
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Item history")}
               </button>
             </>
           )}
