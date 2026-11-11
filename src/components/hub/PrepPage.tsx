@@ -234,7 +234,9 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
                               ? `&year=${encodeURIComponent(route.period.slice(1))}`
                               : route.period?.startsWith("e:")
                                 ? `&event=${encodeURIComponent(route.period.slice(2))}`
-                                : ""
+                                : route.period?.startsWith("p:")
+                                  ? `&patch=${encodeURIComponent(route.period.slice(2))}`
+                                  : ""
                           }`,
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -257,15 +259,17 @@ export const PrepPage: React.FC<{ route: PrepRoute }> = ({ route }) => {
                         to={{
                           kind: "tiers",
                           ...(side?.team.rating?.league ||
-                          (route.period && ((route.period.startsWith("y") && route.period.length === 5) || route.period.startsWith("e:")))
+                          (route.period && ((route.period.startsWith("y") && route.period.length === 5) || route.period.startsWith("e:") || route.period.startsWith("p:")))
                             ? {
                                 query: new URLSearchParams({
                                   ...(side?.team.rating?.league ? { league: resolveLeagueSlug(side.team.rating.league) || side.team.rating.league } : {}),
                                   ...(route.period && route.period.startsWith("y") && route.period.length === 5
                                     ? { key: route.period }
-                                    : route.period?.startsWith("e:")
-                                      ? { event: route.period.slice(2) }
-                                      : {}),
+                                    : route.period?.startsWith("p:")
+                                      ? { key: `p${route.period.slice(2)}` }
+                                      : route.period?.startsWith("e:")
+                                        ? { event: route.period.slice(2) }
+                                        : {}),
                                 }).toString(),
                               }
                             : {}),
@@ -395,7 +399,9 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period?.startsWith("e:")
                     ? `&event=${encodeURIComponent(period.slice(2))}`
-                    : ""
+                    : period?.startsWith("p:")
+                      ? `&patch=${encodeURIComponent(period.slice(2))}`
+                      : ""
               }`,
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -405,15 +411,17 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
           <HubLink
             to={{
               kind: "tiers",
-              ...(sharedLeague || (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:")))
+              ...(sharedLeague || (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:") || period.startsWith("p:")))
                 ? {
                     query: new URLSearchParams({
                       ...(sharedLeague ? { league: sharedLeague } : {}),
                       ...(period && period.startsWith("y") && period.length === 5
                         ? { key: period }
-                        : period?.startsWith("e:")
-                          ? { event: period.slice(2) }
-                          : {}),
+                        : period?.startsWith("p:")
+                          ? { key: `p${period.slice(2)}` }
+                          : period?.startsWith("e:")
+                            ? { event: period.slice(2) }
+                            : {}),
                     }).toString(),
                   }
                 : {}),
@@ -998,7 +1006,9 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
                     ? `&event=${encodeURIComponent(period.slice(2))}`
-                    : ""
+                    : period.startsWith("p:")
+                      ? `&patch=${encodeURIComponent(period.slice(2))}`
+                      : ""
               }`,
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1024,15 +1034,18 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
               kind: "tiers",
               ...((a.team.rating?.league && a.team.rating.league === b.team.rating?.league) ||
               (period.startsWith("y") && period.length === 5) ||
-              period.startsWith("e:")
+              period.startsWith("e:") ||
+              period.startsWith("p:")
                 ? {
                     query: new URLSearchParams({
                       ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
                       ...(period.startsWith("y") && period.length === 5
                         ? { key: period }
-                        : period.startsWith("e:")
-                          ? { event: period.slice(2) }
-                          : {}),
+                        : period.startsWith("p:")
+                          ? { key: `p${period.slice(2)}` }
+                          : period.startsWith("e:")
+                            ? { event: period.slice(2) }
+                            : {}),
                     }).toString(),
                   }
                 : {}),
@@ -1339,7 +1352,9 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
                     ? `&event=${encodeURIComponent(period.slice(2))}`
-                    : ""
+                    : period.startsWith("p:")
+                      ? `&patch=${encodeURIComponent(period.slice(2))}`
+                      : ""
               }`,
             }}
             className="flex items-center gap-1 min-h-8 px-1.5 rounded text-rw-accent hover:underline"
@@ -1351,15 +1366,18 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
               kind: "tiers",
               ...((a.team.rating?.league && a.team.rating.league === b.team.rating?.league) ||
               (period.startsWith("y") && period.length === 5) ||
-              period.startsWith("e:")
+              period.startsWith("e:") ||
+              period.startsWith("p:")
                 ? {
                     query: new URLSearchParams({
                       ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
                       ...(period.startsWith("y") && period.length === 5
                         ? { key: period }
-                        : period.startsWith("e:")
-                          ? { event: period.slice(2) }
-                          : {}),
+                        : period.startsWith("p:")
+                          ? { key: `p${period.slice(2)}` }
+                          : period.startsWith("e:")
+                            ? { event: period.slice(2) }
+                            : {}),
                     }).toString(),
                   }
                 : {}),
@@ -1490,16 +1508,18 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
           <HubLink
             to={{
               kind: "tiers",
-              ...(t.picks[0] || side.team.rating?.league || (period.startsWith("y") && period.length === 5) || period.startsWith("e:")
+              ...(t.picks[0] || side.team.rating?.league || (period.startsWith("y") && period.length === 5) || period.startsWith("e:") || period.startsWith("p:")
                 ? {
                     query: new URLSearchParams({
                       ...(t.picks[0] ? { q: resolveChampSlug(t.picks[0][0]) } : {}),
                       ...(side.team.rating?.league ? { league: resolveLeagueSlug(side.team.rating.league) || side.team.rating.league } : {}),
                       ...(period.startsWith("y") && period.length === 5
                         ? { key: period }
-                        : period.startsWith("e:")
-                          ? { event: period.slice(2) }
-                          : {}),
+                        : period.startsWith("p:")
+                          ? { key: `p${period.slice(2)}` }
+                          : period.startsWith("e:")
+                            ? { event: period.slice(2) }
+                            : {}),
                     }).toString(),
                   }
                 : {}),
@@ -1516,7 +1536,9 @@ const Tendencies: React.FC<{ side: Side; rows: TeamGameRow[]; period: PeriodKey;
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
                     ? `&event=${encodeURIComponent(period.slice(2))}`
-                    : ""
+                    : period.startsWith("p:")
+                      ? `&patch=${encodeURIComponent(period.slice(2))}`
+                      : ""
               }`,
             }}
             className="text-[11px] text-rw-accent hover:underline"
@@ -1735,7 +1757,9 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
                     ? `&year=${encodeURIComponent(period.slice(1))}`
                     : period?.startsWith("e:")
                       ? `&event=${encodeURIComponent(period.slice(2))}`
-                      : ""
+                      : period?.startsWith("p:")
+                        ? `&patch=${encodeURIComponent(period.slice(2))}`
+                        : ""
                 }`,
               }}
               className="text-rw-accent hover:underline"
@@ -1772,15 +1796,17 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
             <HubLink
               to={{
                 kind: "tiers",
-                ...(sharedLeague || (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:")))
+                ...(sharedLeague || (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:") || period.startsWith("p:")))
                   ? {
                       query: new URLSearchParams({
                         ...(sharedLeague ? { league: sharedLeague } : {}),
                         ...(period && period.startsWith("y") && period.length === 5
                           ? { key: period }
-                          : period?.startsWith("e:")
-                            ? { event: period.slice(2) }
-                            : {}),
+                          : period?.startsWith("p:")
+                            ? { key: `p${period.slice(2)}` }
+                            : period?.startsWith("e:")
+                              ? { event: period.slice(2) }
+                              : {}),
                       }).toString(),
                     }
                   : {}),
@@ -2057,7 +2083,9 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
                     ? `&event=${encodeURIComponent(period.slice(2))}`
-                    : ""
+                    : period.startsWith("p:")
+                      ? `&patch=${encodeURIComponent(period.slice(2))}`
+                      : ""
               }`,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -2070,15 +2098,18 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
               kind: "tiers",
               ...((a.team.rating?.league && a.team.rating.league === b.team.rating?.league) ||
               (period.startsWith("y") && period.length === 5) ||
-              period.startsWith("e:")
+              period.startsWith("e:") ||
+              period.startsWith("p:")
                 ? {
                     query: new URLSearchParams({
                       ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
                       ...(period.startsWith("y") && period.length === 5
                         ? { key: period }
-                        : period.startsWith("e:")
-                          ? { event: period.slice(2) }
-                          : {}),
+                        : period.startsWith("p:")
+                          ? { key: `p${period.slice(2)}` }
+                          : period.startsWith("e:")
+                            ? { event: period.slice(2) }
+                            : {}),
                     }).toString(),
                   }
                 : {}),
@@ -2279,7 +2310,7 @@ const Lanes: React.FC<{
               <HubLink
                 to={{
                   kind: "items",
-                  query: `player=${encodeURIComponent(pa.p.u)}${sa?.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(sa.champs[0].c))}` : ""}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                  query: `player=${encodeURIComponent(pa.p.u)}${sa?.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(sa.champs[0].c))}` : ""}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
               >
@@ -2311,7 +2342,9 @@ const Lanes: React.FC<{
                       ? `&year=${encodeURIComponent(period.slice(1))}`
                       : period.startsWith("e:")
                         ? `&event=${encodeURIComponent(period.slice(2))}`
-                        : ""
+                        : period.startsWith("p:")
+                          ? `&patch=${encodeURIComponent(period.slice(2))}`
+                          : ""
                   }`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -2336,9 +2369,11 @@ const Lanes: React.FC<{
                     ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
                     ...(period.startsWith("y") && period.length === 5
                       ? { key: period }
-                      : period.startsWith("e:")
-                        ? { event: period.slice(2) }
-                        : {}),
+                      : period.startsWith("p:")
+                        ? { key: `p${period.slice(2)}` }
+                        : period.startsWith("e:")
+                          ? { event: period.slice(2) }
+                          : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -2584,7 +2619,9 @@ const Lanes: React.FC<{
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
                     ? `&event=${encodeURIComponent(period.slice(2))}`
-                    : ""
+                    : period.startsWith("p:")
+                      ? `&patch=${encodeURIComponent(period.slice(2))}`
+                      : ""
               }`,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -2597,15 +2634,18 @@ const Lanes: React.FC<{
               kind: "tiers",
               ...((a.team.rating?.league && a.team.rating.league === b.team.rating?.league) ||
               (period.startsWith("y") && period.length === 5) ||
-              period.startsWith("e:")
+              period.startsWith("e:") ||
+              period.startsWith("p:")
                 ? {
                     query: new URLSearchParams({
                       ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
                       ...(period.startsWith("y") && period.length === 5
                         ? { key: period }
-                        : period.startsWith("e:")
-                          ? { event: period.slice(2) }
-                          : {}),
+                        : period.startsWith("p:")
+                          ? { key: `p${period.slice(2)}` }
+                          : period.startsWith("e:")
+                            ? { event: period.slice(2) }
+                            : {}),
                     }).toString(),
                   }
                 : {}),
@@ -2923,7 +2963,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(cA))}${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(cA))}${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period && period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -2941,7 +2981,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
                 const hasParams =
                   qChamps ||
                   (a.team.rating?.league && a.team.rating.league === b.team.rating?.league) ||
-                  (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:")));
+                  (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:") || period.startsWith("p:")));
                 return hasParams
                   ? {
                       query: new URLSearchParams({
@@ -2949,9 +2989,11 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
                         ...(a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? { league: resolveLeagueSlug(a.team.rating.league) || a.team.rating.league } : {}),
                         ...(period && period.startsWith("y") && period.length === 5
                           ? { key: period }
-                          : period?.startsWith("e:")
-                            ? { event: period.slice(2) }
-                            : {}),
+                          : period?.startsWith("p:")
+                            ? { key: `p${period.slice(2)}` }
+                            : period?.startsWith("e:")
+                              ? { event: period.slice(2) }
+                              : {}),
                       }).toString(),
                     }
                   : {};
@@ -3000,7 +3042,9 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period && period.startsWith("e:")
                     ? `&event=${encodeURIComponent(period.slice(2))}`
-                    : ""
+                    : period && period.startsWith("p:")
+                      ? `&patch=${encodeURIComponent(period.slice(2))}`
+                      : ""
               }`,
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"

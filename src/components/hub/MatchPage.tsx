@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, PlayCircle, Clock, Crown, Star, Swords } from "lucide-react";
 import { tl, tc, tk, roleName, locale, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
+import { normalizeRole } from "../../hub/champAgg";
 import { buildGameDraftQuery, type GameDraftInput, loadHubSeries, prettySlug, resolveChampSlug, resolveItemSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
@@ -178,8 +179,8 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
             <HubLink
               to={
                 slugA && slugB
-                  ? { kind: "finder", query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}` }
-                  : { kind: "finder", ...(seriesYear ? { query: `year=${encodeURIComponent(seriesYear)}` } : {}) }
+                  ? { kind: "finder", query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}` }
+                  : { kind: "finder", ...(s.e || seriesYear ? { query: `${s.e ? `event=${encodeURIComponent(s.e)}` : ""}${s.e && seriesYear ? "&" : ""}${seriesYear ? `year=${encodeURIComponent(seriesYear)}` : ""}` } : {}) }
               }
               className="hover:text-rw-accent hover:underline"
             >
@@ -269,7 +270,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
+                    query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
                   }}
                   className={heroBtn()}
                 >
@@ -675,7 +676,7 @@ const SeriesGames: React.FC<{
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
+                  query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -836,7 +837,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
             {g.date &&
               (slugA && slugB ? (
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}` }}
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}` }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {new Date(`${g.date.replace(" ", "T")}Z`).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })}
@@ -902,7 +903,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}`,
+                    query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}`,
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                 >
@@ -950,7 +951,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}&vs=${encodeURIComponent(resolveChampSlug(red[0].c))}${blue[0].r ? `&role=${encodeURIComponent(blue[0].r)}` : ""}`,
+                      query: `champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}&vs=${encodeURIComponent(resolveChampSlug(red[0].c))}${blue[0].r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""}`,
                     }}
                     className="text-[11px] font-semibold text-rw-accent hover:underline"
                   >
@@ -989,8 +990,8 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
         </div>
         <div className="grid grid-cols-2 gap-3">
           {/* spoiler mode: the draft only (kills, gold and objectives give the result away) */}
-          <SideHeader name={blueTeam.n} u={blueTeam.u} side="blue" won={!hidden && blueWon} st={hidden ? undefined : g.t?.blue} period={gamePeriod} />
-          <SideHeader name={redTeam.n} u={redTeam.u} side="red" won={!hidden && redWon} st={hidden ? undefined : g.t?.red} right period={gamePeriod} />
+          <SideHeader name={blueTeam.n} u={blueTeam.u} side="blue" won={!hidden && blueWon} st={hidden ? undefined : g.t?.blue} period={gamePeriod} eventSlug={s.e} />
+          <SideHeader name={redTeam.n} u={redTeam.u} side="red" won={!hidden && redWon} st={hidden ? undefined : g.t?.red} right period={gamePeriod} eventSlug={s.e} />
         </div>
         {(g.t?.blue?.picks?.length || g.t?.blue?.bans?.length) && (
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-rw-border">
@@ -1011,12 +1012,12 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
       )}
       {!hidden && (blue.length > 0 || red.length > 0) && (
         <div className="grid gap-3 lg:grid-cols-2">
-          <Scoreboard name={blueTeam.n} u={blueTeam.u} oppU={redTeam.u} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} ratings={ratings} top={top?.[0]} period={gamePeriod} />
-          <Scoreboard name={redTeam.n} u={redTeam.u} oppU={blueTeam.u} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} ratings={ratings} top={top?.[0]} period={gamePeriod} />
+          <Scoreboard name={blueTeam.n} u={blueTeam.u} oppU={redTeam.u} side="blue" players={blue} hidden={hidden} won={blueWon} minutes={g.min} ratings={ratings} top={top?.[0]} period={gamePeriod} eventSlug={s.e} />
+          <Scoreboard name={redTeam.n} u={redTeam.u} oppU={blueTeam.u} side="red" players={red} hidden={hidden} won={redWon} minutes={g.min} ratings={ratings} top={top?.[0]} period={gamePeriod} eventSlug={s.e} />
         </div>
       )}
-      {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} period={gamePeriod} />}
-      {!hidden && <PlayerBars g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} minutes={g.min ?? undefined} ratings={ratings} period={gamePeriod} />}
+      {!hidden && <Leads g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} period={gamePeriod} eventSlug={s.e} />}
+      {!hidden && <PlayerBars g={g} blueName={blueTeam.n} redName={redTeam.n} blueU={blueTeam.u} redU={redTeam.u} blue={blue} red={red} minutes={g.min ?? undefined} ratings={ratings} period={gamePeriod} eventSlug={s.e} />}
       {g.st !== "f" && !g.p && (
         <p className="text-[11px] text-rw-muted text-center">
           {g.st === "r" ? tl("Only the result of this game is known.") : tl("No result or stats were recorded for this game.")}
@@ -1199,7 +1200,8 @@ const PlayerBars: React.FC<{
   minutes?: number;
   ratings?: Map<GamePlayer, number>;
   period?: string;
-}> = ({ g, blueName, redName, blueU, redU, blue, red, minutes, ratings, period }) => {
+  eventSlug?: string;
+}> = ({ g, blueName, redName, blueU, redU, blue, red, minutes, ratings, period, eventSlug }) => {
   const [metric, setMetric] = useState<BarMetric>("dm");
   const getVal = (p: GamePlayer, k: BarMetric): number | undefined => {
     if (k === "rt") return ratings?.get(p);
@@ -1317,7 +1319,7 @@ const PlayerBars: React.FC<{
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                  query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1328,6 +1330,7 @@ const PlayerBars: React.FC<{
                   kind: "leaders",
                   query: new URLSearchParams({
                     q: `${blueU},${redU}`,
+                    ...(eventSlug ? { event: eventSlug } : {}),
                     ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                   }).toString(),
                 }}
@@ -1341,11 +1344,12 @@ const PlayerBars: React.FC<{
                   ...(() => {
                     const qChamps = [blue[0]?.c, red[0]?.c && red[0]?.c !== blue[0]?.c ? red[0].c : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",");
                     const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
-                    return qChamps || key
+                    return qChamps || key || eventSlug
                       ? {
                           query: new URLSearchParams({
                             ...(qChamps ? { q: qChamps } : {}),
                             ...(key ? { key } : {}),
+                            ...(eventSlug ? { event: eventSlug } : {}),
                           }).toString(),
                         }
                       : {};
@@ -1503,7 +1507,7 @@ const PlayerBars: React.FC<{
   );
 };
 
-const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: string | null; redU?: string | null; blue: GamePlayer[]; red: GamePlayer[]; period?: string }> = ({ g, blueName, redName, blueU, redU, blue, red, period }) => {
+const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: string | null; redU?: string | null; blue: GamePlayer[]; red: GamePlayer[]; period?: string; eventSlug?: string }> = ({ g, blueName, redName, blueU, redU, blue, red, period, eventSlug }) => {
   const t = g.t?.blue;
   // the team's XP lead: its five players' leads over their lane opponents add up to it
   const xpAt = (key: "x10" | "x15" | "x20") => (blue.length === 5 && blue.every((p) => p[key] != null) ? blue.reduce((s, p) => s + (p[key] as number), 0) : null);
@@ -1558,7 +1562,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -1579,11 +1583,12 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                       ...(() => {
                         const qChamps = [blue[0]?.c, red[0]?.c && red[0]?.c !== blue[0]?.c ? red[0].c : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",");
                         const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
-                        return qChamps || key
+                        return qChamps || key || eventSlug
                           ? {
                               query: new URLSearchParams({
                                 ...(qChamps ? { q: qChamps } : {}),
                                 ...(key ? { key } : {}),
+                                ...(eventSlug ? { event: eventSlug } : {}),
                               }).toString(),
                             }
                           : {};
@@ -1598,6 +1603,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                       kind: "leaders",
                       query: new URLSearchParams({
                         q: `${blueU},${redU}`,
+                        ...(eventSlug ? { event: eventSlug } : {}),
                         ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                       }).toString(),
                     }}
@@ -1675,7 +1681,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -1686,6 +1692,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                       kind: "leaders",
                       query: new URLSearchParams({
                         q: `${blueU},${redU}`,
+                        ...(eventSlug ? { event: eventSlug } : {}),
                         ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                       }).toString(),
                     }}
@@ -1708,11 +1715,12 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                       ...(() => {
                         const qChamps = [lanes[0]?.b?.c, lanes[0]?.o?.c && lanes[0]?.o?.c !== lanes[0]?.b?.c ? lanes[0].o.c : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",");
                         const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
-                        return qChamps || key
+                        return qChamps || key || eventSlug
                           ? {
                               query: new URLSearchParams({
                                 ...(qChamps ? { q: qChamps } : {}),
                                 ...(key ? { key } : {}),
+                                ...(eventSlug ? { event: eventSlug } : {}),
                               }).toString(),
                             }
                           : {};
@@ -1795,7 +1803,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
   );
 };
 
-const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red"; won: boolean; st?: SideStats; right?: boolean; period?: string }> = ({
+const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red"; won: boolean; st?: SideStats; right?: boolean; period?: string; eventSlug?: string }> = ({
   name,
   u,
   side,
@@ -1803,6 +1811,7 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
   st,
   right,
   period,
+  eventSlug,
 }) => {
   const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
   const obj: [string, React.ReactNode][] = [];
@@ -1825,7 +1834,7 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
       <div className={`flex items-center gap-2 ${right ? "justify-end" : ""}`}>
         {u ? (
           <HubLink
-            to={{ kind: "finder", query: `team=${encodeURIComponent(u)}&side=${side === "blue" ? "b" : "r"}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
+            to={{ kind: "finder", query: `team=${encodeURIComponent(u)}&side=${side === "blue" ? "b" : "r"}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
             className="text-[10px] uppercase font-bold tracking-wider hover:underline"
             style={{ color }}
             title={tl("Game finder")}
@@ -1968,7 +1977,8 @@ const Scoreboard: React.FC<{
   ratings?: Map<GamePlayer, number>;
   top?: GamePlayer;
   period?: string;
-}> = ({ name, u, oppU, side, players, hidden, won, minutes, ratings, top, period }) => {
+  eventSlug?: string;
+}> = ({ name, u, oppU, side, players, hidden, won, minutes, ratings, top, period, eventSlug }) => {
   const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
   const totalK = players.reduce((s, p) => s + p.k, 0);
   const totalDmg = players.reduce((s, p) => s + (p.dm || 0), 0);
@@ -2029,6 +2039,7 @@ const Scoreboard: React.FC<{
                 kind: "leaders",
                 query: new URLSearchParams({
                   q: u,
+                  ...(eventSlug ? { event: eventSlug } : {}),
                   ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                 }).toString(),
               }}
@@ -2039,7 +2050,7 @@ const Scoreboard: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `team=${encodeURIComponent(u)}${oppU ? `&vs=${encodeURIComponent(oppU)}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                query: `team=${encodeURIComponent(u)}${oppU ? `&vs=${encodeURIComponent(oppU)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -2064,11 +2075,12 @@ const Scoreboard: React.FC<{
                     .filter((x): x is string => Boolean(x))
                     .join(",");
                   const key = period && /^y\d{4}$/.test(period) ? period : "";
-                  return qChamps || key
+                  return qChamps || key || eventSlug
                     ? {
                         query: new URLSearchParams({
                           ...(qChamps ? { q: qChamps } : {}),
                           ...(key ? { key } : {}),
+                          ...(eventSlug ? { event: eventSlug } : {}),
                         }).toString(),
                       }
                     : {};
@@ -2096,6 +2108,7 @@ const Scoreboard: React.FC<{
             rating={ratings?.get(p)}
             top={p === top}
             period={period}
+            eventSlug={eventSlug}
           />
         ))}
       </div>
@@ -2115,6 +2128,7 @@ const PlayerRow: React.FC<{
   rating?: number;
   top?: boolean;
   period?: string;
+  eventSlug?: string;
 }> = ({
   p,
   teamName,
@@ -2127,6 +2141,7 @@ const PlayerRow: React.FC<{
   rating,
   top,
   period,
+  eventSlug,
 }) => {
   const kp = teamKills ? Math.round(((p.k + p.a) / teamKills) * 100) : null;
   const csm = p.cs != null && minutes ? fmtDec(p.cs / minutes) : null;
@@ -2186,6 +2201,7 @@ const PlayerRow: React.FC<{
                   query: new URLSearchParams({
                     ...(p.u ? { player: p.u } : {}),
                     ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
+                    ...(eventSlug ? { event: eventSlug } : {}),
                     ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                   }).toString(),
                 }}
@@ -2231,6 +2247,7 @@ const PlayerRow: React.FC<{
                     item: resolveItemSlug(it),
                     ...(p.u ? { player: p.u } : {}),
                     ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
+                    ...(eventSlug ? { event: eventSlug } : {}),
                     ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                   }).toString(),
                 }}
@@ -2247,6 +2264,7 @@ const PlayerRow: React.FC<{
                     item: resolveItemSlug(p.tr),
                     ...(p.u ? { player: p.u } : {}),
                     ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
+                    ...(eventSlug ? { event: eventSlug } : {}),
                     ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                   }).toString(),
                 }}

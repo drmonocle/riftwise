@@ -9,7 +9,7 @@
 import React, { useEffect, useId, useMemo, useState } from "react";
 import { tl, tc, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadPlayerGames, loadPlayerGames2y, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadPlayerGames, loadPlayerGames2y, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import { currentHubRoute } from "../../hub/route";
 import { playerRowLine, rateLine, type RatingFile } from "../../hub/playerRating";
@@ -539,7 +539,7 @@ const ColoredOpponentGraph: React.FC<{
                 ...(period && /^y:?(\d{4})$/.test(period)
                   ? { query: `key=y${encodeURIComponent(/^y:?(\d{4})$/.exec(period)![1])}` }
                   : period?.startsWith("e:")
-                    ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                    ? { query: `event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` }
                     : period?.startsWith("p:")
                       ? { query: `key=p${encodeURIComponent(period.slice(2))}` }
                       : {}),
@@ -553,7 +553,7 @@ const ColoredOpponentGraph: React.FC<{
                 kind: "leaders",
                 query: new URLSearchParams({
                   ...(period && /^y:?(\d{4})$/.test(period) ? { year: /^y:?(\d{4})$/.exec(period)![1] } : {}),
-                  ...(period?.startsWith("e:") ? { event: period.slice(2) } : {}),
+                  ...(period?.startsWith("e:") ? { event: resolveEventSlug(period.slice(2)) } : {}),
                   ...(active.champs?.[0]?.c ? { champ: resolveChampSlug(active.champs[0].c) } : {}),
                   q: [subjectTeamSlug, resolveOppSlug(active.opp, active.u)].filter(Boolean).join(","),
                 }).toString(),
@@ -573,7 +573,7 @@ const periodQuerySuffix = (p?: string): string => {
   if (!p || p === "all") return "";
   if (p.startsWith("y:")) return `&year=${encodeURIComponent(p.slice(2))}`;
   if (/^y\d{4}$/.test(p)) return `&year=${encodeURIComponent(p.slice(1))}`;
-  if (p.startsWith("e:")) return `&event=${encodeURIComponent(p.slice(2))}`;
+  if (p.startsWith("e:")) return `&event=${encodeURIComponent(resolveEventSlug(p.slice(2)))}`;
   if (p.startsWith("p:")) return `&patch=${encodeURIComponent(p.slice(2))}`;
   return "";
 };
@@ -615,11 +615,11 @@ export const PlayerOpponents: React.FC<{
     const raw = (p.get("p") || p.get("period") || "").trim();
     if (/^y:?(\d{4})$/.test(raw)) return `y${/^y:?(\d{4})$/.exec(raw)![1]}`;
     if (/^\d{4}$/.test(raw)) return `y${raw}`;
-    if (raw.startsWith("e:") && raw.length > 2) return raw;
+    if (raw.startsWith("e:") && raw.length > 2) return `e:${resolveEventSlug(raw.slice(2))}`;
     const yr = (p.get("y") || p.get("year") || "").trim();
     if (/^\d{4}$/.test(yr)) return `y${yr}`;
     const ev = (p.get("event") || "").trim();
-    if (ev) return ev.startsWith("e:") ? ev : `e:${ev}`;
+    if (ev) return `e:${resolveEventSlug(ev.startsWith("e:") ? ev.slice(2) : ev)}`;
     return "all";
   };
   const [scope, setScope] = useState<string>(() => (givenRows ? "all" : parseUrlScope(routeQuery)));
@@ -915,7 +915,7 @@ export const PlayerOpponents: React.FC<{
             const activeP = period || (scope !== "all" ? scope : "");
             const yrMatch = /^y:?(\d{4})$/.exec(activeP);
             const yr = yrMatch ? yrMatch[1] : "";
-            const ev = activeP.startsWith("e:") ? activeP.slice(2) : "";
+            const ev = activeP.startsWith("e:") ? resolveEventSlug(activeP.slice(2)) : "";
             const topChamp = opps[0]?.champs[0]?.c;
             const secondChamp = opps[0]?.champs[1]?.c || opps[1]?.champs[0]?.c;
             const subTeam = scopedRows[0]?.[7] ? resolveOppSlug(scopedRows[0][7]) : "";
@@ -1187,7 +1187,10 @@ export const PlayerOpponents: React.FC<{
                 );
               })()}
               <HubLink
-                to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(resolveOppSlug(expanded.opp, expanded.u))}${periodQuerySuffix(period || scope)}` }}
+                to={{
+                  kind: "items",
+                  query: `player=${encodeURIComponent(slug)}${expanded.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(expanded.champs[0].c))}` : ""}${periodQuerySuffix(period || scope)}`,
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Item history")}
@@ -1200,7 +1203,7 @@ export const PlayerOpponents: React.FC<{
               </HubLink>
               {(() => {
                 const yr = (period || scope) && /^y:?(\d{4})$/.test((period || scope)!) ? /^y:?(\d{4})$/.exec((period || scope)!)![1] : undefined;
-                const ev = (period || scope)?.startsWith("e:") ? (period || scope)!.slice(2) : undefined;
+                const ev = (period || scope)?.startsWith("e:") ? resolveEventSlug((period || scope)!.slice(2)) : undefined;
                 return (
                   <>
                     <HubLink
@@ -1955,7 +1958,7 @@ export const TeamPeriodOpponents: React.FC<{
               ...(period && /^y\d{4}$/.test(period)
                 ? { query: `key=${encodeURIComponent(period)}` }
                 : period?.startsWith("e:")
-                  ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                  ? { query: `event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` }
                   : period?.startsWith("p:")
                     ? { query: `key=p${encodeURIComponent(period.slice(2))}` }
                     : {}),
@@ -1982,7 +1985,7 @@ export const TeamPeriodOpponents: React.FC<{
                 ...(period && /^y\d{4}$/.test(period)
                   ? { year: period.slice(1) }
                   : period?.startsWith("e:")
-                    ? { event: period.slice(2) }
+                    ? { event: resolveEventSlug(period.slice(2)) }
                     : {}),
                 q: [teamSlug, filtered[0]?.u].filter(Boolean).join(","),
               }).toString(),
@@ -2065,7 +2068,7 @@ export const TeamPeriodOpponents: React.FC<{
                   ...(period && /^y\d{4}$/.test(period)
                     ? { query: `key=${encodeURIComponent(period)}` }
                     : period?.startsWith("e:")
-                      ? { query: `event=${encodeURIComponent(period.slice(2))}` }
+                      ? { query: `event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` }
                       : period?.startsWith("p:")
                         ? { query: `key=p${encodeURIComponent(period.slice(2))}` }
                         : {}),
@@ -2092,7 +2095,7 @@ export const TeamPeriodOpponents: React.FC<{
                     ...(period && /^y\d{4}$/.test(period)
                       ? { year: period.slice(1) }
                       : period?.startsWith("e:")
-                        ? { event: period.slice(2) }
+                        ? { event: resolveEventSlug(period.slice(2)) }
                         : {}),
                     q: [teamSlug, resolveOppSlug(expanded.opp, expanded.u)].filter(Boolean).join(","),
                   }).toString(),

@@ -961,14 +961,17 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
           ? `${tl("Patch")} ${o.label}`
           : o.label;
   })();
+  const topFilteredChamp = filteredChamps[0] || agg.champs[0];
+  const secFilteredChamp = filteredChamps[1] || (topFilteredChamp && agg.champs[0] && agg.champs[0].c !== topFilteredChamp.c ? agg.champs[0] : agg.champs[1]);
+  const singleFilteredChamp = filteredChamps.length === 1 ? filteredChamps[0] : agg.champs.length === 1 ? agg.champs[0] : undefined;
   const leaderTo = (stat: string): import("../../hub/route").HubRoute => ({
     kind: "leaders",
     query: new URLSearchParams({
       stat,
       q: slug,
       ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
-      ...(agg.champs.length === 1 ? { champ: resolveChampSlug(agg.champs[0].c) } : {}),
-      ...(/^y\d{4}$/.test(period) ? { year: period.slice(1) } : period.startsWith("e:") ? { event: period.slice(2) } : {}),
+      ...(singleFilteredChamp ? { champ: resolveChampSlug(singleFilteredChamp.c) } : {}),
+      ...(/^y\d{4}$/.test(period) ? { year: period.slice(1) } : period.startsWith("e:") ? { event: resolveEventSlug(period.slice(2)) } : {}),
     }).toString(),
   });
   return (
@@ -991,11 +994,11 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   kind: "items",
                   query: new URLSearchParams({
                     player: slug,
-                    ...(agg.champs.length === 1 ? { champ: resolveChampSlug(agg.champs[0].c) } : {}),
+                    ...(singleFilteredChamp ? { champ: resolveChampSlug(singleFilteredChamp.c) } : {}),
                     ...(/^y\d{4}$/.test(period)
                       ? { year: period.slice(1) }
                       : period.startsWith("e:")
-                        ? { event: period.slice(2) }
+                        ? { event: resolveEventSlug(period.slice(2)) }
                         : {}),
                   }).toString(),
                 }}
@@ -1006,11 +1009,11 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `player=${encodeURIComponent(slug)}${
+                  query: `player=${encodeURIComponent(slug)}${singleFilteredChamp ? `&champ=${encodeURIComponent(resolveChampSlug(singleFilteredChamp.c))}` : ""}${
                     /^y\d{4}$/.test(period)
                       ? `&year=${encodeURIComponent(period.slice(1))}`
                       : period.startsWith("e:")
-                        ? `&event=${encodeURIComponent(period.slice(2))}`
+                        ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
                         : period.startsWith("p:")
                           ? `&patch=${encodeURIComponent(period.slice(2))}`
                           : ""
@@ -1020,11 +1023,11 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               >
                 {tl("Game finder")} →
               </HubLink>
-              {agg.champs[0] && (
+              {topFilteredChamp && (
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(agg.champs[0].c))}${agg.champs[1] ? `&vs=${encodeURIComponent(resolveChampSlug(agg.champs[1].c))}` : ""}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(topFilteredChamp.c))}${secFilteredChamp ? `&vs=${encodeURIComponent(resolveChampSlug(secFilteredChamp.c))}` : ""}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1050,7 +1053,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                         teams: teamSlug(who.club),
                         ...(period !== "all" ? { p: period } : {}),
                         ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
-                        ...(agg.champs[0] ? { champ: resolveChampSlug(agg.champs[0].c) } : {}),
+                        ...(topFilteredChamp ? { champ: resolveChampSlug(topFilteredChamp.c) } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1068,17 +1071,17 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               <HubLink
                 to={{
                   kind: "tiers",
-                  ...(agg.roles[0] || agg.champs[0] || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:")
+                  ...(agg.roles[0] || topFilteredChamp || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:")
                     ? {
                         query: new URLSearchParams({
                           ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
-                          ...(agg.champs[0] ? { q: resolveChampSlug(agg.champs[0].c) } : {}),
+                          ...(topFilteredChamp ? { q: resolveChampSlug(topFilteredChamp.c) } : {}),
                           ...(/^y\d{4}$/.test(period)
                             ? { key: period }
                             : period.startsWith("p:")
                               ? { key: `p${period.slice(2)}` }
                               : period.startsWith("e:")
-                                ? { event: period.slice(2) }
+                                ? { event: resolveEventSlug(period.slice(2)) }
                                 : {}),
                         }).toString(),
                       }
