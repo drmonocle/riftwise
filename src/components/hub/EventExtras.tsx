@@ -133,7 +133,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
   const tiersQuery =
     new URLSearchParams({
       ...(normLg ? { scope: normLg, league: normLg } : {}),
-      ...(yr ? { key: `y${yr}` } : {}),
+      ...(yr ? { key: `y${yr}`, year: yr } : {}),
       ...(slug ? { event: slug } : {}),
     }).toString() || undefined;
   return (
@@ -529,7 +529,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(o.pentas[0].c))}${o.pentas[1]?.c && o.pentas[1].c !== o.pentas[0].c ? `&vs=${encodeURIComponent(resolveChampSlug(o.pentas[1].c))}` : ""}`,
+                        query: `champ=${encodeURIComponent(resolveChampSlug(o.pentas[0].c))}${o.pentas[1]?.c && o.pentas[1].c !== o.pentas[0].c ? `&vs=${encodeURIComponent(resolveChampSlug(o.pentas[1].c))}` : ""}${slug ? `&event=${encodeURIComponent(slug)}` : ""}${yr ? `&patch=y${yr}&year=${yr}` : ""}`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -950,7 +950,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                   query:
                     new URLSearchParams({
                       ...(normLg ? { scope: normLg, league: normLg } : {}),
-                      ...(yr ? { key: `y${yr}` } : {}),
+                      ...(yr ? { key: `y${yr}`, year: yr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                       ...(qRole ? { role: qRole } : {}),
                     }).toString() || undefined,
@@ -1183,7 +1183,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
               query:
                 new URLSearchParams({
                   ...(lgSlug ? { scope: lgSlug, league: lgSlug } : {}),
-                  ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
+                  ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) } : {}),
                   event: e.u,
                 }).toString() || undefined,
             }}

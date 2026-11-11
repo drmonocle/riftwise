@@ -175,7 +175,7 @@ export const FactGroups: React.FC<{
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0]))}${topChamps[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topChamps[1]))}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0]))}${topChamps[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topChamps[1]))}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${evYr ? `&patch=y${evYr}&year=${evYr}` : ""}`,
                   }}
                   className="text-rw-accent hover:underline"
                 >
@@ -231,8 +231,8 @@ export const FactGroups: React.FC<{
                 kind: "champions",
                 query:
                   new URLSearchParams({
-                    ...(normLg ? { league: normLg } : {}),
-                    ...(evYr ? { year: evYr } : {}),
+                    ...(normLg ? { scope: normLg, league: normLg } : {}),
+                    ...(evYr ? { key: `y${evYr}`, year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
                     ...(topChamps.length >= 1 ? { q: topChamps.map(resolveChampSlug).join(",") } : {}),
                   }).toString() || undefined,
@@ -447,7 +447,7 @@ export const FactCard: React.FC<{
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}${f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? `&vs=${encodeURIComponent(resolveChampSlug(f.rows[1].champ))}` : ""}`,
+                      query: `champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}${f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? `&vs=${encodeURIComponent(resolveChampSlug(f.rows[1].champ))}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${evYr ? `&patch=y${evYr}&year=${evYr}` : ""}`,
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                     data-nocapture="1"
@@ -634,7 +634,7 @@ export const FactCard: React.FC<{
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}${f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? `&vs=${encodeURIComponent(resolveChampSlug(f.rows[1].champ))}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}${f.rows[1]?.champ && f.rows[1].champ !== f.rows[0].champ ? `&vs=${encodeURIComponent(resolveChampSlug(f.rows[1].champ))}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${evYr ? `&patch=y${evYr}&year=${evYr}` : ""}`,
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
                   data-nocapture="1"

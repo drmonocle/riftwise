@@ -262,7 +262,7 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                 <HubLink
                   to={{
                     kind: "champions",
-                    query: `league=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
+                    query: `league=${encodeURIComponent(def.league)}&scope=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
                   }}
                   className={btn}
                 >
@@ -312,7 +312,7 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                   {tl("Records")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "champions", query: `league=${encodeURIComponent(def.league)}` }}
+                  to={{ kind: "champions", query: `league=${encodeURIComponent(def.league)}&scope=${encodeURIComponent(def.league)}` }}
                   className={btn}
                 >
                   {tl("Champions")} →
@@ -581,7 +581,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                 ) : null;
               })()}
               <HubLink
-                to={{ kind: "champions", query: `league=world-championship&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
+                to={{ kind: "champions", query: `league=world-championship&scope=world-championship&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Champions")} →

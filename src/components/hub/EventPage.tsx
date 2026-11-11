@@ -611,12 +611,12 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
               <HubLink
                 to={{
                   kind: "tournaments",
+                  ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                    ? { year: (e.start || e.end || "").slice(0, 4) }
+                    : {}),
                   query:
                     new URLSearchParams({
                       ...(e.lu ? { league: e.lu } : {}),
-                      ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
-                        ? { year: (e.start || e.end || "").slice(0, 4) }
-                        : {}),
                     }).toString() || undefined,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -2092,7 +2092,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
   const more =
     e.lu && /^\d{4}$/.test(year) ? (
       <HubLink
-        to={{ kind: "champions", query: new URLSearchParams({ league: e.lu, year, event: e.u }).toString() }}
+        to={{ kind: "champions", query: new URLSearchParams({ scope: e.lu, league: e.lu, key: `y${year}`, year, event: e.u }).toString() }}
         className="text-[11px] text-rw-accent hover:underline"
       >
         {tl("Every champion, with filters")}
@@ -2123,7 +2123,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}${rows[1] ? `&vs=${encodeURIComponent(resolveChampSlug(rows[1].c))}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}${rows[1] ? `&vs=${encodeURIComponent(resolveChampSlug(rows[1].c))}` : ""}&event=${encodeURIComponent(e.u)}${/^\d{4}$/.test(year) ? `&patch=y${year}&year=${year}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -2132,7 +2132,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
               <HubLink
                 to={{
                   kind: "items",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}${/^\d{4}$/.test(year) ? `&year=${year}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}${e.lu ? `&league=${encodeURIComponent(e.lu)}` : ""}${/^\d{4}$/.test(year) ? `&year=${year}` : ""}&event=${encodeURIComponent(e.u)}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >

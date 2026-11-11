@@ -338,7 +338,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c[0]))}${rows[1]?.c?.[0] && rows[1].c[0] !== rows[0].c[0] ? `&vs=${encodeURIComponent(resolveChampSlug(rows[1].c[0]))}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c[0]))}${rows[1]?.c?.[0] && rows[1].c[0] !== rows[0].c[0] ? `&vs=${encodeURIComponent(resolveChampSlug(rows[1].c[0]))}` : ""}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}&event=${encodeURIComponent(e.u)}${/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? `&patch=y${(e.start || e.end || "").slice(0, 4)}&year=${(e.start || e.end || "").slice(0, 4)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -371,8 +371,8 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             to={{
               kind: "champions",
               query: new URLSearchParams({
-                ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
-                ...((e.start || e.end || "").slice(0, 4) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                ...(e.lu ? { scope: resolveLeagueSlug(e.lu), league: resolveLeagueSlug(e.lu) } : {}),
+                ...((e.start || e.end || "").slice(0, 4) ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
                 ...((search.trim() || rows.length === 1) && rows[0]?.c?.[0] ? { q: resolveChampSlug(rows[0].c[0]) } : {}),
@@ -388,7 +388,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
               kind: "tiers",
               query: new URLSearchParams({
                 ...(e.lu ? { scope: resolveLeagueSlug(e.lu), league: resolveLeagueSlug(e.lu) } : {}),
-                ...((e.start || e.end || "").slice(0, 4) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
+                ...((e.start || e.end || "").slice(0, 4) ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
                 ...((search.trim() || rows.length === 1) && rows[0]?.c?.[0] ? { q: resolveChampSlug(rows[0].c[0]) } : {}),
@@ -818,8 +818,8 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
             to={{
               kind: "champions",
               query: new URLSearchParams({
-                ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
-                ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                ...(e.lu ? { scope: resolveLeagueSlug(e.lu), league: resolveLeagueSlug(e.lu) } : {}),
+                ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
               }).toString(),
             }}
@@ -833,7 +833,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               kind: "tiers",
               query: new URLSearchParams({
                 ...(e.lu ? { scope: resolveLeagueSlug(e.lu), league: resolveLeagueSlug(e.lu) } : {}),
-                ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
+                ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
               }).toString(),
             }}
