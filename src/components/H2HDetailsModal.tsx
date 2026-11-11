@@ -504,7 +504,7 @@ const PrepButton: React.FC<{
       <button
         type="button"
         disabled={state === "busy"}
-        onClick={() => openRoute((a, b) => navigateHub({ kind: "prep", a, b, ...(year ? { period: `y${year}` } : {}) }))}
+        onClick={() => openRoute((a, b) => navigateHub({ kind: "prep", a, b, ...(event ? { period: `e:${event}` } : year ? { period: `y${year}` } : {}) }))}
         className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-rw-accent/40 text-rw-accent text-xs font-semibold hover:bg-rw-accent/10 disabled:opacity-60"
       >
         <ClipboardList className="w-3.5 h-3.5" />
@@ -518,7 +518,7 @@ const PrepButton: React.FC<{
             openRoute((a, b) =>
               navigateHub({
                 kind: "draft",
-                query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${year ? `&p=y${encodeURIComponent(year)}` : ""}`,
+                query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${event ? `&p=e:${encodeURIComponent(event)}` : year ? `&p=y${encodeURIComponent(year)}` : ""}`,
               }),
             )
           }
@@ -530,7 +530,7 @@ const PrepButton: React.FC<{
         <button
           type="button"
           disabled={state === "busy"}
-          onClick={() => openRoute((a, b) => navigateHub({ kind: "compare", mode: "team", a, b, ...(year ? { period: `y${year}` } : {}) }))}
+          onClick={() => openRoute((a, b) => navigateHub({ kind: "compare", mode: "team", a, b, ...(event ? { period: `e:${event}` } : year ? { period: `y${year}` } : {}) }))}
           className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
         >
           <GitCompare className="w-3.5 h-3.5" />
@@ -589,7 +589,7 @@ const PrepButton: React.FC<{
                       query: new URLSearchParams({
                         ...(lg ? { scope: lg, league: lg } : {}),
                         ...(event ? { event } : {}),
-                        ...(year ? { key: `y${year}` } : {}),
+                        ...(year ? { key: `y${year}`, year } : {}),
                       }).toString(),
                     }
                   : {}),
@@ -610,6 +610,7 @@ const PrepButton: React.FC<{
                 query: new URLSearchParams({
                   q: `${a},${b}`,
                   ...(lg ? { league: lg } : {}),
+                  ...(event ? { event } : {}),
                   ...(year ? { year } : {}),
                 }).toString(),
               }),

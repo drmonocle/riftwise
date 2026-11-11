@@ -245,6 +245,18 @@ describe("search shortcuts", () => {
       kind: "counters",
       query: "champ=azir&vs=orianna&role=Mid&patch=16.5",
     });
+    expect(siblingSectionRoute({ kind: "tiers", query: "key=p16.5&q=azir,orianna&role=Mid" }, "finder")).toEqual({
+      kind: "finder",
+      query: "champ=azir&vschamp=orianna&role=Mid&patch=16.5",
+    });
+    expect(siblingSectionRoute({ kind: "champions", query: "scope=lck&key=y2025&role=Mid&q=azir" }, "leaders")).toEqual({
+      kind: "leaders",
+      query: "role=Mid&league=lck&year=2025&champ=azir",
+    });
+    expect(siblingSectionRoute({ kind: "champions", query: "key=y2025&q=azir" }, "items")).toEqual({
+      kind: "items",
+      query: "champ=azir&year=2025",
+    });
     expect(siblingSectionRoute({ kind: "tiers", query: "key=p16.5" }, "patches")).toEqual({
       kind: "patches",
       query: "patch=16.5",

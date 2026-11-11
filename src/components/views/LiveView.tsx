@@ -740,7 +740,7 @@ const LiveMatchBlock: React.FC<{
                     const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     const q = new URLSearchParams({
                       ...(lg ? { scope: lg, league: lg } : {}),
-                      ...(yr ? { key: `y${yr}` } : {}),
+                      ...(yr ? { key: `y${yr}`, year: yr } : {}),
                     }).toString();
                     navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
                   }}
@@ -1170,7 +1170,7 @@ const NextMatchCard: React.FC<{
                     const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     const q = new URLSearchParams({
                       ...(lg ? { scope: lg, league: lg } : {}),
-                      ...(yr ? { key: `y${yr}` } : {}),
+                      ...(yr ? { key: `y${yr}`, year: yr } : {}),
                     }).toString();
                     navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
                   }}

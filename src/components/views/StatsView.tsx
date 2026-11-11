@@ -156,10 +156,19 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     (current.kind === "champions" || current.kind === "tiers" ? params.get("scope") || "" : "") ||
     (current.kind === "worlds" || current.kind === "msi" || current.kind === "first-stand" ? current.kind : "");
   const role = params.get("role") || "";
-  const champ = params.get("champ") || "";
-  const vsChamp = (current.kind === "counters" ? params.get("vs") : params.get("vschamp")) || "";
+  const rawQ = params.get("q") || "";
+  const champParts =
+    (current.kind === "champions" || current.kind === "tiers" || current.kind === "patches") && rawQ
+      ? rawQ
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+  const champ = params.get("champ") || champParts[0] || "";
+  const vsChamp = (current.kind === "counters" ? params.get("vs") : params.get("vschamp")) || champParts[1] || "";
+  const item = params.get("item") || "";
   const region = params.get("region") || "";
-  const q = params.get("q") || "";
+  const q = champParts.length ? "" : rawQ;
 
   if (targetKind === "prep") {
     return {
@@ -215,6 +224,7 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
   if (targetKind === "items") {
     const next = new URLSearchParams();
     if (playerA) next.set("player", playerA);
+    if (item) next.set("item", item);
     if (champ) next.set("champ", champ);
     if (event) next.set("event", event);
     if (year) next.set("year", year);

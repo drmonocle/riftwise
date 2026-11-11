@@ -224,6 +224,10 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][]; teamSlug?:
       <dd className="text-xs text-rw-text flex flex-wrap gap-x-3 gap-y-1">
         {shares.slice(0, 3).map(([r, v]) => {
           const pctVal = Math.round(v * 100);
+          const roleQuery = new URLSearchParams({
+            ...(period && period !== "all" ? { p: period } : {}),
+            ...(ROLES[r] ? { role: ROLES[r] } : {}),
+          }).toString();
           return (
             <span key={r} className="inline-flex items-center gap-1.5 whitespace-nowrap">
               {teamSlug ? (
@@ -232,7 +236,7 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][]; teamSlug?:
                     kind: "team",
                     slug: teamSlug,
                     tab: "champions",
-                    ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                    ...(roleQuery ? { query: roleQuery } : {}),
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >
@@ -250,7 +254,7 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][]; teamSlug?:
                     kind: "team",
                     slug: teamSlug,
                     tab: "champions",
-                    ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                    ...(roleQuery ? { query: roleQuery } : {}),
                   }}
                   className="tabular-nums text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -436,11 +440,11 @@ export const DraftTendencies: React.FC<{
                       ? {
                           query: new URLSearchParams({
                             ...(period?.startsWith("y") && period.length === 5
-                              ? { key: period }
+                              ? { key: period, year: period.slice(1) }
                               : period?.startsWith("e:")
                                 ? { event: resolveEventSlug(period.slice(2)) }
                                 : period?.startsWith("p:")
-                                  ? { key: `p${period.slice(2)}` }
+                                  ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
                                   : {}),
                             ...((d.b1[0] || d.r12[0]) ? { q: resolveChampSlug((d.b1[0] || d.r12[0])[0]) } : {}),
                             ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
@@ -576,7 +580,10 @@ export const DraftTendencies: React.FC<{
                   kind: "team",
                   slug: resolvedSlug,
                   tab: "champions",
-                  ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                  query: new URLSearchParams({
+                    ...(period && period !== "all" ? { p: period } : {}),
+                    ...(ROLES[i] ? { role: ROLES[i] } : {}),
+                  }).toString(),
                 }}
                 className="hover:text-rw-accent hover:underline"
               >

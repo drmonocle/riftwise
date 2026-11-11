@@ -520,7 +520,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             kind: "tiers",
                             query: new URLSearchParams({
                               ...(sLg ? { scope: sLg, league: sLg } : {}),
-                              ...(sYr ? { key: `y${sYr}` } : {}),
+                              ...(sYr ? { key: `y${sYr}`, year: sYr } : {}),
                             }).toString(),
                           })
                         }
@@ -613,7 +613,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           kind: "tiers",
                           query: new URLSearchParams({
                             ...(pLg ? { scope: pLg, league: pLg } : {}),
-                            ...(pYr ? { key: `y${pYr}` } : {}),
+                            ...(pYr ? { key: `y${pYr}`, year: pYr } : {}),
                           }).toString(),
                         })
                       }
