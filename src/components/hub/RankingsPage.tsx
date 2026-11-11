@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
-import { bare, loadAliases, loadRatings, loadRatingsHistory, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadAliases, loadRatings, loadRatingsHistory, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
 import { hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
@@ -54,7 +54,7 @@ export const RankingsPage: React.FC = () => {
 const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   const route = useHubRoute();
   const q = new URLSearchParams(route.kind === "rankings" && "query" in route ? route.query || "" : "");
-  const rawLeague = q.get("league") || "";
+  const rawLeague = q.get("league") || q.get("scope") || q.get("region") || "";
   const league = useMemo(() => {
     if (!rawLeague || rawLeague === "*") return rawLeague;
     if (d.teams.some((r) => r[3] === rawLeague)) return rawLeague;
@@ -73,6 +73,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   }, [d.teams, rawLeague]);
   const setLeague = (v: string) => {
     const next = new URLSearchParams(q);
+    next.delete("scope");
+    next.delete("region");
     if (!v) next.delete("league");
     else next.set("league", v);
     const qs = next.toString();
@@ -194,10 +196,11 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       .map((s) => s.trim())
       .filter(Boolean);
     const matchRow = (r: RatingRow, t: string) => {
-      const hay = normText(`${r[0] || ""} ${r[1]} ${r[2] || ""} ${r[3] || ""} ${r[10] || ""}`);
+      const hay = normText(`${r[0] || ""} ${r[1]} ${r[2] || ""} ${r[3] || ""} ${r[10] || ""} ${r[11] || ""} ${countryName(r[11]) || ""}`);
       if (hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t)))) return true;
-      const canonTeam = aliases.data?.team[t] || prettySlug(t);
-      if (canonTeam && ((r[0] && r[0].toLowerCase() === canonTeam) || prettySlug(r[1]) === canonTeam)) return true;
+      const canonTeam = resolveTeamAlias(aliases.data?.team[t] || t) || prettySlug(t);
+      const rowTeam = resolveTeamAlias(r[0] || r[1]) || prettySlug(r[1]);
+      if (canonTeam && ((r[0] && r[0].toLowerCase() === canonTeam) || prettySlug(r[1]) === canonTeam || rowTeam === canonTeam)) return true;
       const canonLeague = aliases.data?.league[t] || resolveLeagueSlug(t);
       if (canonLeague && r[4] && r[4].toLowerCase() === canonLeague.toLowerCase()) return true;
       return false;

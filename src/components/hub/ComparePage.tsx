@@ -8,7 +8,8 @@ import { Check, Copy } from "lucide-react";
 import { tl, tc, tn, roleName, fmtDec, locale, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { winRate } from "../../stats";
-import { bare, HubHit, HubIndex, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, matchesChampSearch, normText, prettySlug, searchHub, teamStarter } from "../../hub/data";
+import { bare, HubHit, HubIndex, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, matchesChampSearch, normText, prettySlug, resolveTeamAlias, searchHub, teamStarter } from "../../hub/data";
+import { normalizeRole } from "../../hub/champAgg";
 import { countView } from "../../usage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { CompareRoute, hubShareUrl, navigateHub } from "../../hub/route";
@@ -19,6 +20,7 @@ import {
   type PlayerAgg,
   type TeamAgg,
   inPeriod,
+  matchesPeriodEvent,
   periodOptions,
   playerAgg,
   playerHeadToHead,
@@ -2317,14 +2319,25 @@ const PlayerHeadToHead: React.FC<{
       .filter(Boolean);
     if (!terms.length) return shown;
     return shown.filter((m) => {
-      const hay = normText(`${champName(m.a[2])} ${m.a[2]} ${champName(m.b[2])} ${m.b[2]} ${m.a[9] || ""} ${m.a[0] || ""}`);
-      return terms.some(
-        (t) =>
+      const hay = normText(
+        `${champName(m.a[2])} ${m.a[2]} ${champName(m.b[2])} ${m.b[2]} ${m.a[7] || ""} ${m.b[7] || ""} ${m.a[9] || ""} ${m.a[11] || ""} ${m.a[10] || ""} ${m.a[0] || ""}`,
+      );
+      const tA = resolveTeamAlias(m.a[7] || "");
+      const tB = resolveTeamAlias(m.b[7] || "");
+      const rA = normalizeRole(m.a[10] || "");
+      return terms.some((t) => {
+        const qTeam = resolveTeamAlias(t);
+        const qRole = normalizeRole(t);
+        return (
           matchesChampSearch(m.a[2], t) ||
           matchesChampSearch(m.b[2], t) ||
+          Boolean(qTeam && (qTeam === tA || qTeam === tB)) ||
+          Boolean(qRole && qRole === rA) ||
+          matchesPeriodEvent(m.a[9] || "", m.a[11], t) ||
           hay.includes(t) ||
-          (bare(t).length >= 2 && bare(hay).includes(bare(t))),
-      );
+          (bare(t).length >= 2 && bare(hay).includes(bare(t)))
+        );
+      });
     });
   }, [shown, champFilter]);
   const s = useMemo(() => {
@@ -2357,7 +2370,7 @@ const PlayerHeadToHead: React.FC<{
           <RevealButton onReveal={reveal} small />
         ) : (
           <span className="flex flex-wrap items-center gap-2">
-            {shown.length > 8 && (
+            {(shown.length > 8 || Boolean(champFilter.trim())) && (
               <input
                 type="search"
                 value={champFilter}

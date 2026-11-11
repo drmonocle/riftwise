@@ -14,7 +14,7 @@ import { MissingFile, winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
 import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import { championList, useDDragon } from "../../hub/ddragon";
-import { ROLES } from "../../hub/champAgg";
+import { ROLES, normalizeRole } from "../../hub/champAgg";
 import { PeriodKey, inPeriod, kdaOf, playerRowRef, teamRowRef } from "../../hub/period";
 import { ComparePick, bothOptions } from "./ComparePage";
 import { PeriodPicker, QuickPeriods, defaultPeriod } from "./PeriodStats";
@@ -424,17 +424,18 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
   if (!a || !b) {
     const rawInitChamp = q.get("champ") || "";
     const rawInitRole = q.get("role") || "";
+    const resolvedInitRole = normalizeRole(rawInitRole) || rawInitRole.trim();
     return (
       <div className="space-y-3">
         <div className={`${card} space-y-2 text-xs`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-rw-text font-semibold">{tl("Draft board")}</p>
-            {(rawInitChamp || rawInitRole) && (
+            {(rawInitChamp || resolvedInitRole) && (
               <span className="inline-flex flex-wrap items-center gap-2 text-[11px] text-rw-sub">
                 {rawInitChamp && <ChampLink name={rawInitChamp} size={16} />}
-                {rawInitRole && ROLES.includes(rawInitRole) && (
+                {resolvedInitRole && ROLES.includes(resolvedInitRole) && (
                   <span className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-rw-accent font-semibold">
-                    {roleName(rawInitRole)}
+                    {roleName(resolvedInitRole)}
                   </span>
                 )}
               </span>
@@ -645,9 +646,16 @@ const Board: React.FC<{
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<number | "open" | null>(() => {
     if (!initRole) return null;
-    const idx = ROLES.findIndex((r) => r.toLowerCase() === initRole.trim().toLowerCase());
+    const resolved = normalizeRole(initRole) || initRole.trim();
+    const idx = ROLES.findIndex((r) => r.toLowerCase() === resolved.toLowerCase());
     return idx >= 0 ? idx : null;
   });
+  useEffect(() => {
+    if (!initRole) return;
+    const resolved = normalizeRole(initRole) || initRole.trim();
+    const idx = ROLES.findIndex((r) => r.toLowerCase() === resolved.toLowerCase());
+    if (idx >= 0) setRole(idx);
+  }, [initRole]);
   const [poolFilter, setPoolFilter] = useState<PoolFilter>("all");
   const [minGames, setMinGames] = useState<number>(0);
   const [sortBy, setSortBy] = useState<SortKey>("picked");
@@ -734,7 +742,18 @@ const Board: React.FC<{
   const shown = useMemo(() => {
     const filtered = all.filter((c) => {
       if (hideTaken && isChampTaken(c, taken)) return false;
-      if (searchTerms.length > 0 && !searchTerms.some((term) => matchesChampSearch(c, term))) {
+      if (
+        searchTerms.length > 0 &&
+        !searchTerms.some(
+          (term) =>
+            matchesChampSearch(c, term) ||
+            [...(pools.b.players.get(c) || []), ...(pools.r.players.get(c) || [])].some(
+              (p) =>
+                (p.g > 0 || p.cg >= 3) &&
+                (normText(p.name).includes(term) || (bare(term).length >= 2 && bare(p.name).includes(bare(term)))),
+            ),
+        )
+      ) {
         return false;
       }
       if (role === "open") {
