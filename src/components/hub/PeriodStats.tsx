@@ -917,6 +917,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
     return new URLSearchParams({
       player: slug,
       ...(clubSlug ? { team: clubSlug } : {}),
+      ...(topPlayerOppSlug ? { vs: topPlayerOppSlug } : {}),
       ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
       ...(vsC && vsC !== cSlug ? { vschamp: vsC } : {}),
       ...(period !== "all" ? { p: period } : {}),
@@ -1602,6 +1603,7 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "b
               query={
                 [
                   slug ? `team=${encodeURIComponent(slug)}` : "",
+                  oppSlug ? `vs=${encodeURIComponent(oppSlug)}` : "",
                   rosterSlug ? `player=${encodeURIComponent(rosterSlug)}` : "",
                   vsC && vsC !== cSlug ? `vschamp=${encodeURIComponent(vsC)}` : "",
                   period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
@@ -2036,7 +2038,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                               <ChampLink
                                 name={c}
                                 size={16}
-                                query={`team=${encodeURIComponent(slug)}${topRosterSlugs[0] ? `&player=${encodeURIComponent(topRosterSlugs[0])}` : ""}${vsC && vsC !== cSlug ? `&vschamp=${encodeURIComponent(vsC)}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`}
+                                query={`team=${encodeURIComponent(slug)}${topTeamOppSlug ? `&vs=${encodeURIComponent(topTeamOppSlug)}` : ""}${topRosterSlugs[0] ? `&player=${encodeURIComponent(topRosterSlugs[0])}` : ""}${vsC && vsC !== cSlug ? `&vschamp=${encodeURIComponent(vsC)}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`}
                               />
                               <span className="inline-flex items-center gap-1.5 text-rw-sub tabular-nums shrink-0">
                                 <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block">
