@@ -9,7 +9,7 @@ import { tl, tk, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
 import { winRate } from "../../stats";
-import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubChamp, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, prettySlug, sameChamp, searchHub } from "../../hub/data";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubChamp, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, prettySlug, resolvePlayerSlug, sameChamp, searchHub } from "../../hub/data";
 import type { ItemIndexRow } from "../../hub/types";
 import { itemName } from "../../hub/ddragon";
 import { HubRoute, navigateHub } from "../../hub/route";
@@ -177,6 +177,7 @@ export const hitRoute = (h: HubHit): HubRoute =>
     kind: KIND_ROUTE[h.kind],
     slug: h.slug,
     ...(h.kind === "team" && h.matched ? { query: `as=${encodeURIComponent(h.matched)}` } : {}),
+    ...(h.kind === "league" && h.year ? { year: h.year } : {}),
   }) as HubRoute;
 
 /**
@@ -486,7 +487,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
           const topPlayers = (c.players12?.length ? c.players12 : c.players || []).slice(0, 4);
           const top: Shortcut[] = [
             ...topPlayers.map((p) => {
-              const pSlug = p.u || prettySlug(p.n);
+              const pSlug = p.u || resolvePlayerSlug(p.n) || prettySlug(p.n);
               return {
                 key: `top-c-${c.u}-${pSlug}`,
                 route: { kind: "player" as const, slug: pSlug, tab: "champions" as const, query: `champ=${encodeURIComponent(c.name)}` },

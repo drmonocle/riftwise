@@ -729,37 +729,61 @@ export function searchHub(index: HubIndex, query: string, limit = 6): Record<Hub
     (p) => p[3] + (p[4] >= String(new Date().getFullYear() - 1) ? 400 : 0),
     (p, m) => ({ kind: "player", name: p[0], slug: slugOf(p[0], p[1]), sub: p[2], games: p[3], matched: m, role: ROLE[p[5]] || "", year: p[4] }),
   );
+  const eventAlias = resolveEventSlug(prettySlug(q));
   out.event = pick(
     index.events,
     (e) => {
       const s = score(e[0], q);
       if (s >= 0) return [s, undefined];
-      // "worlds 2019" / "lck spring 2024": every word somewhere in the name or league
+      if (eventAlias && slugOf(e[0], e[1]) === eventAlias) return [0.2, undefined];
+      // "worlds 2019" / "lck spring 2024": every word somewhere in the name, slug, year or league
       const words = q.split(/\s+/).filter(Boolean);
-      const hay = normText(`${e[0]} ${e[3]}`);
+      const hay = normText(`${e[0]} ${e[1]} ${e[2]} ${e[3]}`);
       return words.length > 1 && words.every((w) => hay.includes(w)) ? [2.5, undefined] : null;
     },
     (e) => (e[4] === "P" ? 100000 : 0) + Number(e[2] || 0) * 10 + Math.min(e[6], 9),
     (e) => ({ kind: "event", name: e[0], slug: slugOf(e[0], e[1]), sub: [e[3], e[5]?.slice(0, 4) || e[2]].filter(Boolean).join(" · "), games: e[6], year: e[2] }),
   );
+  const lgYrMatch = /^(?:(20\d\d)\s+(.+)|(.+?)\s+(20\d\d))$/.exec(q);
+  const lgYrYear = lgYrMatch ? lgYrMatch[1] || lgYrMatch[4] : "";
+  const lgYrRest = lgYrMatch ? (lgYrMatch[2] || lgYrMatch[3] || "").trim() : "";
+  const lgYrSlug = lgYrRest ? resolveLeagueSlug(lgYrRest) : "";
   out.league = pick(
     index.leagues || [],
     (l) => {
       const s = Math.min(...[l.s ? score(l.s, q) : -1, score(l.l, q)].map((x) => (x < 0 ? 9 : x)));
       if (s < 9) return [s, undefined];
+      if (lgYrYear && lgYrRest) {
+        const fromY = Number(l.from || 2011);
+        const toY = Number(l.to || 2099);
+        const yNum = Number(lgYrYear);
+        if (yNum >= fromY && yNum <= toY) {
+          const rs = Math.min(
+            ...[l.s ? score(l.s, lgYrRest) : -1, score(l.l, lgYrRest), lgYrSlug && l.u === lgYrSlug ? 0.2 : -1].map((x) => (x < 0 ? 9 : x)),
+          );
+          if (rs <= 1.5) return [rs + 0.2, `year:${lgYrYear}`];
+        }
+      }
       // an old name of the league ("NA LCS", "OGN Champions")
       const old = (l.h || []).find((h) => h.u !== l.u && ((h.s && score(h.s, q) >= 0 && score(h.s, q) <= 1) || score(h.l, q) >= 0));
       return old ? [2, old.s || old.l] : null;
     },
     (l) => (l.pr ? 100000 : 0) + l.g,
-    (l, m) => ({
-      kind: "league",
-      name: l.l,
-      slug: l.u,
-      sub: [l.s && l.s !== l.l ? l.s : "", l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : l.from || ""].filter(Boolean).join(" · "),
-      games: l.g,
-      matched: m,
-    }),
+    (l, m) => {
+      const pickedYear = m?.startsWith("year:") ? m.slice(5) : undefined;
+      const matchedName = m && !m.startsWith("year:") ? m : undefined;
+      return {
+        kind: "league",
+        name: l.l,
+        slug: l.u,
+        sub: [l.s && l.s !== l.l ? l.s : "", pickedYear || (l.from && l.to ? (l.from === l.to ? l.from : `${l.from}–${l.to}`) : l.from || "")]
+          .filter(Boolean)
+          .join(" · "),
+        games: l.g,
+        matched: matchedName,
+        ...(pickedYear ? { year: pickedYear } : {}),
+      };
+    },
   );
   const champAlias = CHAMP_SLUG_ALIASES[q] || CHAMP_SLUG_ALIASES[prettySlug(q)];
   const bChampAlias = champAlias ? bare(champAlias) : "";
@@ -838,21 +862,27 @@ export function findHubTeam(index: HubIndex, name: string, code?: string): strin
   const n = normText(name || "");
   const nb = bareTeam(name || "");
   const c = normalizeTeamCode(code || "");
+  const aliasSlug = (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || "";
   let best: SearchTeamRow | null = null;
   let bestKey: [number, string, number] | null = null;
   for (const t of index.teams) {
-    const exact = normText(t[0]) === n;
+    const slug = slugOf(t[0], t[1]);
+    const exact = normText(t[0]) === n || (!!aliasSlug && slug === aliasSlug);
+    const olds = [...(t[4] ? t[4].split(" | ") : []), ...(TEAM_EXTRA_OLD[t[0]] || [])];
+    const codes = [...(t[5] ? t[5].split(" | ") : []), ...(TEAM_EXTRA_CODES[t[0]] || [])];
     const nameFit =
-      exact || (!!nb && bareTeam(t[0]) === nb) || (!!t[4] && t[4].split(" | ").some((o) => normText(o) === n || (!!nb && bareTeam(o) === nb)));
-    const codeFit = !!c && !!t[5] && t[5].split(" | ").some((x) => normalizeTeamCode(x) === c);
+      exact || (!!nb && bareTeam(t[0]) === nb) || olds.some((o) => normText(o) === n || (!!nb && bareTeam(o) === nb));
+    const codeFit = !!c && codes.some((x) => normalizeTeamCode(x) === c);
     if (!nameFit && !codeFit) continue;
-    const key: [number, string, number] = [(nameFit ? 2 : 0) + (codeFit ? 1 : 0), t[3] || "", t[2]];
+    const isAcad = ACADEMY_TEAM.test(t[0]) && !ACADEMY_TEAM.test(name || "");
+    const scoreTier = (nameFit ? 2 : 0) + (codeFit ? 1 : 0) - (isAcad ? 0.5 : 0);
+    const key: [number, string, number] = [scoreTier, t[3] || "", t[2]];
     if (!bestKey || key[0] > bestKey[0] || (key[0] === bestKey[0] && (key[1] > bestKey[1] || (key[1] === bestKey[1] && key[2] > bestKey[2])))) {
       best = t;
       bestKey = key;
     }
   }
-  return best ? slugOf(best[0], best[1]) : null;
+  return best ? slugOf(best[0], best[1]) : aliasSlug || null;
 }
 
 export const loadTeamSeries = (slug: string) => teamFile<import("./types").TeamSeriesRow[]>("teamseries", slug);

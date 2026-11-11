@@ -16,7 +16,7 @@ import { winRate } from "../stats";
 import { champName } from "../champions";
 import { fetchLiveStart, type LiveParticipantMeta, type LiveWindow } from "../liveGame";
 import { champNameById, useDDragon } from "../hub/ddragon";
-import { findHubTeam, loadHubIndex, loadHubIndexQuick, prettySlug, resolveLeagueSlug, sameChamp } from "../hub/data";
+import { findHubTeam, loadHubIndex, loadHubIndexQuick, prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp } from "../hub/data";
 import { teamRowRef } from "../hub/period";
 import { bothOptions } from "./hub/ComparePage";
 import { defaultPeriod } from "./hub/PeriodStats";
@@ -24,6 +24,10 @@ import { loadSide, type Side } from "./hub/PrepPage";
 import { pool, comfort, champOf, buildGameDraftQuery, type Pool } from "./hub/DraftPage";
 import { BroadcastCardButton, SectionCard, draftBoardCard } from "./hub/BroadcastCard";
 import { ChampIcon, HubLink, PlayerPhoto, TeamLogo } from "./hub/ui";
+
+const teamSlug = (name?: string, code?: string) =>
+  (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
+const playerSlug = (name: string, u?: string | null) => u || resolvePlayerSlug(name) || prettySlug(name);
 
 const ROLE_ORDER = ["top", "jungle", "mid", "bottom", "support"];
 const ROLE_LABELS = ["Top", "Jungle", "Mid", "Bot", "Support"];
@@ -448,7 +452,7 @@ export const LiveNextGamePreview: React.FC<{
                 <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1">
                     <HubLink
-                      to={{ kind: "team", slug: draftIntel?.slugA || prettySlug(match.team1Name || match.team1Code) }}
+                      to={{ kind: "team", slug: draftIntel?.slugA || teamSlug(match.team1Name, match.team1Code) }}
                       className="inline-flex items-center gap-1 text-[10px] font-bold text-rw-side-a hover:underline"
                     >
                       <TeamLogo name={match.team1Name} code={match.team1Code} src={match.team1Image} size={14} className="shrink-0" />
@@ -468,7 +472,7 @@ export const LiveNextGamePreview: React.FC<{
                   <span className="text-rw-border">·</span>
                   <span className="inline-flex items-center gap-1">
                     <HubLink
-                      to={{ kind: "team", slug: draftIntel?.slugB || prettySlug(match.team2Name || match.team2Code) }}
+                      to={{ kind: "team", slug: draftIntel?.slugB || teamSlug(match.team2Name, match.team2Code) }}
                       className="inline-flex items-center gap-1 text-[10px] font-bold text-rw-side-b hover:underline"
                     >
                       <TeamLogo name={match.team2Name} code={match.team2Code} src={match.team2Image} size={14} className="shrink-0" />
@@ -554,17 +558,17 @@ export const LiveNextGamePreview: React.FC<{
               if (!ra && !rb) return null;
               const renderPicks = (
                 row: typeof ra,
-                teamSlug: string,
+                tSlug: string,
                 teamName: string,
                 alignRight: boolean,
               ) => (
                 <div className={`flex flex-wrap items-center gap-1 min-w-0 ${alignRight ? "justify-end" : ""}`}>
                   {row.player && (
                     <HubLink
-                      to={{ kind: "player", slug: row.u || prettySlug(row.player), tab: "champions" }}
+                      to={{ kind: "player", slug: playerSlug(row.player, row.u), tab: "champions" }}
                       className={`inline-flex items-center gap-1 font-semibold text-rw-text hover:text-rw-accent text-[11px] shrink-0 ${alignRight ? "order-last ml-1 flex-row-reverse" : "mr-1"}`}
                     >
-                      <PlayerPhoto name={row.player} team={teamName} slug={row.u ?? undefined} size={16} linkFallback={false} />
+                      <PlayerPhoto name={row.player} team={teamName} slug={playerSlug(row.player, row.u)} size={16} linkFallback={false} />
                       <span>{row.player}</span>
                     </HubLink>
                   )}
@@ -574,9 +578,9 @@ export const LiveNextGamePreview: React.FC<{
                       <HubLink
                         key={pk.c}
                         to={
-                          row.u
-                            ? { kind: "player", slug: row.u, tab: "champions", query: `champ=${encodeURIComponent(pk.c)}` }
-                            : { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(pk.c)}` }
+                          row.player || row.u
+                            ? { kind: "player", slug: playerSlug(row.player, row.u), tab: "champions", query: `champ=${encodeURIComponent(pk.c)}` }
+                            : { kind: "team", slug: tSlug, tab: "champions", query: `champ=${encodeURIComponent(pk.c)}` }
                         }
                         title={
                           pk.pocket
@@ -615,8 +619,8 @@ export const LiveNextGamePreview: React.FC<{
                         to={{
                           kind: "compare",
                           mode: "player",
-                          a: ra.u || prettySlug(ra.player),
-                          b: rb.u || prettySlug(rb.player),
+                          a: playerSlug(ra.player, ra.u),
+                          b: playerSlug(rb.player, rb.u),
                         }}
                         className="text-[9px] uppercase font-mono text-rw-muted hover:text-rw-accent hover:underline text-center"
                         title={tl("Compare {a} and {b}", { a: ra.player, b: rb.player })}

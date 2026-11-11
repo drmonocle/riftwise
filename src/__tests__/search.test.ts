@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupRank, searchHub, type HubIndex } from "../hub/data";
+import { findHubTeam, groupRank, searchHub, type HubIndex } from "../hub/data";
 import type { HubSearchKind } from "../hub/data";
 import { champPairShortcuts, matchupShortcuts } from "../components/hub/HubSearch";
 
@@ -11,6 +11,8 @@ const index: HubIndex = {
     ["Team Singularity", "", 153, "2022", "", "SNG", "Europe"],
     ["Ahriro", "", 4, "2024", "", "", ""],
     ["G2 Esports", "", 1160, "2026", "", "G2", "EMEA"],
+    ["Hanwha Life Esports", "", 980, "2026", "ROX Tigers | KOO Tigers", "HLE", "Korea"],
+    ["Team Liquid", "", 1400, "2026", "Team Curse", "TL", "Americas"],
   ],
   players: [
     ["Faker", "", "T1", 1742, "2026", "M", "Lee Sang-hyeok"],
@@ -19,13 +21,16 @@ const index: HubIndex = {
   ],
   events: [
     ["MSI 2026", "msi-2026", "2026", "Mid-Season Invitational", "P", "2026-07-12", 71],
+    ["Season 3 World Championship", "worlds-season-3", "2013", "World Championship", "P", "2013-10-04", 63],
     ["RDAG 2022 West Asia", "", "2022", "", "S", "2022-05-01", 32],
   ],
   champs: [
     ["Ahri", "", 14477],
     ["Azir", "", 12000],
   ],
-  leagues: [],
+  leagues: [
+    { u: "lol-champions-korea", l: "LoL Champions Korea", s: "LCK", r: "Korea", pr: 1, g: 4200, n: 45, from: "2012", to: "2026" },
+  ],
 };
 
 const order = (r: Record<HubSearchKind, { score?: number }[]>) =>
@@ -102,5 +107,24 @@ describe("stats search", () => {
       { kind: "compare", mode: "team", a: "g2-esports", b: "kiwoom-drx" },
       { kind: "finder", query: "team=g2-esports&vs=kiwoom-drx" },
     ]);
+  });
+
+  it("matches year-qualified league queries and event aliases", () => {
+    const lck2026 = searchHub(index, "LCK 2026").league[0];
+    expect(lck2026?.slug).toBe("lol-champions-korea");
+    expect(lck2026?.year).toBe("2026");
+
+    const lck2024 = searchHub(index, "2024 LCK").league[0];
+    expect(lck2024?.slug).toBe("lol-champions-korea");
+    expect(lck2024?.year).toBe("2024");
+
+    const w2013 = searchHub(index, "Worlds 2013").event[0];
+    expect(w2013?.slug).toBe("worlds-season-3");
+  });
+
+  it("resolves sponsored and historical team names in findHubTeam", () => {
+    expect(findHubTeam(index, "Team Liquid Honda", "TL")).toBe("team-liquid");
+    expect(findHubTeam(index, "ROX Tigers", "ROX")).toBe("hanwha-life-esports");
+    expect(findHubTeam(index, "DRX", "DRX")).toBe("kiwoom-drx");
   });
 });
