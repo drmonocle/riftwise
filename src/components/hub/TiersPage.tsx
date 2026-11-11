@@ -205,7 +205,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     ? {
                         query: new URLSearchParams({
                           ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
-                          ...(secondChamp && role ? { vs: resolveChampSlug(secondChamp.c) } : {}),
+                          ...(secondChamp ? { vs: resolveChampSlug(secondChamp.c) } : {}),
                           ...(role || topChamp?.role ? { role: role || topChamp!.role! } : {}),
                           ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { patch: key, year: key.slice(1) } : {}),
                         }).toString(),
@@ -227,7 +227,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                         : key.startsWith("y")
                           ? { p: key }
                           : {}),
-                    ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
+                    ...(topChamp ? { champ: [topChamp, secondChamp].filter(Boolean).map((c) => resolveChampSlug(c!.c)).join(",") } : {}),
                     ...(role || topChamp?.role ? { role: role || topChamp!.role! } : {}),
                   }).toString() || undefined,
                 }}
@@ -294,8 +294,9 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     ...(isLeague ? { league: rawScope } : {}),
                     ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                     ...(canonEvSlug ? { event: canonEvSlug } : {}),
-                    ...(role ? { role } : champFilter.trim() && topChamp?.role ? { role: topChamp.role } : {}),
-                    ...(champFilter.trim() && topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
+                    ...(role ? { role } : topChamp?.role ? { role: topChamp.role } : {}),
+                    ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
+                    ...(champFilter.trim() && secondChamp ? { vschamp: resolveChampSlug(secondChamp.c) } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -511,7 +512,11 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                               : key.startsWith("y")
                                 ? { p: key }
                                 : {}),
-                          champ: resolveChampSlug(byRole.get(r)![0].c),
+                          champ: byRole
+                            .get(r)!
+                            .slice(0, 2)
+                            .map((c) => resolveChampSlug(c.c))
+                            .join(","),
                           role: r,
                         }).toString(),
                       }}
@@ -595,7 +600,17 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                               className="flex flex-col gap-1 rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-1.5 text-xs hover:border-rw-accent/60"
                             >
                               <div className="flex items-center gap-2">
-                                <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c) }} className="flex items-center gap-2 font-semibold text-rw-text hover:text-rw-accent">
+                                <HubLink
+                                  to={{
+                                    kind: "champ",
+                                    slug: resolveChampSlug(c.c),
+                                    query: new URLSearchParams({
+                                      ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { p: `p:${key.slice(1)}` } : key.startsWith("y") ? { p: key } : {}),
+                                      role: r,
+                                    }).toString(),
+                                  }}
+                                  className="flex items-center gap-2 font-semibold text-rw-text hover:text-rw-accent"
+                                >
                                   <ChampIcon name={c.c} size={32} />
                                   <span>{champName(c.c)}</span>
                                 </HubLink>
@@ -677,7 +692,14 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                           ) : (
                             <HubLink
                               key={c.c}
-                              to={{ kind: "champ", slug: resolveChampSlug(c.c) }}
+                              to={{
+                                kind: "champ",
+                                slug: resolveChampSlug(c.c),
+                                query: new URLSearchParams({
+                                  ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { p: `p:${key.slice(1)}` } : key.startsWith("y") ? { p: key } : {}),
+                                  role: r,
+                                }).toString(),
+                              }}
                               className="block rounded hover:ring-1 hover:ring-rw-accent"
                               title={`${champName(c.c)}: ${tl("presence {p}", { p: `${fmtDec(c.presence * 100)}%` })} · ${tl("{n} picks", { n: c.p })}${
                                 c.wr != null && c.p >= 10 ? ` · ${tl("{p} win rate", { p: `${fmtDec(c.wr * 100)}%` })}` : ""
