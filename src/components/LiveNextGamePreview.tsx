@@ -16,7 +16,7 @@ import { winRate } from "../stats";
 import { champName } from "../champions";
 import { fetchLiveStart, type LiveParticipantMeta, type LiveWindow } from "../liveGame";
 import { champNameById, useDDragon } from "../hub/ddragon";
-import { findHubTeam, loadHubIndex, loadHubIndexQuick, prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp } from "../hub/data";
+import { findHubTeam, loadHubIndex, loadHubIndexQuick, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp } from "../hub/data";
 import { teamRowRef } from "../hub/period";
 import { bothOptions } from "./hub/ComparePage";
 import { defaultPeriod } from "./hub/PeriodStats";
@@ -398,7 +398,7 @@ export const LiveNextGamePreview: React.FC<{
                     ...(match.leagueSlug ? { scope: resolveLeagueSlug(match.leagueSlug) } : {}),
                     ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5 ? { key: draftIntel.period } : {}),
                     ...(draftIntel.rolesA[0]?.open[0]?.c || draftIntel.rolesB[0]?.open[0]?.c
-                      ? { q: [draftIntel.rolesA[0]?.open[0]?.c, draftIntel.rolesB[0]?.open[0]?.c].filter(Boolean).join(",") }
+                      ? { q: [draftIntel.rolesA[0]?.open[0]?.c, draftIntel.rolesB[0]?.open[0]?.c].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",") }
                       : {}),
                   }).toString() || undefined,
               }}
@@ -461,7 +461,7 @@ export const LiveNextGamePreview: React.FC<{
                     {g.team1.map((p) => (
                       <HubLink
                         key={p.c}
-                        to={{ kind: "champ", slug: prettySlug(p.c) }}
+                        to={{ kind: "champ", slug: resolveChampSlug(p.c) }}
                         title={`${champName(p.c)} (${p.player})`}
                         className="opacity-75 grayscale-[35%] hover:opacity-100 hover:grayscale-0 transition-all"
                       >
@@ -481,7 +481,7 @@ export const LiveNextGamePreview: React.FC<{
                     {g.team2.map((p) => (
                       <HubLink
                         key={p.c}
-                        to={{ kind: "champ", slug: prettySlug(p.c) }}
+                        to={{ kind: "champ", slug: resolveChampSlug(p.c) }}
                         title={`${champName(p.c)} (${p.player})`}
                         className="opacity-75 grayscale-[35%] hover:opacity-100 hover:grayscale-0 transition-all"
                       >
@@ -524,7 +524,7 @@ export const LiveNextGamePreview: React.FC<{
                   {side.bans.map((b) => (
                     <HubLink
                       key={b.c}
-                      to={{ kind: "team", slug: side.slug, tab: "champions", query: `champ=${encodeURIComponent(b.c)}` }}
+                      to={{ kind: "team", slug: side.slug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(b.c))}` }}
                       title={b.why}
                       className="inline-flex items-center gap-1 rounded border border-rw-border bg-rw-bg px-1.5 py-0.5 text-[10px] hover:border-rw-accent"
                     >
@@ -579,8 +579,8 @@ export const LiveNextGamePreview: React.FC<{
                         key={pk.c}
                         to={
                           row.player || row.u
-                            ? { kind: "player", slug: playerSlug(row.player, row.u), tab: "champions", query: `champ=${encodeURIComponent(pk.c)}` }
-                            : { kind: "team", slug: tSlug, tab: "champions", query: `champ=${encodeURIComponent(pk.c)}` }
+                            ? { kind: "player", slug: playerSlug(row.player, row.u), tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(pk.c))}` }
+                            : { kind: "team", slug: tSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(pk.c))}` }
                         }
                         title={
                           pk.pocket
@@ -636,7 +636,7 @@ export const LiveNextGamePreview: React.FC<{
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(prettySlug(ra.open[0].c))}&vs=${encodeURIComponent(prettySlug(rb.open[0].c))}&role=${encodeURIComponent(rLabel)}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(ra.open[0].c))}&vs=${encodeURIComponent(resolveChampSlug(rb.open[0].c))}&role=${encodeURIComponent(rLabel)}`,
                         }}
                         className="text-[8px] text-rw-sub hover:text-rw-accent hover:underline text-center"
                         title={tl("Counters")}

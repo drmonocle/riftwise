@@ -32,7 +32,7 @@ import { useMatchRatings } from "../hub/matchRatings";
 import { gameStory } from "../gameStory";
 import { smoothPath, useWidth } from "../useWidth";
 import { navigateHub } from "../hub/route";
-import { prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../hub/data";
+import { prettySlug, resolveChampSlug, resolveItemSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../hub/data";
 import { SectionCard } from "./hub/BroadcastCard";
 import { PlayerPhoto, TeamLogo } from "./hub/ui";
 
@@ -834,7 +834,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                       onClick={() =>
                         navigateHub({
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(prettySlug(champNameById(l[i].meta!.championId)))}&vs=${encodeURIComponent(prettySlug(champNameById(r[i].meta!.championId)))}&role=${encodeURIComponent(ROLE_LABEL[role])}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(l[i].meta!.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(r[i].meta!.championId)))}&role=${encodeURIComponent(ROLE_LABEL[role])}`,
                         })
                       }
                       className="block w-full text-[9px] normal-case text-rw-muted hover:text-rw-accent hover:underline mt-0.5"
@@ -870,7 +870,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
           {icon ? (
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "champ", slug: prettySlug(champNameById(p.meta!.championId)) })}
+              onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(p.meta!.championId)) })}
               className="block rounded hover:ring-1 hover:ring-rw-accent transition-all"
               title={champName(champNameById(p.meta.championId))}
             >
@@ -901,7 +901,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
                   kind: "finder",
                   query: new URLSearchParams({
                     player: playerSlug(pName),
-                    champ: champNameById(p.meta!.championId),
+                    champ: resolveChampSlug(champNameById(p.meta!.championId)),
                   }).toString(),
                 })
               }
@@ -952,8 +952,8 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
                         kind: "items",
                         query: new URLSearchParams({
                           player: playerSlug(pName),
-                          item: iKey,
-                          ...(champNameById(p.meta!.championId) ? { champ: prettySlug(champNameById(p.meta!.championId)) } : {}),
+                          item: resolveItemSlug(iKey),
+                          ...(champNameById(p.meta!.championId) ? { champ: resolveChampSlug(champNameById(p.meta!.championId)) } : {}),
                         }).toString(),
                       })
                     }
@@ -1336,7 +1336,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                 {icon && (
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "champ", slug: prettySlug(champNameById(x.championId)) })}
+                    onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(x.championId)) })}
                     className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
                   >
                     <img src={icon} alt="" width={24} height={24} className="rounded" />
@@ -1345,7 +1345,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                 <span className="min-w-0">
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "champ", slug: prettySlug(champNameById(x.championId)) })}
+                    onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(x.championId)) })}
                     className="block truncate text-rw-text hover:text-rw-accent hover:underline"
                   >
                     {champName(champNameById(x.championId))}
@@ -1394,7 +1394,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                     onClick={() =>
                       navigateHub({
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(prettySlug(champNameById(p.championId)))}&vs=${encodeURIComponent(prettySlug(champNameById(q.championId)))}&role=${encodeURIComponent(ROLE_LABEL[p.role] || p.role)}`,
+                        query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(p.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(q.championId)))}&role=${encodeURIComponent(ROLE_LABEL[p.role] || p.role)}`,
                       })
                     }
                     className="text-[8px] text-rw-sub hover:text-rw-accent hover:underline text-center"
