@@ -122,7 +122,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                 const topP = filtered[0] || rows[0];
                 const topC = topP?.c?.[0]?.[0];
                 const secC = topP?.c?.[1]?.[0];
-                const qChamps = terms.length > 0 && topC ? [topC, secC && secC !== topC ? secC : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",") : "";
+                const qChamps = topC ? [topC, secC && secC !== topC ? secC : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",") : "";
                 return (
                   <>
                     <HubLink
@@ -211,7 +211,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                         query:
                           new URLSearchParams({
                             ...(topP ? { p: `p:${topP.p}` } : {}),
-                            ...(topC ? { champ: resolveChampSlug(topC) } : {}),
+                            ...(qChamps ? { champ: qChamps } : {}),
                           }).toString() || undefined,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -267,27 +267,43 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                   </span>
                 </div>
                 <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
-                  {p.c.length >= 1 && (
-                    <HubLink
-                      to={{
-                        kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(p.c[0][0]))}${p.c[1] ? `&vs=${encodeURIComponent(resolveChampSlug(p.c[1][0]))}` : ""}&patch=${encodeURIComponent(p.p)}`,
-                      }}
-                      className="text-rw-accent hover:underline font-semibold"
-                    >
-                      {tl("Counters")}
-                    </HubLink>
-                  )}
-                  <HubLink to={{ kind: "tiers", query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}` }} className="text-rw-accent hover:underline font-semibold">
-                    {tl("Pro tier list")}
-                  </HubLink>
-                  <HubLink to={{ kind: "champions", query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}` }} className="text-rw-accent hover:underline font-semibold">
-                    {tl("Champions")}
-                  </HubLink>
                   {(() => {
+                    const pChamps = [p.c[0]?.[0], p.c[1]?.[0] && p.c[1][0] !== p.c[0]?.[0] ? p.c[1][0] : ""]
+                      .filter(Boolean)
+                      .map((c) => resolveChampSlug(c!))
+                      .join(",");
                     const pYear = /^\d{4}$/.test((p.from || "").slice(0, 4)) ? (p.from || "").slice(0, 4) : "";
                     return (
                       <>
+                        {p.c.length >= 1 && (
+                          <HubLink
+                            to={{
+                              kind: "counters",
+                              query: `champ=${encodeURIComponent(resolveChampSlug(p.c[0][0]))}${p.c[1] ? `&vs=${encodeURIComponent(resolveChampSlug(p.c[1][0]))}` : ""}&patch=${encodeURIComponent(p.p)}`,
+                            }}
+                            className="text-rw-accent hover:underline font-semibold"
+                          >
+                            {tl("Counters")}
+                          </HubLink>
+                        )}
+                        <HubLink
+                          to={{
+                            kind: "tiers",
+                            query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}${pChamps ? `&q=${encodeURIComponent(pChamps)}` : ""}`,
+                          }}
+                          className="text-rw-accent hover:underline font-semibold"
+                        >
+                          {tl("Pro tier list")}
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "champions",
+                            query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}${pChamps ? `&q=${encodeURIComponent(pChamps)}` : ""}`,
+                          }}
+                          className="text-rw-accent hover:underline font-semibold"
+                        >
+                          {tl("Champions")}
+                        </HubLink>
                         <HubLink
                           to={{
                             kind: "items",
@@ -304,7 +320,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `p=p:${encodeURIComponent(p.p)}${p.c[0]?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(p.c[0][0]))}` : ""}`,
+                            query: `p=p:${encodeURIComponent(p.p)}${pChamps ? `&champ=${encodeURIComponent(pChamps)}` : ""}`,
                           }}
                           className="text-rw-accent hover:underline font-semibold"
                         >
@@ -948,7 +964,27 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 {tl("Pro tier list")}
               </HubLink>
             )}
-            <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(l.u)}` }} className={heroBtn()}>
+            <HubLink
+              to={{
+                kind: "rankings",
+                query: new URLSearchParams({
+                  league: l.u,
+                  ...(l.titles[0]
+                    ? {
+                        q: [
+                          l.titles[0].u || teamSlug(l.titles[0].t),
+                          l.titles[1] && (l.titles[1].u || teamSlug(l.titles[1].t)) !== (l.titles[0].u || teamSlug(l.titles[0].t))
+                            ? l.titles[1].u || teamSlug(l.titles[1].t)
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(","),
+                      }
+                    : {}),
+                }).toString(),
+              }}
+              className={heroBtn()}
+            >
               {tl("Power rankings")}
             </HubLink>
             {totalGames > 0 && (
@@ -971,12 +1007,38 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
               </HubLink>
             )}
             {totalGames > 0 && (
-              <HubLink to={{ kind: "items", query: `league=${l.u}${season ? `&year=${season}` : ""}` }} className={heroBtn()}>
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    league: l.u,
+                    ...(season ? { year: season } : {}),
+                    ...(l.titles[0] ? { team: l.titles[0].u || teamSlug(l.titles[0].t) } : {}),
+                    ...(l.titles[1] && (l.titles[1].u || teamSlug(l.titles[1].t)) !== (l.titles[0]?.u || teamSlug(l.titles[0]?.t || ""))
+                      ? { vs: l.titles[1].u || teamSlug(l.titles[1].t) }
+                      : {}),
+                  }).toString(),
+                }}
+                className={heroBtn()}
+              >
                 {tl("Item history")}
               </HubLink>
             )}
             {totalGames > 0 && (
-              <HubLink to={{ kind: "finder", query: `league=${l.u}${season ? `&year=${season}` : ""}` }} className={heroBtn()}>
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: new URLSearchParams({
+                    league: l.u,
+                    ...(season ? { year: season } : {}),
+                    ...(l.titles[0] ? { team: l.titles[0].u || teamSlug(l.titles[0].t) } : {}),
+                    ...(l.titles[1] && (l.titles[1].u || teamSlug(l.titles[1].t)) !== (l.titles[0]?.u || teamSlug(l.titles[0]?.t || ""))
+                      ? { vs: l.titles[1].u || teamSlug(l.titles[1].t) }
+                      : {}),
+                  }).toString(),
+                }}
+                className={heroBtn()}
+              >
                 {tl("Game finder")}
               </HubLink>
             )}
