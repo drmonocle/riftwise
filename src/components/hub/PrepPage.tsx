@@ -942,18 +942,19 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
   const RoleQuickCompare: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b, period }) => {
     const pairs = ROLES.map((r, i) => ({ role: r, pa: a.players[i]?.p, pb: b.players[i]?.p }));
     if (pairs.filter((x) => x.pa && x.pb).length < 3) return null;
-    const playerQ = (teamSlug: string, role: string, oppPlayerSlug: string | undefined, oppTeamSlug: string) =>
+    const playerQ = (teamSlug: string, role: string, oppPlayerSlug: string | undefined, oppTeamSlug: string, topChamp?: string) =>
       new URLSearchParams({
         team: teamSlug,
         role,
         ...(period && period !== "all" ? { p: period } : {}),
         ...(oppPlayerSlug || oppTeamSlug ? { q: (oppPlayerSlug || oppTeamSlug)! } : {}),
+        ...(topChamp ? { champ: resolveChampSlug(topChamp) } : {}),
       }).toString();
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs">
         {pairs.map(({ role, pa, pb }) => {
-          const qa = playerQ(a.team.u, role, pb?.u, b.team.u);
-          const qb = playerQ(b.team.u, role, pa?.u, a.team.u);
+          const qa = playerQ(a.team.u, role, pb?.u, b.team.u, pa?.champs?.[0]?.c);
+          const qb = playerQ(b.team.u, role, pa?.u, a.team.u, pb?.champs?.[0]?.c);
           return (
             <div
               key={role}
@@ -2622,6 +2623,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
             role,
             ...(period !== "all" ? { p: period } : {}),
             ...(oppPlayerSlug || oppTeamSlug ? { q: (oppPlayerSlug || oppTeamSlug)! } : {}),
+            ...(x.list[0]?.[0] ? { champ: resolveChampSlug(x.list[0][0]) } : {}),
           }).toString();
           return (
             <>
@@ -3012,12 +3014,14 @@ const Lanes: React.FC<{
       role: r,
       ...(period !== "all" ? { p: period } : {}),
       ...(pb?.p.u || b.team.u ? { q: pb?.p.u || b.team.u } : {}),
+      ...(sa?.champs[0]?.c ? { champ: resolveChampSlug(sa.champs[0].c) } : {}),
     }).toString();
     const lanePQueryB = new URLSearchParams({
       team: b.team.u,
       role: r,
       ...(period !== "all" ? { p: period } : {}),
       ...(pa?.p.u || a.team.u ? { q: pa?.p.u || a.team.u } : {}),
+      ...(sb?.champs[0]?.c ? { champ: resolveChampSlug(sb.champs[0].c) } : {}),
     }).toString();
     type Line = [string, number | null | undefined, number | null | undefined, (v: number) => string, string?];
     const wr = (x: typeof sa) => (x && x.g ? (x.w / x.g) * 100 : null);

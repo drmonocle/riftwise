@@ -175,14 +175,16 @@ export const HubHome: React.FC<{
           <div className={`${card} flex flex-col`}>
             <h2 className={tileHead}><User className="w-4 h-4 text-rw-accent" />{tl("Players")}</h2>
             <ul className="text-xs space-y-1.5">
-              {(home.data?.potm || []).slice(0, 3).map((p) => {
+              {(home.data?.potm || []).slice(0, 3).map((p, _, potmSlice) => {
                 const potmYr = home.data?.potmFrom && /^\d{4}/.test(home.data.potmFrom) ? home.data.potmFrom.slice(0, 4) : undefined;
                 const pSlug = playerSlug(p.n, p.u);
+                const rivalPSlug = potmSlice.map((x) => playerSlug(x.n, x.u)).find((s) => Boolean(s) && s !== pSlug);
                 const tSlug = p.t ? teamSlug(p.t) : "";
                 const pQuery = new URLSearchParams({
                   ...(tSlug ? { team: tSlug } : {}),
                   ...(p.r ? { role: p.r } : {}),
                   ...(potmYr ? { p: `y${potmYr}` } : {}),
+                  ...(rivalPSlug ? { q: rivalPSlug } : {}),
                 }).toString();
                 const tQuery = new URLSearchParams({
                   ...(potmYr ? { p: `y${potmYr}` } : {}),
@@ -905,7 +907,7 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `event=${encodeURIComponent(latest[0].u)}${w0 ? `&team=${encodeURIComponent(w0)}` : ""}${latestYr ? `&year=${encodeURIComponent(latestYr)}` : ""}`,
+                      query: `event=${encodeURIComponent(latest[0].u)}${w0 ? `&team=${encodeURIComponent(w0)}${w1 && w1 !== w0 ? `&vs=${encodeURIComponent(w1)}` : ""}` : ""}${latestYr ? `&year=${encodeURIComponent(latestYr)}` : ""}`,
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -1306,6 +1308,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
               const potmYr = from && /^\d{4}/.test(from) ? from.slice(0, 4) : undefined;
               return shown.map((p, i) => {
                 const pSlug = playerSlug(p.n, p.u);
+                const rivalPSlug = shown.map((x) => playerSlug(x.n, x.u)).find((s) => Boolean(s) && s !== pSlug);
                 const tSlug = p.t ? teamSlug(p.t) : "";
                 const rNorm = normalizeRole(p.r) || "";
                 const pQ = (() => {
@@ -1313,6 +1316,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                   if (potmYr) qp.set("p", `y${potmYr}`);
                   if (tSlug) qp.set("team", tSlug);
                   if (rNorm) qp.set("role", rNorm);
+                  if (rivalPSlug) qp.set("q", rivalPSlug);
                   return qp.toString() || undefined;
                 })();
                 const tQ = (() => {

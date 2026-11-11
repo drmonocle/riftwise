@@ -283,7 +283,18 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
               return (
                 <>
                   <HubLink
-                    to={{ kind: "event", slug: d.parent.u, ...(topT.length ? { query: `q=${topT.map(encodeURIComponent).join(",")}` } : {}) }}
+                    to={{
+                      kind: "event",
+                      slug: d.parent.u,
+                      ...((topT.length || topC[0])
+                        ? {
+                            query: new URLSearchParams({
+                              ...(topT.length ? { q: topT.join(",") } : {}),
+                              ...(topC[0] ? { champ: topC[0] } : {}),
+                            }).toString(),
+                          }
+                        : {}),
+                    }}
                     className={btn}
                   >
                     {tl("Bracket, standings and every series")}
@@ -684,72 +695,116 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
             right={
               ko.qf.some((m) => m.w) ? (
                 <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
-                  {ko.final?.a && ko.final?.b && (
-                    <>
-                      <HubLink
-                        to={{ kind: "prep", a: ko.final.a, b: ko.final.b, period: `e:${main.u}` }}
-                        className="text-[11px] font-semibold text-rw-accent hover:underline"
-                      >
-                        {tl("Match prep")} →
-                      </HubLink>
-                      <HubLink
-                        to={{ kind: "draft", query: `teams=${encodeURIComponent(ko.final.a)},${encodeURIComponent(ko.final.b)}&p=e:${encodeURIComponent(main.u)}` }}
-                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Draft board")} →
-                      </HubLink>
-                      <HubLink
-                        to={{ kind: "compare", mode: "team", a: ko.final.a, b: ko.final.b, period: `e:${main.u}` }}
-                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Compare")} →
-                      </HubLink>
-                      <HubLink
-                        to={{ kind: "items", query: `team=${encodeURIComponent(ko.final.a)}&vs=${encodeURIComponent(ko.final.b)}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}&league=world-championship` }}
-                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Item history")} →
-                      </HubLink>
-                      <HubLink
-                        to={{ kind: "finder", query: `team=${encodeURIComponent(ko.final.a)}&vs=${encodeURIComponent(ko.final.b)}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}&league=world-championship` }}
-                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Game finder")} →
-                      </HubLink>
-                    </>
-                  )}
-                  <HubLink
-                    to={{
-                      kind: "rankings",
-                      query: `league=world-championship${
-                        ko.final?.a
-                          ? `&q=${encodeURIComponent(ko.final.a)}${ko.final?.b && ko.final.b !== ko.final.a ? `,${encodeURIComponent(ko.final.b)}` : ""}`
-                          : ""
-                      }`,
-                    }}
-                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Power rankings")} →
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "tiers", query: `league=world-championship&scope=world-championship&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
-                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Pro tier list")} →
-                  </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "leaders",
-                      query: `league=world-championship&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}${
-                        ko.final?.a
-                          ? `&q=${encodeURIComponent(ko.final.a)}${ko.final?.b && ko.final.b !== ko.final.a ? `,${encodeURIComponent(ko.final.b)}` : ""}`
-                          : ""
-                      }`,
-                    }}
-                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Player leaderboards")} →
-                  </HubLink>
+                  {(() => {
+                    const koTopC = evTopChampsOf(main, d.parent);
+                    const koTopP = evTopPlayersOf(main, d.parent);
+                    const koCJoin = koTopC.join(",");
+                    const koQParts = [ko.final?.a, ko.final?.b && ko.final.b !== ko.final?.a ? ko.final.b : "", ...koTopP].filter(Boolean);
+                    return (
+                      <>
+                        {ko.final?.a && ko.final?.b && (
+                          <>
+                            <HubLink
+                              to={{ kind: "prep", a: ko.final.a, b: ko.final.b, period: `e:${main.u}` }}
+                              className="text-[11px] font-semibold text-rw-accent hover:underline"
+                            >
+                              {tl("Match prep")} →
+                            </HubLink>
+                            <HubLink
+                              to={{
+                                kind: "draft",
+                                query: `teams=${encodeURIComponent(ko.final.a)},${encodeURIComponent(ko.final.b)}${koCJoin ? `&champ=${encodeURIComponent(koCJoin)}` : ""}&p=e:${encodeURIComponent(main.u)}`,
+                              }}
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Draft board")} →
+                            </HubLink>
+                            <HubLink
+                              to={{ kind: "compare", mode: "team", a: ko.final.a, b: ko.final.b, period: `e:${main.u}` }}
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Compare")} →
+                            </HubLink>
+                            <HubLink
+                              to={{
+                                kind: "items",
+                                query: new URLSearchParams({
+                                  team: ko.final.a,
+                                  vs: ko.final.b,
+                                  ...(koTopP[0] ? { player: koTopP[0] } : {}),
+                                  ...(koTopP[1] && koTopP[1] !== koTopP[0] ? { vsplayer: koTopP[1] } : {}),
+                                  ...(koTopC[0] ? { champ: koTopC[0] } : {}),
+                                  ...(koTopC[1] && koTopC[1] !== koTopC[0] ? { vschamp: koTopC[1] } : {}),
+                                  event: main.u,
+                                  year: d.year,
+                                  league: "world-championship",
+                                }).toString(),
+                              }}
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Item history")} →
+                            </HubLink>
+                            <HubLink
+                              to={{
+                                kind: "finder",
+                                query: new URLSearchParams({
+                                  team: ko.final.a,
+                                  vs: ko.final.b,
+                                  ...(koTopP[0] ? { player: koTopP[0] } : {}),
+                                  ...(koTopP[1] && koTopP[1] !== koTopP[0] ? { vsplayer: koTopP[1] } : {}),
+                                  ...(koTopC[0] ? { champ: koTopC[0] } : {}),
+                                  ...(koTopC[1] && koTopC[1] !== koTopC[0] ? { vschamp: koTopC[1] } : {}),
+                                  event: main.u,
+                                  year: d.year,
+                                  league: "world-championship",
+                                }).toString(),
+                              }}
+                              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                            >
+                              {tl("Game finder")} →
+                            </HubLink>
+                          </>
+                        )}
+                        <HubLink
+                          to={{
+                            kind: "rankings",
+                            query: `league=world-championship${
+                              ko.final?.a
+                                ? `&q=${encodeURIComponent(ko.final.a)}${ko.final?.b && ko.final.b !== ko.final.a ? `,${encodeURIComponent(ko.final.b)}` : ""}`
+                                : ""
+                            }`,
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Power rankings")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "tiers",
+                            query: `league=world-championship&scope=world-championship&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}${koCJoin ? `&q=${encodeURIComponent(koCJoin)}` : ""}`,
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Pro tier list")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "leaders",
+                            query: new URLSearchParams({
+                              league: "world-championship",
+                              year: d.year,
+                              event: main.u,
+                              ...(koTopC[0] ? { champ: koTopC[0] } : {}),
+                              ...(koQParts.length ? { q: koQParts.join(",") } : {}),
+                            }).toString(),
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Player leaderboards")} →
+                        </HubLink>
+                      </>
+                    );
+                  })()}
                   <BroadcastCardButton data={() => bracketPicksCard(ko, byU, d.name)} name={`worlds-${d.year}-knockouts`} label={tl("Overview card")} />
                 </span>
               ) : undefined
@@ -768,102 +823,124 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                 const swissUs = Object.keys(swiss.rec).sort(
                   (a, b) => swiss.rec[b][0] - swiss.rec[a][0] || swiss.rec[a][1] - swiss.rec[b][1],
                 );
-                return swissUs.length >= 1 ? (
+                const swTopC = evTopChampsOf(main, d.parent);
+                const swTopP = evTopPlayersOf(main, d.parent);
+                const swCJoin = swTopC.join(",");
+                const swQParts = [...swissUs.slice(0, 2), ...swTopP].filter(Boolean);
+                return (
                   <>
-                    <HubLink
-                      to={{ kind: "prep", a: swissUs[0], ...(swissUs[1] ? { b: swissUs[1] } : {}), period: `e:${main.u}` }}
-                      className="text-[11px] font-semibold text-rw-accent hover:underline"
-                    >
-                      {tl("Match prep")} →
-                    </HubLink>
+                    {swissUs.length >= 1 && (
+                      <>
+                        <HubLink
+                          to={{ kind: "prep", a: swissUs[0], ...(swissUs[1] ? { b: swissUs[1] } : {}), period: `e:${main.u}` }}
+                          className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "compare",
+                            mode: "team",
+                            a: swissUs[0],
+                            ...(swissUs[1] ? { b: swissUs[1] } : {}),
+                            period: `e:${main.u}`,
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Compare")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "items",
+                            query: new URLSearchParams({
+                              team: swissUs[0],
+                              ...(swissUs[1] ? { vs: swissUs[1] } : {}),
+                              ...(swTopP[0] ? { player: swTopP[0] } : {}),
+                              ...(swTopP[1] && swTopP[1] !== swTopP[0] ? { vsplayer: swTopP[1] } : {}),
+                              ...(swTopC[0] ? { champ: swTopC[0] } : {}),
+                              ...(swTopC[1] && swTopC[1] !== swTopC[0] ? { vschamp: swTopC[1] } : {}),
+                              event: main.u,
+                              year: d.year,
+                              league: "world-championship",
+                            }).toString(),
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Item history")} →
+                        </HubLink>
+                      </>
+                    )}
                     <HubLink
                       to={{
-                        kind: "compare",
-                        mode: "team",
-                        a: swissUs[0],
-                        ...(swissUs[1] ? { b: swissUs[1] } : {}),
-                        period: `e:${main.u}`,
+                        kind: "champions",
+                        query: `league=world-championship&scope=world-championship&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}${swCJoin ? `&q=${encodeURIComponent(swCJoin)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
-                      {tl("Compare")} →
+                      {tl("Champions")} →
                     </HubLink>
                     <HubLink
                       to={{
-                        kind: "items",
-                        query: `team=${encodeURIComponent(swissUs[0])}${swissUs[1] ? `&vs=${encodeURIComponent(swissUs[1])}` : ""}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}&league=world-championship`,
+                        kind: "tiers",
+                        query: `league=world-championship&scope=world-championship&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}${swCJoin ? `&q=${encodeURIComponent(swCJoin)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
-                      {tl("Item history")} →
+                      {tl("Pro tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `${
+                          swissUs.length > 0
+                            ? `teams=${swissUs
+                                .slice(0, 2)
+                                .map((u) => encodeURIComponent(u))
+                                .join(",")}&`
+                            : ""
+                        }${swCJoin ? `champ=${encodeURIComponent(swCJoin)}&` : ""}p=e:${encodeURIComponent(main.u)}`,
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: new URLSearchParams({
+                          ...(swissUs[0] ? { team: swissUs[0] } : {}),
+                          ...(swissUs[1] ? { vs: swissUs[1] } : {}),
+                          ...(swTopP[0] ? { player: swTopP[0] } : {}),
+                          ...(swTopP[1] && swTopP[1] !== swTopP[0] ? { vsplayer: swTopP[1] } : {}),
+                          ...(swTopC[0] ? { champ: swTopC[0] } : {}),
+                          ...(swTopC[1] && swTopC[1] !== swTopC[0] ? { vschamp: swTopC[1] } : {}),
+                          event: main.u,
+                          year: d.year,
+                          league: "world-championship",
+                        }).toString(),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Game finder")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "leaders",
+                        query: new URLSearchParams({
+                          league: "world-championship",
+                          year: d.year,
+                          event: main.u,
+                          ...(swTopC[0] ? { champ: swTopC[0] } : {}),
+                          ...(swQParts.length ? { q: swQParts.join(",") } : {}),
+                        }).toString(),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Player leaderboards")} →
                     </HubLink>
                   </>
-                ) : null;
+                );
               })()}
-              <HubLink
-                to={{ kind: "champions", query: `league=world-championship&scope=world-championship&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Champions")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "tiers", query: `league=world-championship&scope=world-championship&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Pro tier list")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "draft",
-                  query: `${
-                    Object.keys(swiss.rec).length > 0
-                      ? `teams=${Object.keys(swiss.rec)
-                          .sort((a, b) => swiss.rec[b][0] - swiss.rec[a][0] || swiss.rec[a][1] - swiss.rec[b][1])
-                          .slice(0, 2)
-                          .map((u) => encodeURIComponent(u))
-                          .join(",")}&`
-                      : ""
-                  }p=e:${encodeURIComponent(main.u)}`,
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Draft board")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "finder",
-                  query: `${
-                    Object.keys(swiss.rec).length > 0
-                      ? (() => {
-                          const top = Object.keys(swiss.rec)
-                            .sort((a, b) => swiss.rec[b][0] - swiss.rec[a][0] || swiss.rec[a][1] - swiss.rec[b][1])
-                            .slice(0, 2);
-                          return `team=${encodeURIComponent(top[0])}${top[1] ? `&vs=${encodeURIComponent(top[1])}` : ""}&`;
-                        })()
-                      : ""
-                  }event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}&league=world-championship`,
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Game finder")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "leaders",
-                  query: `league=world-championship&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}${
-                    Object.keys(swiss.rec).length > 0
-                      ? `&q=${Object.keys(swiss.rec)
-                          .sort((a, b) => swiss.rec[b][0] - swiss.rec[a][0] || swiss.rec[a][1] - swiss.rec[b][1])
-                          .slice(0, 2)
-                          .map((u) => encodeURIComponent(u))
-                          .join(",")}`
-                      : ""
-                  }`,
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Player leaderboards")} →
-              </HubLink>
               <HubLink
                 to={{
                   kind: "rankings",
@@ -1178,75 +1255,113 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
             <span className="flex flex-wrap items-center gap-2" data-nocapture="1">
               {(() => {
                 const topM = [...res.matches].reverse().find((m) => m.a && m.b);
-                return topM ? (
+                const brTopC = evTopChampsOf(main, d.parent);
+                const brTopP = evTopPlayersOf(main, d.parent);
+                const brCJoin = brTopC.join(",");
+                const brQParts = [topM?.a, topM?.b && topM.b !== topM?.a ? topM.b : "", ...brTopP].filter(Boolean);
+                return (
                   <>
+                    {topM && (
+                      <>
+                        <HubLink
+                          to={{ kind: "prep", a: topM.a, b: topM.b, period: `e:${main.u}` }}
+                          className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "draft",
+                            query: `teams=${encodeURIComponent(topM.a)},${encodeURIComponent(topM.b)}${brCJoin ? `&champ=${encodeURIComponent(brCJoin)}` : ""}&p=e:${encodeURIComponent(main.u)}`,
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")} →
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "compare", mode: "team", a: topM.a, b: topM.b, period: `e:${main.u}` }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Compare")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "items",
+                            query: new URLSearchParams({
+                              team: topM.a,
+                              vs: topM.b,
+                              ...(brTopP[0] ? { player: brTopP[0] } : {}),
+                              ...(brTopP[1] && brTopP[1] !== brTopP[0] ? { vsplayer: brTopP[1] } : {}),
+                              ...(brTopC[0] ? { champ: brTopC[0] } : {}),
+                              ...(brTopC[1] && brTopC[1] !== brTopC[0] ? { vschamp: brTopC[1] } : {}),
+                              event: main.u,
+                              year: d.year,
+                              league: INTL[kind].league,
+                            }).toString(),
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Item history")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query: new URLSearchParams({
+                              team: topM.a,
+                              vs: topM.b,
+                              ...(brTopP[0] ? { player: brTopP[0] } : {}),
+                              ...(brTopP[1] && brTopP[1] !== brTopP[0] ? { vsplayer: brTopP[1] } : {}),
+                              ...(brTopC[0] ? { champ: brTopC[0] } : {}),
+                              ...(brTopC[1] && brTopC[1] !== brTopC[0] ? { vschamp: brTopC[1] } : {}),
+                              event: main.u,
+                              year: d.year,
+                              league: INTL[kind].league,
+                            }).toString(),
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Game finder")} →
+                        </HubLink>
+                      </>
+                    )}
                     <HubLink
-                      to={{ kind: "prep", a: topM.a, b: topM.b, period: `e:${main.u}` }}
-                      className="text-[11px] font-semibold text-rw-accent hover:underline"
-                    >
-                      {tl("Match prep")} →
-                    </HubLink>
-                    <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(topM.a)},${encodeURIComponent(topM.b)}&p=e:${encodeURIComponent(main.u)}` }}
+                      to={{
+                        kind: "rankings",
+                        query: `league=${encodeURIComponent(INTL[kind].league)}${
+                          topM ? `&q=${encodeURIComponent(topM.a)}${topM.b && topM.b !== topM.a ? `,${encodeURIComponent(topM.b)}` : ""}` : ""
+                        }`,
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
-                      {tl("Draft board")} →
+                      {tl("Power rankings")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "compare", mode: "team", a: topM.a, b: topM.b, period: `e:${main.u}` }}
+                      to={{
+                        kind: "tiers",
+                        query: `league=${encodeURIComponent(INTL[kind].league)}&scope=${encodeURIComponent(INTL[kind].league)}&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}${brCJoin ? `&q=${encodeURIComponent(brCJoin)}` : ""}`,
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
-                      {tl("Compare")} →
+                      {tl("Pro tier list")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "items", query: `team=${encodeURIComponent(topM.a)}&vs=${encodeURIComponent(topM.b)}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}&league=${encodeURIComponent(INTL[kind].league)}` }}
+                      to={{
+                        kind: "leaders",
+                        query: new URLSearchParams({
+                          league: INTL[kind].league,
+                          year: d.year,
+                          event: main.u,
+                          ...(brTopC[0] ? { champ: brTopC[0] } : {}),
+                          ...(brQParts.length ? { q: brQParts.join(",") } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
-                      {tl("Item history")} →
-                    </HubLink>
-                    <HubLink
-                      to={{ kind: "finder", query: `team=${encodeURIComponent(topM.a)}&vs=${encodeURIComponent(topM.b)}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}&league=${encodeURIComponent(INTL[kind].league)}` }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Game finder")} →
+                      {tl("Player leaderboards")} →
                     </HubLink>
                   </>
-                ) : null;
-              })()}
-              {(() => {
-                const topM = [...res.matches].reverse().find((m) => m.a && m.b);
-                return (
-                  <HubLink
-                    to={{
-                      kind: "rankings",
-                      query: `league=${encodeURIComponent(INTL[kind].league)}${
-                        topM ? `&q=${encodeURIComponent(topM.a)}${topM.b && topM.b !== topM.a ? `,${encodeURIComponent(topM.b)}` : ""}` : ""
-                      }`,
-                    }}
-                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Power rankings")} →
-                  </HubLink>
                 );
               })()}
-              <HubLink
-                to={{ kind: "tiers", query: `league=${encodeURIComponent(INTL[kind].league)}&scope=${encodeURIComponent(INTL[kind].league)}&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}` }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Pro tier list")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "leaders",
-                  query: `league=${encodeURIComponent(INTL[kind].league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(main.u)}${(() => {
-                    const topM = [...res.matches].reverse().find((m) => m.a && m.b);
-                    return topM ? `&q=${encodeURIComponent(topM.a)}${topM.b && topM.b !== topM.a ? `,${encodeURIComponent(topM.b)}` : ""}` : "";
-                  })()}`,
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Player leaderboards")} →
-              </HubLink>
               <BroadcastCardButton data={() => msiBracketCard(res, byU, d.name, kind)} name={`${kind}-${d.year}-bracket`} label={tl("Overview card")} />
             </span>
           ) : undefined
@@ -1723,22 +1838,30 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
           {runs
             .slice()
             .reverse()
-            .map((r, idx) => (
+            .map((r, idx) => {
+              const rSlug = r.u || runnerSlug(r.team);
+              const rRival = runs.map((x) => x.u || runnerSlug(x.team)).find((s) => Boolean(s) && s !== rSlug);
+              const rQuery = new URLSearchParams({
+                p: `y${r.to}`,
+                ...(rRival ? { q: rRival } : {}),
+              }).toString();
+              return (
               <span key={`${r.team}-${r.from}-${idx}`} className="inline-flex items-center gap-1">
                 {idx > 0 && <span className="text-rw-muted mr-1">·</span>}
-                <HubLink to={{ kind: "team", slug: r.u || runnerSlug(r.team), query: `p=y${encodeURIComponent(r.to)}` }} className="shrink-0 hover:opacity-80" title={r.team}>
+                <HubLink to={{ kind: "team", slug: rSlug, query: rQuery }} className="shrink-0 hover:opacity-80" title={r.team}>
                   <TeamLogo name={r.team} size={13} className="shrink-0" />
                 </HubLink>
-                <TeamLink name={r.team} u={r.u} query={`p=y${encodeURIComponent(r.to)}`} className="text-rw-text hover:text-rw-accent" />
+                <TeamLink name={r.team} u={r.u} query={rQuery} className="text-rw-text hover:text-rw-accent" />
                 {r.u ? (
-                  <HubLink to={{ kind: "team", slug: r.u, tab: "history", query: `p=y${encodeURIComponent(r.to)}` }} className="hover:text-rw-accent hover:underline">
+                  <HubLink to={{ kind: "team", slug: r.u, tab: "history", query: rQuery }} className="hover:text-rw-accent hover:underline">
                     ({r.from}–{r.to}, {r.n})
                   </HubLink>
                 ) : (
                   <span>({r.from}–{r.to}, {r.n})</span>
                 )}
               </span>
-            ))}
+              );
+            })}
         </p>
       )}
     </Section>

@@ -103,7 +103,16 @@ const CareerRecords: React.FC<{
                 {tl("Compare")} →
               </HubLink>
               <HubLink
-                to={{ kind: "items", query: `player=${encodeURIComponent(c.games[0].u || resolvePlayerSlug(c.games[0].pl))}` }}
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    player: c.games[0].u || resolvePlayerSlug(c.games[0].pl),
+                    ...(c.games[1] &&
+                    (c.games[1].u || resolvePlayerSlug(c.games[1].pl)) !== (c.games[0].u || resolvePlayerSlug(c.games[0].pl))
+                      ? { vsplayer: c.games[1].u || resolvePlayerSlug(c.games[1].pl) }
+                      : {}),
+                  }).toString(),
+                }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Item history")} →
@@ -295,17 +304,21 @@ const PentakillRecords: React.FC<{
         share="records-most-pentakills"
       >
         <ol className="text-xs space-y-1.5">
-          {mostRows.map((x, i) => (
+          {mostRows.map((x, i) => {
+            const pSlug = x.u || resolvePlayerSlug(x.n);
+            const rivalSlug = mostRows.map((m) => m.u || resolvePlayerSlug(m.n)).find((s) => Boolean(s) && s !== pSlug);
+            const pQuery = rivalSlug ? `q=${encodeURIComponent(rivalSlug)}` : undefined;
+            return (
             <li key={i} className="space-y-0.5 min-w-0">
               <div className="flex justify-between gap-2 min-w-0">
                 <span className="inline-flex items-center gap-1.5 min-w-0">
-                  <HubLink to={{ kind: "player", slug: x.u || resolvePlayerSlug(x.n) }} title={x.n} className="shrink-0">
+                  <HubLink to={{ kind: "player", slug: pSlug, ...(pQuery ? { query: pQuery } : {}) }} title={x.n} className="shrink-0">
                     <PlayerPhoto name={x.n} slug={x.u ?? undefined} size={16} />
                   </HubLink>
-                  <PlayerLink name={x.n} u={x.u} />
+                  <PlayerLink name={x.n} u={x.u} query={pQuery} />
                 </span>
                 <HubLink
-                  to={{ kind: "player", slug: x.u || resolvePlayerSlug(x.n) }}
+                  to={{ kind: "player", slug: pSlug, ...(pQuery ? { query: pQuery } : {}) }}
                   className="text-rw-accent font-bold tabular-nums hover:underline"
                 >
                   {x.v}
@@ -315,7 +328,8 @@ const PentakillRecords: React.FC<{
                 <div className="h-full rounded-full bg-rw-accent/70" style={{ width: `${Math.max(8, Math.round((x.v / maxPenta) * 100))}%` }} />
               </div>
             </li>
-          ))}
+            );
+          })}
         </ol>
         <p className="text-[10px] text-rw-muted">
           {tl(
@@ -422,7 +436,14 @@ const PentakillRecords: React.FC<{
                         kind: "finder",
                         query: new URLSearchParams({
                           player: recentRows[0].u || resolvePlayerSlug(recentRows[0].n),
+                          ...(recentRows[1] &&
+                          (recentRows[1].u || resolvePlayerSlug(recentRows[1].n)) !== (recentRows[0].u || resolvePlayerSlug(recentRows[0].n))
+                            ? { vsplayer: recentRows[1].u || resolvePlayerSlug(recentRows[1].n) }
+                            : {}),
                           champ: resolveChampSlug(recentRows[0].c),
+                          ...(recentRows[1]?.c && resolveChampSlug(recentRows[1].c) !== resolveChampSlug(recentRows[0].c)
+                            ? { vschamp: resolveChampSlug(recentRows[1].c) }
+                            : {}),
                           ...(aSlug ? { team: aSlug } : {}),
                           ...(bSlug && bSlug !== aSlug ? { vs: bSlug } : {}),
                           ...(r0Ev ? { event: r0Ev } : r0Year ? { year: r0Year } : {}),
@@ -553,10 +574,12 @@ const PentaRow: React.FC<{
   const aTeamQ = new URLSearchParams({
     ...(pPeriod ? { p: pPeriod } : {}),
     ...(bSlug && bSlug !== aSlug ? { q: bSlug } : {}),
+    ...(x.c ? { champ: resolveChampSlug(x.c) } : {}),
   }).toString();
   const bTeamQ = new URLSearchParams({
     ...(pPeriod ? { p: pPeriod } : {}),
     ...(aSlug ? { q: aSlug } : {}),
+    ...(x.c ? { champ: resolveChampSlug(x.c) } : {}),
   }).toString();
   return (
     <li className="min-w-0">
@@ -627,7 +650,10 @@ const PentaRow: React.FC<{
         <EventLink
           name={x.t}
           u={x.e}
-          query={`q=${encodeURIComponent([pSlug, aSlug, bSlug].filter(Boolean).join(","))}`}
+          query={new URLSearchParams({
+            q: [pSlug, aSlug, bSlug].filter(Boolean).join(","),
+            ...(x.c ? { champ: resolveChampSlug(x.c) } : {}),
+          }).toString()}
           className="text-rw-muted hover:text-rw-accent hover:underline"
         />{" "}
         ·{" "}
@@ -1512,6 +1538,7 @@ export const RecordsPanel: React.FC = () => {
                   const oppTeamQuery = new URLSearchParams({
                     ...(pPeriod ? { p: pPeriod } : {}),
                     ...(pSlug ? { q: pSlug } : {}),
+                    ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
                   }).toString();
                   return (
                     <li key={i} className="space-y-0.5 min-w-0">
@@ -1588,7 +1615,10 @@ export const RecordsPanel: React.FC = () => {
                           <EventLink
                             name={p.t}
                             u={p.e}
-                            query={`q=${encodeURIComponent([pSlug, oppSlug].filter(Boolean).join(","))}`}
+                            query={new URLSearchParams({
+                              q: [pSlug, oppSlug].filter(Boolean).join(","),
+                              ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
+                            }).toString()}
                             className="text-rw-muted hover:text-rw-accent hover:underline"
                           />{" "}
                           ·{" "}
@@ -1716,23 +1746,34 @@ export const RecordsPanel: React.FC = () => {
               share={shareName(title)}
             >
               <ol className="text-xs space-y-1.5">
-                {rows.map((p, i) => (
+                {rows.map((p, i) => {
+                  const pSlug = p.u || resolvePlayerSlug(p.pl);
+                  const rivalSlug = rows.map((x) => x.u || resolvePlayerSlug(x.pl)).find((s) => Boolean(s) && s !== pSlug);
+                  const pQuery = rivalSlug ? `q=${encodeURIComponent(rivalSlug)}` : undefined;
+                  return (
                   <li key={i} className="space-y-0.5 min-w-0">
                     <div className="flex justify-between gap-2 min-w-0">
                       <span className="inline-flex items-center gap-1.5 min-w-0">
-                        <HubLink to={{ kind: "player", slug: p.u || resolvePlayerSlug(p.pl) }} title={p.pl} className="shrink-0">
+                        <HubLink to={{ kind: "player", slug: pSlug, ...(pQuery ? { query: pQuery } : {}) }} title={p.pl} className="shrink-0">
                           <PlayerPhoto name={p.pl} slug={p.u ?? undefined} size={16} />
                         </HubLink>
-                        <PlayerLink name={p.pl} u={p.u} />
+                        <PlayerLink name={p.pl} u={p.u} query={pQuery} />
                       </span>
                       <HubLink
                         to={
                           title === tl("Most pro games")
-                            ? { kind: "finder", query: `player=${encodeURIComponent(p.u || resolvePlayerSlug(p.pl))}` }
+                            ? {
+                                kind: "finder",
+                                query: new URLSearchParams({
+                                  player: pSlug,
+                                  ...(rivalSlug ? { vsplayer: rivalSlug } : {}),
+                                }).toString(),
+                              }
                             : {
                                 kind: "player",
-                                slug: p.u || resolvePlayerSlug(p.pl),
+                                slug: pSlug,
                                 ...(title === tl("Biggest champion pools") ? { tab: "champions" } : { tab: "stats" }),
+                                ...(pQuery ? { query: pQuery } : {}),
                               }
                         }
                         className="text-rw-accent font-bold tabular-nums hover:underline"
@@ -1744,7 +1785,8 @@ export const RecordsPanel: React.FC = () => {
                       <div className="h-full rounded-full bg-rw-accent/70" style={{ width: `${Math.max(8, Math.round((p.v / maxV) * 100))}%` }} />
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ol>
             </Section>
           );
