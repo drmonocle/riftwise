@@ -338,7 +338,7 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: stri
                       ? {
                           query: new URLSearchParams({
                             ...(evSlug ? { event: evSlug } : {}),
-                            ...(year !== "all" ? { key: `y${year}` } : {}),
+                            ...(year !== "all" ? { key: `y${year}`, year } : {}),
                           }).toString(),
                         }
                       : {}),
@@ -367,7 +367,18 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: stri
               title={`${tl("Every series")} · ${teamName}${year !== "all" ? ` (${year})` : ""}`}
               sub={`${tn("{n} series", "{n} series", rows.length)} · ${tl("{w} won", { w: won })}`}
               rows={shown.slice(0, 5).map((r) => `${r[3] > r[4] ? tc("short result", "W") : tc("short result", "L")} ${r[3]}-${r[4]} vs ${r[1]} · ${r[5]} (${fmtDate(r[0])})`)}
-              url={hubShareUrl({ kind: "team", slug, tab: "matches" })}
+              url={hubShareUrl({
+                kind: "team",
+                slug,
+                tab: "matches",
+                query:
+                  [
+                    activePeriod ? `p=${encodeURIComponent(activePeriod)}` : "",
+                    q.trim() ? `q=${encodeURIComponent(q.trim())}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join("&") || undefined,
+              })}
             />
             <SectionCard
               section={`${tl("Every series")} · ${teamName}`}
@@ -450,11 +461,11 @@ export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string; initi
               ? {
                   query: new URLSearchParams({
                     ...(initialYear
-                      ? { key: `y${initialYear}` }
+                      ? { key: `y${initialYear}`, year: initialYear }
                       : period && /^y\d{4}$/.test(period)
-                        ? { key: period }
+                        ? { key: period, year: period.slice(1) }
                         : period?.startsWith("p:")
-                          ? { key: `p${period.slice(2)}` }
+                          ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
                           : period?.startsWith("e:")
                             ? { event: resolveEventSlug(period.slice(2)) }
                             : {}),
@@ -584,7 +595,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 ...(h2hEv
                   ? { query: `event=${encodeURIComponent(h2hEv)}` }
                   : year !== "all"
-                    ? { query: `key=y${encodeURIComponent(year)}` }
+                    ? { query: `key=y${encodeURIComponent(year)}&year=${encodeURIComponent(year)}` }
                     : {}),
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -1033,7 +1044,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                   ? {
                       query: new URLSearchParams({
                         ...(evSlug ? { event: evSlug } : {}),
-                        ...(year !== "all" ? { key: `y${year}` } : {}),
+                        ...(year !== "all" ? { key: `y${year}`, year } : {}),
                         ...(champ !== "all" ? { q: resolveChampSlug(champ) } : shown[0]?.[2] ? { q: resolveChampSlug(shown[0][2]) } : {}),
                         ...(shown[0]?.[10] ? { role: normalizeRole(shown[0][10]) || shown[0][10] } : {}),
                       }).toString(),
@@ -1371,11 +1382,11 @@ export const PlayerGamesArchive: React.FC<{
                   query: new URLSearchParams({
                     ...(initialChamp ? { q: resolveChampSlug(initialChamp) } : {}),
                     ...(initialYear
-                      ? { key: `y${initialYear}` }
+                      ? { key: `y${initialYear}`, year: initialYear }
                       : period && /^y\d{4}$/.test(period)
-                        ? { key: period }
+                        ? { key: period, year: period.slice(1) }
                         : period?.startsWith("p:")
-                          ? { key: `p${period.slice(2)}` }
+                          ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
                           : period?.startsWith("e:")
                             ? { event: resolveEventSlug(period.slice(2)) }
                             : {}),
@@ -1508,11 +1519,11 @@ export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; cha
             query: new URLSearchParams({
               q: resolveChampSlug(champ),
               ...(year
-                ? { key: `y${year}` }
+                ? { key: `y${year}`, year }
                 : period && /^y\d{4}$/.test(period)
-                  ? { key: period }
+                  ? { key: period, year: period.slice(1) }
                   : period?.startsWith("p:")
-                    ? { key: `p${period.slice(2)}` }
+                    ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
                     : period?.startsWith("e:")
                       ? { event: resolveEventSlug(period.slice(2)) }
                       : {}),
@@ -1528,7 +1539,7 @@ export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; cha
         <HubLink
           to={{
             kind: "finder",
-            query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(resolveChampSlug(champ))}${year ? `&year=${encodeURIComponent(year)}` : period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : ""}`,
+            query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(resolveChampSlug(champ))}${year ? `&year=${encodeURIComponent(year)}` : period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : ""}`,
           }}
           className="text-rw-accent hover:underline"
         >

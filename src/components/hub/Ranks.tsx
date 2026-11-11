@@ -869,6 +869,7 @@ export const PlayerRanks: React.FC<{
                     scope: lu,
                     league: lu,
                     key: `y${year}`,
+                    year,
                     ...(me?.r ? { role: me.r } : {}),
                     ...(games?.[0]?.[2] ? { q: resolveChampSlug(games[0][2]) } : {}),
                   }).toString(),
@@ -921,7 +922,12 @@ export const PlayerRanks: React.FC<{
               <CopyRanksPost
                 title={`${name || me?.n || slug} · ${leagueLabel} ${year}${me?.r ? ` (${roleName(me.r)})` : ""}`}
                 rows={cardRows}
-                url={hubShareUrl({ kind: "player", slug, tab: "stats", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) })}
+                url={hubShareUrl({
+                  kind: "player",
+                  slug,
+                  tab: "stats",
+                  ...(year || lu ? { query: [year ? `p=y${encodeURIComponent(year)}` : "", lu ? `league=${encodeURIComponent(lu)}` : ""].filter(Boolean).join("&") } : {}),
+                })}
               />
               <SectionCard
                 section={tl("League ranks")}
@@ -1110,7 +1116,7 @@ export const TeamRanks: React.FC<{
                   kind: "tiers",
                   query: new URLSearchParams({
                     ...(lu ? { scope: lu, league: lu } : {}),
-                    ...(year ? { key: `y${year}` } : {}),
+                    ...(year ? { key: `y${year}`, year } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1139,7 +1145,12 @@ export const TeamRanks: React.FC<{
               <CopyRanksPost
                 title={`${name || me?.t || slug} · ${leagueLabel} ${year}`}
                 rows={cardRows}
-                url={hubShareUrl({ kind: "team", slug, tab: "stats", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) })}
+                url={hubShareUrl({
+                  kind: "team",
+                  slug,
+                  tab: "stats",
+                  ...(year || lu ? { query: [year ? `p=y${encodeURIComponent(year)}` : "", lu ? `league=${encodeURIComponent(lu)}` : ""].filter(Boolean).join("&") } : {}),
+                })}
               />
               <SectionCard
                 section={tl("League ranks")}

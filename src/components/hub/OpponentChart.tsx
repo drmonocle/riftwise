@@ -559,11 +559,11 @@ const ColoredOpponentGraph: React.FC<{
                   ? {
                       query: new URLSearchParams({
                         ...(period && /^y:?(\d{4})$/.test(period)
-                          ? { key: `y${/^y:?(\d{4})$/.exec(period)![1]}` }
+                          ? { key: `y${/^y:?(\d{4})$/.exec(period)![1]}`, year: /^y:?(\d{4})$/.exec(period)![1] }
                           : period?.startsWith("e:")
                             ? { event: resolveEventSlug(period.slice(2)) }
                             : period?.startsWith("p:")
-                              ? { key: `p${period.slice(2)}` }
+                              ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
                               : {}),
                         ...(active.champs?.[0]?.c ? { q: resolveChampSlug(active.champs[0].c) } : {}),
                       }).toString(),
@@ -917,7 +917,7 @@ export const PlayerOpponents: React.FC<{
                     ...(yr || ev || activeP.startsWith("p:") || topChamp
                       ? {
                           query: new URLSearchParams({
-                            ...(yr ? { key: `y${yr}` } : ev ? { event: ev } : activeP.startsWith("p:") ? { key: `p${activeP.slice(2)}` } : {}),
+                            ...(yr ? { key: `y${yr}`, year: yr } : ev ? { event: ev } : activeP.startsWith("p:") ? { key: `p${activeP.slice(2)}`, patch: activeP.slice(2) } : {}),
                             ...(topChamp ? { q: resolveChampSlug(topChamp) } : {}),
                           }).toString(),
                         }
@@ -1002,7 +1002,7 @@ export const PlayerOpponents: React.FC<{
                     ...(yr || ev || activeP.startsWith("p:") || topChamp
                       ? {
                           query: new URLSearchParams({
-                            ...(yr ? { key: `y${yr}` } : ev ? { event: ev } : activeP.startsWith("p:") ? { key: `p${activeP.slice(2)}` } : {}),
+                            ...(yr ? { key: `y${yr}`, year: yr } : ev ? { event: ev } : activeP.startsWith("p:") ? { key: `p${activeP.slice(2)}`, patch: activeP.slice(2) } : {}),
                             ...(topChamp ? { q: resolveChampSlug(topChamp) } : {}),
                           }).toString(),
                         }
@@ -1113,7 +1113,7 @@ export const PlayerOpponents: React.FC<{
                     ...(yr || ev || activeP.startsWith("p:") || topChamp
                       ? {
                           query: new URLSearchParams({
-                            ...(yr ? { key: `y${yr}` } : ev ? { event: ev } : activeP.startsWith("p:") ? { key: `p${activeP.slice(2)}` } : {}),
+                            ...(yr ? { key: `y${yr}`, year: yr } : ev ? { event: ev } : activeP.startsWith("p:") ? { key: `p${activeP.slice(2)}`, patch: activeP.slice(2) } : {}),
                             ...(topChamp ? { q: resolveChampSlug(topChamp) } : {}),
                           }).toString(),
                         }
@@ -1348,11 +1348,11 @@ export const PlayerOpponents: React.FC<{
                           ? {
                               query: new URLSearchParams({
                                 ...(yr
-                                  ? { key: `y${yr}` }
+                                  ? { key: `y${yr}`, year: yr }
                                   : ev
                                     ? { event: ev }
                                     : (period || scope)?.startsWith("p:")
-                                      ? { key: `p${(period || scope)!.slice(2)}` }
+                                      ? { key: `p${(period || scope)!.slice(2)}`, patch: (period || scope)!.slice(2) }
                                       : {}),
                                 ...(expanded.champs[0]?.c ? { q: resolveChampSlug(expanded.champs[0].c) } : {}),
                               }).toString(),
@@ -1771,7 +1771,7 @@ export const TeamOpponentsChart: React.FC<{
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(opp0Yr ? { query: `key=y${opp0Yr}` } : {}),
+                    ...(opp0Yr ? { query: `key=y${opp0Yr}&year=${opp0Yr}` } : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1903,7 +1903,7 @@ export const TeamOpponentsChart: React.FC<{
                       </span>
                       <span>
                         <HubLink
-                          to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(oppSlug)}` }}
+                          to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(oppSlug)}${rowYr ? `&year=${encodeURIComponent(rowYr)}` : ""}` }}
                           className="font-semibold text-rw-text hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -1944,7 +1944,7 @@ export const TeamOpponentsChart: React.FC<{
                         {tl("Compare")}
                       </HubLink>
                       <HubLink
-                        to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(oppSlug)}` }}
+                        to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(oppSlug)}${rowYr ? `&year=${encodeURIComponent(rowYr)}` : ""}` }}
                         className="text-rw-muted hover:text-rw-accent hover:underline"
                       >
                         {tl("Game finder")}
@@ -2147,11 +2147,11 @@ export const TeamPeriodOpponents: React.FC<{
             to={{
               kind: "tiers",
               ...(period && /^y\d{4}$/.test(period)
-                ? { query: `key=${encodeURIComponent(period)}` }
+                ? { query: `key=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` }
                 : period?.startsWith("e:")
                   ? { query: `event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` }
                   : period?.startsWith("p:")
-                    ? { query: `key=p${encodeURIComponent(period.slice(2))}` }
+                    ? { query: `key=p${encodeURIComponent(period.slice(2))}&patch=${encodeURIComponent(period.slice(2))}` }
                     : {}),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -2264,11 +2264,11 @@ export const TeamPeriodOpponents: React.FC<{
                 to={{
                   kind: "tiers",
                   ...(period && /^y\d{4}$/.test(period)
-                    ? { query: `key=${encodeURIComponent(period)}` }
+                    ? { query: `key=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` }
                     : period?.startsWith("e:")
                       ? { query: `event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` }
                       : period?.startsWith("p:")
-                        ? { query: `key=p${encodeURIComponent(period.slice(2))}` }
+                        ? { query: `key=p${encodeURIComponent(period.slice(2))}&patch=${encodeURIComponent(period.slice(2))}` }
                         : {}),
                 }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"
