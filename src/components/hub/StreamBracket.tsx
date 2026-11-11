@@ -218,7 +218,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
               query: new URLSearchParams({
                 ...(lgSlug ? { scope: lgSlug, league: lgSlug } : {}),
                 event: ev.u,
-                ...(which.year ? { key: `y${which.year}` } : {}),
+                ...(which.year ? { key: `y${which.year}`, year: which.year } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -349,9 +349,9 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           to={{
             kind: "champions",
             query: new URLSearchParams({
-              ...(lgSlug ? { league: lgSlug } : {}),
+              ...(lgSlug ? { scope: lgSlug, league: lgSlug } : {}),
               event: ev.u,
-              ...(which.year ? { key: `y${which.year}` } : {}),
+              ...(which.year ? { key: `y${which.year}`, year: which.year } : {}),
             }).toString(),
           }}
           className="text-rw-accent hover:underline"
@@ -365,7 +365,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             query: new URLSearchParams({
               ...(lgSlug ? { scope: lgSlug, league: lgSlug } : {}),
               event: ev.u,
-              ...(which.year ? { key: `y${which.year}` } : {}),
+              ...(which.year ? { key: `y${which.year}`, year: which.year } : {}),
             }).toString(),
           }}
           className="text-rw-accent hover:underline"

@@ -302,7 +302,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   const yr = match.startTimeUtc?.slice(0, 4);
                   const q = new URLSearchParams({
                     ...(lg ? { scope: lg, league: lg } : {}),
-                    ...(yr ? { key: `y${yr}` } : {}),
+                    ...(yr ? { key: `y${yr}`, year: yr } : {}),
                   }).toString();
                   onClose();
                   navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -609,7 +609,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               const yr = match.startTimeUtc?.slice(0, 4);
               const q = new URLSearchParams({
                 ...(lg ? { scope: lg, league: lg } : {}),
-                ...(yr ? { key: `y${yr}` } : {}),
+                ...(yr ? { key: `y${yr}`, year: yr } : {}),
               }).toString();
               onClose();
               navigateHub({

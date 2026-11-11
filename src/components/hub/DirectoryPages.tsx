@@ -273,7 +273,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
               to={{
                 kind: "rankings",
                 query: new URLSearchParams({
-                  ...(t[6] ? { league: t[6] } : {}),
+                  ...(t[6] ? { league: resolveLeagueSlug(t[6]) || t[6] } : {}),
                   q: u,
                 }).toString(),
               }}
@@ -361,8 +361,8 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             ...((since !== "all" || region)
               ? {
                   query: new URLSearchParams({
-                    ...(region ? { scope: resolveLeagueSlug(region) || region } : {}),
-                    ...(since !== "all" ? { key: `y${since}` } : {}),
+                    ...(region ? { scope: resolveLeagueSlug(region) || region, league: resolveLeagueSlug(region) || region } : {}),
+                    ...(since !== "all" ? { key: `y${since}`, year: since } : {}),
                   }).toString(),
                 }
               : {}),
@@ -374,10 +374,10 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         <HubLink
           to={{
             kind: "tournaments",
-            ...((since !== "all" || region || (words.trim() && list.length === 1))
+            ...(since !== "all" ? { year: since } : {}),
+            ...((region || (words.trim() && list.length === 1))
               ? {
                   query: new URLSearchParams({
-                    ...(since !== "all" ? { year: since } : {}),
                     ...(words.trim() && list.length === 1
                       ? { q: teamRowSlug(list[0]) }
                       : region
@@ -827,7 +827,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             query:
               new URLSearchParams({
                 ...(role ? { role } : {}),
-                ...(since !== "all" ? { key: `y${since}` } : {}),
+                ...(since !== "all" ? { key: `y${since}`, year: since } : {}),
               }).toString() || undefined,
           }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -835,7 +835,14 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
           {tl("Pro tier list")} →
         </HubLink>
         <HubLink
-          to={{ kind: "counters", ...(role ? { query: `role=${encodeURIComponent(role)}` } : {}) }}
+          to={{
+            kind: "counters",
+            query:
+              new URLSearchParams({
+                ...(role ? { role } : {}),
+                ...(since !== "all" ? { patch: `y${since}`, year: since } : {}),
+              }).toString() || undefined,
+          }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Counters")} →

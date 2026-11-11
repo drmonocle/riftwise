@@ -164,9 +164,8 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               const lg = done[0] ? resolveLeagueSlug(done[0].leagueSlug || done[0].leagueName) : "";
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
-                ...(yr ? { year: yr } : {}),
               }).toString();
-              navigateHub({ kind: "tournaments", ...(q ? { query: q } : {}) });
+              navigateHub({ kind: "tournaments", ...(yr ? { year: yr } : {}), ...(q ? { query: q } : {}) });
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
           >
@@ -223,7 +222,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               const lg = done[0] ? resolveLeagueSlug(done[0].leagueSlug || done[0].leagueName) : "";
               const q = new URLSearchParams({
                 ...(lg ? { scope: lg, league: lg } : {}),
-                ...(yr ? { key: `y${yr}` } : {}),
+                ...(yr ? { key: `y${yr}`, year: yr } : {}),
               }).toString();
               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
             }}
