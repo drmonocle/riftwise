@@ -529,7 +529,21 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
           <div className="min-w-0">
             <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-rw-teal">
               <Star className="w-3 h-3 fill-current shrink-0" />
-              <span className="truncate">{tl("Top rated:")}</span>
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  query: new URLSearchParams({
+                    q: [pSlug(mvp.n, mvp.u), slugA, slugB].filter(Boolean).join(","),
+                    ...(mvp.champs[0] ? { champ: resolveChampSlug(mvp.champs[0]) } : {}),
+                    ...(s.e ? { event: s.e } : {}),
+                    ...(seriesYear ? { year: seriesYear } : {}),
+                  }).toString(),
+                }}
+                className="truncate hover:underline"
+                title={tl("Player leaderboards")}
+              >
+                {tl("Top rated:")}
+              </HubLink>
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
               <HubLink to={{ kind: "player", slug: pSlug(mvp.n, mvp.u), ...(pQuery ? { query: pQuery } : {}) }} className="shrink-0 hover:opacity-80" title={mvp.n}>
@@ -558,7 +572,22 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
                 </HubLink>
               ))}
             </span>
-            <PlayerRatingBadge v={mvp.avgRt} top />
+            <HubLink
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  player: pSlug(mvp.n, mvp.u),
+                  ...(mvp.teamSide === 1 ? (slugA ? { team: slugA, ...(slugB ? { vs: slugB } : {}) } : {}) : (slugB ? { team: slugB, ...(slugA ? { vs: slugA } : {}) } : {})),
+                  ...(mvp.champs[0] ? { champ: resolveChampSlug(mvp.champs[0]) } : {}),
+                  ...(s.e ? { event: s.e } : {}),
+                  ...(seriesYear ? { year: seriesYear } : {}),
+                }).toString(),
+              }}
+              className="hover:opacity-85"
+              title={tl("Game finder")}
+            >
+              <PlayerRatingBadge v={mvp.avgRt} top />
+            </HubLink>
           </div>
         </div>
       )}
@@ -693,10 +722,12 @@ const SeriesGames: React.FC<{
             const pBObj = (game?.p || []).find((p) => p.s !== aSide);
             const pA = pAObj ? pSlug(pAObj.n, pAObj.u) : "";
             const pB = pBObj ? pSlug(pBObj.n, pBObj.u) : "";
+            const rA = pAObj?.r ? normalizeRole(pAObj.r) : "";
+            const fearlessPeriod = seriesYear ? `y${seriesYear}` : s.e ? `e:${s.e}` : undefined;
             return (
               <span className="ml-auto flex items-center gap-2">
                 <HubLink
-                  to={{ kind: "prep", a: slugA, b: slugB, ...(seriesYear ? { period: `y${seriesYear}` } : {}) }}
+                  to={{ kind: "prep", a: slugA, b: slugB, ...(fearlessPeriod ? { period: fearlessPeriod } : {}) }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
                   {tl("Match prep")} →
@@ -717,14 +748,14 @@ const SeriesGames: React.FC<{
                               .join(","),
                           )}`
                         : ""
-                    }${seriesYear ? `&p=y${encodeURIComponent(seriesYear)}` : ""}`,
+                    }${rA ? `&role=${encodeURIComponent(rA)}` : ""}${fearlessPeriod ? `&p=${encodeURIComponent(fearlessPeriod)}` : ""}`,
                   }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
                   {tl("Draft board")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "compare", mode: "team", a: slugA, b: slugB, ...(seriesYear ? { period: `y${seriesYear}` } : {}) }}
+                  to={{ kind: "compare", mode: "team", a: slugA, b: slugB, ...(fearlessPeriod ? { period: fearlessPeriod } : {}) }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
                   {tl("Compare")} →
@@ -737,7 +768,7 @@ const SeriesGames: React.FC<{
                         curGp.bPicks[0] && curGp.bPicks[0] !== curGp.aPicks[0]
                           ? `&vs=${encodeURIComponent(resolveChampSlug(curGp.bPicks[0]))}`
                           : ""
-                      }${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${
+                      }${rA ? `&role=${encodeURIComponent(rA)}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${
                         game?.patch ? `&patch=${encodeURIComponent(game.patch)}` : seriesYear ? `&patch=y${encodeURIComponent(seriesYear)}&year=${encodeURIComponent(seriesYear)}` : ""
                       }`,
                     }}
@@ -750,6 +781,8 @@ const SeriesGames: React.FC<{
                   to={{
                     kind: "items",
                     query: `${pA ? `player=${encodeURIComponent(pA)}&` : ""}${pB && pB !== pA ? `vsplayer=${encodeURIComponent(pB)}&` : ""}team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${
+                      rA ? `&role=${encodeURIComponent(rA)}` : ""
+                    }${
                       curGp?.aPicks[0] ? `&champ=${encodeURIComponent(resolveChampSlug(curGp.aPicks[0]))}` : ""
                     }${
                       curGp?.bPicks[0] && curGp.bPicks[0] !== curGp?.aPicks[0]
@@ -767,6 +800,8 @@ const SeriesGames: React.FC<{
                   to={{
                     kind: "finder",
                     query: `${pA ? `player=${encodeURIComponent(pA)}&` : ""}${pB && pB !== pA ? `vsplayer=${encodeURIComponent(pB)}&` : ""}team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${
+                      rA ? `&role=${encodeURIComponent(rA)}` : ""
+                    }${
                       curGp?.aPicks[0] ? `&champ=${encodeURIComponent(resolveChampSlug(curGp.aPicks[0]))}` : ""
                     }${
                       curGp?.bPicks[0] && curGp.bPicks[0] !== curGp?.aPicks[0]
@@ -792,6 +827,7 @@ const SeriesGames: React.FC<{
                     kind: "leaders",
                     query: new URLSearchParams({
                       q: [slugA, slugB, pA, pB && pB !== pA ? pB : ""].filter(Boolean).join(","),
+                      ...(rA ? { role: rA } : {}),
                       ...(curGp?.aPicks[0] ? { champ: resolveChampSlug(curGp.aPicks[0]) } : {}),
                       ...(s.e ? { event: s.e } : {}),
                       ...(seriesYear ? { year: seriesYear } : {}),
@@ -804,7 +840,7 @@ const SeriesGames: React.FC<{
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(game?.patch || s.e || seriesYear || curGp?.aPicks[0]
+                    ...(game?.patch || s.e || seriesYear || curGp?.aPicks[0] || rA
                       ? {
                           query: new URLSearchParams({
                             ...(curGp?.aPicks[0]
@@ -819,6 +855,7 @@ const SeriesGames: React.FC<{
                                     .join(","),
                                 }
                               : {}),
+                            ...(rA ? { role: rA } : {}),
                             ...(game?.patch ? { key: `p${game.patch}`, patch: game.patch } : seriesYear ? { key: `y${seriesYear}` } : {}),
                             ...(seriesYear ? { year: seriesYear } : {}),
                             ...(s.e ? { event: s.e } : {}),
@@ -1161,17 +1198,17 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
         </div>
         <div className="grid grid-cols-2 gap-3">
           {/* spoiler mode: the draft only (kills, gold and objectives give the result away) */}
-          <SideHeader name={blueTeam.n} u={sideSlug(blueTeam)} oppU={sideSlug(redTeam)} side="blue" won={!hidden && blueWon} st={hidden ? undefined : g.t?.blue} period={gamePeriod} eventSlug={s.e} patch={g.patch} />
-          <SideHeader name={redTeam.n} u={sideSlug(redTeam)} oppU={sideSlug(blueTeam)} side="red" won={!hidden && redWon} st={hidden ? undefined : g.t?.red} right period={gamePeriod} eventSlug={s.e} patch={g.patch} />
+          <SideHeader name={blueTeam.n} u={sideSlug(blueTeam)} oppU={sideSlug(redTeam)} p0={blue[0]} oppP0={red[0]} side="blue" won={!hidden && blueWon} st={hidden ? undefined : g.t?.blue} period={gamePeriod} eventSlug={s.e} patch={g.patch} />
+          <SideHeader name={redTeam.n} u={sideSlug(redTeam)} oppU={sideSlug(blueTeam)} p0={red[0]} oppP0={blue[0]} side="red" won={!hidden && redWon} st={hidden ? undefined : g.t?.red} right period={gamePeriod} eventSlug={s.e} patch={g.patch} />
         </div>
         {(g.t?.blue?.picks?.length || g.t?.blue?.bans?.length) && (
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-rw-border">
-            <Draft st={g.t?.blue} side="blue" teamSlug={sideSlug(blueTeam)} oppSlug={sideSlug(redTeam)} period={gamePeriod} />
-            <Draft st={g.t?.red} side="red" right teamSlug={sideSlug(redTeam)} oppSlug={sideSlug(blueTeam)} period={gamePeriod} />
+            <Draft st={g.t?.blue} side="blue" teamSlug={sideSlug(blueTeam)} oppSlug={sideSlug(redTeam)} period={gamePeriod} eventSlug={s.e} />
+            <Draft st={g.t?.red} side="red" right teamSlug={sideSlug(redTeam)} oppSlug={sideSlug(blueTeam)} period={gamePeriod} eventSlug={s.e} />
           </div>
         )}
         {!hidden && blue.length === 5 && red.length === 5 && (
-          <GameRoleMatchups blue={blue} red={red} period={gamePeriod} />
+          <GameRoleMatchups blue={blue} red={red} period={gamePeriod || (s.e ? `e:${s.e}` : undefined)} />
         )}
       </div>
 
@@ -2167,10 +2204,12 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
   );
 };
 
-const SideHeader: React.FC<{ name: string; u: string | null; oppU?: string | null; side: "blue" | "red"; won: boolean; st?: SideStats; right?: boolean; period?: string; eventSlug?: string; patch?: string }> = ({
+const SideHeader: React.FC<{ name: string; u: string | null; oppU?: string | null; p0?: GamePlayer; oppP0?: GamePlayer; side: "blue" | "red"; won: boolean; st?: SideStats; right?: boolean; period?: string; eventSlug?: string; patch?: string }> = ({
   name,
   u,
   oppU,
+  p0,
+  oppP0,
   side,
   won,
   st,
@@ -2180,7 +2219,7 @@ const SideHeader: React.FC<{ name: string; u: string | null; oppU?: string | nul
   patch,
 }) => {
   const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
-  const pQuery = period ? `p=${encodeURIComponent(period)}` : undefined;
+  const pQuery = period ? `p=${encodeURIComponent(period)}` : eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : undefined;
   const obj: [string, React.ReactNode][] = [];
   if (st?.k != null) obj.push([tl("Kills"), st.k]);
   if (st?.gold != null) obj.push([tl("Gold"), fmtGold(st.gold)]);
@@ -2196,12 +2235,32 @@ const SideHeader: React.FC<{ name: string; u: string | null; oppU?: string | nul
   const firsts = [st?.fb === 1 ? tl("First blood") : null, st?.ft === 1 ? tl("First tower") : null].filter((x): x is string => !!x);
   const drakes = st?.drakes ? Object.entries(st.drakes).map(([k, n]) => `${tl(DRAKE_LABEL[k] || k)}${n && n > 1 ? ` ×${n}` : ""}`) : [];
   const yr = period && /^y\d{4}$/.test(period) ? period.slice(1) : undefined;
+  const p0Slug = p0 ? pSlug(p0.n, p0.u) : "";
+  const oppP0Slug = oppP0 ? pSlug(oppP0.n, oppP0.u) : "";
+  const p0Role = p0?.r ? normalizeRole(p0.r) : "";
+  const p0Champ = p0?.c || st?.picks?.[0] || "";
+  const oppP0Champ = oppP0?.c || "";
   return (
     <div className={`min-w-0 ${right ? "text-right" : ""}`}>
       <div className={`flex items-center gap-2 ${right ? "justify-end" : ""}`}>
         {u ? (
           <HubLink
-            to={{ kind: "finder", query: `team=${encodeURIComponent(u)}${oppU ? `&vs=${encodeURIComponent(oppU)}` : ""}&side=${side === "blue" ? "b" : "r"}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
+            to={{
+              kind: "finder",
+              query: new URLSearchParams({
+                ...(p0Slug ? { player: p0Slug } : {}),
+                ...(oppP0Slug && oppP0Slug !== p0Slug ? { vsplayer: oppP0Slug } : {}),
+                team: u,
+                ...(oppU ? { vs: oppU } : {}),
+                side: side === "blue" ? "b" : "r",
+                ...(p0Role ? { role: p0Role } : {}),
+                ...(p0Champ ? { champ: resolveChampSlug(p0Champ) } : {}),
+                ...(oppP0Champ && oppP0Champ !== p0Champ ? { vschamp: resolveChampSlug(oppP0Champ) } : {}),
+                ...(patch ? { patch } : {}),
+                ...(eventSlug ? { event: eventSlug } : {}),
+                ...(yr ? { year: yr } : {}),
+              }).toString(),
+            }}
             className="text-[10px] uppercase font-bold tracking-wider hover:underline"
             style={{ color }}
             title={tl("Game finder")}
@@ -2268,7 +2327,9 @@ const sgn = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+
 // Draft order: blue picks 1st, 4th, 5th, 8th, 9th; red 2nd, 3rd, 6th, 7th, 10th. Bans and picks come in two phases (3 + 2).
 const PICK_NO: Record<"blue" | "red", number[]> = { blue: [1, 4, 5, 8, 9], red: [2, 3, 6, 7, 10] };
 
-const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; teamSlug?: string | null; oppSlug?: string | null; period?: string }> = ({ st, side, right, teamSlug, oppSlug, period }) => (
+const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; teamSlug?: string | null; oppSlug?: string | null; period?: string; eventSlug?: string }> = ({ st, side, right, teamSlug, oppSlug, period, eventSlug }) => {
+  const effPeriod = period || (eventSlug ? `e:${eventSlug}` : undefined);
+  return (
   <div className={`space-y-1.5 min-w-0 ${right ? "text-right" : ""}`}>
     {st?.bans && st.bans.length > 0 && (
       <div className={`flex flex-wrap items-center gap-1 ${right ? "justify-end" : ""}`}>
@@ -2286,7 +2347,7 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
                         .join(","),
                     )}`
                   : ""
-              }${period ? `&p=${encodeURIComponent(period)}` : ""}`,
+              }${effPeriod ? `&p=${encodeURIComponent(effPeriod)}` : ""}`,
             }}
             className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline uppercase mr-1"
             title={tl("Draft board")}
@@ -2301,8 +2362,8 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
             key={i}
             to={
               teamSlug
-                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
-                : { kind: "champ", slug: resolveChampSlug(c) }
+                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}${effPeriod ? `&p=${encodeURIComponent(effPeriod)}` : ""}` }
+                : { kind: "champ", slug: resolveChampSlug(c), ...(effPeriod ? { query: `p=${encodeURIComponent(effPeriod)}` } : {}) }
             }
             className={`opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-opacity ${i === 3 ? "ml-2" : ""}`}
             title={`${champName(c)} · ${tl("Ban {n}", { n: i + 1 })}`}
@@ -2328,7 +2389,7 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
                         .join(","),
                     )}`
                   : ""
-              }${period ? `&p=${encodeURIComponent(period)}` : ""}`,
+              }${effPeriod ? `&p=${encodeURIComponent(effPeriod)}` : ""}`,
             }}
             className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline uppercase mr-1 mt-1.5"
             title={tl("Draft board")}
@@ -2343,8 +2404,8 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
             key={i}
             to={
               teamSlug
-                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
-                : { kind: "champ", slug: resolveChampSlug(c) }
+                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}${effPeriod ? `&p=${encodeURIComponent(effPeriod)}` : ""}` }
+                : { kind: "champ", slug: resolveChampSlug(c), ...(effPeriod ? { query: `p=${encodeURIComponent(effPeriod)}` } : {}) }
             }
             className={`flex flex-col items-center hover:opacity-85 ${i === 3 ? "ml-2" : ""}`}
             title={`${champName(c)} · ${tl("Pick {n} of the draft", { n: PICK_NO[side][i] ?? i + 1 })}`}
@@ -2356,7 +2417,8 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
       </div>
     )}
   </div>
-);
+  );
+};
 
 const Scoreboard: React.FC<{
   name: string;

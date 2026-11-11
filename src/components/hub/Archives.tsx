@@ -176,7 +176,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(teamSlug || tSlug(teamName))}&vs=${encodeURIComponent(oppSlug)}${r[6] ? `&event=${encodeURIComponent(r[6])}` : /^\d{4}/.test(r[0]) ? `&year=${r[0].slice(0, 4)}` : ""}`,
+                        query: `team=${encodeURIComponent(teamSlug || tSlug(teamName))}&vs=${encodeURIComponent(oppSlug)}${r[6] ? `&event=${encodeURIComponent(r[6])}` : ""}${/^\d{4}/.test(r[0]) ? `&year=${r[0].slice(0, 4)}` : ""}`,
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Game finder")}
@@ -628,7 +628,16 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
   const ga = rows.reduce((t, r) => t + r[3], 0);
   const gb = rows.reduce((t, r) => t + r[4], 0);
   const h2hEv = event !== "all" ? resolveEventSlug(event) : "";
-  const h2hQ = h2hEv ? `p=e:${encodeURIComponent(h2hEv)}` : year !== "all" ? `p=y${encodeURIComponent(year)}` : undefined;
+  const h2hYr =
+    year !== "all"
+      ? year
+      : h2hEv
+        ? /\b(20\d{2})\b/.exec(h2hEv)?.[1] ||
+          (rows.length > 0 && /^\d{4}/.test(rows[0][0]) && rows.every((r) => r[0].slice(0, 4) === rows[0][0].slice(0, 4))
+            ? rows[0][0].slice(0, 4)
+            : "")
+        : "";
+  const h2hQ = h2hEv ? `p=e:${encodeURIComponent(h2hEv)}` : h2hYr ? `p=y${encodeURIComponent(h2hYr)}` : undefined;
   return (
     <Section
       title={tl("Every series between them")}
@@ -640,7 +649,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 kind: "prep",
                 a,
                 b,
-                period: h2hEv ? `e:${h2hEv}` : year !== "all" ? `y${year}` : undefined,
+                period: h2hEv ? `e:${h2hEv}` : h2hYr ? `y${h2hYr}` : undefined,
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
@@ -652,7 +661,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 mode: "team",
                 a,
                 b,
-                period: h2hEv ? `e:${h2hEv}` : year !== "all" ? `y${year}` : undefined,
+                period: h2hEv ? `e:${h2hEv}` : h2hYr ? `y${h2hYr}` : undefined,
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -661,7 +670,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
             <HubLink
               to={{
                 kind: "draft",
-                query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${h2hEv ? `&p=e:${encodeURIComponent(h2hEv)}` : year !== "all" ? `&p=y${encodeURIComponent(year)}` : ""}`,
+                query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${h2hEv ? `&p=e:${encodeURIComponent(h2hEv)}` : h2hYr ? `&p=y${encodeURIComponent(h2hYr)}` : ""}`,
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -679,11 +688,14 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
             <HubLink
               to={{
                 kind: "tiers",
-                ...(h2hEv
-                  ? { query: `event=${encodeURIComponent(h2hEv)}` }
-                  : year !== "all"
-                    ? { query: `key=y${encodeURIComponent(year)}&year=${encodeURIComponent(year)}` }
-                    : {}),
+                ...(h2hEv || h2hYr
+                  ? {
+                      query: new URLSearchParams({
+                        ...(h2hEv ? { event: h2hEv } : {}),
+                        ...(h2hYr ? { key: `y${h2hYr}`, year: h2hYr } : {}),
+                      }).toString(),
+                    }
+                  : {}),
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -692,11 +704,14 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
             <HubLink
               to={{
                 kind: "counters",
-                ...(h2hEv
-                  ? { query: `event=${encodeURIComponent(h2hEv)}` }
-                  : year !== "all"
-                    ? { query: `patch=y${encodeURIComponent(year)}&year=${encodeURIComponent(year)}` }
-                    : {}),
+                ...(h2hEv || h2hYr
+                  ? {
+                      query: new URLSearchParams({
+                        ...(h2hEv ? { event: h2hEv } : {}),
+                        ...(h2hYr ? { patch: `y${h2hYr}`, year: h2hYr } : {}),
+                      }).toString(),
+                    }
+                  : {}),
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -705,7 +720,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
             <HubLink
               to={{
                 kind: "items",
-                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : ""}${h2hYr ? `&year=${encodeURIComponent(h2hYr)}` : ""}`,
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -714,7 +729,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
             <HubLink
               to={{
                 kind: "finder",
-                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : ""}${h2hYr ? `&year=${encodeURIComponent(h2hYr)}` : ""}`,
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -725,7 +740,8 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 kind: "leaders",
                 query: new URLSearchParams({
                   q: `${a},${b}`,
-                  ...(h2hEv ? { event: h2hEv } : year !== "all" ? { year } : {}),
+                  ...(h2hEv ? { event: h2hEv } : {}),
+                  ...(h2hYr ? { year: h2hYr } : {}),
                 }).toString(),
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -741,7 +757,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 mode: "team",
                 a,
                 b,
-                ...(h2hEv ? { period: `e:${h2hEv}` } : year !== "all" ? { period: `y${year}` } : {}),
+                ...(h2hEv ? { period: `e:${h2hEv}` } : h2hYr ? { period: `y${h2hYr}` } : {}),
               })}
             />
             <SectionCard
@@ -781,7 +797,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                        query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : ""}${h2hYr ? `&year=${encodeURIComponent(h2hYr)}` : ""}`,
                       }}
                       className="hover:underline"
                     >
@@ -791,7 +807,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                      query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : ""}${h2hYr ? `&year=${encodeURIComponent(h2hYr)}` : ""}`,
                     }}
                     className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted hover:text-rw-accent hover:underline"
                   >
@@ -801,7 +817,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(b)}&vs=${encodeURIComponent(a)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                        query: `team=${encodeURIComponent(b)}&vs=${encodeURIComponent(a)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : ""}${h2hYr ? `&year=${encodeURIComponent(h2hYr)}` : ""}`,
                       }}
                       className="hover:underline"
                     >
@@ -829,7 +845,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                       <HubLink
                         to={{
                           kind: "finder",
-                          query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                          query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : ""}${h2hYr ? `&year=${encodeURIComponent(h2hYr)}` : ""}`,
                         }}
                         className="hover:underline"
                       >
@@ -839,7 +855,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                        query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : ""}${h2hYr ? `&year=${encodeURIComponent(h2hYr)}` : ""}`,
                       }}
                       className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted hover:text-rw-accent hover:underline"
                     >
@@ -849,7 +865,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                       <HubLink
                         to={{
                           kind: "finder",
-                          query: `team=${encodeURIComponent(b)}&vs=${encodeURIComponent(a)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                          query: `team=${encodeURIComponent(b)}&vs=${encodeURIComponent(a)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : ""}${h2hYr ? `&year=${encodeURIComponent(h2hYr)}` : ""}`,
                         }}
                         className="hover:underline"
                       >
@@ -1374,7 +1390,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(r[2]))}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : /^\d{4}/.test(r[0]) ? `&patch=y${encodeURIComponent(r[0].slice(0, 4))}&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
+                        query: `champ=${encodeURIComponent(resolveChampSlug(r[2]))}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${/^\d{4}/.test(r[0]) ? `&patch=y${encodeURIComponent(r[0].slice(0, 4))}&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Counters")}

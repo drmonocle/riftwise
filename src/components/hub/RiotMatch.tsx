@@ -221,6 +221,15 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             </HubLink>
             <HubLink
               to={{
+                kind: "counters",
+                ...(yr ? { query: `patch=y${encodeURIComponent(yr)}&year=${encodeURIComponent(yr)}` } : {}),
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+            >
+              {tl("Counters")}
+            </HubLink>
+            <HubLink
+              to={{
                 kind: "items",
                 query: new URLSearchParams({
                   team: t1Slug,

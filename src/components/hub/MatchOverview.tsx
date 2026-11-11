@@ -132,6 +132,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
   );
   const hasLanePairs = lanePairs.filter((lp) => lp.a && lp.b).length >= 3;
   const topPair = lanePairs.find((lp) => lp.a?.u && lp.b?.u) || lanePairs.find((lp) => lp.a?.u || lp.b?.u);
+  const topRole = topPair?.role;
   const pA = topPair?.a?.u || lanePairs.find((lp) => lp.a?.u)?.a?.u;
   const pB =
     (topPair?.b?.u && topPair.b.u !== pA ? topPair.b.u : undefined) ||
@@ -282,6 +283,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                       query: new URLSearchParams({
                         champ: cA,
                         ...(cB ? { vs: cB } : {}),
+                        ...(topRole ? { role: topRole } : {}),
                         ...(yr ? { patch: `y${yr}`, year: yr } : {}),
                       }).toString(),
                     });
@@ -301,6 +303,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                     query: new URLSearchParams({
                       teams: `${x.team.u},${y.team.u}`,
                       ...(topChamps.length ? { champ: topChamps.join(",") } : {}),
+                      ...(topRole ? { role: topRole } : {}),
                       ...(yr ? { p: `y${yr}` } : {}),
                     }).toString(),
                   });
@@ -328,6 +331,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   const q = new URLSearchParams({
                     ...(lg ? { league: lg } : {}),
                     ...(yr ? { year: yr } : {}),
+                    ...(topRole ? { role: topRole } : {}),
                     ...(cA ? { champ: cA } : {}),
                     q: [x.team.u, y.team.u, pA, pB].filter(Boolean).join(","),
                   }).toString();
@@ -346,6 +350,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   const q = new URLSearchParams({
                     ...(lg ? { scope: lg, league: lg } : {}),
                     ...(yr ? { key: `y${yr}`, year: yr } : {}),
+                    ...(topRole ? { role: topRole } : {}),
                     ...(topChamps.length ? { q: topChamps.join(",") } : {}),
                   }).toString();
                   onClose();
@@ -368,6 +373,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                       vs: y.team.u,
                       ...(pA ? { player: pA } : {}),
                       ...(pB ? { vsplayer: pB } : {}),
+                      ...(topRole ? { role: topRole } : {}),
                       ...(cA ? { champ: cA } : {}),
                       ...(cB ? { vschamp: cB } : {}),
                       ...(lg ? { league: lg } : {}),
@@ -392,6 +398,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                       vs: y.team.u,
                       ...(pA ? { player: pA } : {}),
                       ...(pB ? { vsplayer: pB } : {}),
+                      ...(topRole ? { role: topRole } : {}),
                       ...(cA ? { champ: cA } : {}),
                       ...(cB ? { vschamp: cB } : {}),
                       ...(lg ? { league: lg } : {}),
@@ -479,6 +486,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                       vs: y.team.u,
                       ...(pA ? { player: pA } : {}),
                       ...(pB ? { vsplayer: pB } : {}),
+                      ...(topRole ? { role: topRole } : {}),
                       ...(cA ? { champ: cA } : {}),
                       ...(cB ? { vschamp: cB } : {}),
                       ...(lg ? { league: lg } : {}),
@@ -635,6 +643,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
+                    ...(topRole ? { role: topRole } : {}),
                     ...(yr ? { patch: `y${yr}`, year: yr } : {}),
                   }).toString(),
                 });
@@ -654,6 +663,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                 query: new URLSearchParams({
                   teams: `${x.team.u},${y.team.u}`,
                   ...(topChamps.length ? { champ: topChamps.join(",") } : {}),
+                  ...(topRole ? { role: topRole } : {}),
                   ...(yr ? { p: `y${yr}` } : {}),
                 }).toString(),
               });
@@ -688,6 +698,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   vs: y.team.u,
                   ...(pA ? { player: pA } : {}),
                   ...(pB ? { vsplayer: pB } : {}),
+                  ...(topRole ? { role: topRole } : {}),
                   ...(cA ? { champ: cA } : {}),
                   ...(cB ? { vschamp: cB } : {}),
                   ...(lg ? { league: lg } : {}),
@@ -712,6 +723,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   vs: y.team.u,
                   ...(pA ? { player: pA } : {}),
                   ...(pB ? { vsplayer: pB } : {}),
+                  ...(topRole ? { role: topRole } : {}),
                   ...(cA ? { champ: cA } : {}),
                   ...(cB ? { vschamp: cB } : {}),
                   ...(lg ? { league: lg } : {}),
@@ -748,6 +760,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               const q = new URLSearchParams({
                 ...(lg ? { scope: lg, league: lg } : {}),
                 ...(yr ? { key: `y${yr}`, year: yr } : {}),
+                ...(topRole ? { role: topRole } : {}),
                 ...(topChamps.length ? { q: topChamps.join(",") } : {}),
               }).toString();
               onClose();
@@ -768,6 +781,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
+                ...(topRole ? { role: topRole } : {}),
                 ...(cA ? { champ: cA } : {}),
                 q: [x.team.u, y.team.u, pA, pB].filter(Boolean).join(","),
               }).toString();
