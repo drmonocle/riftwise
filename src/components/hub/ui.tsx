@@ -361,10 +361,10 @@ export const PlayerLink: React.FC<{ name: string; u?: string | null; query?: str
   );
 };
 
-export const EventLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
+export const EventLink: React.FC<{ name: string; u?: string | null; tab?: string; query?: string; className?: string }> = ({ name, u, tab, query, className }) => {
   const slug = (u ? resolveEventSlug(u) : null) || (name ? resolveEventSlug(name) : null);
   return slug ? (
-    <HubLink to={{ kind: "event", slug }} className={className}>
+    <HubLink to={{ kind: "event", slug, ...(tab ? { tab } : {}), ...(query ? { query } : {}) }} className={className}>
       {name}
     </HubLink>
   ) : (
