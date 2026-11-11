@@ -1184,11 +1184,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                     <HubLink
                       to={{
                         kind: "best",
-                        ...(topLgSlug || asOfYr
+                        ...(topLgSlug || asOfYr || aSlug
                           ? {
                               query: new URLSearchParams({
                                 ...(topLgSlug ? { league: topLgSlug } : {}),
                                 ...(asOfYr ? { year: asOfYr } : {}),
+                                ...(aSlug ? { q: bSlug ? `${aSlug},${bSlug}` : aSlug } : {}),
                               }).toString(),
                             }
                           : {}),
@@ -1358,6 +1359,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   query: new URLSearchParams({
                     ...(leagueSlug ? { league: leagueSlug } : {}),
                     ...(asOfYr ? { year: asOfYr } : {}),
+                    ...(top?.[0] ? { q: rows[1]?.r?.[0] ? `${top[0]},${rows[1].r[0]}` : top[0] } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1458,6 +1460,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                             ...(leagueSlug ? { league: leagueSlug } : {}),
                             ...(asOfYr ? { year: asOfYr } : {}),
                             ...(top?.[0] ? { team: top[0] } : {}),
+                            ...(rows[1]?.r?.[0] ? { vs: rows[1].r[0] } : {}),
                           }).toString(),
                         }}
                         className="hover:text-rw-accent hover:underline"

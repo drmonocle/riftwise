@@ -658,6 +658,8 @@ const LeagueTable: React.FC<{
                 ...(patchQ ? { patch: patchQ } : {}),
                 ...(side ? { side } : {}),
                 ...(roleQ ? { role: roleQ } : {}),
+                ...(search.trim() && shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
+                ...(search.trim() && shownRows[1] ? { vschamp: resolveChampSlug(shownRows[1].c) } : {}),
               }).toString(),
             }}
             className="hover:text-rw-accent hover:underline"
@@ -677,6 +679,8 @@ const LeagueTable: React.FC<{
                     patch: vs,
                     ...(side ? { side } : {}),
                     ...(roleQ ? { role: roleQ } : {}),
+                    ...(search.trim() && shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
+                    ...(search.trim() && shownRows[1] ? { vschamp: resolveChampSlug(shownRows[1].c) } : {}),
                   }).toString(),
                 }}
                 className="hover:text-rw-accent hover:underline"
@@ -1071,6 +1075,8 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
               query: new URLSearchParams({
                 ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                 ...(roleQ ? { role: roleQ } : {}),
+                ...(search.trim() && shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
+                ...(search.trim() && shownRows[1] ? { vschamp: resolveChampSlug(shownRows[1].c) } : {}),
               }).toString(),
             }}
             className="text-rw-muted hover:text-rw-accent hover:underline"

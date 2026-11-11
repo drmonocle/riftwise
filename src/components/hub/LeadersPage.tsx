@@ -128,6 +128,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
 
   const maxG = useMemo(() => Math.max(1, ...shownRows.map((p) => p.g)), [shownRows]);
   const periodQ = `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`;
+  const playerPeriodQ = `${periodQ}${q.get("champ") ? `&champ=${encodeURIComponent(resolveChampSlug(q.get("champ")!))}` : ""}`;
   const columns: Column<EventPlayer>[] = [
     {
       key: "n",
@@ -135,10 +136,10 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       value: (p) => p.n,
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-          <HubLink to={{ kind: "player", slug: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n), query: periodQ }} title={p.n} className="shrink-0">
+          <HubLink to={{ kind: "player", slug: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n), query: playerPeriodQ }} title={p.n} className="shrink-0">
             <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
           </HubLink>
-          <PlayerLink name={p.n} u={p.u} query={periodQ} className="text-rw-text hover:text-rw-accent font-semibold" />
+          <PlayerLink name={p.n} u={p.u} query={playerPeriodQ} className="text-rw-text hover:text-rw-accent font-semibold" />
           <span className="inline-flex items-center gap-1 text-[10px] text-rw-muted">
             <HubLink to={{ kind: "team", slug: p.tu || resolveTeamAlias(p.t, aliases.data?.team) || prettySlug(p.t), query: periodQ }} title={p.t} className="shrink-0">
               <TeamLogo name={p.t} size={13} />
@@ -800,36 +801,65 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       >
                         {tl("Game finder")} →
                       </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "best",
+                          query: new URLSearchParams({
+                            ...(league ? { league } : {}),
+                            ...(year ? { year } : {}),
+                            ...(event ? { event } : {}),
+                            ...(top2[0]?.tu || top2[0]?.t
+                              ? {
+                                  q: [
+                                    top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t),
+                                    top2[1] &&
+                                    (top2[1].tu || top2[1].t) &&
+                                    (top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t)) !==
+                                      (top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t))
+                                      ? top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t)
+                                      : "",
+                                  ]
+                                    .filter(Boolean)
+                                    .join(","),
+                                }
+                              : {}),
+                          }).toString(),
+                        }}
+                        className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Best games")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "records",
+                          query:
+                            new URLSearchParams({
+                              ...(league ? { league } : {}),
+                              ...(year ? { year } : {}),
+                              ...(event ? { event } : {}),
+                              ...(top2[0]
+                                ? {
+                                    q: [
+                                      top2[0].u || resolvePlayerSlug(top2[0].n) || prettySlug(top2[0].n),
+                                      top2[1] &&
+                                      (top2[1].u || resolvePlayerSlug(top2[1].n) || prettySlug(top2[1].n)) !==
+                                        (top2[0].u || resolvePlayerSlug(top2[0].n) || prettySlug(top2[0].n))
+                                        ? top2[1].u || resolvePlayerSlug(top2[1].n) || prettySlug(top2[1].n)
+                                        : "",
+                                    ]
+                                      .filter(Boolean)
+                                      .join(","),
+                                  }
+                                : {}),
+                            }).toString() || undefined,
+                        }}
+                        className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Records")} →
+                      </HubLink>
                     </>
                   ) : null;
                 })()}
-                <HubLink
-                  to={{
-                    kind: "best",
-                    query: new URLSearchParams({
-                      ...(league ? { league } : {}),
-                      ...(year ? { year } : {}),
-                      ...(event ? { event } : {}),
-                    }).toString(),
-                  }}
-                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Best games")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "records",
-                    query:
-                      new URLSearchParams({
-                        ...(league ? { league } : {}),
-                        ...(year ? { year } : {}),
-                        ...(event ? { event } : {}),
-                      }).toString() || undefined,
-                  }}
-                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Records")} →
-                </HubLink>
                 <SectionCard
                   section={tl("Player leaderboards")}
                   name={scope}
