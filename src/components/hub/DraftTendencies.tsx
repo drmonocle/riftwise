@@ -9,7 +9,7 @@ import { winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
 import { ROLES } from "../../hub/champAgg";
 import { champName } from "../../champions";
-import { prettySlug, resolveTeamAlias } from "../../hub/data";
+import { prettySlug, resolveChampSlug, resolveTeamAlias } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { ChampLink, HubLink } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -183,7 +183,7 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
       <ul className="text-xs space-y-1">
         {list.map(([c, n, w]) => {
           const good = n > 0 && w / n >= 0.5;
-          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${isBan ? "ban" : "champ"}=${encodeURIComponent(c)}${side ? `&side=${side}` : ""}${periodParam}`;
+          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${isBan ? "ban" : "champ"}=${encodeURIComponent(resolveChampSlug(c))}${side ? `&side=${side}` : ""}${periodParam}`;
           return (
             <li key={c} className="flex items-center justify-between gap-2 min-w-0">
               <ChampLink name={c} size={16} />
@@ -288,7 +288,7 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: s
       <ul className="text-xs space-y-1">
         {list.map(([a, b, n, w, gd]) => {
           const good = n > 0 && w / n >= 0.5;
-          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}champ=${encodeURIComponent(`${a},${b}`)}${side ? `&side=${side}` : ""}${periodParam}`;
+          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}champ=${encodeURIComponent(`${resolveChampSlug(a)},${resolveChampSlug(b)}`)}${side ? `&side=${side}` : ""}${periodParam}`;
           return (
             <li key={`${a}-${b}`} className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1 min-w-0 truncate" title={`${champName(a)} + ${champName(b)}`}>
@@ -393,7 +393,7 @@ export const DraftTendencies: React.FC<{
                     query: new URLSearchParams({
                       teams: resolvedSlug,
                       ...(period && period !== "all" ? { p: period } : {}),
-                      ...((d.b1[0] || d.r12[0]) ? { champ: (d.b1[0] || d.r12[0])[0] } : {}),
+                      ...((d.b1[0] || d.r12[0]) ? { champ: resolveChampSlug((d.b1[0] || d.r12[0])[0]) } : {}),
                       ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
                     }).toString(),
                   }}
@@ -409,7 +409,7 @@ export const DraftTendencies: React.FC<{
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(prettySlug(topOpeners[0]))}${topOpeners[1] ? `&vs=${encodeURIComponent(topOpeners[1])}` : ""}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(topOpeners[0]))}${topOpeners[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topOpeners[1]))}` : ""}`,
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                         data-nocapture="1"
@@ -419,7 +419,7 @@ export const DraftTendencies: React.FC<{
                       <HubLink
                         to={{
                           kind: "items",
-                          query: `champ=${encodeURIComponent(prettySlug(topOpeners[0]))}${period?.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(topOpeners[0]))}${period?.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                         data-nocapture="1"

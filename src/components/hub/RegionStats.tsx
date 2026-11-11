@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, regionName } from "../../i18n";
 import type { EventLines } from "../../hub/worldsFacts";
-import { normText } from "../../hub/data";
+import { normText, searchAlias } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { HubLink, Section } from "./ui";
 import { STable } from "../STable";
@@ -17,21 +17,21 @@ import { chanceShade } from "../SwissStandings";
 const MERGE: Record<string, string> = { EU: "EMEA", LMS: "PCS", LAN: "LAT", LAS: "LAT" };
 /** Common league/region search shorthands mapped to canonical region codes for Region vs region filtering. */
 const REGION_SEARCH_ALIASES: Record<string, string> = {
-  KR: "KR korea lck ogn",
-  CN: "CN china lpl",
-  EMEA: "EMEA EU europe lec eulcs",
-  NA: "NA north america lcs lta nalcs",
-  BR: "BR brazil cblol lta",
-  VN: "VN vietnam vcs lcp",
-  JP: "JP japan ljl lcp",
-  TR: "TR turkey tcl",
-  OCE: "OCE oceania lco opl lcp",
-  CIS: "CIS lcl",
-  PCS: "PCS taiwan lms lcp gpl",
-  APAC: "APAC pacific asia-pacific lcp pcs",
-  AME: "AME americas lta lcs cblol lla",
-  LAT: "LAT LAN LAS latin america lla lta",
-  SEA: "SEA southeast asia gpl pcs lcp",
+  KR: "KR korea lck ogn 韩国 韓國 한국",
+  CN: "CN china lpl 中国 中國 중국",
+  EMEA: "EMEA EU europe lec eulcs 欧洲 歐洲 유럽",
+  NA: "NA north america lcs lta nalcs 北美 북미",
+  BR: "BR brazil cblol lta 巴西 브라질",
+  VN: "VN vietnam vcs lcp 越南 베트남",
+  JP: "JP japan ljl lcp 日本 일본",
+  TR: "TR turkey tcl 土耳其 튀르키예",
+  OCE: "OCE oceania lco opl lcp 大洋洲 오세아니아",
+  CIS: "CIS lcl 独联体",
+  PCS: "PCS taiwan lms lcp gpl 太平洋 台港澳",
+  APAC: "APAC pacific asia-pacific lcp pcs 亚太",
+  AME: "AME americas lta lcs cblol lla 美洲",
+  LAT: "LAT LAN LAS latin america lla lta 拉美",
+  SEA: "SEA southeast asia gpl pcs lcp 东南亚",
 };
 /** region code -> [translation key, English name, flag] (no flag for regions of many countries) */
 const REGIONS: Record<string, [string, string, string | null]> = {
@@ -353,7 +353,14 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
     return pairs.filter((p) => {
       const hay = normText(`${p.a} ${regionLabel(p.a)} ${REGION_SEARCH_ALIASES[p.a] || ""} ${p.b} ${regionLabel(p.b)} ${REGION_SEARCH_ALIASES[p.b] || ""}`);
       const hayBare = bare(hay);
-      return pairTerms.some((t) => hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t))));
+      return pairTerms.some((t) => {
+        const ta = searchAlias(t);
+        return (
+          hay.includes(t) ||
+          (t.length >= 2 && hayBare.includes(bare(t))) ||
+          (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false)
+        );
+      });
     });
   }, [pairs, pairTerms]);
   if (!list.length) return null;

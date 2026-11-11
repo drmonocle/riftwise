@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { bare, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
+import { bare, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { normalizeRole } from "../../hub/champAgg";
 import type { EventPlayer } from "../../hub/types";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
@@ -36,6 +36,8 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((x) => normText(x.trim()))
     .filter(Boolean);
+  const tSlug = (t: string, u?: string | null) => u || resolveTeamAlias(t) || prettySlug(t);
+  const pSlug = (n: string, u?: string | null) => u || resolvePlayerSlug(n) || prettySlug(n);
   const allRegular = s.players.filter((p) => p.g >= minG);
   const regular = terms.length
     ? allRegular.filter((p) => {
@@ -44,9 +46,11 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
         const canonTeam = resolveTeamAlias(p.tu || p.t || "");
         return terms.some((term) => {
           const canonRole = normalizeRole(term);
+          const ta = searchAlias(term);
           return (
             hay.includes(term) ||
             (term.length >= 2 && hayBare.includes(bare(term))) ||
+            (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
             (p.u ? resolvePlayerSlug(term) === p.u : false) ||
             (canonTeam ? resolveTeamAlias(term) === canonTeam : false) ||
             (canonRole && p.r ? p.r === canonRole : false) ||
@@ -61,12 +65,15 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
         const hay = normText(`${t.t} ${t.u || ""}`);
         const hayBare = bare(hay);
         const canonTeam = resolveTeamAlias(t.u || t.t);
-        return terms.some(
-          (term) =>
+        return terms.some((term) => {
+          const ta = searchAlias(term);
+          return (
             hay.includes(term) ||
             (term.length >= 2 && hayBare.includes(bare(term))) ||
-            (canonTeam ? resolveTeamAlias(term) === canonTeam : false),
-        );
+            (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
+            (canonTeam ? resolveTeamAlias(term) === canonTeam : false)
+          );
+        });
       })
     : allTeams;
   const headerTeams = teams.length >= 1 ? teams : allTeams;
@@ -158,8 +165,8 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               kind: "finder",
               query: `league=${league}&year=${year}${
                 headerTeams.length >= 1
-                  ? `&team=${encodeURIComponent(headerTeams[0].u || prettySlug(headerTeams[0].t))}${
-                      terms.length && headerTeams[1] ? `&vs=${encodeURIComponent(headerTeams[1].u || prettySlug(headerTeams[1].t))}` : ""
+                  ? `&team=${encodeURIComponent(tSlug(headerTeams[0].t, headerTeams[0].u))}${
+                      terms.length && headerTeams[1] ? `&vs=${encodeURIComponent(tSlug(headerTeams[1].t, headerTeams[1].u))}` : ""
                     }`
                   : ""
               }`,
@@ -173,8 +180,8 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               <HubLink
                 to={{
                   kind: "prep",
-                  a: headerTeams[0].u || prettySlug(headerTeams[0].t),
-                  ...(headerTeams[1] ? { b: headerTeams[1].u || prettySlug(headerTeams[1].t) } : {}),
+                  a: tSlug(headerTeams[0].t, headerTeams[0].u),
+                  ...(headerTeams[1] ? { b: tSlug(headerTeams[1].t, headerTeams[1].u) } : {}),
                   period: `y${year}`,
                 }}
                 className="text-rw-accent hover:underline"
@@ -184,7 +191,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(headerTeams[0].u || prettySlug(headerTeams[0].t))}${headerTeams[1] ? `,${encodeURIComponent(headerTeams[1].u || prettySlug(headerTeams[1].t))}` : ""}&p=y${encodeURIComponent(year)}`,
+                  query: `teams=${encodeURIComponent(tSlug(headerTeams[0].t, headerTeams[0].u))}${headerTeams[1] ? `,${encodeURIComponent(tSlug(headerTeams[1].t, headerTeams[1].u))}` : ""}&p=y${encodeURIComponent(year)}`,
                 }}
                 className="text-rw-accent hover:underline"
               >
@@ -194,8 +201,8 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 to={{
                   kind: "compare",
                   mode: "team",
-                  a: headerTeams[0].u || prettySlug(headerTeams[0].t),
-                  ...(headerTeams[1] ? { b: headerTeams[1].u || prettySlug(headerTeams[1].t) } : {}),
+                  a: tSlug(headerTeams[0].t, headerTeams[0].u),
+                  ...(headerTeams[1] ? { b: tSlug(headerTeams[1].t, headerTeams[1].u) } : {}),
                   period: `y${year}`,
                 }}
                 className="text-rw-accent hover:underline"
@@ -244,7 +251,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                   <li key={t.u || t.t} className="flex items-center justify-between gap-2 min-w-0">
                     <span className="inline-flex items-center gap-1.5 truncate min-w-0">
                       <span className="text-rw-muted tabular-nums w-4 inline-block shrink-0">{i + 1}</span>
-                      <HubLink to={{ kind: "team", slug: t.u || prettySlug(t.t) }} className="shrink-0 hover:opacity-80" title={t.t}>
+                      <HubLink to={{ kind: "team", slug: tSlug(t.t, t.u) }} className="shrink-0 hover:opacity-80" title={t.t}>
                         <TeamLogo name={t.t} size={15} />
                       </HubLink>
                       <TeamLink name={t.t} u={t.u} className="text-rw-text hover:text-rw-accent truncate" />
@@ -254,14 +261,14 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&team=${encodeURIComponent(t.u || t.t)}`,
+                            query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&team=${encodeURIComponent(tSlug(t.t, t.u))}`,
                           }}
                           className="hover:text-rw-accent hover:underline"
                         >
                           {t.w}-{t.g - t.w}
                         </HubLink>{" "}
                         <HubLink
-                          to={{ kind: "team", slug: t.u || prettySlug(t.t), tab: "stats", query: `p=y${encodeURIComponent(year)}` }}
+                          to={{ kind: "team", slug: tSlug(t.t, t.u), tab: "stats", query: `p=y${encodeURIComponent(year)}` }}
                           className={`hover:underline ${wrPct >= 55 ? "text-rw-teal font-semibold" : wrPct <= 45 ? "text-rw-red" : "text-rw-muted"}`}
                         >
                           ({wrPct}%)
@@ -292,8 +299,8 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                       to={{
                         kind: "compare",
                         mode: "player",
-                        a: regular[0].u || prettySlug(regular[0].n),
-                        ...(regular[1] ? { b: regular[1].u || prettySlug(regular[1].n) } : {}),
+                        a: pSlug(regular[0].n, regular[0].u),
+                        ...(regular[1] ? { b: pSlug(regular[1].n, regular[1].u) } : {}),
                         period: `y${year}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -303,7 +310,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(regular[0].u || prettySlug(regular[0].n))}&year=${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
+                        query: `player=${encodeURIComponent(pSlug(regular[0].n, regular[0].u))}&year=${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
@@ -314,9 +321,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                         <HubLink
                           to={{
                             kind: "prep",
-                            a: regular[0].tu || prettySlug(regular[0].t),
-                            ...(regular[1] && (regular[1].tu || regular[1].t) && (regular[1].tu || prettySlug(regular[1].t)) !== (regular[0].tu || prettySlug(regular[0].t))
-                              ? { b: regular[1].tu || prettySlug(regular[1].t) }
+                            a: tSlug(regular[0].t, regular[0].tu),
+                            ...(regular[1] && (regular[1].tu || regular[1].t) && tSlug(regular[1].t, regular[1].tu) !== tSlug(regular[0].t, regular[0].tu)
+                              ? { b: tSlug(regular[1].t, regular[1].tu) }
                               : {}),
                             period: `y${year}`,
                           }}
@@ -327,9 +334,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `teams=${encodeURIComponent(regular[0].tu || prettySlug(regular[0].t))}${
-                              regular[1] && (regular[1].tu || regular[1].t) && (regular[1].tu || prettySlug(regular[1].t)) !== (regular[0].tu || prettySlug(regular[0].t))
-                                ? `,${encodeURIComponent(regular[1].tu || prettySlug(regular[1].t))}`
+                            query: `teams=${encodeURIComponent(tSlug(regular[0].t, regular[0].tu))}${
+                              regular[1] && (regular[1].tu || regular[1].t) && tSlug(regular[1].t, regular[1].tu) !== tSlug(regular[0].t, regular[0].tu)
+                                ? `,${encodeURIComponent(tSlug(regular[1].t, regular[1].tu))}`
                                 : ""
                             }&p=y${encodeURIComponent(year)}`,
                           }}
@@ -342,9 +349,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(regular[0].u || prettySlug(regular[0].n))}${
-                          terms.length > 0 && regular[1] && (regular[1].u || prettySlug(regular[1].n)) !== (regular[0].u || prettySlug(regular[0].n))
-                            ? `&vsplayer=${encodeURIComponent(regular[1].u || prettySlug(regular[1].n))}`
+                        query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(pSlug(regular[0].n, regular[0].u))}${
+                          terms.length > 0 && regular[1] && pSlug(regular[1].n, regular[1].u) !== pSlug(regular[0].n, regular[0].u)
+                            ? `&vsplayer=${encodeURIComponent(pSlug(regular[1].n, regular[1].u))}`
                             : ""
                         }`,
                       }}
@@ -389,11 +396,11 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                           league,
                           ...(regular[0]?.tu || regular[0]?.t
                             ? {
-                                q: `${regular[0].tu || prettySlug(regular[0].t)}${
+                                q: `${tSlug(regular[0].t, regular[0].tu)}${
                                   regular[1] &&
                                   (regular[1].tu || regular[1].t) &&
-                                  (regular[1].tu || prettySlug(regular[1].t)) !== (regular[0].tu || prettySlug(regular[0].t))
-                                    ? `,${regular[1].tu || prettySlug(regular[1].t)}`
+                                  tSlug(regular[1].t, regular[1].tu) !== tSlug(regular[0].t, regular[0].tu)
+                                    ? `,${tSlug(regular[1].t, regular[1].tu)}`
                                     : ""
                                 }`,
                               }
@@ -455,11 +462,11 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                           return (
                             <li key={`${p.u || p.n}-${p.t}`} className="flex items-center justify-between gap-2 min-w-0">
                               <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                                <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} className="shrink-0 hover:opacity-80" title={p.n}>
+                                <HubLink to={{ kind: "player", slug: pSlug(p.n, p.u) }} className="shrink-0 hover:opacity-80" title={p.n}>
                                   <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={16} />
                                 </HubLink>
                                 {p.t && (
-                                  <HubLink to={{ kind: "team", slug: p.tu || prettySlug(p.t) }} className="shrink-0 hover:opacity-80" title={p.t}>
+                                  <HubLink to={{ kind: "team", slug: tSlug(p.t, p.tu) }} className="shrink-0 hover:opacity-80" title={p.t}>
                                     <TeamLogo name={p.t} size={13} />
                                   </HubLink>
                                 )}
@@ -479,7 +486,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                                 <HubLink
                                   to={{
                                     kind: "finder",
-                                    query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(p.u || p.n)}`,
+                                    query: `league=${encodeURIComponent(league)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(pSlug(p.n, p.u))}`,
                                   }}
                                   className="hover:text-rw-accent hover:underline"
                                 >

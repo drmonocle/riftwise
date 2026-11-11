@@ -7,7 +7,7 @@ import { Sparkles } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
 import { load } from "../../stats";
-import { bare, matchesChampSearch, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
+import { bare, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { ChampIcon, HubLink, PlayerPhoto, RevealButton, Section, TeamLogo, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
@@ -87,20 +87,20 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
       <HubLink
         to={{
           kind: "finder",
-          query: `${who.kind}=${encodeURIComponent(who.slug)}&champ=${encodeURIComponent(nt.c)}${yr}`,
+          query: `${who.kind}=${encodeURIComponent(who.slug)}&champ=${encodeURIComponent(resolveChampSlug(nt.c))}${yr}`,
         }}
         className="hover:text-rw-accent hover:underline"
       >
         {plain}
       </HubLink>
     ) : (
-      <HubLink to={{ kind: "champ", slug: prettySlug(nt.c) }} className="hover:text-rw-accent hover:underline">
+      <HubLink to={{ kind: "champ", slug: resolveChampSlug(nt.c) }} className="hover:text-rw-accent hover:underline">
         {plain}
       </HubLink>
     );
     return (
       <span className="inline-flex items-center gap-1 flex-wrap">
-        <HubLink to={{ kind: "champ", slug: prettySlug(nt.c) }} title={champName(nt.c)}>
+        <HubLink to={{ kind: "champ", slug: resolveChampSlug(nt.c) }} title={champName(nt.c)}>
           <ChampIcon name={nt.c} size={16} />
         </HubLink>
         {textNode}
@@ -333,7 +333,7 @@ export const OwnStorylines: React.FC<{
                       query: new URLSearchParams({
                         teams: who.slug,
                         ...(noteYr ? { p: `y${noteYr}` } : noteEv ? { p: `e:${noteEv}` } : {}),
-                        ...(noteChamp ? { champ: noteChamp } : {}),
+                        ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -349,7 +349,7 @@ export const OwnStorylines: React.FC<{
                   {noteChamp && (
                     <>
                       <HubLink
-                        to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(noteChamp))}` }}
+                        to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(noteChamp))}` }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Counters")} →
@@ -357,7 +357,7 @@ export const OwnStorylines: React.FC<{
                       <HubLink
                         to={{
                           kind: "items",
-                          query: `champ=${encodeURIComponent(prettySlug(noteChamp))}${noteYr ? `&year=${encodeURIComponent(String(noteYr))}` : ""}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(noteChamp))}${noteYr ? `&year=${encodeURIComponent(String(noteYr))}` : ""}`,
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -372,7 +372,7 @@ export const OwnStorylines: React.FC<{
                         team: who.slug,
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
-                        ...(noteChamp ? { champ: noteChamp } : {}),
+                        ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -434,7 +434,7 @@ export const OwnStorylines: React.FC<{
                             query: new URLSearchParams({
                               teams: whoTeamSlug,
                               ...(noteYr ? { p: `y${noteYr}` } : noteEv ? { p: `e:${noteEv}` } : {}),
-                              ...(noteChamp ? { champ: noteChamp } : {}),
+                              ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                             }).toString(),
                           }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -452,7 +452,7 @@ export const OwnStorylines: React.FC<{
                   </HubLink>
                   {noteChamp && (
                     <HubLink
-                      to={{ kind: "counters", query: `champ=${encodeURIComponent(prettySlug(noteChamp))}` }}
+                      to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(noteChamp))}` }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Counters")} →
@@ -463,7 +463,7 @@ export const OwnStorylines: React.FC<{
                       kind: "items",
                       query: new URLSearchParams({
                         player: who.slug,
-                        ...(noteChamp ? { champ: prettySlug(noteChamp) } : {}),
+                        ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
                       }).toString(),
                     }}
@@ -478,7 +478,7 @@ export const OwnStorylines: React.FC<{
                         player: who.slug,
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
-                        ...(noteChamp ? { champ: noteChamp } : {}),
+                        ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -550,11 +550,13 @@ export const HomeStorylines: React.FC = () => {
         const rPlayer = r.t === "player" ? r.u || resolvePlayerSlug(r.name) : "";
         return terms.some((t) => {
           const tb = bare(t);
+          const ta = searchAlias(t);
           const qTeam = rTeam ? resolveTeamAlias(t) : "";
           const qPlayer = rPlayer ? resolvePlayerSlug(t) : "";
           return (
             hay.includes(t) ||
             (tb.length >= 2 && hayBare.includes(tb)) ||
+            (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
             (r.c ? matchesChampSearch(r.c, t) : false) ||
             Boolean(qTeam && qTeam === rTeam) ||
             Boolean(qPlayer && qPlayer === rPlayer) ||
@@ -589,7 +591,7 @@ export const HomeStorylines: React.FC = () => {
                           kind: "draft",
                           query: new URLSearchParams({
                             teams: [topTeams[0], topTeams[1]].filter(Boolean).join(","),
-                            ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                            ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
                           }).toString(),
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -684,7 +686,7 @@ export const HomeStorylines: React.FC = () => {
                         query: new URLSearchParams({
                           teams: [a, b].filter(Boolean).join(","),
                           ...(filteredYr ? { p: `y${filteredYr}` } : filteredEv ? { p: `e:${filteredEv}` } : {}),
-                          ...(filteredChamp ? { champ: filteredChamp } : {}),
+                          ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -705,7 +707,7 @@ export const HomeStorylines: React.FC = () => {
                           ...(b ? { vs: b } : {}),
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
-                          ...(filteredChamp ? { champ: filteredChamp } : {}),
+                          ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -775,7 +777,7 @@ export const HomeStorylines: React.FC = () => {
                         kind: "items",
                         query: new URLSearchParams({
                           player: playerSlugs[0],
-                          ...(filteredChamp ? { champ: prettySlug(filteredChamp) } : {}),
+                          ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                         }).toString(),
                       }}
@@ -790,7 +792,7 @@ export const HomeStorylines: React.FC = () => {
                           player: playerSlugs[0],
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
-                          ...(filteredChamp ? { champ: filteredChamp } : {}),
+                          ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
