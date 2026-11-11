@@ -271,7 +271,7 @@ export function eventFacts(games: Game[], event: string): Fact[] {
     facts.push({
       id: "games", title: tl("Biggest single games"),
       headline: tl("{who} went {line} on {champ} in Game {n} vs {opp}", { who: who(o.side.c, o.l.name), line: line(o.l.k, o.l.d, o.l.a), champ: champName(o.l.champ), n: o.g.n, opp: o.opp.c || o.opp.name }),
-      rows: big.map((o) => ({ label: who(o.side.c, o.l.name), player: o.l.u, champ: o.l.champ, value: line(o.l.k, o.l.d, o.l.a), sub: `${champName(o.l.champ)} · ${gameSub(o)}`, match: { slug: o.g.series, game: o.g.n } })),
+      rows: big.map((o) => ({ label: who(o.side.c, o.l.name), player: o.l.u, team: o.side.u || null, champ: o.l.champ, value: line(o.l.k, o.l.d, o.l.a), sub: `${champName(o.l.champ)} · ${gameSub(o)}`, match: { slug: o.g.series, game: o.g.n } })),
     });
   }
   const dmgShare = ones
@@ -283,7 +283,7 @@ export function eventFacts(games: Game[], event: string): Fact[] {
     facts.push({
       id: "damage", title: tl("Biggest share of a team's damage"),
       headline: tl("{who} dealt {pct} of {team}'s damage on {champ} in Game {n} vs {opp}", { who: who(o.side.c, o.l.name), pct: `${Math.round(share * 100)}%`, team: o.side.c || o.side.name, champ: champName(o.l.champ), n: o.g.n, opp: o.opp.c || o.opp.name }),
-      rows: dmg.map(({ o, share }) => ({ label: who(o.side.c, o.l.name), player: o.l.u, champ: o.l.champ, value: `${Math.round(share * 100)}%`, sub: `${champName(o.l.champ)} · ${gameSub(o)}`, match: { slug: o.g.series, game: o.g.n } })),
+      rows: dmg.map(({ o, share }) => ({ label: who(o.side.c, o.l.name), player: o.l.u, team: o.side.u || null, champ: o.l.champ, value: `${Math.round(share * 100)}%`, sub: `${champName(o.l.champ)} · ${gameSub(o)}`, match: { slug: o.g.series, game: o.g.n } })),
     });
   }
 

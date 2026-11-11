@@ -395,6 +395,13 @@ export const FactCard: React.FC<{
     const out: string[] = [];
     for (const r of f.rows) {
       if (r.team && !out.includes(r.team)) out.push(r.team);
+      else if (!r.team && /\s+vs\.?\s+/i.test(r.label)) {
+        for (const part of r.label.split(/\s+vs\.?\s+/i)) {
+          const ts = resolveTeamAlias(part.trim());
+          if (ts && !out.includes(ts)) out.push(ts);
+          if (out.length >= 2) break;
+        }
+      }
       if (out.length >= 2) break;
     }
     return out;
@@ -686,19 +693,33 @@ export const FactCard: React.FC<{
             ) : cardChamps[0] ? (
               <>
                 {cardTeams[0] && (
-                  <HubLink
-                    to={{
-                      kind: "compare",
-                      mode: "team",
-                      a: cardTeams[0],
-                      ...(cardTeams[1] ? { b: cardTeams[1] } : {}),
-                      ...(eventSlug ? { period: `e:${eventSlug}` } : evYr ? { period: `y${evYr}` } : {}),
-                    }}
-                    className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
-                    data-nocapture="1"
-                  >
-                    {tl("Compare")} →
-                  </HubLink>
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: cardTeams[0],
+                        ...(cardTeams[1] ? { b: cardTeams[1] } : {}),
+                        ...(eventSlug ? { period: `e:${eventSlug}` } : evYr ? { period: `y${evYr}` } : {}),
+                      }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
+                      data-nocapture="1"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a: cardTeams[0],
+                        ...(cardTeams[1] ? { b: cardTeams[1] } : {}),
+                        ...(eventSlug ? { period: `e:${eventSlug}` } : evYr ? { period: `y${evYr}` } : {}),
+                      }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
+                      data-nocapture="1"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
                 )}
                 <HubLink
                   to={{

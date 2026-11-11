@@ -315,7 +315,7 @@ export function moreEventFacts(games: Game[], event: string): Fact[] {
         ? tl("{who} got the only pentakill of {event}, on {champ}", { who: pk[0].p.name, event, champ: champName(pk[0].p.champ) })
         : tl("{n} pentakills at {event}", { n: pk.length, event }),
       rows: pk.slice(0, 8).map(({ g, p, side }) => ({
-        label: p.name, player: p.u, champ: p.champ, value: p.n > 1 ? `×${p.n}` : "",
+        label: p.name, player: p.u, team: side?.u || null, champ: p.champ, value: p.n > 1 ? `×${p.n}` : "",
         sub: `${champName(p.champ)} · ${side ? vsText(g, g.team.indexOf(side)) : at(g) + tl("Game {n}", { n: g.n })}`,
         match: { slug: g.series, game: g.n },
       })),

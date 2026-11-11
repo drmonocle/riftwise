@@ -137,6 +137,9 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
   const yr = year && /^\d{4}$/.test(year) ? year : slug && /\d{4}/.test(slug) ? /\d{4}/.exec(slug)![0] : undefined;
   const normLg = leagueSlug ? resolveLeagueSlug(leagueSlug) : "";
   const evQ = slug ? `p=e:${encodeURIComponent(slug)}` : undefined;
+  const evBaseFinderQuery = slug
+    ? `event=${encodeURIComponent(slug)}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`
+    : "";
   const pentaPlayers = Array.from(new Set((o.pentas || []).map((p) => pSlug(p.n, p.u)).filter(Boolean))).slice(0, 2);
   const pentaChamps = Array.from(new Set((o.pentas || []).map((p) => (p.c ? resolveChampSlug(p.c) : "")).filter(Boolean))).slice(0, 2);
   const mvpPlayers = Array.from(new Set((o.mvp || []).map((m) => pSlug(m.n, m.u)).filter(Boolean))).slice(0, 2);
@@ -300,6 +303,8 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                     kind: "finder",
                     query: new URLSearchParams({
                       event: slug,
+                      ...(normLg ? { league: normLg } : {}),
+                      ...(yr ? { year: yr } : {}),
                       ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
                       ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                       ...(featTeams[0] ? { team: featTeams[0] } : {}),
@@ -334,17 +339,17 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
         <Stat
           label={tl("Games")}
           value={fmtNum(o.g)}
-          to={slug ? { kind: "finder", query: `event=${encodeURIComponent(slug)}` } : undefined}
+          to={slug ? { kind: "finder", query: evBaseFinderQuery } : undefined}
         />
         <Stat
           label={tl("Avg game")}
           value={o.min ? mmss(o.min) : "–"}
-          to={slug && o.min ? { kind: "finder", query: `event=${encodeURIComponent(slug)}` } : undefined}
+          to={slug && o.min ? { kind: "finder", query: evBaseFinderQuery } : undefined}
         />
         <Stat
           label={tl("Kills / game")}
           value={o.kills || "–"}
-          to={slug && o.kills ? { kind: "finder", query: `event=${encodeURIComponent(slug)}` } : undefined}
+          to={slug && o.kills ? { kind: "finder", query: evBaseFinderQuery } : undefined}
         />
         <Stat
           label={tl("Blue side wins")}
@@ -358,7 +363,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
               ? undefined
               : tl("{b} blue · {r} red", { b: o.blue, r: o.red })
           }
-          to={slug && !hidden && sideTotal > 0 ? { kind: "finder", query: `event=${encodeURIComponent(slug)}&side=b` } : undefined}
+          to={slug && !hidden && sideTotal > 0 ? { kind: "finder", query: `${evBaseFinderQuery}&side=b` } : undefined}
         />
       </div>
       {!hidden && sideTotal > 0 && (
@@ -366,7 +371,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
           <div className="flex items-center justify-between text-xs">
             {slug ? (
               <HubLink
-                to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}&side=b` }}
+                to={{ kind: "finder", query: `${evBaseFinderQuery}&side=b` }}
                 className="font-bold flex items-center gap-1.5 text-[#4a9eff] hover:underline"
                 title={tl("Game finder")}
               >
@@ -381,7 +386,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
             )}
             {slug ? (
               <HubLink
-                to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}&side=r` }}
+                to={{ kind: "finder", query: `${evBaseFinderQuery}&side=r` }}
                 className="font-bold flex items-center gap-1.5 text-rw-red hover:underline"
                 title={tl("Game finder")}
               >
@@ -509,7 +514,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
             </span>
             {slug ? (
               <HubLink
-                to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }}
+                to={{ kind: "finder", query: evBaseFinderQuery }}
                 className="font-mono text-rw-sub tabular-nums hover:text-rw-accent hover:underline"
                 title={tl("Game finder")}
               >
@@ -542,7 +547,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                 {tl(DRAKE[k] || k)}{" "}
                 {slug ? (
                   <HubLink
-                    to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }}
+                    to={{ kind: "finder", query: evBaseFinderQuery }}
                     className="text-rw-text font-semibold tabular-nums hover:text-rw-accent hover:underline"
                     title={tl("Game finder")}
                   >
@@ -635,6 +640,8 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                       kind: "finder",
                       query: new URLSearchParams({
                         event: slug,
+                        ...(normLg ? { league: normLg } : {}),
+                        ...(yr ? { year: yr } : {}),
                         ...(pentaPlayers[0] ? { player: pentaPlayers[0] } : {}),
                         ...(pentaPlayers[1] ? { vsplayer: pentaPlayers[1] } : {}),
                         ...(featTeams[0] ? { team: featTeams[0] } : {}),
@@ -810,6 +817,8 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                     kind: "finder",
                     query: new URLSearchParams({
                       event: slug,
+                      ...(normLg ? { league: normLg } : {}),
+                      ...(yr ? { year: yr } : {}),
                       ...(mvpPlayers[0] ? { player: mvpPlayers[0] } : {}),
                       ...(mvpPlayers[1] ? { vsplayer: mvpPlayers[1] } : {}),
                       ...(featTeams[0] ? { team: featTeams[0] } : {}),
@@ -861,7 +870,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   </span>
                   {slug ? (
                     <HubLink
-                      to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}&player=${encodeURIComponent(pSlug(m.n, m.u))}` }}
+                      to={{ kind: "finder", query: `${evBaseFinderQuery}&player=${encodeURIComponent(pSlug(m.n, m.u))}` }}
                       className="text-rw-accent font-bold tabular-nums hover:underline"
                       title={tl("Game finder")}
                     >
@@ -1094,7 +1103,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `event=${encodeURIComponent(eventSlug)}${qRole ? `&role=${encodeURIComponent(qRole)}` : ""}${
+                    query: `event=${encodeURIComponent(eventSlug)}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${yr ? `&year=${encodeURIComponent(yr)}` : ""}${qRole ? `&role=${encodeURIComponent(qRole)}` : ""}${
                       topRosterP1 ? `&player=${encodeURIComponent(topRosterP1)}${topRosterP2 && topRosterP2 !== topRosterP1 ? `&vsplayer=${encodeURIComponent(topRosterP2)}` : ""}` : ""
                     }${
                       rTeam0
@@ -1177,7 +1186,20 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               )}
               {eventSlug && (
                 <HubLink
-                  to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}&team=${encodeURIComponent(tSlug(t.t, t.u))}` }}
+                  to={{
+                    kind: "finder",
+                    query: (() => {
+                      const st = t.p.filter(([, , r]) => !/coach/i.test(r || "")).map(([n, u]) => pSlug(n, u)).filter(Boolean);
+                      return new URLSearchParams({
+                        event: eventSlug,
+                        ...(normLg ? { league: normLg } : {}),
+                        ...(yr ? { year: yr } : {}),
+                        team: tSlug(t.t, t.u),
+                        ...(st[0] ? { player: st[0] } : {}),
+                        ...(st[1] && st[1] !== st[0] ? { vsplayer: st[1] } : {}),
+                      }).toString();
+                    })(),
+                  }}
                   className="ml-auto text-[10px] font-normal text-rw-muted hover:text-rw-accent hover:underline shrink-0"
                   title={tl("Game finder")}
                 >
@@ -1505,10 +1527,24 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
                         kind: "finder",
                         query: (() => {
                           const [rA, rB] = regPair(r.a, r.b);
+                          const pFor = (ts: string) => {
+                            if (!ts) return "";
+                            const ps = (e.players || []).find((p) => tSlug(p.t, p.tu) === ts);
+                            if (ps) return pSlug(ps.n, ps.u);
+                            const tr = (e.rosters || []).find((x) => tSlug(x.t, x.u) === ts);
+                            const st = tr?.p.find(([, , rl]) => !/coach/i.test(rl || ""));
+                            return st ? pSlug(st[0], st[1]) : "";
+                          };
+                          const pA = pFor(rA);
+                          const pB = pFor(rB);
                           return new URLSearchParams({
                             event: e.u,
+                            ...(lgSlug ? { league: lgSlug } : {}),
+                            ...(evYr ? { year: evYr } : {}),
                             ...(rA ? { team: rA } : {}),
                             ...(rB ? { vs: rB } : {}),
+                            ...(pA ? { player: pA } : {}),
+                            ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                           }).toString();
                         })(),
                       }}

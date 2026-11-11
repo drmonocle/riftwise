@@ -111,6 +111,18 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
     );
   }, [players, role, regular, minG, maxG, search, aliases.data]);
   if (players.length === 0) return null;
+  const evYr = /^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? (e.start || e.end || "").slice(0, 4) : "";
+  const evLg = e.lu ? resolveLeagueSlug(e.lu) : "";
+  const pFinderQuery = (p: EventPlayer, champOverride?: string) =>
+    new URLSearchParams({
+      event: e.u,
+      ...(evLg ? { league: evLg } : {}),
+      ...(evYr ? { year: evYr } : {}),
+      player: pSlug(p.n, p.u),
+      ...(p.t ? { team: tSlug(p.t, p.tu) } : {}),
+      ...(p.r ? { role: p.r } : {}),
+      ...(champOverride ? { champ: resolveChampSlug(champOverride) } : p.c?.[0] ? { champ: resolveChampSlug(p.c[0]) } : {}),
+    }).toString();
   const pStatLink = (p: EventPlayer, node: React.ReactNode) =>
     node == null || node === "–" ? (
       "–"
@@ -119,7 +131,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
         to={
           p.u
             ? { kind: "player", slug: p.u, tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }
-            : { kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(pSlug(p.n, p.u))}` }
+            : { kind: "finder", query: pFinderQuery(p) }
         }
         className="hover:text-rw-accent hover:underline"
         title={tl("Stats")}
@@ -178,7 +190,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((p.g / Math.max(1, maxG)) * 100))}%` }} />
           </span>
           <HubLink
-            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(pSlug(p.n, p.u))}` }}
+            to={{ kind: "finder", query: pFinderQuery(p) }}
             className="hover:text-rw-accent hover:underline"
           >
             {p.g}
@@ -192,7 +204,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       value: (p) => per(p.w, p.g, 3),
       render: (p) => (
         <HubLink
-          to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(pSlug(p.n, p.u))}` }}
+          to={{ kind: "finder", query: pFinderQuery(p) }}
           className="hover:opacity-90"
           title={tl("Game finder")}
         >
@@ -240,7 +252,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
               to={
                 p.u
                   ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}&p=e:${encodeURIComponent(e.u)}` }
-                  : { kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(pSlug(p.n, p.u))}&champ=${encodeURIComponent(resolveChampSlug(c))}` }
+                  : { kind: "finder", query: pFinderQuery(p, c) }
               }
               className="hover:opacity-80"
               title={`${p.n} · ${champName(c)}`}
@@ -253,7 +265,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
               to={
                 p.u
                   ? { kind: "player", slug: p.u, tab: "champions", query: `p=e:${encodeURIComponent(e.u)}` }
-                  : { kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(pSlug(p.n, p.u))}` }
+                  : { kind: "finder", query: pFinderQuery(p) }
               }
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline ml-0.5"
             >
@@ -273,7 +285,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       render: (p) =>
         p.mvp ? (
           <HubLink
-            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(pSlug(p.n, p.u))}` }}
+            to={{ kind: "finder", query: pFinderQuery(p) }}
             className="hover:text-rw-accent hover:underline font-semibold"
           >
             {p.mvp}
@@ -446,17 +458,18 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
           <HubLink
             to={{
               kind: "finder",
-              query: `event=${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}${
-                topPlayers[0]
-                  ? `&player=${encodeURIComponent(topPlayers[0])}${
-                      topTeams[0] ? `&team=${encodeURIComponent(topTeams[0])}` : ""
-                    }${topTeams[1] ? `&vs=${encodeURIComponent(topTeams[1])}` : ""}${
-                      topPlayers[1] ? `&vsplayer=${encodeURIComponent(topPlayers[1])}` : ""
-                    }${topChamps[0] ? `&champ=${encodeURIComponent(topChamps[0])}` : ""}${
-                      topChamps[1] ? `&vschamp=${encodeURIComponent(topChamps[1])}` : ""
-                    }`
-                  : ""
-              }`,
+              query: new URLSearchParams({
+                event: e.u,
+                ...(evLg ? { league: evLg } : {}),
+                ...(evYr ? { year: evYr } : {}),
+                ...(role !== "All" ? { role } : rows[0]?.r ? { role: rows[0].r } : {}),
+                ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
+                ...(topTeams[0] ? { team: topTeams[0] } : {}),
+                ...(topTeams[1] ? { vs: topTeams[1] } : {}),
+                ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                ...(topChamps[1] ? { vschamp: topChamps[1] } : {}),
+              }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -594,6 +607,8 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                       ? { vschamp: topChamps[1] }
                       : {}),
                   ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
+                  ...(evLg ? { league: evLg } : {}),
+                  ...(evYr ? { year: evYr } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -605,6 +620,8 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 kind: "finder",
                 query: new URLSearchParams({
                   event: e.u,
+                  ...(evLg ? { league: evLg } : {}),
+                  ...(evYr ? { year: evYr } : {}),
                   player: pSlug(rows[0].n, rows[0].u),
                   ...(pSlug(rows[1].n, rows[1].u) !== pSlug(rows[0].n, rows[0].u)
                     ? { vsplayer: pSlug(rows[1].n, rows[1].u) }
@@ -613,7 +630,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                   ...(rows[1].t && rows[1].t !== rows[0].t ? { vs: tSlug(rows[1].t, rows[1].tu) } : {}),
                   ...(rows[0].c?.[0] ? { champ: resolveChampSlug(rows[0].c[0]) } : {}),
                   ...(rows[1].c?.[0] && rows[1].c[0] !== rows[0].c?.[0] ? { vschamp: resolveChampSlug(rows[1].c[0]) } : {}),
-                  ...(role !== "All" ? { role } : {}),
+                  ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -672,6 +689,8 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                   player: pSlug(rows[0].n, rows[0].u),
                   ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                   event: e.u,
+                  ...(evLg ? { league: evLg } : {}),
+                  ...(evYr ? { year: evYr } : {}),
                   ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
                   ...(topTeams[1] ? { vs: topTeams[1] } : {}),
                   ...(topChamps[0] ? { champ: topChamps[0] } : {}),
@@ -688,6 +707,8 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 kind: "finder",
                 query: new URLSearchParams({
                   event: e.u,
+                  ...(evLg ? { league: evLg } : {}),
+                  ...(evYr ? { year: evYr } : {}),
                   player: pSlug(rows[0].n, rows[0].u),
                   ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                   ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
@@ -745,6 +766,16 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
   }, [teams, search, aliases.data]);
   if (teams.length === 0 || hidden) return null;
   const maxTeamG = Math.max(1, ...teams.map((t) => t.g));
+  const evYr = /^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? (e.start || e.end || "").slice(0, 4) : "";
+  const evLg = e.lu ? resolveLeagueSlug(e.lu) : "";
+  const tFinderQuery = (t: EventTeamStats, side?: "b" | "r") =>
+    new URLSearchParams({
+      event: e.u,
+      ...(evLg ? { league: evLg } : {}),
+      ...(evYr ? { year: evYr } : {}),
+      team: tSlug(t.t, t.u),
+      ...(side ? { side } : {}),
+    }).toString();
   const tStatLink = (t: EventTeamStats, node: React.ReactNode) =>
     node == null || node === "–" ? (
       "–"
@@ -781,7 +812,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
             <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((t.g / maxTeamG) * 100))}%` }} />
           </span>
           <HubLink
-            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(tSlug(t.t, t.u))}` }}
+            to={{ kind: "finder", query: tFinderQuery(t) }}
             className="hover:text-rw-accent hover:underline"
           >
             {t.g}
@@ -795,7 +826,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
       value: (t) => per(t.w, t.g, 3),
       render: (t) => (
         <HubLink
-          to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(tSlug(t.t, t.u))}` }}
+          to={{ kind: "finder", query: tFinderQuery(t) }}
           className="hover:opacity-90"
           title={tl("Game finder")}
         >
@@ -850,7 +881,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
         t.blue != null ? (
           t.blue > 0 ? (
             <HubLink
-              to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(tSlug(t.t, t.u))}&side=b` }}
+              to={{ kind: "finder", query: tFinderQuery(t, "b") }}
               className="hover:text-rw-accent hover:underline"
             >
               {pct(per(t.blue, t.g, 3))}
@@ -1050,6 +1081,8 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               kind: "finder",
               query: new URLSearchParams({
                 event: e.u,
+                ...(evLg ? { league: evLg } : {}),
+                ...(evYr ? { year: evYr } : {}),
                 ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
                 ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
                 ...(topTeam0 ? { team: topTeam0 } : {}),
@@ -1168,7 +1201,17 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(pair[0])}&vs=${encodeURIComponent(pair[1])}${evChamps[0] ? `&champ=${encodeURIComponent(evChamps[0])}` : ""}${evChamps[1] ? `&vschamp=${encodeURIComponent(evChamps[1])}` : ""}`,
+                  query: new URLSearchParams({
+                    event: e.u,
+                    ...(evLg ? { league: evLg } : {}),
+                    ...(evYr ? { year: evYr } : {}),
+                    ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                    ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
+                    team: pair[0],
+                    vs: pair[1],
+                    ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                    ...(evChamps[1] ? { vschamp: evChamps[1] } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -1225,7 +1268,17 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(topTeam0)}${topTeam1 ? `&vs=${encodeURIComponent(topTeam1)}` : ""}${evChamps[0] ? `&champ=${encodeURIComponent(evChamps[0])}` : ""}${evChamps[1] ? `&vschamp=${encodeURIComponent(evChamps[1])}` : ""}`,
+                  query: new URLSearchParams({
+                    event: e.u,
+                    ...(evLg ? { league: evLg } : {}),
+                    ...(evYr ? { year: evYr } : {}),
+                    ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                    ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
+                    team: topTeam0,
+                    ...(topTeam1 ? { vs: topTeam1 } : {}),
+                    ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                    ...(evChamps[1] ? { vschamp: evChamps[1] } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
