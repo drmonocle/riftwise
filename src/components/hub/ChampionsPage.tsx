@@ -696,6 +696,7 @@ const LeagueTable: React.FC<{
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                   ...(shownRows[1] ? { vs: resolveChampSlug(shownRows[1].c) } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
+                  ...(canonEventSlug ? { event: canonEventSlug } : patchQ ? { patch: patchQ } : year ? { patch: `y${year}`, year } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -707,8 +708,9 @@ const LeagueTable: React.FC<{
                 kind: "tiers",
                 query: new URLSearchParams({
                   scope: league,
-                  ...(patchQ ? { key: `p${patchQ}` } : year ? { key: `y${year}` } : {}),
-                  ...(eventSlug ? { event: eventSlug } : {}),
+                  league,
+                  ...(patchQ ? { key: `p${patchQ}`, patch: patchQ } : year ? { key: `y${year}`, year } : {}),
+                  ...(canonEventSlug ? { event: canonEventSlug } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
                   ...(search.trim()
                     ? { q: search.trim() }
@@ -727,6 +729,7 @@ const LeagueTable: React.FC<{
                 query: new URLSearchParams({
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                   ...(year ? { year } : {}),
+                  ...(canonEventSlug ? { event: canonEventSlug } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -737,7 +740,7 @@ const LeagueTable: React.FC<{
               to={{
                 kind: "draft",
                 query: new URLSearchParams({
-                  ...(eventSlug ? { p: `e:${eventSlug}` } : patchQ ? { p: `p:${patchQ}` } : year ? { p: `y${year}` } : {}),
+                  ...(canonEventSlug ? { p: `e:${canonEventSlug}` } : patchQ ? { p: `p:${patchQ}` } : year ? { p: `y${year}` } : {}),
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
                 }).toString() || undefined,
@@ -752,7 +755,7 @@ const LeagueTable: React.FC<{
                 query: new URLSearchParams({
                   league,
                   ...(year ? { year } : {}),
-                  ...(eventSlug ? { event: eventSlug } : {}),
+                  ...(canonEventSlug ? { event: canonEventSlug } : {}),
                   ...(patchQ ? { patch: patchQ } : {}),
                   ...(side ? { side } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
@@ -769,7 +772,7 @@ const LeagueTable: React.FC<{
                 query: new URLSearchParams({
                   league,
                   ...(year ? { year } : {}),
-                  ...(eventSlug ? { event: eventSlug } : {}),
+                  ...(canonEventSlug ? { event: canonEventSlug } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
                   ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                 }).toString(),
@@ -1068,6 +1071,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                   ...(shownRows[1] ? { vs: resolveChampSlug(shownRows[1].c) } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
+                  ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { patch: key, year: key.slice(1) } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -1079,6 +1083,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 kind: "tiers",
                 query: new URLSearchParams({
                   key,
+                  ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                   ...(scope === "all" ? { scope: "all" } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
                   ...(search.trim()
@@ -1229,8 +1234,9 @@ const MetaSpotlight: React.FC<{
     topWr && topWr.wr != null ? { label: tl("Win %"), c: topWr.c, val: pct(topWr.wr), sub: `${topWr.p} ${tl("Picks")}`, tone: "text-rw-teal" } : null,
   ].filter((x): x is NonNullable<typeof x> => !!x);
   if (cards.length < 2) return null;
+  const canonEv = event ? resolveEventSlug(event) : "";
   const tierKey = keyParam || (patch ? `p${patch}` : year ? `y${year}` : "");
-  const draftP = event ? `e:${event}` : patch ? `p:${patch}` : year ? `y${year}` : keyParam?.startsWith("p") ? `p:${keyParam.slice(1)}` : keyParam?.startsWith("y") ? keyParam : "";
+  const draftP = canonEv ? `e:${canonEv}` : patch ? `p:${patch}` : year ? `y${year}` : keyParam?.startsWith("p") ? `p:${keyParam.slice(1)}` : keyParam?.startsWith("y") ? keyParam : "";
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
       {cards.map((item) => (
@@ -1257,7 +1263,11 @@ const MetaSpotlight: React.FC<{
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(item.c))}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                    query: new URLSearchParams({
+                      champ: resolveChampSlug(item.c),
+                      ...(role ? { role } : {}),
+                      ...(canonEv ? { event: canonEv } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
+                    }).toString(),
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >
@@ -1267,7 +1277,11 @@ const MetaSpotlight: React.FC<{
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(item.c))}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                    query: new URLSearchParams({
+                      champ: resolveChampSlug(item.c),
+                      ...(year ? { year } : {}),
+                      ...(canonEv ? { event: canonEv } : {}),
+                    }).toString(),
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >
@@ -1281,7 +1295,7 @@ const MetaSpotlight: React.FC<{
                       champ: resolveChampSlug(item.c),
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
-                      ...(event ? { event } : {}),
+                      ...(canonEv ? { event: canonEv } : {}),
                       ...(patch ? { patch } : {}),
                       ...(role ? { role } : {}),
                     }).toString(),
@@ -1295,8 +1309,10 @@ const MetaSpotlight: React.FC<{
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
-                      ...(league ? { scope: league } : scopeAll ? { scope: "all" } : {}),
+                      ...(league ? { scope: league, league } : scopeAll ? { scope: "all" } : {}),
                       ...(tierKey ? { key: tierKey } : {}),
+                      ...(patch ? { patch } : year ? { year } : {}),
+                      ...(canonEv ? { event: canonEv } : {}),
                       ...(role ? { role } : {}),
                       q: resolveChampSlug(item.c),
                     }).toString(),
@@ -1327,7 +1343,7 @@ const MetaSpotlight: React.FC<{
                       champ: resolveChampSlug(item.c),
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
-                      ...(event ? { event } : {}),
+                      ...(canonEv ? { event: canonEv } : {}),
                       ...(role ? { role } : {}),
                     }).toString(),
                   }}

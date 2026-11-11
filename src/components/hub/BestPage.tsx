@@ -7,7 +7,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
 import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
-import { bare, loadAliases, loadBest, loadBestIndex, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadAliases, loadBest, loadBestIndex, normText, prettySlug, resolveEventSlug, resolveLeagueSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
@@ -214,7 +214,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "champions",
                         query: new URLSearchParams({
                           ...(league ? { league } : {}),
-                          ...(year ? { year } : {}),
+                          ...(year ? { key: `y${year}`, year } : {}),
                         }).toString(),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -225,8 +225,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          ...(league ? { scope: league } : {}),
-                          ...(year ? { key: `y${year}` } : {}),
+                          ...(league ? { scope: league, league } : {}),
+                          ...(year ? { key: `y${year}`, year } : {}),
                         }).toString(),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -451,8 +451,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
-                      ...(league ? { scope: league } : {}),
-                      ...(year ? { key: `y${year}` } : {}),
+                      ...(league ? { scope: league, league } : {}),
+                      ...(year ? { key: `y${year}`, year } : {}),
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -534,7 +534,8 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
   const totalK = ka != null && kb != null ? ka + kb : 0;
   const pctKa = totalK > 0 && ka != null ? Math.round((ka / totalK) * 100) : 50;
   const y = (date || "").slice(0, 4);
-  const period = /^\d{4}$/.test(y) ? `y${y}` : undefined;
+  const canonEslug = eslug ? resolveEventSlug(eslug) : "";
+  const period = canonEslug ? `e:${canonEslug}` : /^\d{4}$/.test(y) ? `y${y}` : undefined;
   const sa = aSlug || (a ? resolveTeamAlias(a) || prettySlug(a) : "");
   const sb = bSlug || (b ? resolveTeamAlias(b) || prettySlug(b) : "");
   return (
@@ -624,7 +625,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${eslug ? `&event=${encodeURIComponent(eslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                  query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -656,7 +657,8 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
   const totalS = wa + wb;
   const pctWa = totalS > 0 ? Math.round((wa / totalS) * 100) : 50;
   const y = (date || "").slice(0, 4);
-  const period = /^\d{4}$/.test(y) ? `y${y}` : undefined;
+  const canonEslug = eslug ? resolveEventSlug(eslug) : "";
+  const period = canonEslug ? `e:${canonEslug}` : /^\d{4}$/.test(y) ? `y${y}` : undefined;
   const sa = aSlug || (a ? resolveTeamAlias(a) || prettySlug(a) : "");
   const sb = bSlug || (b ? resolveTeamAlias(b) || prettySlug(b) : "");
   return (
@@ -734,7 +736,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${eslug ? `&event=${encodeURIComponent(eslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >
@@ -773,7 +775,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${eslug ? `&event=${encodeURIComponent(eslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >

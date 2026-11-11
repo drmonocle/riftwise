@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, matchesChampSearch, normText, prettySlug, resolveChampSlug, sameChamp, searchAlias } from "../../hub/data";
+import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, sameChamp, searchAlias } from "../../hub/data";
 import { normalizeRole, ROLES } from "../../hub/champAgg";
 import type { HubChamp, HubMatchups } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
@@ -29,6 +29,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const vsParam = q.get("vs") || "";
   const role = normalizeRole(q.get("role"));
   const spanParam = q.get("span") || "";
+  const evParam = q.get("event") ? resolveEventSlug(q.get("event")!) : "";
+  const rawPatchParam = q.get("patch") || "";
+  const patchParam = rawPatchParam && !/^y\d{4}$/.test(rawPatchParam) ? (rawPatchParam.startsWith("p") ? rawPatchParam.slice(1) : rawPatchParam) : "";
+  const yearParam = q.get("year") || (/^y(\d{4})$/.exec(rawPatchParam)?.[1] ?? "") || (/(?:^|-)(20\d{2})(?:-|$)/.exec(evParam)?.[1] ?? "");
   const index = useLoad(loadHubIndexQuick, []);
   const data = useLoad(
     () =>
@@ -111,7 +115,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       <HubLink
         to={{
           kind: "finder",
-          query: `champ=${encodeURIComponent(resolveChampSlug(rawChamp))}&vschamp=${encodeURIComponent(resolveChampSlug(opp))}${rStr ? `&role=${encodeURIComponent(rStr)}` : ""}`,
+          query: new URLSearchParams({
+            champ: resolveChampSlug(rawChamp),
+            vschamp: resolveChampSlug(opp),
+            ...(rStr ? { role: rStr } : {}),
+            ...(evParam ? { event: evParam } : {}),
+            ...(patchParam ? { patch: patchParam } : {}),
+            ...(yearParam ? { year: yearParam } : {}),
+          }).toString(),
         }}
         className="hover:text-rw-accent hover:underline"
         title={tl("Game finder")}
@@ -412,6 +423,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   query: new URLSearchParams({
                     q: slug,
                     ...(role ? { role } : {}),
+                    ...(evParam ? { event: evParam } : {}),
+                    ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                   }).toString(),
                 }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
@@ -424,6 +437,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   query: new URLSearchParams({
                     champ: slug,
                     ...(role ? { role } : {}),
+                    ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
                   }).toString(),
                 }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
@@ -431,7 +445,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 {tl("Draft board")} →
               </HubLink>
               <HubLink
-                to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    champ: slug,
+                    ...(yearParam ? { year: yearParam } : {}),
+                    ...(evParam ? { event: evParam } : {}),
+                  }).toString(),
+                }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
               >
                 {tl("Item history")} →
@@ -442,6 +463,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   query: new URLSearchParams({
                     q: vsMatch ? `${slug},${resolveChampSlug(vsMatch.oppCanon)}` : slug,
                     ...(role ? { role } : {}),
+                    ...(evParam ? { event: evParam } : {}),
+                    ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                   }).toString(),
                 }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
@@ -454,6 +477,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   query: new URLSearchParams({
                     champ: slug,
                     ...(role ? { role } : {}),
+                    ...(yearParam ? { year: yearParam } : {}),
+                    ...(evParam ? { event: evParam } : {}),
                   }).toString(),
                 }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
@@ -463,7 +488,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `champ=${encodeURIComponent(slug)}${vsMatch ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsMatch.oppCanon))}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                  query: new URLSearchParams({
+                    champ: slug,
+                    ...(vsMatch ? { vschamp: resolveChampSlug(vsMatch.oppCanon) } : {}),
+                    ...(role ? { role } : {}),
+                    ...(evParam ? { event: evParam } : {}),
+                    ...(patchParam ? { patch: patchParam } : {}),
+                    ...(yearParam ? { year: yearParam } : {}),
+                  }).toString(),
                 }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
               >
@@ -616,13 +648,29 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 right={
                   <div className="flex flex-wrap items-center gap-2">
                     <HubLink
-                      to={{ kind: "finder", query: `champ=${encodeURIComponent(slug)}&vschamp=${encodeURIComponent(resolveChampSlug(vsMatch.oppCanon))}` }}
+                      to={{
+                        kind: "finder",
+                        query: new URLSearchParams({
+                          champ: slug,
+                          vschamp: resolveChampSlug(vsMatch.oppCanon),
+                          ...(evParam ? { event: evParam } : {}),
+                          ...(patchParam ? { patch: patchParam } : {}),
+                          ...(yearParam ? { year: yearParam } : {}),
+                        }).toString(),
+                      }}
                       className="px-2 py-0.5 rounded border border-rw-accent/50 bg-rw-accent/10 text-[11px] font-semibold text-rw-accent hover:bg-rw-accent/20"
                     >
                       {tl("Game finder")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          champ: slug,
+                          ...(yearParam ? { year: yearParam } : {}),
+                          ...(evParam ? { event: evParam } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Item history")} →
@@ -633,6 +681,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           q: `${slug},${resolveChampSlug(vsMatch.oppCanon)}`,
                           ...(role ? { role } : {}),
+                          ...(evParam ? { event: evParam } : {}),
+                          ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -645,6 +695,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           champ: slug,
                           ...(role ? { role } : {}),
+                          ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -657,6 +708,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           champ: slug,
                           ...(role ? { role } : {}),
+                          ...(yearParam ? { year: yearParam } : {}),
+                          ...(evParam ? { event: evParam } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -825,7 +878,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "counters",
-                            query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(resolveChampSlug(good[0].c))}${good[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[good[0].role])}` : role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                            query: new URLSearchParams({
+                              champ: slug,
+                              vs: resolveChampSlug(good[0].c),
+                              ...(good[0].role >= 0 ? { role: ROLES[good[0].role] } : role ? { role } : {}),
+                              ...(evParam ? { event: evParam } : {}),
+                              ...(patchParam ? { patch: patchParam } : {}),
+                              ...(yearParam ? { year: yearParam } : {}),
+                            }).toString(),
                           }}
                           className="text-[11px] text-rw-accent hover:underline font-semibold"
                         >
@@ -834,7 +894,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `champ=${encodeURIComponent(slug)}&vschamp=${encodeURIComponent(resolveChampSlug(good[0].c))}${good[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[good[0].role])}` : ""}`,
+                            query: new URLSearchParams({
+                              champ: slug,
+                              vschamp: resolveChampSlug(good[0].c),
+                              ...(good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
+                              ...(evParam ? { event: evParam } : {}),
+                              ...(patchParam ? { patch: patchParam } : {}),
+                              ...(yearParam ? { year: yearParam } : {}),
+                            }).toString(),
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -843,7 +910,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       </>
                     )}
                     <HubLink
-                      to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          champ: slug,
+                          ...(yearParam ? { year: yearParam } : {}),
+                          ...(evParam ? { event: evParam } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Item history")} →
@@ -854,6 +928,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           q: good[0] ? `${slug},${resolveChampSlug(good[0].c)}` : slug,
                           ...(role ? { role } : {}),
+                          ...(evParam ? { event: evParam } : {}),
+                          ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -866,6 +942,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           champ: slug,
                           ...(role ? { role } : {}),
+                          ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -878,6 +955,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           champ: slug,
                           ...(role ? { role } : {}),
+                          ...(yearParam ? { year: yearParam } : {}),
+                          ...(evParam ? { event: evParam } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -969,7 +1048,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "counters",
-                            query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(resolveChampSlug(bad[0].c))}${bad[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[bad[0].role])}` : role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                            query: new URLSearchParams({
+                              champ: slug,
+                              vs: resolveChampSlug(bad[0].c),
+                              ...(bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : role ? { role } : {}),
+                              ...(evParam ? { event: evParam } : {}),
+                              ...(patchParam ? { patch: patchParam } : {}),
+                              ...(yearParam ? { year: yearParam } : {}),
+                            }).toString(),
                           }}
                           className="text-[11px] text-rw-accent hover:underline font-semibold"
                         >
@@ -978,7 +1064,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `champ=${encodeURIComponent(slug)}&vschamp=${encodeURIComponent(resolveChampSlug(bad[0].c))}${bad[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[bad[0].role])}` : ""}`,
+                            query: new URLSearchParams({
+                              champ: slug,
+                              vschamp: resolveChampSlug(bad[0].c),
+                              ...(bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
+                              ...(evParam ? { event: evParam } : {}),
+                              ...(patchParam ? { patch: patchParam } : {}),
+                              ...(yearParam ? { year: yearParam } : {}),
+                            }).toString(),
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -987,7 +1080,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       </>
                     )}
                     <HubLink
-                      to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          champ: slug,
+                          ...(yearParam ? { year: yearParam } : {}),
+                          ...(evParam ? { event: evParam } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Item history")} →
@@ -998,6 +1098,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           q: bad[0] ? `${slug},${resolveChampSlug(bad[0].c)}` : slug,
                           ...(role ? { role } : {}),
+                          ...(evParam ? { event: evParam } : {}),
+                          ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1010,6 +1112,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           champ: slug,
                           ...(role ? { role } : {}),
+                          ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1022,6 +1125,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           champ: slug,
                           ...(role ? { role } : {}),
+                          ...(yearParam ? { year: yearParam } : {}),
+                          ...(evParam ? { event: evParam } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1125,7 +1230,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(resolveChampSlug(filteredRows[0].c))}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                          query: new URLSearchParams({
+                            champ: slug,
+                            vs: resolveChampSlug(filteredRows[0].c),
+                            ...(role ? { role } : {}),
+                            ...(evParam ? { event: evParam } : {}),
+                            ...(patchParam ? { patch: patchParam } : {}),
+                            ...(yearParam ? { year: yearParam } : {}),
+                          }).toString(),
                         }}
                         className="text-[11px] text-rw-accent hover:underline font-semibold"
                       >
@@ -1134,7 +1246,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink
                         to={{
                           kind: "finder",
-                          query: `champ=${encodeURIComponent(slug)}&vschamp=${encodeURIComponent(resolveChampSlug(filteredRows[0].c))}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                          query: new URLSearchParams({
+                            champ: slug,
+                            vschamp: resolveChampSlug(filteredRows[0].c),
+                            ...(role ? { role } : {}),
+                            ...(evParam ? { event: evParam } : {}),
+                            ...(patchParam ? { patch: patchParam } : {}),
+                            ...(yearParam ? { year: yearParam } : {}),
+                          }).toString(),
                         }}
                         className="text-[11px] text-rw-accent hover:underline font-semibold"
                       >
@@ -1143,7 +1262,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     </>
                   )}
                   <HubLink
-                    to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        champ: slug,
+                        ...(yearParam ? { year: yearParam } : {}),
+                        ...(evParam ? { event: evParam } : {}),
+                      }).toString(),
+                    }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Item history")} →
@@ -1154,6 +1280,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       query: new URLSearchParams({
                         q: [slug, filteredRows[0]?.c ? resolveChampSlug(filteredRows[0].c) : ""].filter(Boolean).join(","),
                         ...(role ? { role } : {}),
+                        ...(evParam ? { event: evParam } : {}),
+                        ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1166,6 +1294,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       query: new URLSearchParams({
                         champ: slug,
                         ...(role ? { role } : {}),
+                        ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1178,6 +1307,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       query: new URLSearchParams({
                         champ: slug,
                         ...(role ? { role } : {}),
+                        ...(yearParam ? { year: yearParam } : {}),
+                        ...(evParam ? { event: evParam } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1220,7 +1351,13 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `champ=${encodeURIComponent(slug)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                    query: new URLSearchParams({
+                      champ: slug,
+                      ...(role ? { role } : {}),
+                      ...(evParam ? { event: evParam } : {}),
+                      ...(patchParam ? { patch: patchParam } : {}),
+                      ...(yearParam ? { year: yearParam } : {}),
+                    }).toString(),
                   }}
                   className="hover:text-rw-accent hover:underline"
                   title={tl("Game finder")}
@@ -1264,7 +1401,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <HubLink
                             to={{
                               kind: "finder",
-                              query: `champ=${encodeURIComponent(`${slug},${resolveChampSlug(topDuo[0])}`)}`,
+                              query: new URLSearchParams({
+                                champ: `${slug},${resolveChampSlug(topDuo[0])}`,
+                                ...(evParam ? { event: evParam } : {}),
+                                ...(patchParam ? { patch: patchParam } : {}),
+                                ...(yearParam ? { year: yearParam } : {}),
+                              }).toString(),
                             }}
                             className="text-[11px] text-rw-accent hover:underline"
                           >
@@ -1273,7 +1415,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <HubLink
                             to={{
                               kind: "counters",
-                              query: `champ=${encodeURIComponent(resolveChampSlug(topDuo[0]))}`,
+                              query: new URLSearchParams({
+                                champ: resolveChampSlug(topDuo[0]),
+                                ...(evParam ? { event: evParam } : {}),
+                                ...(patchParam ? { patch: patchParam } : {}),
+                                ...(yearParam ? { year: yearParam } : {}),
+                              }).toString(),
                             }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
@@ -1282,7 +1429,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <HubLink
                             to={{
                               kind: "tiers",
-                              query: `role=Bot&q=${encodeURIComponent(`${slug},${resolveChampSlug(topDuo[0])}`)}`,
+                              query: new URLSearchParams({
+                                role: "Bot",
+                                q: `${slug},${resolveChampSlug(topDuo[0])}`,
+                                ...(evParam ? { event: evParam } : {}),
+                                ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
+                              }).toString(),
                             }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
@@ -1291,7 +1443,11 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <HubLink
                             to={{
                               kind: "draft",
-                              query: `role=Bot&champ=${encodeURIComponent(`${slug},${resolveChampSlug(topDuo[0])}`)}`,
+                              query: new URLSearchParams({
+                                role: "Bot",
+                                champ: `${slug},${resolveChampSlug(topDuo[0])}`,
+                                ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
+                              }).toString(),
                             }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
@@ -1301,7 +1457,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ) : null;
                     })()}
                     <HubLink
-                      to={{ kind: "items", query: `champ=${encodeURIComponent(slug)}` }}
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          champ: slug,
+                          ...(yearParam ? { year: yearParam } : {}),
+                          ...(evParam ? { event: evParam } : {}),
+                        }).toString(),
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Item history")} →
@@ -1309,7 +1472,12 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "leaders",
-                        query: `role=Bot&champ=${encodeURIComponent(slug)}`,
+                        query: new URLSearchParams({
+                          role: "Bot",
+                          champ: slug,
+                          ...(yearParam ? { year: yearParam } : {}),
+                          ...(evParam ? { event: evParam } : {}),
+                        }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
