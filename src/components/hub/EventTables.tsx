@@ -113,16 +113,27 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
   if (players.length === 0) return null;
   const evYr = /^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? (e.start || e.end || "").slice(0, 4) : "";
   const evLg = e.lu ? resolveLeagueSlug(e.lu) : "";
-  const pFinderQuery = (p: EventPlayer, champOverride?: string) =>
-    new URLSearchParams({
+  const pFinderQuery = (p: EventPlayer, champOverride?: string) => {
+    const ps = pSlug(p.n, p.u);
+    const pts = p.t ? tSlug(p.t, p.tu) : "";
+    const rival =
+      rows.find((x) => x.r === p.r && pSlug(x.n, x.u) !== ps) ||
+      rows.find((x) => pSlug(x.n, x.u) !== ps) ||
+      players.find((x) => x.r === p.r && pSlug(x.n, x.u) !== ps);
+    const rivalSlug = rival ? pSlug(rival.n, rival.u) : "";
+    const rivalTeamSlug = rival?.t && tSlug(rival.t, rival.tu) !== pts ? tSlug(rival.t, rival.tu) : "";
+    return new URLSearchParams({
       event: e.u,
       ...(evLg ? { league: evLg } : {}),
       ...(evYr ? { year: evYr } : {}),
-      player: pSlug(p.n, p.u),
-      ...(p.t ? { team: tSlug(p.t, p.tu) } : {}),
+      player: ps,
+      ...(rivalSlug ? { vsplayer: rivalSlug } : {}),
+      ...(pts ? { team: pts } : {}),
+      ...(rivalTeamSlug ? { vs: rivalTeamSlug } : {}),
       ...(p.r ? { role: p.r } : {}),
       ...(champOverride ? { champ: resolveChampSlug(champOverride) } : p.c?.[0] ? { champ: resolveChampSlug(p.c[0]) } : {}),
     }).toString();
+  };
   const pPageQuery = (p: EventPlayer, opts?: { champ?: string; includeDefaultChamp?: boolean }) => {
     const ps = pSlug(p.n, p.u);
     const rival =
@@ -831,9 +842,13 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
   };
   const tFinderQuery = (t: EventTeamStats, side?: "b" | "r") => {
     const ts = tSlug(t.t, t.u);
-    const vsTeam = pair ? (pair[0] === ts ? pair[1] : pair[1] === ts ? pair[0] : "") : "";
+    const vsTeam =
+      (pair ? (pair[0] === ts ? pair[1] : pair[1] === ts ? pair[0] : "") : "") ||
+      rows.map((r) => tSlug(r.t, r.u)).find((s) => Boolean(s) && s !== ts) ||
+      "";
     const tPlayer = (e.players || []).filter((p) => tSlug(p.t, p.tu) === ts).sort((a, b) => b.g - a.g)[0];
     const tpSlug = tPlayer ? pSlug(tPlayer.n, tPlayer.u) : "";
+    const topEvChamp = e.champs?.[0]?.c ? resolveChampSlug(e.champs[0].c) : "";
     return new URLSearchParams({
       event: e.u,
       ...(evLg ? { league: evLg } : {}),
@@ -841,6 +856,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
       team: ts,
       ...(vsTeam ? { vs: vsTeam } : {}),
       ...(tpSlug ? { player: tpSlug } : {}),
+      ...(topEvChamp ? { champ: topEvChamp } : {}),
       ...(side ? { side } : {}),
     }).toString();
   };

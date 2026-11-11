@@ -886,15 +886,29 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 list.length ? (
                   <span className="inline-flex flex-wrap items-center gap-x-2.5 gap-y-1 align-middle">
                     {list.map((r, i) => {
-                      const yrQ = `p=y${encodeURIComponent(yearOnly(r.year))}`;
+                      const rs = r.u || teamSlug(r.team);
+                      const vsTeam = list.map((x) => x.u || teamSlug(x.team)).find((u) => u && u !== rs) || sorted.map((x) => x.u || teamSlug(x.team)).find((u) => u && u !== rs) || "";
+                      const yrQ = new URLSearchParams({
+                        p: `y${yearOnly(r.year)}`,
+                        ...(vsTeam ? { q: vsTeam } : {}),
+                        ...(cA ? { champ: cA } : {}),
+                      }).toString();
+                      const fQ = new URLSearchParams({
+                        league: intlLeague,
+                        team: rs,
+                        ...(vsTeam ? { vs: vsTeam } : {}),
+                        year: yearOnly(r.year),
+                        ...(pA ? { player: pA } : {}),
+                        ...(cA ? { champ: cA } : {}),
+                      }).toString();
                       return (
                         <span key={`${r.u}-${r.year}-${i}`} className="inline-flex items-center gap-1">
-                          <HubLink to={{ kind: "team", slug: r.u || teamSlug(r.team), query: yrQ }} className="shrink-0">
+                          <HubLink to={{ kind: "team", slug: rs, query: yrQ }} className="shrink-0">
                             <TeamLogo name={r.team} size={13} />
                           </HubLink>
                           <TeamLink name={r.team} u={r.u} query={yrQ} className="text-rw-text hover:text-rw-accent" />
                           <HubLink
-                            to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}` }}
+                            to={{ kind: "finder", query: fQ }}
                             className="text-rw-muted hover:text-rw-accent hover:underline"
                             title={tl("Game finder")}
                           >
@@ -935,11 +949,25 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         ) : (
           <List>
             {sorted.map((r) => {
-              const yrQ = `p=y${encodeURIComponent(yearOnly(r.year))}`;
+              const rs = r.u || teamSlug(r.team);
+              const vsTeam = sorted.map((x) => x.u || teamSlug(x.team)).find((u) => u && u !== rs) || "";
+              const yrQ = new URLSearchParams({
+                p: `y${yearOnly(r.year)}`,
+                ...(vsTeam ? { q: vsTeam } : {}),
+                ...(cA ? { champ: cA } : {}),
+              }).toString();
+              const fQ = new URLSearchParams({
+                league: intlLeague,
+                team: rs,
+                ...(vsTeam ? { vs: vsTeam } : {}),
+                year: yearOnly(r.year),
+                ...(pA ? { player: pA } : {}),
+                ...(cA ? { champ: cA } : {}),
+              }).toString();
               return (
                 <li key={r.u} className="flex items-center justify-between gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                    <HubLink to={{ kind: "team", slug: r.u || teamSlug(r.team), query: yrQ }} className="shrink-0">
+                    <HubLink to={{ kind: "team", slug: rs, query: yrQ }} className="shrink-0">
                       <TeamLogo name={r.team} size={15} />
                     </HubLink>
                     <TeamLink name={r.team} u={r.u} query={yrQ} className="text-rw-text hover:text-rw-accent truncate" />
@@ -947,7 +975,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   <span className="flex items-center gap-2 shrink-0">
                     {chip(r.path)}
                     <HubLink
-                      to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}` }}
+                      to={{ kind: "finder", query: fQ }}
                       className={`tabular-nums font-bold w-8 text-right hover:underline ${r.wins === 3 ? "text-rw-teal" : r.losses === 3 ? "text-rw-red" : "text-rw-sub"}`}
                       title={tl("Game finder")}
                     >
@@ -963,14 +991,31 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
     );
   }
 
+  const allCindSlugs = [...cind.playIn, ...cind.underdogs, ...(all ? cind.debuts : [])]
+    .map((x) => x.u || (x.team ? teamSlug(x.team) : ""))
+    .filter(Boolean);
   const runRow = (r: Run, i: number, show: "chance" | "place") => {
-    const yrQ = `p=y${encodeURIComponent(yearOnly(r.year))}`;
+    const rs = r.u || teamSlug(r.team);
+    const vsTeam = allCindSlugs.find((u) => u && u !== rs) || topTeams.find((u) => u && u !== rs) || "";
+    const yrQ = new URLSearchParams({
+      p: `y${yearOnly(r.year)}`,
+      ...(vsTeam ? { q: vsTeam } : {}),
+      ...(cA ? { champ: cA } : {}),
+    }).toString();
+    const fQ = new URLSearchParams({
+      league: intlLeague,
+      team: rs,
+      ...(vsTeam ? { vs: vsTeam } : {}),
+      year: yearOnly(r.year),
+      ...(pA ? { player: pA } : {}),
+      ...(cA ? { champ: cA } : {}),
+    }).toString();
     return (
       <Item
         key={i}
         left={
           <span className="inline-flex items-center gap-1.5 min-w-0">
-            <HubLink to={{ kind: "team", slug: r.u || teamSlug(r.team), query: yrQ }} className="shrink-0">
+            <HubLink to={{ kind: "team", slug: rs, query: yrQ }} className="shrink-0">
               <TeamLogo name={r.team} size={15} />
             </HubLink>
             <TeamLink name={r.team} u={r.u} query={yrQ} className="text-rw-text hover:text-rw-accent truncate" />
@@ -980,7 +1025,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         <HubLink
           to={{
             kind: "finder",
-            query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}`,
+            query: fQ,
           }}
           className="hover:text-rw-accent hover:underline"
         >
@@ -989,7 +1034,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
       }
       right={
         r.u ? (
-          <HubLink to={{ kind: "team", slug: r.u, tab: "history" }} className="hover:underline">
+          <HubLink to={{ kind: "team", slug: r.u, tab: "history", query: yrQ }} className="hover:underline">
             {show === "chance" && r.chance != null ? `${r.chance}%` : placeText(r.place)}
           </HubLink>
         ) : show === "chance" && r.chance != null ? (
@@ -1360,20 +1405,33 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         <List>
           {fin.mostReached.slice(0, 6).map((r) => {
             const wrPct = r.n > 0 ? Math.round((r.won / r.n) * 100) : 0;
+            const vsFTeam = fin.mostReached.find((x) => x.u !== r.u)?.u || "";
+            const tQ =
+              new URLSearchParams({
+                ...(vsFTeam ? { q: vsFTeam } : {}),
+                ...(cA ? { champ: cA } : {}),
+              }).toString() || undefined;
+            const fQ = new URLSearchParams({
+              league: intlLeague,
+              team: r.u,
+              ...(vsFTeam ? { vs: vsFTeam } : {}),
+              ...(pA ? { player: pA } : {}),
+              ...(cA ? { champ: cA } : {}),
+            }).toString();
             return (
               <Item
                 key={r.u}
                 left={
                   <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <HubLink to={{ kind: "team", slug: r.u }} className="shrink-0">
+                    <HubLink to={{ kind: "team", slug: r.u, ...(tQ ? { query: tQ } : {}) }} className="shrink-0">
                       <TeamLogo name={r.name} size={15} />
                     </HubLink>
-                    <TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
+                    <TeamLink name={r.name} u={r.u} query={tQ} className="text-rw-text hover:text-rw-accent truncate" />
                   </span>
                 }
                 sub={
                   <HubLink
-                    to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u)}` }}
+                    to={{ kind: "finder", query: fQ }}
                     className="hover:text-rw-accent hover:underline"
                   >
                     {tl("{w} won · {l} lost", { w: r.won, l: r.n - r.won })}
@@ -1387,7 +1445,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         <span className="h-full bg-rw-red/75" style={{ width: `${100 - wrPct}%` }} />
                       </span>
                     )}
-                    <HubLink to={{ kind: "team", slug: r.u, tab: "history" }} className="hover:underline">
+                    <HubLink to={{ kind: "team", slug: r.u, tab: "history", ...(tQ ? { query: tQ } : {}) }} className="hover:underline">
                       {r.n}
                     </HubLink>
                   </span>
@@ -1402,20 +1460,34 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <List>
               {(() => {
                 const maxLost = Math.max(1, ...fin.mostLost.slice(0, 5).map((r) => r.n));
-                return fin.mostLost.slice(0, 5).map((r) => (
+                return fin.mostLost.slice(0, 5).map((r) => {
+                  const vsLTeam = fin.mostReached.find((x) => x.u !== r.u)?.u || fin.mostLost.find((x) => x.u !== r.u)?.u || "";
+                  const tQ =
+                    new URLSearchParams({
+                      ...(vsLTeam ? { q: vsLTeam } : {}),
+                      ...(cA ? { champ: cA } : {}),
+                    }).toString() || undefined;
+                  const fQ = new URLSearchParams({
+                    league: intlLeague,
+                    team: r.u,
+                    ...(vsLTeam ? { vs: vsLTeam } : {}),
+                    ...(pA ? { player: pA } : {}),
+                    ...(cA ? { champ: cA } : {}),
+                  }).toString();
+                  return (
                   <Item
                     key={r.u}
                     left={
                       <span className="inline-flex items-center gap-1.5 min-w-0">
-                        <HubLink to={{ kind: "team", slug: r.u }} className="shrink-0">
+                        <HubLink to={{ kind: "team", slug: r.u, ...(tQ ? { query: tQ } : {}) }} className="shrink-0">
                           <TeamLogo name={r.name} size={15} />
                         </HubLink>
-                        <TeamLink name={r.name} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
+                        <TeamLink name={r.name} u={r.u} query={tQ} className="text-rw-text hover:text-rw-accent truncate" />
                       </span>
                     }
                     sub={
                       <HubLink
-                        to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u)}` }}
+                        to={{ kind: "finder", query: fQ }}
                         className="hover:text-rw-accent hover:underline"
                       >
                         {r.years.map(yearOnly).join(", ")}
@@ -1426,13 +1498,14 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
                           <span className="h-full bg-rw-red/75 rounded-full" style={{ width: `${Math.round((r.n / maxLost) * 100)}%` }} />
                         </span>
-                        <HubLink to={{ kind: "team", slug: r.u, tab: "history" }} className="hover:underline">
+                        <HubLink to={{ kind: "team", slug: r.u, tab: "history", ...(tQ ? { query: tQ } : {}) }} className="hover:underline">
                           {r.n}
                         </HubLink>
                       </span>
                     }
                   />
-                ));
+                  );
+                });
               })()}
             </List>
           </>
@@ -1449,11 +1522,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   new URLSearchParams({
                     ...(lastYr ? { p: `y${lastYr}` } : {}),
                     ...(lSlug && lSlug !== wSlug ? { q: lSlug } : {}),
+                    ...(cA ? { champ: cA } : {}),
                   }).toString() || undefined;
                 const lQ =
                   new URLSearchParams({
                     ...(lastYr ? { p: `y${lastYr}` } : {}),
                     ...(wSlug && wSlug !== lSlug ? { q: wSlug } : {}),
+                    ...(cA ? { champ: cA } : {}),
                   }).toString() || undefined;
                 return (
                   <Item
@@ -1488,21 +1563,48 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           {tl("Match prep")}
                         </HubLink>
                         <HubLink
-                          to={{ kind: "draft", query: `teams=${encodeURIComponent(wSlug)},${encodeURIComponent(lSlug)}${lastYr ? `&p=y${encodeURIComponent(lastYr)}` : ""}` }}
+                          to={{
+                            kind: "draft",
+                            query: new URLSearchParams({
+                              teams: `${wSlug},${lSlug}`,
+                              ...(lastYr ? { p: `y${lastYr}` } : {}),
+                              ...(cJoin ? { champ: cJoin } : {}),
+                            }).toString(),
+                          }}
                           className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                           title={tl("Draft board")}
                         >
                           {tl("Draft board")}
                         </HubLink>
                         <HubLink
-                          to={{ kind: "items", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(wSlug)}&vs=${encodeURIComponent(lSlug)}${lastYr ? `&year=${encodeURIComponent(lastYr)}` : ""}` }}
+                          to={{
+                            kind: "items",
+                            query: new URLSearchParams({
+                              league: intlLeague,
+                              team: wSlug,
+                              vs: lSlug,
+                              ...(lastYr ? { year: lastYr } : {}),
+                              ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                              ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
+                            }).toString(),
+                          }}
                           className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                           title={tl("Item history")}
                         >
                           {tl("Item history")}
                         </HubLink>
                         <HubLink
-                          to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(wSlug)}&vs=${encodeURIComponent(lSlug)}${lastYr ? `&year=${encodeURIComponent(lastYr)}` : ""}` }}
+                          to={{
+                            kind: "finder",
+                            query: new URLSearchParams({
+                              league: intlLeague,
+                              team: wSlug,
+                              vs: lSlug,
+                              ...(lastYr ? { year: lastYr } : {}),
+                              ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                              ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
+                            }).toString(),
+                          }}
                           className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -1695,11 +1797,17 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           {(() => {
             const maxTitles = Math.max(1, ...titles.map((p) => p.titles.length));
             return titles.map((p) => {
+              const ps = p.u || prettySlug(p.name);
+              const vsPSlug = tPlayers.find((x) => x !== ps) || "";
+              const pts = p.team ? teamSlug(p.team) : "";
+              const vsTSlug = tTeams.find((x) => x !== pts) || "";
               const pLatestYr = p.titles.length ? yearOnly([...p.titles].sort().pop()!) : undefined;
               const pQ =
                 new URLSearchParams({
                   ...(pLatestYr ? { p: `y${pLatestYr}` } : {}),
-                  ...(p.team ? { team: teamSlug(p.team) } : {}),
+                  ...(pts ? { team: pts } : {}),
+                  ...(vsPSlug ? { q: vsPSlug } : {}),
+                  ...(cA ? { champ: cA } : {}),
                 }).toString() || undefined;
               return (
                 <Item
@@ -1722,8 +1830,10 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         kind: "finder",
                         query: new URLSearchParams({
                           league: intlLeague,
-                          player: p.u || prettySlug(p.name),
-                          ...(p.team ? { team: teamSlug(p.team) } : {}),
+                          player: ps,
+                          ...(vsPSlug ? { vsplayer: vsPSlug } : {}),
+                          ...(pts ? { team: pts, ...(vsTSlug ? { vs: vsTSlug } : {}) } : {}),
+                          ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
                         }).toString(),
                       }}
                       className="hover:text-rw-accent hover:underline"
@@ -1918,35 +2028,49 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           {tl("How the host region's best team did. Home wins: {n} of {of}.", { n: hs.filter((h) => h.best === 1).length, of: hs.filter((h) => h.region).length })}
         </p>
         <List>
-          {hs.map((h) => (
+          {hs.map((h) => {
+            const hSlug = h.team ? h.teamU || teamSlug(h.team) : "";
+            const vsHTeam = hSlug ? hostTeams.find((u) => u && u !== hSlug) || "" : "";
+            const hYr = yearOnly(h.year);
+            const hTeamQ = new URLSearchParams({
+              ...(hYr ? { p: `y${hYr}` } : {}),
+              ...(vsHTeam ? { q: vsHTeam } : {}),
+              ...(cA ? { champ: cA } : {}),
+            }).toString();
+            const hFinderQ = new URLSearchParams({
+              league: intlLeague,
+              ...(hSlug ? { team: hSlug, ...(vsHTeam ? { vs: vsHTeam } : {}) } : {}),
+              year: hYr,
+              ...(pA ? { player: pA } : {}),
+              ...(cA ? { champ: cA } : {}),
+            }).toString();
+            return (
             <li key={h.year} className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1.5 min-w-0">
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `league=${encodeURIComponent(intlLeague)}${
-                      h.team ? `&team=${encodeURIComponent(h.teamU || teamSlug(h.team))}` : ""
-                    }&year=${encodeURIComponent(yearOnly(h.year))}`,
+                    query: hFinderQ,
                   }}
                   className="tabular-nums text-rw-muted hover:text-rw-accent hover:underline w-9"
                 >
-                  {yearOnly(h.year)}
+                  {hYr}
                 </HubLink>
                 {h.region && <RegionFlag code={h.region} />}
                 <span className="truncate text-rw-text">{h.country}</span>
                 {h.team && (
                   <span className="inline-flex items-center gap-1 truncate text-rw-muted">
                     <span>·</span>
-                    <HubLink to={{ kind: "team", slug: h.teamU || teamSlug(h.team), query: `p=y${encodeURIComponent(yearOnly(h.year))}` }} className="shrink-0">
+                    <HubLink to={{ kind: "team", slug: hSlug, query: hTeamQ }} className="shrink-0">
                       <TeamLogo name={h.team} size={14} />
                     </HubLink>
-                    <TeamLink name={h.team} u={h.teamU} query={`p=y${encodeURIComponent(yearOnly(h.year))}`} className="truncate text-rw-muted hover:text-rw-accent hover:underline" />
+                    <TeamLink name={h.team} u={h.teamU} query={hTeamQ} className="truncate text-rw-muted hover:text-rw-accent hover:underline" />
                   </span>
                 )}
               </span>
               {h.region && h.team ? (
                 <HubLink
-                  to={{ kind: "team", slug: h.teamU || teamSlug(h.team), tab: "history" }}
+                  to={{ kind: "team", slug: hSlug, tab: "history", query: hTeamQ }}
                   className={`shrink-0 font-semibold hover:underline ${h.best === 1 ? "text-rw-accent" : "text-rw-sub hover:text-rw-accent"}`}
                 >
                   {placeText(h.best)}
@@ -1955,7 +2079,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <span className={`shrink-0 font-semibold ${h.best === 1 ? "text-rw-accent" : "text-rw-sub"}`}>{h.region ? placeText(h.best) : "–"}</span>
               )}
             </li>
-          ))}
+            );
+          })}
         </List>
       </Section>,
     );
@@ -2164,14 +2289,27 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               <tbody>
                 {(() => {
                   const maxG = Math.max(1, ...ys.map((y) => y.games));
-                  return ys.map((y) => (
+                  return ys.map((y) => {
+                    const yYr = yearOnly(y.year);
+                    const yC0 = y.top ? resolveChampSlug(y.top[0]) : cA;
+                    const yC1 = y.best && resolveChampSlug(y.best[0]) !== yC0 ? resolveChampSlug(y.best[0]) : cB && cB !== yC0 ? cB : undefined;
+                    const yFinderQ = (side?: "b" | "r") =>
+                      new URLSearchParams({
+                        league: intlLeague,
+                        year: yYr,
+                        ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                        ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                        ...(yC0 ? { champ: yC0, ...(yC1 ? { vschamp: yC1 } : {}) } : {}),
+                        ...(side ? { side } : {}),
+                      }).toString();
+                    return (
                     <tr key={y.year} className="border-t border-rw-border whitespace-nowrap">
                       <td className="px-2 py-1 text-rw-text font-semibold" data-sort={editionYear(y.year) || 0}>
                         <HubLink
-                          to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(yearOnly(y.year))}` }}
+                          to={{ kind: "finder", query: yFinderQ() }}
                           className="hover:text-rw-accent hover:underline"
                         >
-                          {yearOnly(y.year)}
+                          {yYr}
                         </HubLink>
                       </td>
                       <td className="px-2 py-1 text-right tabular-nums" data-sort={y.games}>
@@ -2180,7 +2318,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                             <span className="h-full bg-rw-accent/75 rounded-full" style={{ width: `${Math.round((y.games / maxG) * 100)}%` }} />
                           </span>
                           <HubLink
-                            to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(yearOnly(y.year))}` }}
+                            to={{ kind: "finder", query: yFinderQ() }}
                             className="w-7 text-right hover:text-rw-accent hover:underline"
                           >
                             {y.games}
@@ -2192,7 +2330,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           "–"
                         ) : (
                           <HubLink
-                            to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(yearOnly(y.year))}&side=b` }}
+                            to={{ kind: "finder", query: yFinderQ("b") }}
                             className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline"
                             title={tl("Game finder")}
                           >
@@ -2207,7 +2345,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       <td className="px-2 py-1 text-right tabular-nums" data-sort={y.min ?? -1}>
                         {y.min != null ? (
                           <HubLink
-                            to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(yearOnly(y.year))}` }}
+                            to={{ kind: "finder", query: yFinderQ() }}
                             className="hover:text-rw-accent hover:underline"
                           >
                             {mmss(y.min)}
@@ -2219,7 +2357,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       <td className="px-2 py-1 text-right tabular-nums" data-sort={y.kills ?? -1}>
                         {y.kills != null ? (
                           <HubLink
-                            to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(yearOnly(y.year))}` }}
+                            to={{ kind: "finder", query: yFinderQ() }}
                             className="hover:text-rw-accent hover:underline"
                           >
                             {y.kills}
@@ -2235,7 +2373,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                               kind: "champ",
                               slug: resolveChampSlug(y.top[0]),
                               query: new URLSearchParams({
-                                p: `y${yearOnly(y.year)}`,
+                                p: `y${yYr}`,
+                                ...(topTeams[0] ? { team: topTeams[0] } : {}),
+                                ...(pA ? { player: pA } : {}),
                                 ...(y.best && resolveChampSlug(y.best[0]) !== resolveChampSlug(y.top[0])
                                   ? { vschamp: resolveChampSlug(y.best[0]) }
                                   : {}),
@@ -2257,7 +2397,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                               kind: "champ",
                               slug: resolveChampSlug(y.best[0]),
                               query: new URLSearchParams({
-                                p: `y${yearOnly(y.year)}`,
+                                p: `y${yYr}`,
+                                ...(topTeams[0] ? { team: topTeams[0] } : {}),
+                                ...(pA ? { player: pA } : {}),
                                 ...(y.top && resolveChampSlug(y.top[0]) !== resolveChampSlug(y.best[0])
                                   ? { vschamp: resolveChampSlug(y.top[0]) }
                                   : {}),
@@ -2277,14 +2419,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       </td>
                       <td className="px-2 py-1 text-right tabular-nums text-rw-sub" data-sort={y.newTeams * 100 + y.newPlayers}>
                         <HubLink
-                          to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(yearOnly(y.year))}` }}
+                          to={{ kind: "finder", query: yFinderQ() }}
                           className="hover:text-rw-accent hover:underline"
                         >
                           {tl("{t} teams · {p} players", { t: y.newTeams, p: y.newPlayers })}
                         </HubLink>
                       </td>
                     </tr>
-                  ));
+                    );
+                  });
                 })()}
               </tbody>
             </STable>
@@ -2476,6 +2619,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       const n = r ? r.ow + r.ol : 0;
                       const pct = n ? Math.round((r!.ow / n) * 100) : null;
                       const topTeam = y.topTeams.get(code);
+                      const vsRegCode = trend.regions.find((rc) => rc !== code && y.topTeams.get(rc));
+                      const vsTopTeam = vsRegCode ? y.topTeams.get(vsRegCode) : undefined;
                       return (
                         <td
                           key={y.y}
@@ -2488,7 +2633,16 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                             <span className="text-rw-muted">·</span>
                           ) : (
                             <HubLink
-                              to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(yearOnly(y.y))}${topTeam ? `&team=${encodeURIComponent(topTeam)}` : ""}` }}
+                              to={{
+                                kind: "finder",
+                                query: new URLSearchParams({
+                                  league: intlLeague,
+                                  year: yearOnly(y.y),
+                                  ...(topTeam ? { team: topTeam, ...(vsTopTeam && vsTopTeam !== topTeam ? { vs: vsTopTeam } : {}) } : {}),
+                                  ...(pA ? { player: pA } : {}),
+                                  ...(cA ? { champ: cA } : {}),
+                                }).toString(),
+                              }}
                               className="hover:underline"
                             >
                               {pct}

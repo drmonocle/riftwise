@@ -465,14 +465,20 @@ const RegionTrend: React.FC<{
                   const wl = t.cells.get(c)!.get(y);
                   if (!wl) return <td key={y} data-sort={-1} className="px-0.5 py-1 text-center text-rw-muted">–</td>;
                   const p = wl[0] / (wl[0] + wl[1]);
+                  const vsRegCode = t.rows.find((rc) => rc !== c && t.cells.get(rc)?.get(y)?.[2]);
+                  const vsTopTeam = vsRegCode ? t.cells.get(vsRegCode)?.get(y)?.[2] : undefined;
                   return (
                     <td key={y} data-sort={Math.round(p * 100)} className="px-0.5 py-0.5 text-center">
                       <HubLink
                         to={{
                           kind: "finder",
-                          query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(y)}${
-                            wl[2] ? `&team=${encodeURIComponent(wl[2])}` : ""
-                          }`,
+                          query: new URLSearchParams({
+                            league: intlLeague,
+                            year: y,
+                            ...(wl[2] ? { team: wl[2], ...(vsTopTeam && vsTopTeam !== wl[2] ? { vs: vsTopTeam } : {}) } : {}),
+                            ...(pA ? { player: pA } : {}),
+                            ...(cA ? { champ: cA } : {}),
+                          }).toString(),
                         }}
                         className={`block min-w-[2.5rem] rounded-sm px-1 py-0.5 tabular-nums text-rw-text hover:ring-1 hover:ring-rw-accent/60 ${wl[0] + wl[1] < 3 ? "opacity-45" : ""}`}
                         style={chanceShade(p)}
@@ -817,6 +823,17 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 const oPct = pctOf(r.ow, r.ol);
                 const tBar = r.titles > 0 ? Math.max(6, Math.round((r.titles / maxTitles) * 100)) : 0;
                 const fBar = r.finals > 0 ? Math.max(6, Math.round((r.finals / maxFinals) * 100)) : 0;
+                const regTeam = topTeamByRegion.get(r.code);
+                const vsRegCode = list.find((x) => x.code !== r.code && topTeamByRegion.get(x.code))?.code;
+                const vsRegTeam = vsRegCode ? topTeamByRegion.get(vsRegCode) : undefined;
+                const rFinderQ =
+                  new URLSearchParams({
+                    league: intlLeague,
+                    ...(regTeam ? { team: regTeam, ...(vsRegTeam && vsRegTeam !== regTeam ? { vs: vsRegTeam } : {}) } : {}),
+                    ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                    ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
+                    ...(singleYear ? { year: singleYear } : {}),
+                  }).toString() || undefined;
                 return (
                   <tr key={r.code} className="border-t border-rw-border">
                     <td className="px-2 py-1" data-sort={regionLabel(r.code)}>
@@ -830,12 +847,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                       <HubLink
                         to={{
                           kind: "finder",
-                          query:
-                            new URLSearchParams({
-                              league: intlLeague,
-                              ...(topTeamByRegion.get(r.code) ? { team: topTeamByRegion.get(r.code)! } : {}),
-                              ...(singleYear ? { year: singleYear } : {}),
-                            }).toString() || undefined,
+                          query: rFinderQ,
                         }}
                         className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline"
                         title={tl("Game finder")}
@@ -855,12 +867,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                       <HubLink
                         to={{
                           kind: "finder",
-                          query:
-                            new URLSearchParams({
-                              league: intlLeague,
-                              ...(topTeamByRegion.get(r.code) ? { team: topTeamByRegion.get(r.code)! } : {}),
-                              ...(singleYear ? { year: singleYear } : {}),
-                            }).toString() || undefined,
+                          query: rFinderQ,
                         }}
                         className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline"
                         title={tl("Game finder")}
@@ -884,12 +891,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                         <HubLink
                           to={{
                             kind: "finder",
-                            query:
-                              new URLSearchParams({
-                                league: intlLeague,
-                                ...(topTeamByRegion.get(r.code) ? { team: topTeamByRegion.get(r.code)! } : {}),
-                                ...(singleYear ? { year: singleYear } : {}),
-                              }).toString() || undefined,
+                            query: rFinderQ,
                           }}
                           className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
@@ -1209,6 +1211,8 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                             league: intlLeague,
                             ...(topTeamByRegion.get(p.a) ? { team: topTeamByRegion.get(p.a)! } : {}),
                             ...(topTeamByRegion.get(p.b) ? { vs: topTeamByRegion.get(p.b)! } : {}),
+                            ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                            ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                             ...(singleYear ? { year: singleYear } : {}),
                           }).toString() || undefined,
                       }}

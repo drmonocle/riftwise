@@ -150,15 +150,22 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
   ).slice(0, 2);
   const yr = year && /^\d{4}$/.test(year) ? year : slug && /\d{4}/.test(slug) ? /\d{4}/.exec(slug)![0] : undefined;
   const normLg = leagueSlug ? resolveLeagueSlug(leagueSlug) : "";
-  const evBaseFinderQuery = slug
-    ? `event=${encodeURIComponent(slug)}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`
-    : "";
   const pentaPlayers = Array.from(new Set((o.pentas || []).map((p) => pSlug(p.n, p.u)).filter(Boolean))).slice(0, 2);
   const pentaChamps = Array.from(new Set((o.pentas || []).map((p) => (p.c ? resolveChampSlug(p.c) : "")).filter(Boolean))).slice(0, 2);
   const mvpPlayers = Array.from(new Set((o.mvp || []).map((m) => pSlug(m.n, m.u)).filter(Boolean))).slice(0, 2);
   const topPlayers = Array.from(
     new Set([...mvpPlayers, ...pentaPlayers, ...(o.farm ? [pSlug(o.farm.n, o.farm.u)] : [])].filter(Boolean)),
   ).slice(0, 2);
+  const evBaseFinderQuery = slug
+    ? new URLSearchParams({
+        event: slug,
+        ...(normLg ? { league: normLg } : {}),
+        ...(yr ? { year: yr } : {}),
+        ...(featTeams[0] ? { team: featTeams[0], ...(featTeams[1] ? { vs: featTeams[1] } : {}) } : {}),
+        ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+        ...(pentaChamps[0] ? { champ: pentaChamps[0], ...(pentaChamps[1] ? { vschamp: pentaChamps[1] } : {}) } : {}),
+      }).toString()
+    : "";
   const tiersQuery =
     new URLSearchParams({
       ...(normLg ? { scope: normLg, league: normLg } : {}),
@@ -762,13 +769,19 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
           </div>
           <ul className="space-y-1">
             {o.pentas.map((p, i) => {
+              const ps = pSlug(p.n, p.u);
+              const vsP = pentaPlayers.find((x) => x !== ps) || topPlayers.find((x) => x !== ps);
+              const pc = p.c ? resolveChampSlug(p.c) : undefined;
+              const vsC = pc ? pentaChamps.find((x) => x !== pc) : undefined;
               const pFinderQ = slug
                 ? new URLSearchParams({
                     event: slug,
                     ...(normLg ? { league: normLg } : {}),
                     ...(yr ? { year: yr } : {}),
-                    player: pSlug(p.n, p.u),
-                    ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
+                    ...(featTeams[0] ? { team: featTeams[0], ...(featTeams[1] ? { vs: featTeams[1] } : {}) } : {}),
+                    player: ps,
+                    ...(vsP ? { vsplayer: vsP } : {}),
+                    ...(pc ? { champ: pc, ...(vsC ? { vschamp: vsC } : {}) } : {}),
                   }).toString()
                 : "";
               return (
@@ -1012,7 +1025,18 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                     </span>
                     {slug ? (
                       <HubLink
-                        to={{ kind: "finder", query: `${evBaseFinderQuery}&player=${encodeURIComponent(ms)}` }}
+                        to={{
+                          kind: "finder",
+                          query: new URLSearchParams({
+                            event: slug,
+                            ...(normLg ? { league: normLg } : {}),
+                            ...(yr ? { year: yr } : {}),
+                            ...(featTeams[0] ? { team: featTeams[0], ...(featTeams[1] ? { vs: featTeams[1] } : {}) } : {}),
+                            player: ms,
+                            ...(vsMvp ? { vsplayer: vsMvp } : {}),
+                            ...(pentaChamps[0] ? { champ: pentaChamps[0] } : {}),
+                          }).toString(),
+                        }}
                         className="text-rw-accent font-bold tabular-nums hover:underline"
                         title={tl("Game finder")}
                       >
@@ -1722,6 +1746,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
                             ...(rB ? { vs: rB } : {}),
                             ...(pA ? { player: pA } : {}),
                             ...(pB && pB !== pA ? { vsplayer: pB } : {}),
+                            ...(regChamps[0] ? { champ: regChamps[0], ...(regChamps[1] ? { vschamp: regChamps[1] } : {}) } : {}),
                           }).toString();
                         })(),
                       }}

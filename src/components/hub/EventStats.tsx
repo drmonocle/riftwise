@@ -374,7 +374,18 @@ export const FactGroups: React.FC<{
             </h2>
             <div className="grid gap-3 md:grid-cols-2 3xl:grid-cols-3">
               {list.map((f) => (
-                <FactCard key={f.id} f={f} link={link} shareId={shareId(f)} eventSlug={eventSlug} leagueSlug={normLg} year={evYr} />
+                <FactCard
+                  key={f.id}
+                  f={f}
+                  link={link}
+                  shareId={shareId(f)}
+                  eventSlug={eventSlug}
+                  leagueSlug={normLg}
+                  year={evYr}
+                  fallbackTeams={topTeams}
+                  fallbackPlayers={topPlayers}
+                  fallbackChamps={topChamps}
+                />
               ))}
             </div>
           </div>
@@ -391,7 +402,10 @@ export const FactCard: React.FC<{
   eventSlug?: string;
   leagueSlug?: string | null;
   year?: string | null;
-}> = ({ f, link, shareId, eventSlug, leagueSlug, year }) => {
+  fallbackTeams?: string[];
+  fallbackPlayers?: string[];
+  fallbackChamps?: string[];
+}> = ({ f, link, shareId, eventSlug, leagueSlug, year, fallbackTeams, fallbackPlayers, fallbackChamps }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const evYr =
     year && /^\d{4}$/.test(year)
@@ -435,6 +449,9 @@ export const FactCard: React.FC<{
     }
     return out;
   }, [f.rows]);
+  const effTeams = cardTeams.length ? cardTeams : (fallbackTeams || []).slice(0, 2);
+  const effPlayers = cardPlayers.length ? cardPlayers : (fallbackPlayers || []).slice(0, 2);
+  const effChamps = cardChamps.length ? cardChamps : (fallbackChamps || []).slice(0, 2);
   const copy = () => {
     navigator.clipboard
       ?.writeText(factText(f, link))
@@ -457,13 +474,13 @@ export const FactCard: React.FC<{
           {f.rows.length >= 1 &&
             (cardPlayers[0] ? (
               <>
-                {cardTeams[0] && (
+                {effTeams[0] && (
                   <>
                     <HubLink
                       to={{
                         kind: "prep",
-                        a: cardTeams[0],
-                        ...(cardTeams[1] ? { b: cardTeams[1] } : {}),
+                        a: effTeams[0],
+                        ...(effTeams[1] ? { b: effTeams[1] } : {}),
                         ...(eventSlug ? { period: `e:${eventSlug}` } : evYr ? { period: `y${evYr}` } : {}),
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
@@ -474,8 +491,8 @@ export const FactCard: React.FC<{
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(cardTeams.join(","))}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : evYr ? `&p=y${evYr}` : ""}${
-                          cardChamps.length >= 1 ? `&champ=${encodeURIComponent(cardChamps.join(","))}` : ""
+                        query: `teams=${encodeURIComponent(effTeams.join(","))}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : evYr ? `&p=y${evYr}` : ""}${
+                          effChamps.length >= 1 ? `&champ=${encodeURIComponent(effChamps.join(","))}` : ""
                         }`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -501,18 +518,18 @@ export const FactCard: React.FC<{
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(cardPlayers[0])}${cardPlayers[1] ? `&vsplayer=${encodeURIComponent(cardPlayers[1])}` : ""}${cardTeams[0] ? `&team=${encodeURIComponent(cardTeams[0])}` : ""}${cardTeams[1] ? `&vs=${encodeURIComponent(cardTeams[1])}` : ""}${cardChamps[0] ? `&champ=${encodeURIComponent(cardChamps[0])}` : ""}${cardChamps[1] ? `&vschamp=${encodeURIComponent(cardChamps[1])}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
+                    query: `player=${encodeURIComponent(cardPlayers[0])}${cardPlayers[1] ? `&vsplayer=${encodeURIComponent(cardPlayers[1])}` : ""}${effTeams[0] ? `&team=${encodeURIComponent(effTeams[0])}` : ""}${effTeams[1] ? `&vs=${encodeURIComponent(effTeams[1])}` : ""}${effChamps[0] ? `&champ=${encodeURIComponent(effChamps[0])}` : ""}${effChamps[1] ? `&vschamp=${encodeURIComponent(effChamps[1])}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
                 >
                   {tl("Item history")} →
                 </HubLink>
-                {cardChamps[0] && (
+                {effChamps[0] && (
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(cardChamps[0])}${cardChamps[1] ? `&vs=${encodeURIComponent(cardChamps[1])}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${evYr ? `&patch=y${evYr}&year=${evYr}` : ""}`,
+                      query: `champ=${encodeURIComponent(effChamps[0])}${effChamps[1] ? `&vs=${encodeURIComponent(effChamps[1])}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${evYr ? `&patch=y${evYr}&year=${evYr}` : ""}`,
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                     data-nocapture="1"
@@ -528,8 +545,8 @@ export const FactCard: React.FC<{
                         ...(normLg ? { league: normLg } : {}),
                         ...(evYr ? { year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
-                        ...(cardChamps[0] ? { champ: cardChamps[0] } : {}),
-                        q: [...cardPlayers, ...cardTeams].filter(Boolean).join(","),
+                        ...(effChamps[0] ? { champ: effChamps[0] } : {}),
+                        q: [...cardPlayers, ...effTeams].filter(Boolean).join(","),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -543,10 +560,10 @@ export const FactCard: React.FC<{
                     query: new URLSearchParams({
                       player: cardPlayers[0],
                       ...(cardPlayers[1] ? { vsplayer: cardPlayers[1] } : {}),
-                      ...(cardTeams[0] ? { team: cardTeams[0] } : {}),
-                      ...(cardTeams[1] ? { vs: cardTeams[1] } : {}),
-                      ...(cardChamps[0] ? { champ: cardChamps[0] } : {}),
-                      ...(cardChamps[1] ? { vschamp: cardChamps[1] } : {}),
+                      ...(effTeams[0] ? { team: effTeams[0] } : {}),
+                      ...(effTeams[1] ? { vs: effTeams[1] } : {}),
+                      ...(effChamps[0] ? { champ: effChamps[0] } : {}),
+                      ...(effChamps[1] ? { vschamp: effChamps[1] } : {}),
                       ...(normLg ? { league: normLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
@@ -565,7 +582,7 @@ export const FactCard: React.FC<{
                         ...(normLg ? { league: normLg, scope: normLg } : {}),
                         ...(evYr ? { key: `y${evYr}`, year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
-                        ...(cardChamps.length >= 1 ? { q: cardChamps.join(",") } : {}),
+                        ...(effChamps.length >= 1 ? { q: effChamps.join(",") } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -579,7 +596,7 @@ export const FactCard: React.FC<{
                     query:
                       new URLSearchParams({
                         ...(normLg ? { league: normLg } : {}),
-                        ...(cardTeams.length >= 1 ? { q: cardTeams.join(",") } : {}),
+                        ...(effTeams.length >= 1 ? { q: effTeams.join(",") } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -605,7 +622,9 @@ export const FactCard: React.FC<{
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(cardTeams.join(","))}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : evYr ? `&p=y${evYr}` : ""}`,
+                    query: `teams=${encodeURIComponent(cardTeams.join(","))}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : evYr ? `&p=y${evYr}` : ""}${
+                      effChamps.length >= 1 ? `&champ=${encodeURIComponent(effChamps.join(","))}` : ""
+                    }`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -644,6 +663,8 @@ export const FactCard: React.FC<{
                     query: new URLSearchParams({
                       team: cardTeams[0],
                       ...(cardTeams[1] ? { vs: cardTeams[1] } : {}),
+                      ...(effPlayers[0] ? { player: effPlayers[0], ...(effPlayers[1] ? { vsplayer: effPlayers[1] } : {}) } : {}),
+                      ...(effChamps[0] ? { champ: effChamps[0], ...(effChamps[1] ? { vschamp: effChamps[1] } : {}) } : {}),
                       ...(normLg ? { league: normLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
@@ -660,6 +681,8 @@ export const FactCard: React.FC<{
                     query: new URLSearchParams({
                       team: cardTeams[0],
                       ...(cardTeams[1] ? { vs: cardTeams[1] } : {}),
+                      ...(effPlayers[0] ? { player: effPlayers[0], ...(effPlayers[1] ? { vsplayer: effPlayers[1] } : {}) } : {}),
+                      ...(effChamps[0] ? { champ: effChamps[0], ...(effChamps[1] ? { vschamp: effChamps[1] } : {}) } : {}),
                       ...(normLg ? { league: normLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
@@ -678,6 +701,7 @@ export const FactCard: React.FC<{
                         ...(normLg ? { league: normLg, scope: normLg } : {}),
                         ...(evYr ? { key: `y${evYr}`, year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
+                        ...(effChamps.length >= 1 ? { q: effChamps.join(",") } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -693,7 +717,8 @@ export const FactCard: React.FC<{
                         ...(normLg ? { league: normLg } : {}),
                         ...(evYr ? { year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
-                        q: cardTeams.join(","),
+                        ...(effChamps[0] ? { champ: effChamps[0] } : {}),
+                        q: [...cardTeams, ...effPlayers].filter(Boolean).join(","),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -704,13 +729,13 @@ export const FactCard: React.FC<{
               </>
             ) : cardChamps[0] ? (
               <>
-                {cardTeams[0] && (
+                {effTeams[0] && (
                   <>
                     <HubLink
                       to={{
                         kind: "prep",
-                        a: cardTeams[0],
-                        ...(cardTeams[1] ? { b: cardTeams[1] } : {}),
+                        a: effTeams[0],
+                        ...(effTeams[1] ? { b: effTeams[1] } : {}),
                         ...(eventSlug ? { period: `e:${eventSlug}` } : evYr ? { period: `y${evYr}` } : {}),
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
@@ -722,8 +747,8 @@ export const FactCard: React.FC<{
                       to={{
                         kind: "compare",
                         mode: "team",
-                        a: cardTeams[0],
-                        ...(cardTeams[1] ? { b: cardTeams[1] } : {}),
+                        a: effTeams[0],
+                        ...(effTeams[1] ? { b: effTeams[1] } : {}),
                         ...(eventSlug ? { period: `e:${eventSlug}` } : evYr ? { period: `y${evYr}` } : {}),
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
@@ -746,7 +771,7 @@ export const FactCard: React.FC<{
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `champ=${encodeURIComponent(cardChamps[0])}${cardChamps[1] ? `&vschamp=${encodeURIComponent(cardChamps[1])}` : ""}${cardTeams[0] ? `&team=${encodeURIComponent(cardTeams[0])}` : ""}${cardTeams[1] ? `&vs=${encodeURIComponent(cardTeams[1])}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
+                    query: `champ=${encodeURIComponent(cardChamps[0])}${cardChamps[1] ? `&vschamp=${encodeURIComponent(cardChamps[1])}` : ""}${effTeams[0] ? `&team=${encodeURIComponent(effTeams[0])}` : ""}${effTeams[1] ? `&vs=${encodeURIComponent(effTeams[1])}` : ""}${effPlayers[0] ? `&player=${encodeURIComponent(effPlayers[0])}` : ""}${effPlayers[1] ? `&vsplayer=${encodeURIComponent(effPlayers[1])}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -789,7 +814,7 @@ export const FactCard: React.FC<{
                   to={{
                     kind: "draft",
                     query: new URLSearchParams({
-                      ...(cardTeams.length >= 1 ? { teams: cardTeams.join(",") } : {}),
+                      ...(effTeams.length >= 1 ? { teams: effTeams.join(",") } : {}),
                       ...(eventSlug ? { p: `e:${eventSlug}` } : evYr ? { p: `y${evYr}` } : {}),
                       champ: cardChamps.join(","),
                     }).toString(),
@@ -805,8 +830,10 @@ export const FactCard: React.FC<{
                     query: new URLSearchParams({
                       champ: cardChamps[0],
                       ...(cardChamps[1] ? { vschamp: cardChamps[1] } : {}),
-                      ...(cardTeams[0] ? { team: cardTeams[0] } : {}),
-                      ...(cardTeams[1] ? { vs: cardTeams[1] } : {}),
+                      ...(effTeams[0] ? { team: effTeams[0] } : {}),
+                      ...(effTeams[1] ? { vs: effTeams[1] } : {}),
+                      ...(effPlayers[0] ? { player: effPlayers[0] } : {}),
+                      ...(effPlayers[1] ? { vsplayer: effPlayers[1] } : {}),
                       ...(normLg ? { league: normLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
@@ -823,7 +850,7 @@ export const FactCard: React.FC<{
                     query:
                       new URLSearchParams({
                         ...(normLg ? { league: normLg } : {}),
-                        ...(cardTeams.length >= 1 ? { q: cardTeams.join(",") } : {}),
+                        ...(effTeams.length >= 1 ? { q: effTeams.join(",") } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -836,7 +863,7 @@ export const FactCard: React.FC<{
                     kind: "leaders",
                     query: new URLSearchParams({
                       champ: cardChamps[0],
-                      ...(cardTeams.length >= 1 ? { q: cardTeams.join(",") } : {}),
+                      ...([...effTeams, ...effPlayers].length >= 1 ? { q: [...effTeams, ...effPlayers].join(",") } : {}),
                       ...(normLg ? { league: normLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
@@ -853,7 +880,12 @@ export const FactCard: React.FC<{
                 <HubLink
                   to={{
                     kind: "draft",
-                    ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : evYr ? { query: `p=y${evYr}` } : {}),
+                    query:
+                      new URLSearchParams({
+                        ...(effTeams.length >= 1 ? { teams: effTeams.join(",") } : {}),
+                        ...(eventSlug ? { p: `e:${eventSlug}` } : evYr ? { p: `y${evYr}` } : {}),
+                        ...(effChamps.length >= 1 ? { champ: effChamps.join(",") } : {}),
+                      }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -865,6 +897,9 @@ export const FactCard: React.FC<{
                     kind: "items",
                     query:
                       new URLSearchParams({
+                        ...(effTeams[0] ? { team: effTeams[0], ...(effTeams[1] ? { vs: effTeams[1] } : {}) } : {}),
+                        ...(effPlayers[0] ? { player: effPlayers[0], ...(effPlayers[1] ? { vsplayer: effPlayers[1] } : {}) } : {}),
+                        ...(effChamps[0] ? { champ: effChamps[0], ...(effChamps[1] ? { vschamp: effChamps[1] } : {}) } : {}),
                         ...(normLg ? { league: normLg } : {}),
                         ...(evYr ? { year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
@@ -880,6 +915,9 @@ export const FactCard: React.FC<{
                     kind: "finder",
                     query:
                       new URLSearchParams({
+                        ...(effTeams[0] ? { team: effTeams[0], ...(effTeams[1] ? { vs: effTeams[1] } : {}) } : {}),
+                        ...(effPlayers[0] ? { player: effPlayers[0], ...(effPlayers[1] ? { vsplayer: effPlayers[1] } : {}) } : {}),
+                        ...(effChamps[0] ? { champ: effChamps[0], ...(effChamps[1] ? { vschamp: effChamps[1] } : {}) } : {}),
                         ...(normLg ? { league: normLg } : {}),
                         ...(evYr ? { year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
@@ -898,6 +936,8 @@ export const FactCard: React.FC<{
                         ...(normLg ? { league: normLg } : {}),
                         ...(evYr ? { year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
+                        ...(effChamps[0] ? { champ: effChamps[0] } : {}),
+                        ...([...effTeams, ...effPlayers].length >= 1 ? { q: [...effTeams, ...effPlayers].join(",") } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -913,6 +953,7 @@ export const FactCard: React.FC<{
                         ...(normLg ? { league: normLg, scope: normLg } : {}),
                         ...(evYr ? { key: `y${evYr}`, year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
+                        ...(effChamps.length >= 1 ? { q: effChamps.join(",") } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
