@@ -168,14 +168,20 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       key: "t",
       label: tl("Team"),
       value: (p) => p.t.toLowerCase(),
-      render: (p) => (
-        <span className="inline-flex items-center gap-1.5 max-w-[9rem] truncate align-bottom">
-          <HubLink to={{ kind: "team", slug: tSlug(p.t, p.tu), query: `p=e:${encodeURIComponent(e.u)}` }} className="shrink-0 hover:opacity-80" title={p.t}>
-            <TeamLogo name={p.t} size={14} />
-          </HubLink>
-          <TeamLink name={p.t} u={p.tu} query={`p=e:${encodeURIComponent(e.u)}`} className="truncate" />
-        </span>
-      ),
+      render: (p) => {
+        const ptQ = new URLSearchParams({
+          p: `e:${e.u}`,
+          q: pSlug(p.n, p.u),
+        }).toString();
+        return (
+          <span className="inline-flex items-center gap-1.5 max-w-[9rem] truncate align-bottom">
+            <HubLink to={{ kind: "team", slug: tSlug(p.t, p.tu), query: ptQ }} className="shrink-0 hover:opacity-80" title={p.t}>
+              <TeamLogo name={p.t} size={14} />
+            </HubLink>
+            <TeamLink name={p.t} u={p.tu} query={ptQ} className="truncate" />
+          </span>
+        );
+      },
     },
     {
       key: "r",
@@ -795,20 +801,41 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
   const maxTeamG = Math.max(1, ...teams.map((t) => t.g));
   const evYr = /^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? (e.start || e.end || "").slice(0, 4) : "";
   const evLg = e.lu ? resolveLeagueSlug(e.lu) : "";
-  const tFinderQuery = (t: EventTeamStats, side?: "b" | "r") =>
-    new URLSearchParams({
+  const pair =
+    rows.length === 2 || (search.trim() && rows.length >= 2)
+      ? [tSlug(rows[0].t, rows[0].u), tSlug(rows[1].t, rows[1].u)]
+      : null;
+  const tPageQuery = (t: EventTeamStats) => {
+    const ts = tSlug(t.t, t.u);
+    const vsTeam = pair ? (pair[0] === ts ? pair[1] : pair[1] === ts ? pair[0] : "") : "";
+    const tPlayer = (e.players || []).filter((p) => tSlug(p.t, p.tu) === ts).sort((a, b) => b.g - a.g)[0];
+    const tpSlug = tPlayer ? pSlug(tPlayer.n, tPlayer.u) : "";
+    return new URLSearchParams({
+      p: `e:${e.u}`,
+      ...(vsTeam ? { q: vsTeam } : tpSlug ? { q: tpSlug } : {}),
+    }).toString();
+  };
+  const tFinderQuery = (t: EventTeamStats, side?: "b" | "r") => {
+    const ts = tSlug(t.t, t.u);
+    const vsTeam = pair ? (pair[0] === ts ? pair[1] : pair[1] === ts ? pair[0] : "") : "";
+    const tPlayer = (e.players || []).filter((p) => tSlug(p.t, p.tu) === ts).sort((a, b) => b.g - a.g)[0];
+    const tpSlug = tPlayer ? pSlug(tPlayer.n, tPlayer.u) : "";
+    return new URLSearchParams({
       event: e.u,
       ...(evLg ? { league: evLg } : {}),
       ...(evYr ? { year: evYr } : {}),
-      team: tSlug(t.t, t.u),
+      team: ts,
+      ...(vsTeam ? { vs: vsTeam } : {}),
+      ...(tpSlug ? { player: tpSlug } : {}),
       ...(side ? { side } : {}),
     }).toString();
+  };
   const tStatLink = (t: EventTeamStats, node: React.ReactNode) =>
     node == null || node === "–" ? (
       "–"
     ) : (
       <HubLink
-        to={{ kind: "team", slug: tSlug(t.t, t.u), tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+        to={{ kind: "team", slug: tSlug(t.t, t.u), tab: "stats", query: tPageQuery(t) }}
         className="hover:text-rw-accent hover:underline"
         title={tl("Stats")}
       >
@@ -820,14 +847,17 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
       key: "t",
       label: tl("Team"),
       value: (t) => t.t.toLowerCase(),
-      render: (t) => (
-        <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "team", slug: tSlug(t.t, t.u), query: `p=e:${encodeURIComponent(e.u)}` }} className="shrink-0 hover:opacity-80" title={t.t}>
-            <TeamLogo name={t.t} size={15} />
-          </HubLink>
-          <TeamLink name={t.t} u={t.u} query={`p=e:${encodeURIComponent(e.u)}`} />
-        </span>
-      ),
+      render: (t) => {
+        const tq = tPageQuery(t);
+        return (
+          <span className="inline-flex items-center gap-1.5 min-w-0">
+            <HubLink to={{ kind: "team", slug: tSlug(t.t, t.u), query: tq }} className="shrink-0 hover:opacity-80" title={t.t}>
+              <TeamLogo name={t.t} size={15} />
+            </HubLink>
+            <TeamLink name={t.t} u={t.u} query={tq} />
+          </span>
+        );
+      },
     },
     {
       key: "g",
@@ -877,7 +907,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
         if (v == null) return "–";
         return (
           <HubLink
-            to={{ kind: "team", slug: tSlug(t.t, t.u), tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+            to={{ kind: "team", slug: tSlug(t.t, t.u), tab: "stats", query: tPageQuery(t) }}
             className={`hover:underline ${v >= 1.15 ? "text-rw-teal font-semibold" : v <= 0.85 ? "text-rw-red" : ""}`}
             title={tl("Stats")}
           >
@@ -929,7 +959,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
         const v = per(t.gd, t.g, 0) ?? 0;
         return (
           <HubLink
-            to={{ kind: "team", slug: tSlug(t.t, t.u), tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+            to={{ kind: "team", slug: tSlug(t.t, t.u), tab: "stats", query: tPageQuery(t) }}
             className={`hover:underline ${v >= 0 ? "text-rw-teal" : "text-rw-red"}`}
             title={tl("Stats")}
           >
@@ -957,10 +987,6 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
     [...rows, ...teams]
       .map((t) => tSlug(t.t, t.u))
       .find((s) => Boolean(s) && s !== topTeam0) || "";
-  const pair =
-    rows.length === 2 || (search.trim() && rows.length >= 2)
-      ? [tSlug(rows[0].t, rows[0].u), tSlug(rows[1].t, rows[1].u)]
-      : null;
   const evChamps = Array.from(new Set((e.champs || []).map((c) => resolveChampSlug(c.c)).filter(Boolean))).slice(0, 2);
   const teamPlayers = Array.from(
     new Set(

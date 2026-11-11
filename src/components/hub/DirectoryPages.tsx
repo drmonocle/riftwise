@@ -149,14 +149,17 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       key: "n",
       label: tl("Team"),
       value: (t) => t[0].toLowerCase(),
-      render: (t) => (
-        <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "team", slug: teamRowSlug(t), ...(since !== "all" ? { query: `p=y${encodeURIComponent(since)}` } : {}) }} title={t[0]} className="shrink-0">
-            <TeamLogo name={t[0]} code={(t[5] || "").split(" | ")[0] || undefined} size={16} />
-          </HubLink>
-          <TeamLink name={t[0]} u={teamRowSlug(t)} />
-        </span>
-      ),
+      render: (t) => {
+        const tq = since !== "all" ? `p=y${encodeURIComponent(since)}` : undefined;
+        return (
+          <span className="inline-flex items-center gap-1.5 min-w-0">
+            <HubLink to={{ kind: "team", slug: teamRowSlug(t), ...(tq ? { query: tq } : {}) }} title={t[0]} className="shrink-0">
+              <TeamLogo name={t[0]} code={(t[5] || "").split(" | ")[0] || undefined} size={16} />
+            </HubLink>
+            <TeamLink name={t[0]} u={teamRowSlug(t)} query={tq} />
+          </span>
+        );
+      },
     },
     {
       key: "c",
@@ -638,14 +641,21 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       key: "n",
       label: tl("Player"),
       value: (p) => p[0].toLowerCase(),
-      render: (p) => (
-        <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "player", slug: playerRowSlug(p), ...(since !== "all" ? { query: `p=y${encodeURIComponent(since)}` } : {}) }} title={p[0]} className="shrink-0">
-            <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={playerRowSlug(p)} size={18} />
-          </HubLink>
-          <PlayerLink name={p[0]} u={playerRowSlug(p)} />
-        </span>
-      ),
+      render: (p) => {
+        const pTeamSlug = p[2] ? teamSlugOf(p[2]) : "";
+        const pq = new URLSearchParams({
+          ...(since !== "all" ? { p: `y${since}` } : {}),
+          ...(pTeamSlug ? { team: pTeamSlug } : {}),
+        }).toString();
+        return (
+          <span className="inline-flex items-center gap-1.5 min-w-0">
+            <HubLink to={{ kind: "player", slug: playerRowSlug(p), ...(pq ? { query: pq } : {}) }} title={p[0]} className="shrink-0">
+              <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={playerRowSlug(p)} size={18} />
+            </HubLink>
+            <PlayerLink name={p[0]} u={playerRowSlug(p)} query={pq || undefined} />
+          </span>
+        );
+      },
     },
     {
       key: "r",
@@ -667,15 +677,21 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       key: "t",
       label: tl("Last team"),
       value: (p) => p[2] || null,
-      render: (p) =>
-        p[2] ? (
+      render: (p) => {
+        if (!p[2]) return null;
+        const tq = new URLSearchParams({
+          ...(since !== "all" ? { p: `y${since}` } : {}),
+          q: playerRowSlug(p),
+        }).toString();
+        return (
           <span className="inline-flex items-center gap-1.5 min-w-0">
-            <HubLink to={{ kind: "team", slug: teamSlugOf(p[2]), ...(since !== "all" ? { query: `p=y${encodeURIComponent(since)}` } : {}) }} title={p[2]} className="shrink-0">
+            <HubLink to={{ kind: "team", slug: teamSlugOf(p[2]), ...(tq ? { query: tq } : {}) }} title={p[2]} className="shrink-0">
               <TeamLogo name={p[2]} size={15} />
             </HubLink>
-            <TeamLink name={p[2]} u={teamSlugOf(p[2])} />
+            <TeamLink name={p[2]} u={teamSlugOf(p[2])} query={tq || undefined} />
           </span>
-        ) : null,
+        );
+      },
       className: "text-rw-sub max-w-[12rem] truncate",
     },
     {
@@ -726,12 +742,19 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       key: "real",
       label: tl("Name"),
       value: (p) => p[6] || null,
-      render: (p) =>
-        p[6] ? (
-          <HubLink to={{ kind: "player", slug: playerRowSlug(p), ...(since !== "all" ? { query: `p=y${encodeURIComponent(since)}` } : {}) }} className="hover:text-rw-accent hover:underline">
+      render: (p) => {
+        if (!p[6]) return null;
+        const pTeamSlug = p[2] ? teamSlugOf(p[2]) : "";
+        const pq = new URLSearchParams({
+          ...(since !== "all" ? { p: `y${since}` } : {}),
+          ...(pTeamSlug ? { team: pTeamSlug } : {}),
+        }).toString();
+        return (
+          <HubLink to={{ kind: "player", slug: playerRowSlug(p), ...(pq ? { query: pq } : {}) }} className="hover:text-rw-accent hover:underline">
             {p[6]}
           </HubLink>
-        ) : null,
+        );
+      },
       className: "text-rw-muted max-w-[12rem] truncate",
     },
     {
