@@ -1727,11 +1727,11 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <HubLink
                     to={{
                       kind: "items",
-                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${
-                        blue[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}` : ""
-                      }${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
-                        period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""
-                      }`,
+                      query: `${blue[0]?.u ? `player=${encodeURIComponent(blue[0].u)}&` : ""}team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${
+                        blue[0]?.r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""
+                      }${blue[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}` : ""}${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${
+                        eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""
+                      }${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -1740,7 +1740,11 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${
+                        blue[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}` : ""
+                      }${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
+                        period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""
+                      }`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -1883,9 +1887,11 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <HubLink
                     to={{
                       kind: "items",
-                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${
-                        lanes[0]?.b?.c ? `&champ=${encodeURIComponent(resolveChampSlug(lanes[0].b.c))}` : ""
-                      }${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
+                      query: `${lanes[0]?.b?.u ? `player=${encodeURIComponent(lanes[0].b.u)}&` : ""}team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}&role=${encodeURIComponent(
+                        normalizeRole(lanes[0].r),
+                      )}${lanes[0]?.b?.c ? `&champ=${encodeURIComponent(resolveChampSlug(lanes[0].b.c))}` : ""}${
+                        g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""
+                      }${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
                         period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""
                       }`,
                     }}
@@ -1896,7 +1902,11 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                      query: `team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}&role=${encodeURIComponent(normalizeRole(lanes[0].r))}${
+                        lanes[0]?.b?.c ? `&champ=${encodeURIComponent(resolveChampSlug(lanes[0].b.c))}` : ""
+                      }${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
+                        period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""
+                      }`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -2272,7 +2282,11 @@ const Scoreboard: React.FC<{
             <HubLink
               to={{
                 kind: "items",
-                query: `team=${encodeURIComponent(u)}${oppU ? `&vs=${encodeURIComponent(oppU)}` : ""}${players[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(players[0].c))}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                query: `${players[0]?.u ? `player=${encodeURIComponent(players[0].u)}&` : ""}team=${encodeURIComponent(u)}${oppU ? `&vs=${encodeURIComponent(oppU)}` : ""}${
+                  players[0]?.r ? `&role=${encodeURIComponent(normalizeRole(players[0].r))}` : ""
+                }${players[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(players[0].c))}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${
+                  eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""
+                }${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -2295,7 +2309,11 @@ const Scoreboard: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `team=${encodeURIComponent(u)}${oppU ? `&vs=${encodeURIComponent(oppU)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                query: `team=${encodeURIComponent(u)}${oppU ? `&vs=${encodeURIComponent(oppU)}` : ""}${
+                  players[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(players[0].c))}` : ""
+                }${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
+                  period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""
+                }`,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >

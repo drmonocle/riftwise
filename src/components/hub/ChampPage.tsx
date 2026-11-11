@@ -333,6 +333,33 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
           }
           aside={
             <div className="flex flex-wrap gap-2 md:justify-end">
+              {c.recent[0]?.team && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: teamSlug(c.recent[0].team),
+                      ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                      ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : qYear ? { period: `y${qYear}` } : {}),
+                    }}
+                    className={heroBtn()}
+                  >
+                    {tl("Match prep")}
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: teamSlug(c.recent[0].team),
+                      ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                      ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : qYear ? { period: `y${qYear}` } : {}),
+                    }}
+                    className={heroBtn()}
+                  >
+                    {tl("Compare")}
+                  </HubLink>
+                </>
+              )}
               <CountersLink slug={c.u} role={c.roles[0]?.r} patch={qPatch} year={qYear} event={qEvent} className={heroBtn(true)} />
               <HubLink
                 to={{
@@ -350,7 +377,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `champ=${encodeURIComponent(cSlug)}${qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""}`,
+                  query: `champ=${encodeURIComponent(cSlug)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${
+                    c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                  }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                    qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""
+                  }`,
                 }}
                 className={heroBtn()}
               >
@@ -359,7 +390,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               <HubLink
                 to={{
                   kind: "items",
-                  query: `champ=${encodeURIComponent(cSlug)}${qEvent ? `&event=${encodeURIComponent(qEvent)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""}`,
+                  query: `champ=${encodeURIComponent(cSlug)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${
+                    c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                  }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                    qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""
+                  }`,
                 }}
                 className={heroBtn()}
               >
@@ -369,6 +404,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 to={{
                   kind: "draft",
                   query: new URLSearchParams({
+                    ...(c.recent[0]?.team
+                      ? {
+                          teams: `${teamSlug(c.recent[0].team)}${c.recent[0].opp ? `,${teamSlug(c.recent[0].opp)}` : ""}`,
+                        }
+                      : {}),
                     champ: c.u,
                     ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                     ...(qEvent ? { p: `e:${qEvent}` } : qPatch ? { p: `p:${qPatch}` } : qYear ? { p: `y${qYear}` } : {}),
@@ -471,6 +511,33 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   ))}
                 </span>
               )}
+              {c.recent[0]?.team && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: teamSlug(c.recent[0].team),
+                      ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                      ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : qYear ? { period: `y${qYear}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: teamSlug(c.recent[0].team),
+                      ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                      ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : qYear ? { period: `y${qYear}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
               <HubLink
                 to={{
                   kind: "items",
@@ -480,6 +547,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       : items[0]
                         ? `&item=${encodeURIComponent(resolveItemSlug(items[0][0]))}`
                         : ""
+                  }${buildRole || c.roles[0]?.r ? `&role=${encodeURIComponent(buildRole || c.roles[0].r)}` : ""}${
+                    c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                  }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                    qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""
                   }`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -491,7 +562,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   kind: "counters",
                   query: `champ=${encodeURIComponent(c.u)}${
                     buildRole || c.roles[0]?.r ? `&role=${encodeURIComponent(buildRole || c.roles[0].r)}` : ""
-                  }${qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&patch=y${encodeURIComponent(qYear)}&year=${encodeURIComponent(qYear)}` : ""}`,
+                  }${qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&patch=y${encodeURIComponent(qYear)}&year=${encodeURIComponent(qYear)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -501,7 +572,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 to={{
                   kind: "tiers",
                   query: new URLSearchParams({
-                    ...(qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
+                    ...(qEvent ? { event: qEvent } : qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
                     ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
                     q: c.u,
                   }).toString(),
@@ -514,9 +585,14 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 to={{
                   kind: "draft",
                   query: new URLSearchParams({
+                    ...(c.recent[0]?.team
+                      ? {
+                          teams: `${teamSlug(c.recent[0].team)}${c.recent[0].opp ? `,${teamSlug(c.recent[0].opp)}` : ""}`,
+                        }
+                      : {}),
                     champ: c.u,
                     ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
-                    ...(qPatch ? { p: `p:${qPatch}` } : qYear ? { p: `y${qYear}` } : {}),
+                    ...(qEvent ? { p: `e:${qEvent}` } : qPatch ? { p: `p:${qPatch}` } : qYear ? { p: `y${qYear}` } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -524,7 +600,14 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 {tl("Draft board")} →
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `champ=${encodeURIComponent(cSlug)}${buildRole ? `&role=${encodeURIComponent(buildRole)}` : ""}${qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""}` }}
+                to={{
+                  kind: "finder",
+                  query: `champ=${encodeURIComponent(cSlug)}${
+                    buildRole || c.roles[0]?.r ? `&role=${encodeURIComponent(buildRole || c.roles[0].r)}` : ""
+                  }${c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""}${
+                    c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""
+                  }${qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""}`,
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
@@ -535,7 +618,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   query: new URLSearchParams({
                     champ: cSlug,
                     ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
-                    ...(qYear ? { year: qYear } : {}),
+                    ...(qEvent ? { event: qEvent } : qYear ? { year: qYear } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -545,7 +628,13 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               <HubLink
                 to={{
                   kind: "rankings",
-                  ...(c.recent[0]?.team ? { query: `q=${encodeURIComponent(teamSlug(c.recent[0].team))}` } : {}),
+                  ...(c.recent[0]?.team
+                    ? {
+                        query: `q=${encodeURIComponent(teamSlug(c.recent[0].team))}${
+                          c.recent[0].opp ? `,${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""
+                        }`,
+                      }
+                    : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -732,10 +821,37 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 const hit = terms.length ? muRows.find(([oc]) => terms.some((t) => matchesChampSearch(oc, t))) : undefined;
                 return (
                   <>
+                    {c.recent[0]?.team && (
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: teamSlug(c.recent[0].team),
+                            ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                            ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : qYear ? { period: `y${qYear}` } : {}),
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "compare",
+                            mode: "team",
+                            a: teamSlug(c.recent[0].team),
+                            ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                            ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : qYear ? { period: `y${qYear}` } : {}),
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Compare")} →
+                        </HubLink>
+                      </>
+                    )}
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(c.u)}${hit ? `&vs=${encodeURIComponent(resolveChampSlug(hit[0]))}` : ""}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}${qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&patch=y${encodeURIComponent(qYear)}&year=${encodeURIComponent(qYear)}` : ""}`,
+                        query: `champ=${encodeURIComponent(c.u)}${hit ? `&vs=${encodeURIComponent(resolveChampSlug(hit[0]))}` : ""}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}${qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&patch=y${encodeURIComponent(qYear)}&year=${encodeURIComponent(qYear)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -744,7 +860,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `champ=${encodeURIComponent(c.u)}${qYear ? `&year=${encodeURIComponent(qYear)}` : ""}`,
+                        query: `champ=${encodeURIComponent(c.u)}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}${
+                          c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                        }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                          qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""
+                        }`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -754,7 +874,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          ...(qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
+                          ...(qEvent ? { event: qEvent } : qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
                           ...(muRole ? { role: muRole } : {}),
                           q: hit ? `${c.u},${resolveChampSlug(hit[0])}` : c.u,
                         }).toString(),
@@ -767,9 +887,14 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       to={{
                         kind: "draft",
                         query: new URLSearchParams({
+                          ...(c.recent[0]?.team
+                            ? {
+                                teams: `${teamSlug(c.recent[0].team)}${c.recent[0].opp ? `,${teamSlug(c.recent[0].opp)}` : ""}`,
+                              }
+                            : {}),
                           champ: c.u,
                           ...(muRole ? { role: muRole } : {}),
-                          ...(qPatch ? { p: `p:${qPatch}` } : qYear ? { p: `y${qYear}` } : {}),
+                          ...(qEvent ? { p: `e:${qEvent}` } : qPatch ? { p: `p:${qPatch}` } : qYear ? { p: `y${qYear}` } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
@@ -779,7 +904,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `champ=${encodeURIComponent(cSlug)}${hit ? `&vschamp=${encodeURIComponent(resolveChampSlug(hit[0]))}` : ""}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}${qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""}`,
+                        query: `champ=${encodeURIComponent(cSlug)}${hit ? `&vschamp=${encodeURIComponent(resolveChampSlug(hit[0]))}` : ""}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}${
+                          c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                        }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                          qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""
+                        }`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -791,7 +920,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         query: new URLSearchParams({
                           champ: cSlug,
                           ...(muRole ? { role: muRole } : {}),
-                          ...(qYear ? { year: qYear } : {}),
+                          ...(qEvent ? { event: qEvent } : qYear ? { year: qYear } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -801,7 +930,13 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(c.recent[0]?.team ? { query: `q=${encodeURIComponent(teamSlug(c.recent[0].team))}` } : {}),
+                        ...(c.recent[0]?.team
+                          ? {
+                              query: `q=${encodeURIComponent(teamSlug(c.recent[0].team))}${
+                                c.recent[0].opp ? `,${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""
+                              }`,
+                            }
+                          : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1095,11 +1230,38 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 const topDuo = duos[0] || allDuos[0];
                 return (
                   <>
+                    {c.recent[0]?.team && (
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: teamSlug(c.recent[0].team),
+                            ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                            ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : qYear ? { period: `y${qYear}` } : {}),
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "compare",
+                            mode: "team",
+                            a: teamSlug(c.recent[0].team),
+                            ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                            ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : qYear ? { period: `y${qYear}` } : {}),
+                          }}
+                          className="text-[11px] text-rw-accent hover:underline"
+                        >
+                          {tl("Compare")} →
+                        </HubLink>
+                      </>
+                    )}
                     {topDuo && (
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(c.u)}&vs=${encodeURIComponent(resolveChampSlug(topDuo[0]))}${qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&patch=y${encodeURIComponent(qYear)}&year=${encodeURIComponent(qYear)}` : ""}`,
+                          query: `champ=${encodeURIComponent(c.u)}&vs=${encodeURIComponent(resolveChampSlug(topDuo[0]))}&role=Bot${qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&patch=y${encodeURIComponent(qYear)}&year=${encodeURIComponent(qYear)}` : ""}`,
                         }}
                         className="text-[11px] text-rw-accent hover:underline"
                       >
@@ -1107,13 +1269,27 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       </HubLink>
                     )}
                     <HubLink
-                      to={{ kind: "items", query: `champ=${encodeURIComponent(cSlug)}${qYear ? `&year=${encodeURIComponent(qYear)}` : ""}` }}
+                      to={{
+                        kind: "items",
+                        query: `champ=${encodeURIComponent(cSlug)}&role=Bot${
+                          c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                        }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                          qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""
+                        }`,
+                      }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Item history")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft", query: `champ=${encodeURIComponent(c.u)}&role=Bot${qPatch ? `&p=p:${encodeURIComponent(qPatch)}` : qYear ? `&p=y${encodeURIComponent(qYear)}` : ""}` }}
+                      to={{
+                        kind: "draft",
+                        query: `${
+                          c.recent[0]?.team
+                            ? `teams=${encodeURIComponent(teamSlug(c.recent[0].team))}${c.recent[0].opp ? `,${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}&`
+                            : ""
+                        }champ=${encodeURIComponent(c.u)}&role=Bot${qEvent ? `&p=e:${encodeURIComponent(qEvent)}` : qPatch ? `&p=p:${encodeURIComponent(qPatch)}` : qYear ? `&p=y${encodeURIComponent(qYear)}` : ""}`,
+                      }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
@@ -1123,7 +1299,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         kind: "tiers",
                         query: new URLSearchParams({
                           role: "Bot",
-                          ...(qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
+                          ...(qEvent ? { event: qEvent } : qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
                           q: topDuo ? `${c.u},${resolveChampSlug(topDuo[0])}` : c.u,
                         }).toString(),
                       }}
@@ -1134,7 +1310,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `champ=${encodeURIComponent(topDuo ? `${cSlug},${resolveChampSlug(topDuo[0])}` : cSlug)}${qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""}`,
+                        query: `champ=${encodeURIComponent(topDuo ? `${cSlug},${resolveChampSlug(topDuo[0])}` : cSlug)}&role=Bot${
+                          c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                        }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                          qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""
+                        }`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -1146,7 +1326,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         query: new URLSearchParams({
                           champ: cSlug,
                           role: "Bot",
-                          ...(qYear ? { year: qYear } : {}),
+                          ...(qEvent ? { event: qEvent } : qYear ? { year: qYear } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
@@ -1154,7 +1334,16 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       {tl("Player leaderboards")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "rankings" }}
+                      to={{
+                        kind: "rankings",
+                        ...(c.recent[0]?.team
+                          ? {
+                              query: `q=${encodeURIComponent(teamSlug(c.recent[0].team))}${
+                                c.recent[0].opp ? `,${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""
+                              }`,
+                            }
+                          : {}),
+                      }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
@@ -1322,11 +1511,23 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       {tl("Compare")} →
                     </HubLink>
                   )}
-                  {pList.length >= 1 && pList[0].u && (
+                  {pList.length >= 1 && (
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(pList[0].u)}&champ=${encodeURIComponent(cSlug)}${!playersRecent && qEvent ? `&event=${encodeURIComponent(qEvent)}` : !playersRecent && qYear ? `&year=${encodeURIComponent(qYear)}` : ""}`,
+                        query: `player=${encodeURIComponent(pList[0].u || resolvePlayerSlug(pList[0].n))}${
+                          t0 ? `&team=${encodeURIComponent(teamSlug(t0))}` : ""
+                        }${t1 && teamSlug(t1) !== teamSlug(t0) ? `&vs=${encodeURIComponent(teamSlug(t1))}` : ""}${
+                          c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""
+                        }&champ=${encodeURIComponent(cSlug)}${
+                          !playersRecent && qEvent
+                            ? `&event=${encodeURIComponent(qEvent)}`
+                            : !playersRecent && qPatch
+                              ? `&patch=${encodeURIComponent(qPatch)}`
+                              : !playersRecent && qYear
+                                ? `&year=${encodeURIComponent(qYear)}`
+                                : ""
+                        }`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -1337,7 +1538,19 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `player=${encodeURIComponent(pList[0].u || resolvePlayerSlug(pList[0].n))}&champ=${encodeURIComponent(cSlug)}${!playersRecent && qEvent ? `&event=${encodeURIComponent(qEvent)}` : !playersRecent && qPatch ? `&patch=${encodeURIComponent(qPatch)}` : !playersRecent && qYear ? `&year=${encodeURIComponent(qYear)}` : ""}`,
+                        query: `player=${encodeURIComponent(pList[0].u || resolvePlayerSlug(pList[0].n))}${
+                          pList[1] ? `&vsplayer=${encodeURIComponent(pList[1].u || resolvePlayerSlug(pList[1].n))}` : ""
+                        }${t0 ? `&team=${encodeURIComponent(teamSlug(t0))}` : ""}${
+                          t1 && teamSlug(t1) !== teamSlug(t0) ? `&vs=${encodeURIComponent(teamSlug(t1))}` : ""
+                        }${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}&champ=${encodeURIComponent(cSlug)}${
+                          !playersRecent && qEvent
+                            ? `&event=${encodeURIComponent(qEvent)}`
+                            : !playersRecent && qPatch
+                              ? `&patch=${encodeURIComponent(qPatch)}`
+                              : !playersRecent && qYear
+                                ? `&year=${encodeURIComponent(qYear)}`
+                                : ""
+                        }`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -1351,7 +1564,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         champ: cSlug,
                         ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                         ...(!playersRecent && qEvent ? { event: qEvent } : !playersRecent && qYear ? { year: qYear } : {}),
-                        ...(playerSearch.trim() && pList[0]
+                        ...(pList[0]
                           ? {
                               q: `${pList[0].u || resolvePlayerSlug(pList[0].n)}${pList[1] ? `,${pList[1].u || resolvePlayerSlug(pList[1].n)}` : ""}`,
                             }
@@ -1384,7 +1597,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(playerSearch.trim() && t0
+                      ...(t0
                         ? { query: `q=${encodeURIComponent(teamSlug(t0))}${t1 && teamSlug(t1) !== teamSlug(t0) ? `,${encodeURIComponent(teamSlug(t1))}` : ""}` }
                         : {}),
                     }}
@@ -1610,9 +1823,15 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `champ=${encodeURIComponent(cSlug)}${
-                          usedOnly?.kind === "item" ? `&item=${encodeURIComponent(resolveItemSlug(usedOnly.v))}` : ""
-                        }${r0Year ? `&year=${encodeURIComponent(r0Year)}` : ""}`,
+                        query: new URLSearchParams({
+                          champ: cSlug,
+                          ...(usedOnly?.kind === "item" ? { item: resolveItemSlug(usedOnly.v) } : {}),
+                          ...(r0 ? { player: r0.u || resolvePlayerSlug(r0.n) } : {}),
+                          ...(r0?.team ? { team: teamSlug(r0.team) } : {}),
+                          ...(r0?.opp ? { vs: teamSlug(r0.opp) } : {}),
+                          ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
+                          ...(r0Year ? { year: r0Year } : {}),
+                        }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -1638,7 +1857,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           champ: cSlug,
                           ...(r0Year ? { year: r0Year } : {}),
                           ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
-                          ...(recentSearch.trim() && r0 ? { q: r0.u || resolvePlayerSlug(r0.n) } : {}),
+                          ...(r0 ? { q: r0.u || resolvePlayerSlug(r0.n) } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
@@ -1650,7 +1869,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         kind: "finder",
                         query: new URLSearchParams({
                           champ: cSlug,
-                          ...(recentSearch.trim() && r0 ? { player: r0.u || resolvePlayerSlug(r0.n) } : {}),
+                          ...(r0 ? { player: r0.u || resolvePlayerSlug(r0.n) } : {}),
+                          ...(r0?.team ? { team: teamSlug(r0.team) } : {}),
+                          ...(r0?.opp ? { vs: teamSlug(r0.opp) } : {}),
+                          ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
                           ...(r0Year ? { year: r0Year } : {}),
                         }).toString(),
                       }}
@@ -1821,7 +2043,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `teams=${encodeURIComponent(teamSlug(r.team))},${encodeURIComponent(teamSlug(r.opp))}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
+                            query: `teams=${encodeURIComponent(teamSlug(r.team))},${encodeURIComponent(teamSlug(r.opp))}&champ=${encodeURIComponent(c.u)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
                           }}
                           className="hidden md:inline text-[10px] hover:text-rw-accent hover:underline"
                         >
@@ -1829,8 +2051,21 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         </HubLink>
                         <HubLink
                           to={{
+                            kind: "items",
+                            query: `player=${encodeURIComponent(r.u || resolvePlayerSlug(r.n))}&team=${encodeURIComponent(teamSlug(r.team))}&vs=${encodeURIComponent(teamSlug(r.opp))}${
+                              buildRole || c.roles[0]?.r ? `&role=${encodeURIComponent(buildRole || c.roles[0].r)}` : ""
+                            }&champ=${encodeURIComponent(cSlug)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
+                          }}
+                          className="hidden md:inline text-[10px] hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Item history")}
+                        </HubLink>
+                        <HubLink
+                          to={{
                             kind: "finder",
-                            query: `team=${encodeURIComponent(teamSlug(r.team))}&vs=${encodeURIComponent(teamSlug(r.opp))}&champ=${encodeURIComponent(cSlug)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
+                            query: `player=${encodeURIComponent(r.u || resolvePlayerSlug(r.n))}&team=${encodeURIComponent(teamSlug(r.team))}&vs=${encodeURIComponent(teamSlug(r.opp))}${
+                              buildRole || c.roles[0]?.r ? `&role=${encodeURIComponent(buildRole || c.roles[0].r)}` : ""
+                            }&champ=${encodeURIComponent(cSlug)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
                           }}
                           className="hidden md:inline text-[10px] hover:text-rw-accent hover:underline"
                         >
@@ -1857,7 +2092,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         key={j}
                         to={{
                           kind: "items",
-                          query: `item=${encodeURIComponent(resolveItemSlug(it))}&champ=${encodeURIComponent(cSlug)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
+                          query: `item=${encodeURIComponent(resolveItemSlug(it))}&player=${encodeURIComponent(r.u || resolvePlayerSlug(r.n))}${
+                            r.team ? `&team=${encodeURIComponent(teamSlug(r.team))}` : ""
+                          }${r.opp ? `&vs=${encodeURIComponent(teamSlug(r.opp))}` : ""}${
+                            buildRole || c.roles[0]?.r ? `&role=${encodeURIComponent(buildRole || c.roles[0].r)}` : ""
+                          }&champ=${encodeURIComponent(cSlug)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
                         }}
                         title={itemName(it)}
                       >
@@ -1945,14 +2184,21 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(c.u)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&patch=y${encodeURIComponent(qYear)}&year=${encodeURIComponent(qYear)}` : ""}`,
+                  query: `champ=${encodeURIComponent(c.u)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&patch=y${encodeURIComponent(qYear)}&year=${encodeURIComponent(qYear)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Counters")} →
               </HubLink>
               <HubLink
-                to={{ kind: "items", query: `champ=${encodeURIComponent(cSlug)}${qYear ? `&year=${encodeURIComponent(qYear)}` : ""}` }}
+                to={{
+                  kind: "items",
+                  query: `champ=${encodeURIComponent(cSlug)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${
+                    c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                  }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                    qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""
+                  }`,
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Item history")} →
@@ -1961,7 +2207,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 to={{
                   kind: "tiers",
                   query: new URLSearchParams({
-                    ...(qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
+                    ...(qEvent ? { event: qEvent } : qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
                     ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                     q: c.u,
                   }).toString(),
@@ -1971,7 +2217,14 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `champ=${encodeURIComponent(cSlug)}${qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""}` }}
+                to={{
+                  kind: "finder",
+                  query: `champ=${encodeURIComponent(cSlug)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${
+                    c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                  }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                    qEvent ? `&event=${encodeURIComponent(qEvent)}` : qPatch ? `&patch=${encodeURIComponent(qPatch)}` : qYear ? `&year=${encodeURIComponent(qYear)}` : ""
+                  }`,
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
@@ -1982,7 +2235,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   query: new URLSearchParams({
                     champ: cSlug,
                     ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
-                    ...(qYear ? { year: qYear } : {}),
+                    ...(qEvent ? { event: qEvent } : qYear ? { year: qYear } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -2057,6 +2310,33 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
           right={
             <span className="flex flex-wrap items-center gap-2">
               {c.patches.length >= 3 && <PatchTrend patches={c.patches} />}
+              {c.recent[0]?.team && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: teamSlug(c.recent[0].team),
+                      ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                      ...(c.patches[0]?.p ? { period: `p:${c.patches[0].p}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: teamSlug(c.recent[0].team),
+                      ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                      ...(c.patches[0]?.p ? { period: `p:${c.patches[0].p}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
               <HubLink
                 to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${c.patches[0]?.p ? `&patch=${encodeURIComponent(c.patches[0].p)}` : ""}` }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -2064,7 +2344,14 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 {tl("Counters")} →
               </HubLink>
               <HubLink
-                to={{ kind: "items", query: `champ=${encodeURIComponent(cSlug)}` }}
+                to={{
+                  kind: "items",
+                  query: `champ=${encodeURIComponent(cSlug)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${
+                    c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                  }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                    c.patches[0]?.p ? `&patch=${encodeURIComponent(c.patches[0].p)}` : ""
+                  }`,
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Item history")} →
@@ -2086,7 +2373,13 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 to={{
                   kind: "draft",
                   query: new URLSearchParams({
+                    ...(c.recent[0]?.team
+                      ? {
+                          teams: `${teamSlug(c.recent[0].team)}${c.recent[0].opp ? `,${teamSlug(c.recent[0].opp)}` : ""}`,
+                        }
+                      : {}),
                     champ: c.u,
+                    ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                     ...(c.patches[0]?.p ? { p: `p:${c.patches[0].p}` } : {}),
                   }).toString(),
                 }}
@@ -2115,7 +2408,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `champ=${encodeURIComponent(cSlug)}${c.patches[0]?.p ? `&patch=${encodeURIComponent(c.patches[0].p)}` : ""}`,
+                  query: `champ=${encodeURIComponent(cSlug)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${
+                    c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                  }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                    c.patches[0]?.p ? `&patch=${encodeURIComponent(c.patches[0].p)}` : ""
+                  }`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -2134,7 +2431,16 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings" }}
+                to={{
+                  kind: "rankings",
+                  ...(c.recent[0]?.team
+                    ? {
+                        query: `q=${encodeURIComponent(teamSlug(c.recent[0].team))}${
+                          c.recent[0].opp ? `,${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""
+                        }`,
+                      }
+                    : {}),
+                }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Power rankings")} →
@@ -2209,6 +2515,33 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               const latestY = c.years[c.years.length - 1]?.y;
               return (
                 <>
+                  {c.recent[0]?.team && (
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "prep",
+                          a: teamSlug(c.recent[0].team),
+                          ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                          ...(latestY ? { period: `y${latestY}` } : {}),
+                        }}
+                        className="text-[11px] text-rw-accent hover:underline"
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "compare",
+                          mode: "team",
+                          a: teamSlug(c.recent[0].team),
+                          ...(c.recent[0].opp ? { b: teamSlug(c.recent[0].opp) } : {}),
+                          ...(latestY ? { period: `y${latestY}` } : {}),
+                        }}
+                        className="text-[11px] text-rw-accent hover:underline"
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  )}
                   <HubLink
                     to={{ kind: "counters", query: `champ=${encodeURIComponent(c.u)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${latestY ? `&patch=y${encodeURIComponent(latestY)}&year=${encodeURIComponent(latestY)}` : ""}` }}
                     className="text-[11px] text-rw-accent hover:underline"
@@ -2218,7 +2551,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   <HubLink
                     to={{
                       kind: "items",
-                      query: `champ=${encodeURIComponent(cSlug)}${latestY ? `&year=${encodeURIComponent(latestY)}` : ""}`,
+                      query: `champ=${encodeURIComponent(cSlug)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${
+                        c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                      }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                        latestY ? `&year=${encodeURIComponent(latestY)}` : ""
+                      }`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -2241,7 +2578,13 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     to={{
                       kind: "draft",
                       query: new URLSearchParams({
+                        ...(c.recent[0]?.team
+                          ? {
+                              teams: `${teamSlug(c.recent[0].team)}${c.recent[0].opp ? `,${teamSlug(c.recent[0].opp)}` : ""}`,
+                            }
+                          : {}),
                         champ: c.u,
+                        ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                         ...(latestY ? { p: `y${latestY}` } : {}),
                       }).toString(),
                     }}
@@ -2264,7 +2607,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `champ=${encodeURIComponent(cSlug)}${latestY ? `&year=${encodeURIComponent(latestY)}` : ""}`,
+                      query: `champ=${encodeURIComponent(cSlug)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}${
+                        c.recent[0]?.team ? `&team=${encodeURIComponent(teamSlug(c.recent[0].team))}` : ""
+                      }${c.recent[0]?.opp ? `&vs=${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""}${
+                        latestY ? `&year=${encodeURIComponent(latestY)}` : ""
+                      }`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -2284,7 +2631,16 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     {tl("Player leaderboards")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "rankings" }}
+                    to={{
+                      kind: "rankings",
+                      ...(c.recent[0]?.team
+                        ? {
+                            query: `q=${encodeURIComponent(teamSlug(c.recent[0].team))}${
+                              c.recent[0].opp ? `,${encodeURIComponent(teamSlug(c.recent[0].opp))}` : ""
+                            }`,
+                          }
+                        : {}),
+                    }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
