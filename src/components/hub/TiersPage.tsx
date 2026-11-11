@@ -430,6 +430,8 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                   ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                   ...(canonEvSlug ? { event: canonEvSlug } : {}),
                   ...(role ? { role } : {}),
+                  ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
+                  ...(secondChamp ? { vschamp: resolveChampSlug(secondChamp.c) } : {}),
                 }).toString(),
               }}
               className="hover:text-rw-accent hover:underline"
@@ -607,8 +609,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                         {tier.t}
                       </span>
                       <span className={`flex flex-wrap ${role ? "gap-2" : "gap-1"} min-w-0 flex-1`}>
-                        {list.map((c) =>
-                          role ? (
+                        {list.map((c) => {
+                          const peerChamp = (byRole.get(r) || []).find((x) => x.c !== c.c);
+                          const peerCSlug = peerChamp ? resolveChampSlug(peerChamp.c) : "";
+                          return role ? (
                             <div
                               key={c.c}
                               className="flex flex-col gap-1 rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-1.5 text-xs hover:border-rw-accent/60"
@@ -621,6 +625,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                     query: new URLSearchParams({
                                       ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { p: `p:${key.slice(1)}` } : key.startsWith("y") ? { p: key } : {}),
                                       role: r,
+                                      ...(peerCSlug ? { vschamp: peerCSlug } : {}),
                                     }).toString(),
                                   }}
                                   className="flex items-center gap-2 font-semibold text-rw-text hover:text-rw-accent"
@@ -633,6 +638,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                     kind: "finder",
                                     query: new URLSearchParams({
                                       champ: resolveChampSlug(c.c),
+                                      ...(champFilter.trim() && peerCSlug ? { vschamp: peerCSlug } : {}),
                                       role: r,
                                       ...(isLeague ? { league: rawScope } : {}),
                                       ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
@@ -654,9 +660,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                     kind: "counters",
                                     query: new URLSearchParams({
                                       champ: resolveChampSlug(c.c),
-                                      ...((byRole.get(r) || []).find((x) => x.c !== c.c)
-                                        ? { vs: resolveChampSlug((byRole.get(r) || []).find((x) => x.c !== c.c)!.c) }
-                                        : {}),
+                                      ...(peerCSlug ? { vs: peerCSlug } : {}),
                                       role: r,
                                       ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { patch: key, year: key.slice(1) } : {}),
                                     }).toString(),
@@ -670,9 +674,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                     kind: "items",
                                     query: new URLSearchParams({
                                       champ: resolveChampSlug(c.c),
-                                      ...((byRole.get(r) || []).find((x) => x.c !== c.c)
-                                        ? { vschamp: resolveChampSlug((byRole.get(r) || []).find((x) => x.c !== c.c)!.c) }
-                                        : {}),
+                                      ...(peerCSlug ? { vschamp: peerCSlug } : {}),
                                       role: r,
                                       ...(isLeague ? { league: rawScope } : {}),
                                       ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
@@ -690,6 +692,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                       kind: "finder",
                                       query: new URLSearchParams({
                                         champ: resolveChampSlug(c.c),
+                                        ...(champFilter.trim() && peerCSlug ? { vschamp: peerCSlug } : {}),
                                         role: r,
                                         ...(isLeague ? { league: rawScope } : {}),
                                         ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
@@ -719,6 +722,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                 query: new URLSearchParams({
                                   ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { p: `p:${key.slice(1)}` } : key.startsWith("y") ? { p: key } : {}),
                                   role: r,
+                                  ...(peerCSlug ? { vschamp: peerCSlug } : {}),
                                 }).toString(),
                               }}
                               className="block rounded hover:ring-1 hover:ring-rw-accent"
@@ -728,8 +732,8 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                             >
                               <ChampIcon name={c.c} size={30} />
                             </HubLink>
-                          ),
-                        )}
+                          );
+                        })}
                       </span>
                     </div>
                   );

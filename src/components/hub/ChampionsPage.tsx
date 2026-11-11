@@ -405,13 +405,20 @@ const LeagueTable: React.FC<{
   }, [result.rows, emerging, vs, search]);
   const maxLPicks = Math.max(1, ...result.rows.map((r) => r.p || 0));
   const maxLBans = Math.max(1, ...result.rows.map((r) => r.b || 0));
-  const champQuery = (cRole?: number) =>
-    new URLSearchParams({
-      ...(canonEventSlug ? { event: canonEventSlug } : patchQ ? { p: `p:${patchQ}` } : year ? { p: `y${year}` } : {}),
-      ...(roleQ ? { role: roleQ } : cRole != null && cRole >= 0 ? { role: ROLES[cRole] } : {}),
-    }).toString() || undefined;
+  const champQuery = (cRole?: number, curSlug?: string) => {
+    const otherSlug = curSlug
+      ? shownRows.map((r) => resolveChampSlug(r.c)).find((s) => Boolean(s) && s !== curSlug)
+      : undefined;
+    return (
+      new URLSearchParams({
+        ...(canonEventSlug ? { event: canonEventSlug } : patchQ ? { p: `p:${patchQ}` } : year ? { p: `y${year}` } : {}),
+        ...(roleQ ? { role: roleQ } : cRole != null && cRole >= 0 ? { role: ROLES[cRole] } : {}),
+        ...(otherSlug ? { vschamp: otherSlug } : {}),
+      }).toString() || undefined
+    );
+  };
   const cols: Column<LRow>[] = [
-    { key: "c", label: tl("Champion"), value: (c) => champName(c.c), render: (c) => <ChampLink name={c.c} size={18} query={champQuery(c.role)} /> },
+    { key: "c", label: tl("Champion"), value: (c) => champName(c.c), render: (c) => <ChampLink name={c.c} size={18} query={champQuery(c.role, resolveChampSlug(c.c))} /> },
     {
       key: "role",
       label: tl("Role"),
@@ -530,7 +537,7 @@ const LeagueTable: React.FC<{
         c.kda == null ? (
           "–"
         ) : (
-          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: champQuery(c.role) }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: champQuery(c.role, resolveChampSlug(c.c)) }} className="hover:text-rw-accent hover:underline">
             {fmtDec(c.kda, 2)}
           </HubLink>
         ),
@@ -544,7 +551,7 @@ const LeagueTable: React.FC<{
         c.blind == null ? (
           "–"
         ) : (
-          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: champQuery(c.role) }} className="inline-flex flex-col gap-0.5 min-w-[3rem] tabular-nums hover:text-rw-accent">
+          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: champQuery(c.role, resolveChampSlug(c.c)) }} className="inline-flex flex-col gap-0.5 min-w-[3rem] tabular-nums hover:text-rw-accent">
             <span className="hover:underline">{pct(c.blind)}</span>
             <span className="h-1 w-10 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
               <span className="block h-full rounded-full bg-rw-accent/70" style={{ width: `${Math.max(4, Math.min(100, Math.round(c.blind * 100)))}%` }} />
@@ -589,7 +596,7 @@ const LeagueTable: React.FC<{
         c.csm == null ? (
           "–"
         ) : (
-          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: champQuery(c.role) }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: champQuery(c.role, resolveChampSlug(c.c)) }} className="hover:text-rw-accent hover:underline">
             {fmtDec(c.csm, 1)}
           </HubLink>
         ),
@@ -603,7 +610,7 @@ const LeagueTable: React.FC<{
         c.gpm == null ? (
           "–"
         ) : (
-          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: champQuery(c.role) }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: champQuery(c.role, resolveChampSlug(c.c)) }} className="hover:text-rw-accent hover:underline">
             {fmtNum(c.gpm)}
           </HubLink>
         ),
@@ -617,7 +624,7 @@ const LeagueTable: React.FC<{
         c.dpm == null ? (
           "–"
         ) : (
-          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: champQuery(c.role) }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: champQuery(c.role, resolveChampSlug(c.c)) }} className="hover:text-rw-accent hover:underline">
             {fmtNum(c.dpm)}
           </HubLink>
         ),
@@ -909,13 +916,20 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   }, [rows, emerging, thenBlock, search]);
   const maxOPicks = useMemo(() => Math.max(1, ...rows.map((r) => r.p || 0)), [rows]);
   const maxOBans = useMemo(() => Math.max(1, ...rows.map((r) => r.b || 0)), [rows]);
-  const overallChampQuery = (cRole?: string | null) =>
-    new URLSearchParams({
-      ...(key.startsWith("p") ? { p: `p:${key.slice(1)}` } : key.startsWith("y") ? { p: key } : {}),
-      ...(roleQ ? { role: roleQ } : cRole ? { role: cRole } : {}),
-    }).toString() || undefined;
+  const overallChampQuery = (cRole?: string | null, curSlug?: string) => {
+    const otherSlug = curSlug
+      ? shownRows.map((r) => resolveChampSlug(r.c)).find((s) => Boolean(s) && s !== curSlug)
+      : undefined;
+    return (
+      new URLSearchParams({
+        ...(key.startsWith("p") ? { p: `p:${key.slice(1)}` } : key.startsWith("y") ? { p: key } : {}),
+        ...(roleQ ? { role: roleQ } : cRole ? { role: cRole } : {}),
+        ...(otherSlug ? { vschamp: otherSlug } : {}),
+      }).toString() || undefined
+    );
+  };
   const cols: Column<Row>[] = [
-    { key: "c", label: tl("Champion"), value: (c) => champName(c.c), render: (c) => <ChampLink name={c.c} size={18} query={overallChampQuery(c.role)} /> },
+    { key: "c", label: tl("Champion"), value: (c) => champName(c.c), render: (c) => <ChampLink name={c.c} size={18} query={overallChampQuery(c.role, resolveChampSlug(c.c))} /> },
     {
       key: "role",
       label: tl("Role"),
@@ -1019,7 +1033,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
         c.kda == null ? (
           "–"
         ) : (
-          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: overallChampQuery(c.role) }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c), query: overallChampQuery(c.role, resolveChampSlug(c.c)) }} className="hover:text-rw-accent hover:underline">
             {fmtDec(c.kda, 2)}
           </HubLink>
         ),
@@ -1267,11 +1281,14 @@ const MetaSpotlight: React.FC<{
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
       {cards.map((item) => {
+        const curCSlug = resolveChampSlug(item.c);
+        const otherSpotSlug = cards.map((x) => resolveChampSlug(x.c)).find((s) => Boolean(s) && s !== curCSlug);
         const itemRole = role || (typeof item.r === "number" ? (item.r >= 0 ? ROLES[item.r] : "") : item.r || "");
         const itemChampQuery =
           new URLSearchParams({
             ...(canonEv ? { event: canonEv } : draftP ? { p: draftP } : {}),
             ...(itemRole ? { role: itemRole } : {}),
+            ...(otherSpotSlug ? { vschamp: otherSpotSlug } : {}),
           }).toString() || undefined;
         return (
         <div key={item.label} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2">
@@ -1283,14 +1300,14 @@ const MetaSpotlight: React.FC<{
           </div>
           <div className="text-right shrink-0">
             <HubLink
-              to={{ kind: "champ", slug: resolveChampSlug(item.c), query: itemChampQuery }}
+              to={{ kind: "champ", slug: curCSlug, query: itemChampQuery }}
               className={`font-mono font-bold tabular-nums hover:underline ${item.tone}`}
             >
               {item.val}
             </HubLink>
             {item.sub && (
               <div className="text-[10px] text-rw-muted font-mono">
-                <HubLink to={{ kind: "champ", slug: resolveChampSlug(item.c), query: itemChampQuery }} className="hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "champ", slug: curCSlug, query: itemChampQuery }} className="hover:text-rw-accent hover:underline">
                   {item.sub}
                 </HubLink>
                 {" · "}
@@ -1298,7 +1315,8 @@ const MetaSpotlight: React.FC<{
                   to={{
                     kind: "counters",
                     query: new URLSearchParams({
-                      champ: resolveChampSlug(item.c),
+                      champ: curCSlug,
+                      ...(otherSpotSlug ? { vs: otherSpotSlug } : {}),
                       ...(itemRole ? { role: itemRole } : {}),
                       ...(canonEv ? { event: canonEv } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
                     }).toString(),
@@ -1312,7 +1330,8 @@ const MetaSpotlight: React.FC<{
                   to={{
                     kind: "items",
                     query: new URLSearchParams({
-                      champ: resolveChampSlug(item.c),
+                      champ: curCSlug,
+                      ...(otherSpotSlug ? { vschamp: otherSpotSlug } : {}),
                       ...(itemRole ? { role: itemRole } : {}),
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),

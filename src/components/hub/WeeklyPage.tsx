@@ -212,18 +212,33 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
       <div className={`rw-span ${card}`}>
         <h1 className="text-lg font-bold text-rw-text">{tl("The week in pro League")}</h1>
         <p className="text-[11px] text-rw-sub">
-          <HubLink to={{ kind: "finder", ...(wy ? { query: `year=${encodeURIComponent(wy)}` } : {}) }} className="hover:text-rw-accent hover:underline">
-            {range}
-          </HubLink>{" "}
-          ·{" "}
-          <HubLink to={{ kind: "finder", ...(wy ? { query: `year=${encodeURIComponent(wy)}` } : {}) }} className="hover:text-rw-accent hover:underline">
-            {tn("{n} series", "{n} series", w.series)}
-          </HubLink>{" "}
-          ·{" "}
-          <HubLink to={{ kind: "finder", ...(wy ? { query: `year=${encodeURIComponent(wy)}` } : {}) }} className="hover:text-rw-accent hover:underline">
-            {tn("{n} game", "{n} games", w.games)}
-          </HubLink>{" "}
-          · {tl("top leagues and international events")}
+          {(() => {
+            const heroFinderQ = new URLSearchParams({
+              ...(wy ? { year: wy } : {}),
+              ...(w.upsets[0]
+                ? { team: teamSlug(w.upsets[0].w), vs: teamSlug(w.upsets[0].l) }
+                : w.best[0]
+                  ? { team: teamSlug(w.best[0].a), vs: teamSlug(w.best[0].b) }
+                  : {}),
+              ...(w.champs?.[0]?.[0] ? { champ: resolveChampSlug(w.champs[0][0]) } : {}),
+            }).toString();
+            return (
+              <>
+                <HubLink to={{ kind: "finder", ...(heroFinderQ ? { query: heroFinderQ } : {}) }} className="hover:text-rw-accent hover:underline">
+                  {range}
+                </HubLink>{" "}
+                ·{" "}
+                <HubLink to={{ kind: "finder", ...(heroFinderQ ? { query: heroFinderQ } : {}) }} className="hover:text-rw-accent hover:underline">
+                  {tn("{n} series", "{n} series", w.series)}
+                </HubLink>{" "}
+                ·{" "}
+                <HubLink to={{ kind: "finder", ...(heroFinderQ ? { query: heroFinderQ } : {}) }} className="hover:text-rw-accent hover:underline">
+                  {tn("{n} game", "{n} games", w.games)}
+                </HubLink>{" "}
+                · {tl("top leagues and international events")}
+              </>
+            );
+          })()}
         </p>
         <div className="flex flex-wrap items-center gap-1.5 mt-2">
           <BroadcastCardButton
@@ -590,7 +605,13 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         </HubLink>
                       </div>
                       <div className="text-[10px] text-rw-muted truncate">
-                        <EventLink name={u.t} u={u.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> ·{" "}
+                        <EventLink
+                          name={u.t}
+                          u={u.e}
+                          query={`q=${encodeURIComponent(`${teamSlug(u.w)},${teamSlug(u.l)}`)}`}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                        />{" "}
+                        ·{" "}
                         <HubLink to={{ kind: "match", slug: u.g }} className="hover:text-rw-accent hover:underline">
                           {fmtDate(u.date)}
                         </HubLink>
@@ -789,20 +810,28 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 const maxChg = Math.max(1, ...w.movers.map((m) => Math.abs(m.chg)));
                 return (
                   <ol className="text-xs space-y-1.5">
-                    {w.movers.map((m) => (
+                    {w.movers.map((m) => {
+                      const rivalMover = w.movers.find((x) => x.u !== m.u && x.lg === m.lg) || w.movers.find((x) => x.u !== m.u);
+                      const rivalMoverSlug = rivalMover?.u || "";
+                      const moverTeamQ = new URLSearchParams({
+                        ...(wy ? { p: `y${wy}` } : {}),
+                        ...(rivalMoverSlug ? { q: rivalMoverSlug } : {}),
+                      }).toString();
+                      const moverPairQ = [m.u, rivalMoverSlug].filter(Boolean).join(",");
+                      return (
                       <li key={m.u} className="space-y-0.5 min-w-0">
                         <div className="flex items-baseline justify-between gap-2 min-w-0">
                           <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                            <HubLink to={{ kind: "team", slug: m.u, ...(wy ? { query: `p=y${encodeURIComponent(wy)}` } : {}) }} title={m.n} className="shrink-0">
+                            <HubLink to={{ kind: "team", slug: m.u, ...(moverTeamQ ? { query: moverTeamQ } : {}) }} title={m.n} className="shrink-0">
                               <TeamLogo name={m.n} size={15} />
                             </HubLink>
-                            <TeamLink name={m.n} u={m.u} query={wy ? `p=y${encodeURIComponent(wy)}` : undefined} />{" "}
+                            <TeamLink name={m.n} u={m.u} query={moverTeamQ || undefined} />{" "}
                             <HubLink
                               to={{
                                 kind: "league",
                                 slug: resolveLeagueSlug(m.lg),
                                 ...(wy ? { year: wy } : {}),
-                                query: `q=${encodeURIComponent(m.u)}`,
+                                query: `q=${encodeURIComponent(moverPairQ)}`,
                               }}
                               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                             >
@@ -811,7 +840,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           </span>
                           <span className="font-num tabular-nums shrink-0">
                             <HubLink
-                              to={{ kind: "team", slug: m.u, tab: "matches", ...(wy ? { query: `p=y${encodeURIComponent(wy)}` } : {}) }}
+                              to={{ kind: "team", slug: m.u, tab: "matches", ...(moverTeamQ ? { query: moverTeamQ } : {}) }}
                               className={m.chg > 0 ? "text-rw-teal font-bold hover:underline" : "text-rw-red font-bold hover:underline"}
                             >
                               {m.chg > 0 ? "▲" : "▼"}
@@ -822,7 +851,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                                 kind: "rankings",
                                 query: new URLSearchParams({
                                   ...(m.lg ? { league: resolveLeagueSlug(m.lg) } : {}),
-                                  q: m.u,
+                                  q: moverPairQ,
                                 }).toString(),
                               }}
                               className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -838,7 +867,8 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           />
                         </div>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ol>
                 );
               })()
@@ -1280,7 +1310,13 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       </HubLink>
                     </div>
                     <div className="text-[10px] text-rw-muted truncate">
-                      <EventLink name={b.t} u={b.e} className="text-rw-muted hover:text-rw-accent hover:underline" /> ·{" "}
+                      <EventLink
+                        name={b.t}
+                        u={b.e}
+                        query={`q=${encodeURIComponent(`${teamSlug(b.a)},${teamSlug(b.b)}`)}`}
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                      />{" "}
+                      ·{" "}
                       <HubLink to={{ kind: "match", slug: b.g, game: b.gn }} className="hover:text-rw-accent hover:underline">
                         {fmtDate(b.date)}
                       </HubLink>
@@ -1517,18 +1553,20 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 {w.players.map((p, i) => {
                   const pSlug = p.u || playerSlug(p.n);
                   const tSlug = p.t ? teamSlug(p.t) : "";
+                  const oppSlug = p.best?.opp ? teamSlug(p.best.opp) : "";
                   const cSlug = p.best?.c ? resolveChampSlug(p.best.c) : "";
                   const pQ =
                     new URLSearchParams({
                       ...(wy ? { p: `y${wy}` } : {}),
                       ...(tSlug ? { team: tSlug } : {}),
+                      ...(oppSlug ? { q: oppSlug } : {}),
                       ...(p.r ? { role: p.r } : {}),
                       ...(cSlug ? { champ: cSlug } : {}),
                     }).toString() || undefined;
                   const tQ =
                     new URLSearchParams({
                       ...(wy ? { p: `y${wy}` } : {}),
-                      q: pSlug,
+                      q: [pSlug, oppSlug].filter(Boolean).join(","),
                     }).toString() || undefined;
                   return (
                   <li key={p.u || p.n} className="space-y-0.5 min-w-0">
@@ -1580,6 +1618,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             query: new URLSearchParams({
                               player: pSlug,
                               ...(tSlug ? { team: tSlug } : {}),
+                              ...(oppSlug ? { vs: oppSlug } : {}),
                               ...(p.r ? { role: p.r } : {}),
                               ...(wy ? { p: `y${wy}`, year: wy } : {}),
                             }).toString(),
@@ -1780,10 +1819,16 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     const banW = Math.min(100 - pickW, Math.round((bn / cg) * 100));
                     const wrPct = pk ? Math.round((wn / pk) * 100) : null;
                     const wrTone = pk >= 3 && wrPct != null ? (wrPct >= 53 ? "text-rw-teal font-semibold" : wrPct <= 47 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
+                    const otherWeekChamp = w.champs?.find(([oc]) => oc !== c)?.[0];
+                    const otherWeekCSlug = otherWeekChamp ? resolveChampSlug(otherWeekChamp) : "";
+                    const wChampQ = new URLSearchParams({
+                      ...(wy ? { p: `y${wy}`, year: wy } : {}),
+                      ...(otherWeekCSlug ? { vschamp: otherWeekCSlug } : {}),
+                    }).toString();
                     return (
                       <tr key={c} className="border-t border-rw-border">
                         <td className={`${td} max-w-[9rem]`} data-sort={champName(c)}>
-                          <ChampLink name={c} size={18} query={wy ? `p=y${encodeURIComponent(wy)}&year=${encodeURIComponent(wy)}` : undefined} />
+                          <ChampLink name={c} size={18} query={wChampQ || undefined} />
                         </td>
                         <td className={`${td} tabular-nums`} data-sort={presPct ?? -1}>
                           {presPct != null ? (
@@ -1852,7 +1897,24 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 </tbody>
               </STable>
               <p className="text-[10px] text-rw-muted">
-                <HubLink to={{ kind: "champions", ...(wy ? { query: `key=y${encodeURIComponent(wy)}&year=${encodeURIComponent(wy)}` } : {}) }} className="hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{
+                    kind: "champions",
+                    query:
+                      new URLSearchParams({
+                        ...(wy ? { key: `y${wy}`, year: wy } : {}),
+                        ...(w.champs?.length
+                          ? {
+                              q: w.champs
+                                .slice(0, 2)
+                                .map(([c]) => resolveChampSlug(c))
+                                .join(","),
+                            }
+                          : {}),
+                      }).toString() || undefined,
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
                   {tn("Picked or banned in the week's {n} game.", "Picked or banned in the week's {n} games.", w.champGames || 0)}
                 </HubLink>
               </p>
@@ -2069,7 +2131,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       </span>
                     </span>
                     <span className="hidden sm:block w-48 shrink-0 truncate text-[10px] text-rw-muted">
-                      <EventLink name={r.t} u={r.e} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                      <EventLink
+                        name={r.t}
+                        u={r.e}
+                        query={slugA || slugB ? `q=${encodeURIComponent([slugA, slugB].filter(Boolean).join(","))}` : undefined}
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                      />
                     </span>
                     {r.au && r.bu && (
                       <span className="hidden md:inline-flex items-center gap-1.5 shrink-0 text-[10px]">
