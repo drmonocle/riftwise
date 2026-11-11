@@ -842,7 +842,7 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
                 </td>
                 <td className={`${td} text-rw-muted`} data-sort={l.from || ""}>
                   {l.from && l.to ? (
-                    <HubLink to={{ kind: "league", slug: l.u }} className="hover:text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "league", slug: l.u, ...(l.to && /^\d{4}$/.test(l.to) ? { year: l.to } : {}) }} className="hover:text-rw-accent hover:underline">
                       {l.from === l.to ? l.from : `${l.from}–${l.to}`}
                     </HubLink>
                   ) : (
@@ -862,7 +862,13 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
                 <td className={`${td} text-rw-muted tabular-nums`} data-sort={l.g}>
                   <span className="inline-flex items-center gap-1.5">
                     {l.g > 0 ? (
-                      <HubLink to={{ kind: "finder", query: `league=${encodeURIComponent(l.u)}` }} className="hover:text-rw-accent hover:underline">
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query: `league=${encodeURIComponent(l.u)}${l.to && /^\d{4}$/.test(l.to) ? `&year=${encodeURIComponent(l.to)}` : ""}`,
+                        }}
+                        className="hover:text-rw-accent hover:underline"
+                      >
                         {fmtNum(l.g)}
                       </HubLink>
                     ) : (
@@ -1089,7 +1095,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 label: tl("Most titles"),
                 value: `${l.titles[0].t} (${l.titles[0].n})`,
                 icon: <TeamLogo name={l.titles[0].t} size={20} />,
-                to: l.titles[0].u ? { kind: "team", slug: l.titles[0].u } : undefined,
+                to: l.titles[0].u ? { kind: "team", slug: l.titles[0].u, ...(season ? { query: `p=y${encodeURIComponent(season)}` } : {}) } : undefined,
               }
             : null,
         ]}
@@ -1231,13 +1237,13 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 <li key={t.t} className="space-y-0.5 min-w-0">
                   <div className="flex items-center justify-between gap-2 min-w-0">
                     <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                      <HubLink to={{ kind: "team", slug: t.u || teamSlug(t.t) }} title={t.t} className="shrink-0">
+                      <HubLink to={{ kind: "team", slug: t.u || teamSlug(t.t), ...(season ? { query: `p=y${encodeURIComponent(season)}` } : {}) }} title={t.t} className="shrink-0">
                         <TeamLogo name={t.t} size={16} />
                       </HubLink>
                       <TeamLink name={t.t} u={t.u} />
                     </span>
                     <HubLink
-                      to={t.u ? { kind: "team", slug: t.u, tab: "history" } : { kind: "titles" }}
+                      to={t.u ? { kind: "team", slug: t.u, tab: "history", ...(season ? { query: `p=y${encodeURIComponent(season)}` } : {}) } : { kind: "titles" }}
                       className="text-rw-accent font-bold tabular-nums shrink-0 hover:underline"
                     >
                       {t.n}
@@ -1596,7 +1602,7 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
           ) : (
             <span className="flex items-center gap-1.5">
               {!e.rs && <Crown className="w-3 h-3 text-rw-accent shrink-0" />}
-              <HubLink to={{ kind: "team", slug: e.wu || resolveTeamAlias(e.w) || prettySlug(e.w) }} title={e.w} className="shrink-0">
+              <HubLink to={{ kind: "team", slug: e.wu || resolveTeamAlias(e.w) || prettySlug(e.w), query: `p=e:${encodeURIComponent(e.u)}` }} title={e.w} className="shrink-0">
                 <TeamLogo name={e.w} size={15} />
               </HubLink>
               <TeamLink name={e.w} u={e.wu} />

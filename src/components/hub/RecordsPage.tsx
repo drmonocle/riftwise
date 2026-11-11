@@ -534,6 +534,16 @@ const PentaRow: React.FC<{
   x: NonNullable<HubRecords["pentas"]>["recent"][number];
 }> = ({ x }) => {
   const [hidden, reveal] = useHidden(`penta:${x.g}:${x.n}`, x.date);
+  const pPeriod = x.e ? `e:${x.e}` : /^\d{4}/.test(x.date || "") ? `y${x.date.slice(0, 4)}` : "";
+  const pSlug = x.u || resolvePlayerSlug(x.n);
+  const aSlug = resolveTeamAlias(x.a) || prettySlug(x.a);
+  const bSlug = resolveTeamAlias(x.b) || prettySlug(x.b);
+  const champQuery = new URLSearchParams({
+    ...(pSlug ? { player: pSlug } : {}),
+    ...(aSlug ? { team: aSlug } : {}),
+    ...(bSlug && bSlug !== aSlug ? { vs: bSlug } : {}),
+    ...(pPeriod ? { p: pPeriod } : {}),
+  }).toString();
   return (
     <li className="min-w-0">
       <div className="flex items-center gap-1.5 min-w-0">
@@ -541,15 +551,29 @@ const PentaRow: React.FC<{
           <RevealButton onReveal={reveal} small />
         ) : (
           <>
-            <HubLink to={{ kind: "champ", slug: resolveChampSlug(x.c) }} title={champName(x.c)}>
+            <HubLink to={{ kind: "champ", slug: resolveChampSlug(x.c), ...(champQuery ? { query: champQuery } : {}) }} title={champName(x.c)}>
               <ChampIcon name={x.c} size={18} />
             </HubLink>
-            <HubLink to={{ kind: "player", slug: x.u || resolvePlayerSlug(x.n) }} title={x.n} className="shrink-0">
+            <HubLink
+              to={{
+                kind: "player",
+                slug: pSlug,
+                query: new URLSearchParams({
+                  ...(x.c ? { champ: resolveChampSlug(x.c) } : {}),
+                  ...(pPeriod ? { p: pPeriod } : {}),
+                }).toString() || undefined,
+              }}
+              title={x.n}
+              className="shrink-0"
+            >
               <PlayerPhoto name={x.n} slug={x.u ?? undefined} size={16} />
             </HubLink>
             <span className="truncate">
               <PlayerLink name={x.n} u={x.u} />{" "}
-              <HubLink to={{ kind: "champ", slug: resolveChampSlug(x.c) }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{ kind: "champ", slug: resolveChampSlug(x.c), ...(champQuery ? { query: champQuery } : {}) }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {champName(x.c)}
               </HubLink>
               {x.x > 1 && (
@@ -565,7 +589,7 @@ const PentaRow: React.FC<{
                 )
               )}{" "}
               <span className="inline-flex items-center gap-1 text-rw-sub">
-                <HubLink to={{ kind: "team", slug: resolveTeamAlias(x.a) || prettySlug(x.a) }} title={x.a} className="shrink-0">
+                <HubLink to={{ kind: "team", slug: aSlug, ...(pPeriod ? { query: `p=${encodeURIComponent(pPeriod)}` } : {}) }} title={x.a} className="shrink-0">
                   <TeamLogo name={x.a} size={13} />
                 </HubLink>
                 <TeamLink name={x.a} />
@@ -579,7 +603,7 @@ const PentaRow: React.FC<{
                 ) : (
                   <span>vs</span>
                 )}
-                <HubLink to={{ kind: "team", slug: resolveTeamAlias(x.b) || prettySlug(x.b) }} title={x.b} className="shrink-0">
+                <HubLink to={{ kind: "team", slug: bSlug, ...(pPeriod ? { query: `p=${encodeURIComponent(pPeriod)}` } : {}) }} title={x.b} className="shrink-0">
                   <TeamLogo name={x.b} size={13} />
                 </HubLink>
                 <TeamLink name={x.b} />
@@ -1180,7 +1204,15 @@ export const RecordsPanel: React.FC = () => {
                             {fmt(g.v)}
                           </span>
                         )}
-                        <HubLink to={{ kind: "team", slug: resolveTeamAlias(g.w, aliases.data?.team) || prettySlug(g.w) }} title={g.w} className="shrink-0">
+                        <HubLink
+                          to={{
+                            kind: "team",
+                            slug: resolveTeamAlias(g.w, aliases.data?.team) || prettySlug(g.w),
+                            ...(g.e ? { query: `p=e:${encodeURIComponent(g.e)}` } : /^\d{4}/.test(g.date || "") ? { query: `p=y${encodeURIComponent(g.date.slice(0, 4))}` } : {}),
+                          }}
+                          title={g.w}
+                          className="shrink-0"
+                        >
                           <TeamLogo name={g.w} size={14} />
                         </HubLink>
                         <span className="truncate min-w-0">
@@ -1200,7 +1232,15 @@ export const RecordsPanel: React.FC = () => {
                             </span>
                           )}
                         </span>
-                        <HubLink to={{ kind: "team", slug: resolveTeamAlias(g.w === g.a ? g.b : g.a, aliases.data?.team) || prettySlug(g.w === g.a ? g.b : g.a) }} title={g.w === g.a ? g.b : g.a} className="shrink-0">
+                        <HubLink
+                          to={{
+                            kind: "team",
+                            slug: resolveTeamAlias(g.w === g.a ? g.b : g.a, aliases.data?.team) || prettySlug(g.w === g.a ? g.b : g.a),
+                            ...(g.e ? { query: `p=e:${encodeURIComponent(g.e)}` } : /^\d{4}/.test(g.date || "") ? { query: `p=y${encodeURIComponent(g.date.slice(0, 4))}` } : {}),
+                          }}
+                          title={g.w === g.a ? g.b : g.a}
+                          className="shrink-0"
+                        >
                           <TeamLogo name={g.w === g.a ? g.b : g.a} size={14} />
                         </HubLink>
                       </div>
@@ -1433,13 +1473,32 @@ export const RecordsPanel: React.FC = () => {
               <ol className="text-xs space-y-1.5">
                 {rows.map((p, i) => {
                   const barPct = Math.max(8, Math.min(100, Math.round((p.v / maxV) * 100)));
+                  const pPeriod = p.e ? `e:${p.e}` : /^\d{4}/.test(p.date || "") ? `y${p.date.slice(0, 4)}` : "";
+                  const pSlug = p.u || resolvePlayerSlug(p.pl);
+                  const oppSlug = p.opp ? resolveTeamAlias(p.opp, aliases.data?.team) || prettySlug(p.opp) : "";
+                  const pChampQuery = new URLSearchParams({
+                    ...(pSlug ? { player: pSlug } : {}),
+                    ...(oppSlug ? { vs: oppSlug } : {}),
+                    ...(pPeriod ? { p: pPeriod } : {}),
+                  }).toString();
                   return (
                     <li key={i} className="space-y-0.5 min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <HubLink to={{ kind: "champ", slug: resolveChampSlug(p.c) }} title={champName(p.c)} className="shrink-0">
+                        <HubLink to={{ kind: "champ", slug: resolveChampSlug(p.c), ...(pChampQuery ? { query: pChampQuery } : {}) }} title={champName(p.c)} className="shrink-0">
                           <ChampIcon name={p.c} size={18} />
                         </HubLink>
-                        <HubLink to={{ kind: "player", slug: p.u || resolvePlayerSlug(p.pl) }} title={p.pl} className="shrink-0">
+                        <HubLink
+                          to={{
+                            kind: "player",
+                            slug: pSlug,
+                            query: new URLSearchParams({
+                              ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
+                              ...(pPeriod ? { p: pPeriod } : {}),
+                            }).toString() || undefined,
+                          }}
+                          title={p.pl}
+                          className="shrink-0"
+                        >
                           <PlayerPhoto name={p.pl} slug={p.u ?? undefined} size={16} />
                         </HubLink>
                         <div className="truncate min-w-0">
@@ -1458,7 +1517,10 @@ export const RecordsPanel: React.FC = () => {
                           <PlayerLink name={p.pl} u={p.u} />
                           <span className="text-rw-sub">
                             {" "}
-                            <HubLink to={{ kind: "champ", slug: resolveChampSlug(p.c) }} className="hover:text-rw-accent hover:underline">
+                            <HubLink
+                              to={{ kind: "champ", slug: resolveChampSlug(p.c), ...(pChampQuery ? { query: pChampQuery } : {}) }}
+                              className="hover:text-rw-accent hover:underline"
+                            >
                               {champName(p.c)}
                             </HubLink>{" "}
                             {p.g ? (
@@ -1479,7 +1541,7 @@ export const RecordsPanel: React.FC = () => {
                           <HubLink
                             to={{
                               kind: "finder",
-                              query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(resolveChampSlug(p.c))}&vs=${encodeURIComponent(resolveTeamAlias(p.opp, aliases.data?.team) || prettySlug(p.opp))}${p.e ? `&event=${encodeURIComponent(p.e)}` : ""}`,
+                              query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(resolveChampSlug(p.c))}&vs=${encodeURIComponent(oppSlug)}${p.e ? `&event=${encodeURIComponent(p.e)}` : ""}`,
                             }}
                             className="hover:text-rw-accent hover:underline"
                             title={tl("Game finder")}
@@ -1489,7 +1551,7 @@ export const RecordsPanel: React.FC = () => {
                         ) : (
                           <span>vs</span>
                         )}
-                        <HubLink to={{ kind: "team", slug: resolveTeamAlias(p.opp, aliases.data?.team) || prettySlug(p.opp) }} title={p.opp} className="shrink-0">
+                        <HubLink to={{ kind: "team", slug: oppSlug, ...(pPeriod ? { query: `p=${encodeURIComponent(pPeriod)}` } : {}) }} title={p.opp} className="shrink-0">
                           <TeamLogo name={p.opp} size={12} />
                         </HubLink>
                         <span className="truncate">
@@ -2460,7 +2522,15 @@ export const TitlesPanel: React.FC = () => {
                       </td>
                       <td className={td} data-sort={x.as}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
-                          <HubLink to={{ kind: "team", slug: x.u || prettySlug(x.as) }} title={x.as} className="shrink-0">
+                          <HubLink
+                            to={{
+                              kind: "team",
+                              slug: x.u || prettySlug(x.as),
+                              ...(x.e ? { query: `p=e:${encodeURIComponent(x.e)}` } : /^\d{4}/.test(x.date || "") ? { query: `p=y${encodeURIComponent(x.date.slice(0, 4))}` } : {}),
+                            }}
+                            title={x.as}
+                            className="shrink-0"
+                          >
                             <TeamLogo name={x.as} size={16} />
                           </HubLink>
                           <TeamLink name={x.as} u={x.u} />
@@ -2491,6 +2561,7 @@ export const TitlesPanel: React.FC = () => {
                           const sw = m ? Number(m[1]) : 0;
                           const sl = m ? Number(m[2]) : 0;
                           const wPct = sw + sl > 0 ? Math.round((sw / (sw + sl)) * 100) : 0;
+                          const xPeriod = x.e ? `e:${x.e}` : /^\d{4}/.test(x.date || "") ? `y${x.date.slice(0, 4)}` : "";
                           return (
                             <span className="inline-flex items-center gap-1.5">
                               <span className="inline-flex items-center gap-1">
@@ -2507,7 +2578,7 @@ export const TitlesPanel: React.FC = () => {
                                         mode: "team",
                                         a: x.u || resolveTeamAlias(x.as, aliases.data?.team) || prettySlug(x.as),
                                         b: resolveTeamAlias(x.l, aliases.data?.team) || prettySlug(x.l),
-                                        ...(/^\d{4}$/.test((x.date || "").slice(0, 4)) ? { period: `y${(x.date || "").slice(0, 4)}` } : {}),
+                                        ...(xPeriod ? { period: xPeriod } : {}),
                                       }}
                                       className="text-rw-muted hover:text-rw-accent hover:underline"
                                       title={tl("Compare")}
@@ -2518,7 +2589,15 @@ export const TitlesPanel: React.FC = () => {
                                     "vs"
                                   )}
                                 </span>
-                                <HubLink to={{ kind: "team", slug: resolveTeamAlias(x.l, aliases.data?.team) || prettySlug(x.l) }} title={x.l} className="shrink-0">
+                                <HubLink
+                                  to={{
+                                    kind: "team",
+                                    slug: resolveTeamAlias(x.l, aliases.data?.team) || prettySlug(x.l),
+                                    ...(xPeriod ? { query: `p=${encodeURIComponent(xPeriod)}` } : {}),
+                                  }}
+                                  title={x.l}
+                                  className="shrink-0"
+                                >
                                   <TeamLogo name={x.l} size={14} />
                                 </HubLink>
                                 <TeamLink name={x.l} u={resolveTeamAlias(x.l, aliases.data?.team)} />

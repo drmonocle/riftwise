@@ -151,7 +151,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       value: (t) => t[0].toLowerCase(),
       render: (t) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "team", slug: teamRowSlug(t) }} title={t[0]} className="shrink-0">
+          <HubLink to={{ kind: "team", slug: teamRowSlug(t), ...(since !== "all" ? { query: `p=y${encodeURIComponent(since)}` } : {}) }} title={t[0]} className="shrink-0">
             <TeamLogo name={t[0]} code={(t[5] || "").split(" | ")[0] || undefined} size={16} />
           </HubLink>
           <TeamLink name={t[0]} u={teamRowSlug(t)} />
@@ -165,7 +165,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       render: (t) => {
         const c = (t[5] || "").split(" | ")[0];
         return c ? (
-          <HubLink to={{ kind: "team", slug: teamRowSlug(t) }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "team", slug: teamRowSlug(t), ...(since !== "all" ? { query: `p=y${encodeURIComponent(since)}` } : {}) }} className="hover:text-rw-accent hover:underline">
             {c}
           </HubLink>
         ) : null;
@@ -424,11 +424,11 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
           to={{
             kind: "tournaments",
             ...(since !== "all" ? { year: since } : {}),
-            ...((region || (words.trim() && list.length === 1))
+            ...((region || (words.trim() && list[0]))
               ? {
                   query: new URLSearchParams({
-                    ...(words.trim() && list.length === 1
-                      ? { q: teamRowSlug(list[0]) }
+                    ...(words.trim() && list[0]
+                      ? { q: list.slice(0, 2).map((t) => teamRowSlug(t)).join(",") }
                       : region
                         ? { q: region }
                         : {}),
@@ -640,7 +640,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       value: (p) => p[0].toLowerCase(),
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "player", slug: playerRowSlug(p) }} title={p[0]} className="shrink-0">
+          <HubLink to={{ kind: "player", slug: playerRowSlug(p), ...(since !== "all" ? { query: `p=y${encodeURIComponent(since)}` } : {}) }} title={p[0]} className="shrink-0">
             <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={playerRowSlug(p)} size={18} />
           </HubLink>
           <PlayerLink name={p[0]} u={playerRowSlug(p)} />
@@ -670,7 +670,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       render: (p) =>
         p[2] ? (
           <span className="inline-flex items-center gap-1.5 min-w-0">
-            <HubLink to={{ kind: "team", slug: teamSlugOf(p[2]) }} title={p[2]} className="shrink-0">
+            <HubLink to={{ kind: "team", slug: teamSlugOf(p[2]), ...(since !== "all" ? { query: `p=y${encodeURIComponent(since)}` } : {}) }} title={p[2]} className="shrink-0">
               <TeamLogo name={p[2]} size={15} />
             </HubLink>
             <TeamLink name={p[2]} u={teamSlugOf(p[2])} />
@@ -728,7 +728,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       value: (p) => p[6] || null,
       render: (p) =>
         p[6] ? (
-          <HubLink to={{ kind: "player", slug: playerRowSlug(p) }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "player", slug: playerRowSlug(p), ...(since !== "all" ? { query: `p=y${encodeURIComponent(since)}` } : {}) }} className="hover:text-rw-accent hover:underline">
             {p[6]}
           </HubLink>
         ) : null,
@@ -940,13 +940,17 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
         <HubLink
           to={{
             kind: "records",
-            query: list[0]
-              ? `q=${encodeURIComponent(
-                  `${playerRowSlug(list[0])}${
-                    list[1] ? `,${playerRowSlug(list[1])}` : ""
-                  }`,
-                )}`
-              : undefined,
+            query:
+              new URLSearchParams({
+                ...(since !== "all" ? { year: since } : {}),
+                ...(list[0]
+                  ? {
+                      q: `${playerRowSlug(list[0])}${
+                        list[1] ? `,${playerRowSlug(list[1])}` : ""
+                      }`,
+                    }
+                  : {}),
+              }).toString() || undefined,
           }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
