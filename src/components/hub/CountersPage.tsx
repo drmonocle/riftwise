@@ -449,6 +449,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   kind: "items",
                   query: new URLSearchParams({
                     champ: slug,
+                    ...(role ? { role } : {}),
+                    ...(patchParam ? { patch: patchParam } : {}),
                     ...(yearParam ? { year: yearParam } : {}),
                     ...(evParam ? { event: evParam } : {}),
                   }).toString(),
@@ -575,7 +577,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink
                         to={{
                           kind: "items",
-                          ...(topC ? { query: `champ=${encodeURIComponent(champSlug(topC))}` } : {}),
+                          ...(topC || role
+                            ? {
+                                query: new URLSearchParams({
+                                  ...(topC ? { champ: champSlug(topC) } : {}),
+                                  ...(role ? { role } : {}),
+                                }).toString(),
+                              }
+                            : {}),
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -647,75 +656,85 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 title={`${cName} ${tl("vs")} ${champName(vsMatch.oppCanon)}`}
                 right={
                   <div className="flex flex-wrap items-center gap-2">
-                    <HubLink
-                      to={{
-                        kind: "finder",
-                        query: new URLSearchParams({
-                          champ: slug,
-                          vschamp: resolveChampSlug(vsMatch.oppCanon),
-                          ...(evParam ? { event: evParam } : {}),
-                          ...(patchParam ? { patch: patchParam } : {}),
-                          ...(yearParam ? { year: yearParam } : {}),
-                        }).toString(),
-                      }}
-                      className="px-2 py-0.5 rounded border border-rw-accent/50 bg-rw-accent/10 text-[11px] font-semibold text-rw-accent hover:bg-rw-accent/20"
-                    >
-                      {tl("Game finder")} →
-                    </HubLink>
-                    <HubLink
-                      to={{
-                        kind: "items",
-                        query: new URLSearchParams({
-                          champ: slug,
-                          ...(yearParam ? { year: yearParam } : {}),
-                          ...(evParam ? { event: evParam } : {}),
-                        }).toString(),
-                      }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Item history")} →
-                    </HubLink>
-                    <HubLink
-                      to={{
-                        kind: "tiers",
-                        query: new URLSearchParams({
-                          q: `${slug},${resolveChampSlug(vsMatch.oppCanon)}`,
-                          ...(role ? { role } : {}),
-                          ...(evParam ? { event: evParam } : {}),
-                          ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
-                        }).toString(),
-                      }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Pro tier list")} →
-                    </HubLink>
-                    <HubLink
-                      to={{
-                        kind: "draft",
-                        query: new URLSearchParams({
-                          champ: slug,
-                          ...(role ? { role } : {}),
-                          ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
-                        }).toString(),
-                      }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Draft board")} →
-                    </HubLink>
-                    <HubLink
-                      to={{
-                        kind: "leaders",
-                        query: new URLSearchParams({
-                          champ: slug,
-                          ...(role ? { role } : {}),
-                          ...(yearParam ? { year: yearParam } : {}),
-                          ...(evParam ? { event: evParam } : {}),
-                        }).toString(),
-                      }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Player leaderboards")} →
-                    </HubLink>
+                    {(() => {
+                      const vsRole = role || (vsMatch.roles[0] && vsMatch.roles[0].role >= 0 ? ROLES[vsMatch.roles[0].role] : "");
+                      return (
+                        <>
+                          <HubLink
+                            to={{
+                              kind: "finder",
+                              query: new URLSearchParams({
+                                champ: slug,
+                                vschamp: resolveChampSlug(vsMatch.oppCanon),
+                                ...(vsRole ? { role: vsRole } : {}),
+                                ...(evParam ? { event: evParam } : {}),
+                                ...(patchParam ? { patch: patchParam } : {}),
+                                ...(yearParam ? { year: yearParam } : {}),
+                              }).toString(),
+                            }}
+                            className="px-2 py-0.5 rounded border border-rw-accent/50 bg-rw-accent/10 text-[11px] font-semibold text-rw-accent hover:bg-rw-accent/20"
+                          >
+                            {tl("Game finder")} →
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "items",
+                              query: new URLSearchParams({
+                                champ: slug,
+                                ...(vsRole ? { role: vsRole } : {}),
+                                ...(patchParam ? { patch: patchParam } : {}),
+                                ...(yearParam ? { year: yearParam } : {}),
+                                ...(evParam ? { event: evParam } : {}),
+                              }).toString(),
+                            }}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Item history")} →
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "tiers",
+                              query: new URLSearchParams({
+                                q: `${slug},${resolveChampSlug(vsMatch.oppCanon)}`,
+                                ...(vsRole ? { role: vsRole } : {}),
+                                ...(evParam ? { event: evParam } : {}),
+                                ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
+                              }).toString(),
+                            }}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Pro tier list")} →
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "draft",
+                              query: new URLSearchParams({
+                                champ: slug,
+                                ...(vsRole ? { role: vsRole } : {}),
+                                ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
+                              }).toString(),
+                            }}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Draft board")} →
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "leaders",
+                              query: new URLSearchParams({
+                                champ: slug,
+                                ...(vsRole ? { role: vsRole } : {}),
+                                ...(yearParam ? { year: yearParam } : {}),
+                                ...(evParam ? { event: evParam } : {}),
+                              }).toString(),
+                            }}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Player leaderboards")} →
+                          </HubLink>
+                        </>
+                      );
+                    })()}
                     <HubLink
                       to={{ kind: "rankings" }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -914,6 +933,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "items",
                         query: new URLSearchParams({
                           champ: slug,
+                          ...(role ? { role } : good[0] && good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
+                          ...(patchParam ? { patch: patchParam } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
                         }).toString(),
@@ -927,7 +948,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "tiers",
                         query: new URLSearchParams({
                           q: good[0] ? `${slug},${resolveChampSlug(good[0].c)}` : slug,
-                          ...(role ? { role } : {}),
+                          ...(role ? { role } : good[0] && good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
                           ...(evParam ? { event: evParam } : {}),
                           ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                         }).toString(),
@@ -941,7 +962,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "draft",
                         query: new URLSearchParams({
                           champ: slug,
-                          ...(role ? { role } : {}),
+                          ...(role ? { role } : good[0] && good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
                           ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
                         }).toString(),
                       }}
@@ -954,7 +975,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "leaders",
                         query: new URLSearchParams({
                           champ: slug,
-                          ...(role ? { role } : {}),
+                          ...(role ? { role } : good[0] && good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
                         }).toString(),
@@ -1084,6 +1105,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "items",
                         query: new URLSearchParams({
                           champ: slug,
+                          ...(role ? { role } : bad[0] && bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
+                          ...(patchParam ? { patch: patchParam } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
                         }).toString(),
@@ -1097,7 +1120,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "tiers",
                         query: new URLSearchParams({
                           q: bad[0] ? `${slug},${resolveChampSlug(bad[0].c)}` : slug,
-                          ...(role ? { role } : {}),
+                          ...(role ? { role } : bad[0] && bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
                           ...(evParam ? { event: evParam } : {}),
                           ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                         }).toString(),
@@ -1111,7 +1134,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "draft",
                         query: new URLSearchParams({
                           champ: slug,
-                          ...(role ? { role } : {}),
+                          ...(role ? { role } : bad[0] && bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
                           ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
                         }).toString(),
                       }}
@@ -1124,7 +1147,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "leaders",
                         query: new URLSearchParams({
                           champ: slug,
-                          ...(role ? { role } : {}),
+                          ...(role ? { role } : bad[0] && bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
                         }).toString(),
@@ -1233,7 +1256,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           query: new URLSearchParams({
                             champ: slug,
                             vs: resolveChampSlug(filteredRows[0].c),
-                            ...(role ? { role } : {}),
+                            ...(role ? { role } : filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
                             ...(evParam ? { event: evParam } : {}),
                             ...(patchParam ? { patch: patchParam } : {}),
                             ...(yearParam ? { year: yearParam } : {}),
@@ -1249,7 +1272,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           query: new URLSearchParams({
                             champ: slug,
                             vschamp: resolveChampSlug(filteredRows[0].c),
-                            ...(role ? { role } : {}),
+                            ...(role ? { role } : filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
                             ...(evParam ? { event: evParam } : {}),
                             ...(patchParam ? { patch: patchParam } : {}),
                             ...(yearParam ? { year: yearParam } : {}),
@@ -1266,6 +1289,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       kind: "items",
                       query: new URLSearchParams({
                         champ: slug,
+                        ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
+                        ...(patchParam ? { patch: patchParam } : {}),
                         ...(yearParam ? { year: yearParam } : {}),
                         ...(evParam ? { event: evParam } : {}),
                       }).toString(),
@@ -1279,7 +1304,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       kind: "tiers",
                       query: new URLSearchParams({
                         q: [slug, filteredRows[0]?.c ? resolveChampSlug(filteredRows[0].c) : ""].filter(Boolean).join(","),
-                        ...(role ? { role } : {}),
+                        ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
                         ...(evParam ? { event: evParam } : {}),
                         ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                       }).toString(),
@@ -1293,7 +1318,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       kind: "draft",
                       query: new URLSearchParams({
                         champ: slug,
-                        ...(role ? { role } : {}),
+                        ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
                         ...(evParam ? { p: `e:${evParam}` } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}` } : {}),
                       }).toString(),
                     }}
@@ -1306,7 +1331,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       kind: "leaders",
                       query: new URLSearchParams({
                         champ: slug,
-                        ...(role ? { role } : {}),
+                        ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
                         ...(yearParam ? { year: yearParam } : {}),
                         ...(evParam ? { event: evParam } : {}),
                       }).toString(),
@@ -1403,6 +1428,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               kind: "finder",
                               query: new URLSearchParams({
                                 champ: `${slug},${resolveChampSlug(topDuo[0])}`,
+                                role: "Bot",
                                 ...(evParam ? { event: evParam } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
@@ -1417,6 +1443,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               kind: "counters",
                               query: new URLSearchParams({
                                 champ: resolveChampSlug(topDuo[0]),
+                                vs: slug,
+                                role: "Bot",
                                 ...(evParam ? { event: evParam } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
@@ -1461,6 +1489,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "items",
                         query: new URLSearchParams({
                           champ: slug,
+                          role: "Bot",
+                          ...(patchParam ? { patch: patchParam } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
                         }).toString(),
@@ -1532,14 +1562,33 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             <ChampLink name={pc} size={20} />
                             <div className="text-right shrink-0">
                               <HubLink
-                                to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(pc))}` }}
+                                to={{
+                                  kind: "counters",
+                                  query: new URLSearchParams({
+                                    champ: resolveChampSlug(pc),
+                                    vs: slug,
+                                    role: "Bot",
+                                    ...(evParam ? { event: evParam } : {}),
+                                    ...(patchParam ? { patch: patchParam } : {}),
+                                    ...(yearParam ? { year: yearParam } : {}),
+                                  }).toString(),
+                                }}
                                 className={`font-mono font-bold tabular-nums hover:underline ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}
                                 title={tl("Counter-pick finder")}
                               >
                                 {wr}%
                               </HubLink>
                               <HubLink
-                                to={{ kind: "finder", query: `champ=${encodeURIComponent(`${slug},${resolveChampSlug(pc)}`)}` }}
+                                to={{
+                                  kind: "finder",
+                                  query: new URLSearchParams({
+                                    champ: `${slug},${resolveChampSlug(pc)}`,
+                                    role: "Bot",
+                                    ...(evParam ? { event: evParam } : {}),
+                                    ...(patchParam ? { patch: patchParam } : {}),
+                                    ...(yearParam ? { year: yearParam } : {}),
+                                  }).toString(),
+                                }}
                                 className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"
                                 title={tl("Game finder")}
                               >
