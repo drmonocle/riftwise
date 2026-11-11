@@ -471,126 +471,177 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           </p>
         )}
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pt-0.5 text-[11px] font-semibold" data-nocapture="1">
-          <HubLink to={{ kind: "tournaments" }} className="text-rw-accent hover:underline">
-            {tl("Tournaments")} →
-          </HubLink>
-          <HubLink to={{ kind: "leagues" }} className="text-rw-accent hover:underline">
-            {tl("Leagues")} →
-          </HubLink>
-          <HubLink to={{ kind: "teams" }} className="text-rw-accent hover:underline">
-            {tl("Teams")} →
-          </HubLink>
-          <HubLink
-            to={{
-              kind: "champions",
-              query: new URLSearchParams({
-                ...(leagueSlug ? { league: leagueSlug } : {}),
-                ...(asOfYr ? { key: `y${asOfYr}`, year: asOfYr } : {}),
-              }).toString(),
-            }}
-            className="text-rw-accent hover:underline"
-          >
-            {tl("Champions")} →
-          </HubLink>
-          <HubLink
-            to={{
-              kind: "tiers",
-              query: new URLSearchParams({
-                ...(leagueSlug ? { scope: leagueSlug, league: leagueSlug } : {}),
-                ...(asOfYr ? { key: `y${asOfYr}`, year: asOfYr } : {}),
-              }).toString(),
-            }}
-            className="text-rw-accent hover:underline"
-          >
-            {tl("Pro tier list")} →
-          </HubLink>
-          <HubLink
-            to={{
-              kind: "leaders",
-              query: new URLSearchParams({
-                ...(leagueSlug ? { league: leagueSlug } : {}),
-                ...(asOfYr ? { year: asOfYr } : {}),
-                ...(top?.[0] ? { q: rows[1]?.r?.[0] ? `${top[0]},${rows[1].r[0]}` : top[0] } : {}),
-              }).toString(),
-            }}
-            className="text-rw-accent hover:underline"
-          >
-            {tl("Player leaderboards")} →
-          </HubLink>
-          <HubLink
-            to={{
-              kind: "items",
-              query: new URLSearchParams({
-                ...(top?.[0] ? { team: top[0] } : {}),
-                ...(rows[1]?.r?.[0] ? { vs: rows[1].r[0] } : {}),
-                ...(asOfYr ? { year: asOfYr } : {}),
-              }).toString(),
-            }}
-            className="text-rw-accent hover:underline"
-          >
-            {tl("Item history")} →
-          </HubLink>
-          <HubLink to={{ kind: "titles" }} className="text-rw-accent hover:underline">
-            {tl("Titles")} →
-          </HubLink>
-          <HubLink
-            to={{
-              kind: "best",
-              query: new URLSearchParams({
-                ...(leagueSlug ? { league: leagueSlug } : {}),
-                ...(asOfYr ? { year: asOfYr } : {}),
-              }).toString(),
-            }}
-            className="text-rw-accent hover:underline"
-          >
-            {tl("Best games")} →
-          </HubLink>
-          <HubLink
-            to={{
-              kind: "finder",
-              query: new URLSearchParams({
-                ...(leagueSlug ? { league: leagueSlug } : {}),
-                ...(asOfYr ? { year: asOfYr } : {}),
-                ...(top?.[0] ? { team: top[0] } : {}),
-                ...(rows[1]?.r?.[0] ? { vs: rows[1].r[0] } : {}),
-              }).toString(),
-            }}
-            className="text-rw-accent hover:underline"
-          >
-            {tl("Game finder")} →
-          </HubLink>
-          <HubLink
-            to={{
-              kind: "draft",
-              ...(top?.[0] || asOfYr
-                ? {
+          {(() => {
+            const r0 = shownRows[0]?.r || top;
+            const r1 = shownRows[1]?.r || rows[1]?.r;
+            const t0 = r0 ? r0[0] || resolveTeamAlias(r0[1], aliases.data?.team) || prettySlug(r0[1]) : "";
+            const t1 = r1 ? r1[0] || resolveTeamAlias(r1[1], aliases.data?.team) || prettySlug(r1[1]) : "";
+            const vsT = t1 && t1 !== t0 ? t1 : "";
+            const pairQ = [t0, vsT].filter(Boolean).join(",");
+            return (
+              <>
+                <HubLink
+                  to={{
+                    kind: "tournaments",
+                    ...(asOfYr ? { year: asOfYr } : {}),
+                    ...(leagueSlug ? { query: `q=${encodeURIComponent(leagueSlug)}` } : {}),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Tournaments")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leagues",
+                    ...(leagueSlug ? { query: `q=${encodeURIComponent(leagueSlug)}` } : {}),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Leagues")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "teams",
+                    ...((leagueSlug || search.trim())
+                      ? {
+                          query: new URLSearchParams({
+                            ...(leagueSlug ? { league: leagueSlug } : {}),
+                            ...(search.trim() ? { q: search.trim() } : {}),
+                          }).toString(),
+                        }
+                      : {}),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Teams")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "champions",
                     query: new URLSearchParams({
-                      ...(top?.[0] ? { teams: rows[1]?.r?.[0] ? `${top[0]},${rows[1].r[0]}` : top[0] } : {}),
-                      ...(asOfYr ? { p: `y${asOfYr}` } : {}),
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(asOfYr ? { key: `y${asOfYr}`, year: asOfYr } : {}),
                     }).toString(),
-                  }
-                : {}),
-            }}
-            className="text-rw-accent hover:underline"
-          >
-            {tl("Draft board")} →
-          </HubLink>
-          <HubLink
-            to={{
-              kind: "records",
-              ...(leagueSlug || asOfYr
-                ? {
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Champions")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "tiers",
+                    query: new URLSearchParams({
+                      ...(leagueSlug ? { scope: leagueSlug, league: leagueSlug } : {}),
+                      ...(asOfYr ? { key: `y${asOfYr}`, year: asOfYr } : {}),
+                    }).toString(),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "leaders",
                     query: new URLSearchParams({
                       ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(asOfYr ? { year: asOfYr } : {}),
+                      ...(pairQ ? { q: pairQ } : {}),
                     }).toString(),
-                  }
-                : {}),
-            }}
-            className="text-rw-accent hover:underline"
-          >
-            {tl("Records")} →
-          </HubLink>
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      ...(t0 ? { team: t0 } : {}),
+                      ...(vsT ? { vs: vsT } : {}),
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(asOfYr ? { year: asOfYr } : {}),
+                    }).toString(),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "titles",
+                    ...(search.trim() && pairQ
+                      ? { query: `q=${encodeURIComponent(pairQ)}` }
+                      : leagueSlug
+                        ? { query: `kind=Leagues&q=${encodeURIComponent(leagueSlug)}` }
+                        : {}),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Titles")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "best",
+                    query: new URLSearchParams({
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(asOfYr ? { year: asOfYr } : {}),
+                      ...(search.trim() && pairQ ? { q: pairQ } : {}),
+                    }).toString(),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Best games")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: new URLSearchParams({
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(asOfYr ? { year: asOfYr } : {}),
+                      ...(t0 ? { team: t0 } : {}),
+                      ...(vsT ? { vs: vsT } : {}),
+                    }).toString(),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    ...(pairQ || asOfYr
+                      ? {
+                          query: new URLSearchParams({
+                            ...(pairQ ? { teams: pairQ } : {}),
+                            ...(asOfYr ? { p: `y${asOfYr}` } : {}),
+                          }).toString(),
+                        }
+                      : {}),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "records",
+                    ...(leagueSlug || asOfYr || (search.trim() && pairQ)
+                      ? {
+                          query: new URLSearchParams({
+                            ...(leagueSlug ? { league: leagueSlug } : {}),
+                            ...(asOfYr ? { year: asOfYr } : {}),
+                            ...(search.trim() && pairQ ? { q: pairQ } : {}),
+                          }).toString(),
+                        }
+                      : {}),
+                  }}
+                  className="text-rw-accent hover:underline"
+                >
+                  {tl("Records")} →
+                </HubLink>
+              </>
+            );
+          })()}
         </div>
       </div>
 
@@ -706,6 +757,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                     query: new URLSearchParams({
                       team: pair[0],
                       vs: pair[1],
+                      ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(asOfYr ? { year: asOfYr } : {}),
                     }).toString(),
                   }}
@@ -786,6 +838,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                       query: new URLSearchParams({
                         team: s0,
                         ...(topSlug ? { vs: topSlug } : {}),
+                        ...(leagueSlug ? { league: leagueSlug } : {}),
                         ...(asOfYr ? { year: asOfYr } : {}),
                       }).toString(),
                     }}
@@ -867,6 +920,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                       query: new URLSearchParams({
                         team: s0,
                         vs: s1,
+                        ...(leagueSlug ? { league: leagueSlug } : {}),
                         ...(asOfYr ? { year: asOfYr } : {}),
                       }).toString(),
                     }}
@@ -1112,11 +1166,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                     <HubLink
                       to={{
                         kind: "items",
-                        ...(aSlug || asOfYr
+                        ...(aSlug || topLgSlug || asOfYr
                           ? {
                               query: new URLSearchParams({
                                 ...(aSlug ? { team: aSlug } : {}),
                                 ...(bSlug ? { vs: bSlug } : {}),
+                                ...(topLgSlug ? { league: topLgSlug } : {}),
                                 ...(asOfYr ? { year: asOfYr } : {}),
                               }).toString(),
                             }
@@ -1354,6 +1409,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   query: new URLSearchParams({
                     ...(top?.[0] ? { team: top[0] } : {}),
                     ...(rows[1]?.r?.[0] ? { vs: rows[1].r[0] } : {}),
+                    ...(leagueSlug ? { league: leagueSlug } : {}),
                     ...(asOfYr ? { year: asOfYr } : {}),
                   }).toString(),
                 }}

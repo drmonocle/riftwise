@@ -404,6 +404,9 @@ const PentakillRecords: React.FC<{
                         query: new URLSearchParams({
                           player: recentRows[0].u || resolvePlayerSlug(recentRows[0].n),
                           champ: resolveChampSlug(recentRows[0].c),
+                          ...(recentRows[1]?.c && resolveChampSlug(recentRows[1].c) !== resolveChampSlug(recentRows[0].c)
+                            ? { vschamp: resolveChampSlug(recentRows[1].c) }
+                            : {}),
                           ...(aSlug ? { team: aSlug } : {}),
                           ...(bSlug && bSlug !== aSlug ? { vs: bSlug } : {}),
                           ...(r0Ev ? { event: r0Ev } : {}),
@@ -802,6 +805,9 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
                         kind: "items",
                         query: new URLSearchParams({
                           champ: resolveChampSlug(year.player.kills[0].c),
+                          ...(all.player.kills[0]?.c && resolveChampSlug(all.player.kills[0].c) !== resolveChampSlug(year.player.kills[0].c)
+                            ? { vschamp: resolveChampSlug(all.player.kills[0].c) }
+                            : {}),
                           year: label,
                           ...(cfPlayer ? { player: cfPlayer } : {}),
                           ...(cfTeam ? { team: cfTeam } : {}),
@@ -905,13 +911,18 @@ export const RecordsPanel: React.FC = () => {
   const q = new URLSearchParams(route.kind === "records" && "query" in route ? route.query || "" : "");
   // all time, or one year (its own file; team streaks, titles and career totals are all-time only)
   const year = q.get("year") || "all";
-  const urlQ = q.get("q") || "";
+  const urlQ = q.get("q") || q.get("team") || q.get("player") || q.get("champ") || q.get("event") || q.get("league") || "";
   const [search, setSearch] = useState(urlQ);
   useEffect(() => {
     setSearch(urlQ);
   }, [urlQ]);
   const setRecordsUrl = (nextYear: string, nextQ: string) => {
     const next = new URLSearchParams(q);
+    next.delete("team");
+    next.delete("player");
+    next.delete("champ");
+    next.delete("event");
+    next.delete("league");
     if (!nextYear || nextYear === "all") next.delete("year");
     else next.set("year", nextYear);
     if (nextQ.trim()) next.set("q", nextQ.trim());
@@ -1285,6 +1296,9 @@ export const RecordsPanel: React.FC = () => {
                                 player: p0Slug,
                                 ...(p1Slug && p1Slug !== p0Slug ? { vsplayer: p1Slug } : {}),
                                 champ: resolveChampSlug(rows[0].c),
+                                ...(rows[1]?.c && resolveChampSlug(rows[1].c) !== resolveChampSlug(rows[0].c)
+                                  ? { vschamp: resolveChampSlug(rows[1].c) }
+                                  : {}),
                                 ...(opp0 ? { vs: opp0 } : {}),
                                 ...(p0Ev ? { event: p0Ev } : {}),
                                 ...(p0Yr ? { year: p0Yr } : {}),
@@ -2152,7 +2166,7 @@ export const TitlesPanel: React.FC = () => {
   const kindParam = q.get("kind") as (typeof TITLE_FILTERS)[number]["key"] | null;
   const kind: (typeof TITLE_FILTERS)[number]["key"] =
     kindParam && TITLE_FILTERS.some((f) => f.key === kindParam) ? kindParam : "International";
-  const urlQ = q.get("q") || "";
+  const urlQ = q.get("q") || q.get("team") || q.get("event") || q.get("league") || "";
   const [search, setSearch] = useState(urlQ);
   useEffect(() => {
     setSearch(urlQ);
