@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, PlayCircle, Clock, Crown, Star, Swords } from "lucide-react";
 import { tl, tc, tk, roleName, locale, stageLabel, fmtDec } from "../../i18n";
 import { champName } from "../../champions";
-import { buildGameDraftQuery, type GameDraftInput, loadHubSeries, prettySlug } from "../../hub/data";
+import { buildGameDraftQuery, type GameDraftInput, loadHubSeries, prettySlug, resolveChampSlug, resolveItemSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import type { GamePlayer, HubGame, HubSeries, SideStats } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { RatingBadge as PlayerRatingBadge, fmtRating, useRatingFile } from "./PlayerRating";
@@ -31,8 +31,8 @@ export function extractHubGameDraft(g: HubGame): GameDraftInput {
 }
 
 export function seriesGameDraftQuery(s: HubSeries, g: HubGame | undefined, gi = 0): string {
-  const slugA = s.a.u || "";
-  const slugB = s.b.u || "";
+  const slugA = s.a.u || resolveTeamAlias(s.a.n) || prettySlug(s.a.n);
+  const slugB = s.b.u || resolveTeamAlias(s.b.n) || prettySlug(s.b.n);
   const year = (g?.date || s.date || "").slice(0, 4);
   const period = /^\d{4}$/.test(year) ? `y${year}` : undefined;
   if (!g) {
@@ -478,7 +478,7 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
               <span className="truncate">{tl("Top rated:")}</span>
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
-              <HubLink to={{ kind: "player", slug: mvp.u || prettySlug(mvp.n) }} className="shrink-0 hover:opacity-80" title={mvp.n}>
+              <HubLink to={{ kind: "player", slug: mvp.u || resolvePlayerSlug(mvp.n) || prettySlug(mvp.n) }} className="shrink-0 hover:opacity-80" title={mvp.n}>
                 <PlayerPhoto name={mvp.n} team={mvp.teamSide === 1 ? s.a.n : s.b.n} slug={mvp.u ?? undefined} size={20} />
               </HubLink>
               <PlayerLink name={mvp.n} u={mvp.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
@@ -505,7 +505,7 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
                   to={
                     mvp.u
                       ? { kind: "player", slug: mvp.u, tab: "champions", query: `champ=${encodeURIComponent(c)}` }
-                      : { kind: "champ", slug: prettySlug(c) }
+                      : { kind: "champ", slug: resolveChampSlug(c) }
                   }
                   className="hover:opacity-80"
                   title={`${mvp.n} · ${champName(c)}`}
@@ -838,7 +838,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
               <span className="flex items-center gap-1 text-rw-accent">
                 <Crown className="w-3 h-3" />
                 {tl("Player of the Game:")}{" "}
-                <HubLink to={{ kind: "player", slug: g.mvp.u || prettySlug(g.mvp.n) }} className="shrink-0 hover:opacity-80" title={g.mvp.n}>
+                <HubLink to={{ kind: "player", slug: g.mvp.u || resolvePlayerSlug(g.mvp.n) || prettySlug(g.mvp.n) }} className="shrink-0 hover:opacity-80" title={g.mvp.n}>
                   <PlayerPhoto name={g.mvp.n} slug={g.mvp.u ?? undefined} size={15} />
                 </HubLink>
                 <PlayerLink name={g.mvp.n} u={g.mvp.u} className="text-rw-accent hover:underline font-semibold" />
@@ -848,7 +848,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
               <span className="flex items-center gap-1 text-rw-teal" title={tl("RiftWise rating: how well they played this game (6 is average)")}>
                 <Star className="w-3 h-3 fill-current" />
                 {tl("Top rated:")}{" "}
-                <HubLink to={{ kind: "player", slug: top[0].u || prettySlug(top[0].n) }} className="shrink-0 hover:opacity-80" title={top[0].n}>
+                <HubLink to={{ kind: "player", slug: top[0].u || resolvePlayerSlug(top[0].n) || prettySlug(top[0].n) }} className="shrink-0 hover:opacity-80" title={top[0].n}>
                   <PlayerPhoto name={top[0].n} slug={top[0].u ?? undefined} size={15} />
                 </HubLink>
                 <PlayerLink name={top[0].n} u={top[0].u} className="text-rw-teal hover:underline font-semibold" />
@@ -939,7 +939,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(prettySlug(blue[0].c))}&vs=${encodeURIComponent(prettySlug(red[0].c))}${blue[0].r ? `&role=${encodeURIComponent(blue[0].r)}` : ""}`,
+                      query: `champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}&vs=${encodeURIComponent(resolveChampSlug(red[0].c))}${blue[0].r ? `&role=${encodeURIComponent(blue[0].r)}` : ""}`,
                     }}
                     className="text-[11px] font-semibold text-rw-accent hover:underline"
                   >
@@ -1448,7 +1448,7 @@ const PlayerBars: React.FC<{
               <div className="min-w-0">
                 <div className="text-[10px] text-rw-sub truncate text-right inline-flex items-center justify-end gap-1 w-full">
                   {b.c && (
-                    <HubLink to={{ kind: "champ", slug: prettySlug(b.c) }} className="shrink-0 hover:opacity-80" title={champName(b.c)}>
+                    <HubLink to={{ kind: "champ", slug: resolveChampSlug(b.c) }} className="shrink-0 hover:opacity-80" title={champName(b.c)}>
                       <ChampIcon name={b.c} size={14} />
                     </HubLink>
                   )}
@@ -1477,7 +1477,7 @@ const PlayerBars: React.FC<{
                 <div className="text-[10px] text-rw-sub truncate inline-flex items-center gap-1 w-full">
                   <PlayerLink name={o.n} u={o.u} className="truncate hover:text-rw-accent hover:underline" />
                   {o.c && (
-                    <HubLink to={{ kind: "champ", slug: prettySlug(o.c) }} className="shrink-0 hover:opacity-80" title={champName(o.c)}>
+                    <HubLink to={{ kind: "champ", slug: resolveChampSlug(o.c) }} className="shrink-0 hover:opacity-80" title={champName(o.c)}>
                       <ChampIcon name={o.c} size={14} />
                     </HubLink>
                   )}
@@ -1752,7 +1752,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                 left={
                   <span className="inline-flex items-center justify-end gap-1 min-w-0 max-w-full">
                     {b!.c && (
-                      <HubLink to={{ kind: "champ", slug: prettySlug(b!.c) }} className="shrink-0 hover:opacity-80" title={champName(b!.c)}>
+                      <HubLink to={{ kind: "champ", slug: resolveChampSlug(b!.c) }} className="shrink-0 hover:opacity-80" title={champName(b!.c)}>
                         <ChampIcon name={b!.c} size={13} />
                       </HubLink>
                     )}
@@ -1763,7 +1763,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                   <span className="inline-flex items-center gap-1 min-w-0 max-w-full">
                     <PlayerLink name={o!.n} u={o!.u} className="truncate hover:text-rw-accent hover:underline" />
                     {o!.c && (
-                      <HubLink to={{ kind: "champ", slug: prettySlug(o!.c) }} className="shrink-0 hover:opacity-80" title={champName(o!.c)}>
+                      <HubLink to={{ kind: "champ", slug: resolveChampSlug(o!.c) }} className="shrink-0 hover:opacity-80" title={champName(o!.c)}>
                         <ChampIcon name={o!.c} size={13} />
                       </HubLink>
                     )}
@@ -1829,7 +1829,7 @@ const SideHeader: React.FC<{ name: string; u: string | null; side: "blue" | "red
         {won && <span className="text-[10px] font-bold text-rw-teal">{tc("short result", "W")}</span>}
       </div>
       <div className={`flex items-center gap-1.5 min-w-0 ${right ? "flex-row-reverse" : ""}`}>
-        <HubLink to={{ kind: "team", slug: u || prettySlug(name) }} className="shrink-0 hover:opacity-80" title={name}>
+        <HubLink to={{ kind: "team", slug: u || resolveTeamAlias(name) || prettySlug(name) }} className="shrink-0 hover:opacity-80" title={name}>
           <TeamLogo name={name} size={18} />
         </HubLink>
         <TeamLink name={name} u={u} className="text-sm font-bold text-rw-text hover:underline truncate" />
@@ -1902,7 +1902,7 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
             to={
               teamSlug
                 ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
-                : { kind: "champ", slug: prettySlug(c) }
+                : { kind: "champ", slug: resolveChampSlug(c) }
             }
             className={`opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-opacity ${i === 3 ? "ml-2" : ""}`}
             title={`${champName(c)} · ${tl("Ban {n}", { n: i + 1 })}`}
@@ -1931,7 +1931,7 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
             to={
               teamSlug
                 ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
-                : { kind: "champ", slug: prettySlug(c) }
+                : { kind: "champ", slug: resolveChampSlug(c) }
             }
             className={`flex flex-col items-center hover:opacity-85 ${i === 3 ? "ml-2" : ""}`}
             title={`${champName(c)} · ${tl("Pick {n} of the draft", { n: PICK_NO[side][i] ?? i + 1 })}`}
@@ -1967,7 +1967,7 @@ const Scoreboard: React.FC<{
     <section className={`${card} p-3 min-w-0`} style={{ borderTopColor: color, borderTopWidth: 2 }}>
       <h3 className="text-xs font-bold text-rw-text mb-2 flex items-center gap-2">
         <span className="w-1 h-3.5 rounded-sm shrink-0" style={{ background: color }} aria-hidden="true" />
-        <HubLink to={{ kind: "team", slug: u || prettySlug(name) }} className="shrink-0 hover:opacity-80" title={name}>
+        <HubLink to={{ kind: "team", slug: u || resolveTeamAlias(name) || prettySlug(name) }} className="shrink-0 hover:opacity-80" title={name}>
           <TeamLogo name={name} size={16} />
         </HubLink>
         <TeamLink name={name} u={u} className="text-rw-text hover:underline truncate" />
@@ -2017,7 +2017,7 @@ const Scoreboard: React.FC<{
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: name,
+                  q: u,
                   ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                 }).toString(),
               }}
@@ -2124,13 +2124,13 @@ const PlayerRow: React.FC<{
     <div className="border-t border-rw-border pt-2 first:border-0 first:pt-0 text-xs">
       <div className="flex items-center gap-2 min-w-0">
         {p.c && (
-          <HubLink to={{ kind: "champ", slug: prettySlug(p.c) }} className="shrink-0 hover:opacity-85" title={champName(p.c)}>
+          <HubLink to={{ kind: "champ", slug: resolveChampSlug(p.c) }} className="shrink-0 hover:opacity-85" title={champName(p.c)}>
             <ChampIcon name={p.c} size={30} />
           </HubLink>
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 min-w-0">
-            <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} className="shrink-0 hover:opacity-80" title={p.n}>
+            <HubLink to={{ kind: "player", slug: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n) }} className="shrink-0 hover:opacity-80" title={p.n}>
               <PlayerPhoto name={p.n} team={teamName} slug={p.u ?? undefined} size={16} />
             </HubLink>
             <PlayerLink name={p.n} u={p.u} className="font-semibold text-rw-text hover:text-rw-accent hover:underline truncate" />
@@ -2217,9 +2217,9 @@ const PlayerRow: React.FC<{
                 to={{
                   kind: "items",
                   query: new URLSearchParams({
-                    item: prettySlug(it),
+                    item: resolveItemSlug(it),
                     ...(p.u ? { player: p.u } : {}),
-                    ...(p.c ? { champ: prettySlug(p.c) } : {}),
+                    ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
                     ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                   }).toString(),
                 }}
@@ -2233,9 +2233,9 @@ const PlayerRow: React.FC<{
                 to={{
                   kind: "items",
                   query: new URLSearchParams({
-                    item: prettySlug(p.tr),
+                    item: resolveItemSlug(p.tr),
                     ...(p.u ? { player: p.u } : {}),
-                    ...(p.c ? { champ: prettySlug(p.c) } : {}),
+                    ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
                     ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                   }).toString(),
                 }}

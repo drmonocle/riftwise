@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { normalizeRole, ROLES } from "../../hub/champAgg";
@@ -79,17 +79,20 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       const t = normText(p.t);
       const tu = normText(p.tu || "");
       const cs = p.c || [];
-      return terms.some(
-        (term) =>
+      return terms.some((term) => {
+        const qAlias = searchAlias(term);
+        return (
           n.includes(term) ||
           u.includes(term) ||
-          (u && resolvePlayerSlug(term) === (p.u || "").toLowerCase()) ||
+          (qAlias !== null && (n.includes(qAlias) || u.includes(qAlias) || t.includes(qAlias) || tu.includes(qAlias))) ||
+          (u && resolvePlayerSlug(qAlias || term) === (p.u || "").toLowerCase()) ||
           t.includes(term) ||
           tu.includes(term) ||
-          ((tu || t) && (aliases.data?.team[term] || prettySlug(term)) === (p.tu || prettySlug(p.t)).toLowerCase()) ||
+          ((tu || t) && resolveTeamAlias(qAlias || term, aliases.data?.team) === resolveTeamAlias(p.tu || p.t, aliases.data?.team)) ||
           (bare(term).length >= 2 && (bare(n).includes(bare(term)) || bare(t).includes(bare(term)))) ||
-          cs.some((c) => matchesChampSearch(c, term)),
-      );
+          cs.some((c) => matchesChampSearch(c, term))
+        );
+      });
     });
     if (filtered.length === 0 && !q.get("q") && q.get("champ") && search === q.get("champ")) return rows;
     return filtered;
@@ -130,12 +133,12 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       value: (p) => p.n,
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-          <HubLink to={{ kind: "player", slug: p.u || prettySlug(p.n) }} title={p.n} className="shrink-0">
+          <HubLink to={{ kind: "player", slug: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n) }} title={p.n} className="shrink-0">
             <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
           </HubLink>
           <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent font-semibold" />
           <span className="inline-flex items-center gap-1 text-[10px] text-rw-muted">
-            <HubLink to={{ kind: "team", slug: p.tu || prettySlug(p.t) }} title={p.t} className="shrink-0">
+            <HubLink to={{ kind: "team", slug: p.tu || resolveTeamAlias(p.t, aliases.data?.team) || prettySlug(p.t) }} title={p.t} className="shrink-0">
               <TeamLogo name={p.t} size={13} />
             </HubLink>
             <TeamLink name={p.t} u={p.tu} className="text-rw-muted hover:text-rw-accent" />
@@ -407,7 +410,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                   kind: "items",
                   query: new URLSearchParams({
                     player: shownRows[0].u,
-                    ...(q.get("champ") ? { champ: prettySlug(q.get("champ")!) } : {}),
+                    ...(q.get("champ") ? { champ: resolveChampSlug(q.get("champ")!) } : {}),
                     ...(year ? { year } : {}),
                   }).toString(),
                 }}
@@ -454,9 +457,9 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     ...(shownRows[0]?.tu || shownRows[0]?.t
                       ? {
                           q: [
-                            shownRows[0].tu || prettySlug(shownRows[0].t),
-                            shownRows[1] && (shownRows[1].tu || shownRows[1].t) && (shownRows[1].tu || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || prettySlug(shownRows[0].t))
-                              ? shownRows[1].tu || prettySlug(shownRows[1].t)
+                            shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t),
+                            shownRows[1] && (shownRows[1].tu || shownRows[1].t) && (shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t))
+                              ? shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)
                               : "",
                           ]
                             .filter(Boolean)
@@ -470,9 +473,9 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 {tl("Power rankings")} →
               </HubLink>
               {shownRows.length >= 1 && (shownRows[0].tu || shownRows[0].t) && (() => {
-                const aTeam = shownRows[0].tu || prettySlug(shownRows[0].t);
-                const bRow = shownRows.find((r) => (r.tu || r.t) && (r.tu || prettySlug(r.t)) !== aTeam);
-                const bTeam = bRow ? bRow.tu || prettySlug(bRow.t) : undefined;
+                const aTeam = shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t);
+                const bRow = shownRows.find((r) => (r.tu || r.t) && (r.tu || resolveTeamAlias(r.t, aliases.data?.team) || prettySlug(r.t)) !== aTeam);
+                const bTeam = bRow ? bRow.tu || resolveTeamAlias(bRow.t, aliases.data?.team) || prettySlug(bRow.t) : undefined;
                 const activeChamp = q.get("champ") || shownRows[0].c?.[0] || "";
                 return (
                   <>
@@ -540,8 +543,8 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                         to={{
                           kind: "compare",
                           mode: "player",
-                          a: top2[0].u || prettySlug(top2[0].n),
-                          ...(top2[1] ? { b: top2[1].u || prettySlug(top2[1].n) } : {}),
+                          a: top2[0].u || resolvePlayerSlug(top2[0].n) || prettySlug(top2[0].n),
+                          ...(top2[1] ? { b: top2[1].u || resolvePlayerSlug(top2[1].n) || prettySlug(top2[1].n) } : {}),
                           period: event ? `e:${event}` : year ? `y${year}` : undefined,
                         }}
                         className="text-xs font-semibold text-rw-accent hover:underline"
@@ -552,8 +555,8 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                          to={{
                            kind: "items",
                            query: new URLSearchParams({
-                             player: top2[0].u || prettySlug(top2[0].n),
-                             ...(q.get("champ") ? { champ: prettySlug(q.get("champ")!) } : {}),
+                             player: top2[0].u || resolvePlayerSlug(top2[0].n) || prettySlug(top2[0].n),
+                             ...(q.get("champ") ? { champ: resolveChampSlug(q.get("champ")!) } : {}),
                              ...(year ? { year } : {}),
                            }).toString(),
                          }}
@@ -565,9 +568,9 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "prep",
-                            a: top2[0].tu || prettySlug(top2[0].t),
-                            ...(top2[1] && (top2[1].tu || top2[1].t) && (top2[1].tu || prettySlug(top2[1].t)) !== (top2[0].tu || prettySlug(top2[0].t))
-                              ? { b: top2[1].tu || prettySlug(top2[1].t) }
+                            a: top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t),
+                            ...(top2[1] && (top2[1].tu || top2[1].t) && (top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t)) !== (top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t))
+                              ? { b: top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t) }
                               : {}),
                             period: event ? `e:${event}` : year ? `y${year}` : undefined,
                           }}
@@ -587,9 +590,9 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(shownRows[0]?.tu || shownRows[0]?.t
                         ? {
                             q: [
-                              shownRows[0].tu || prettySlug(shownRows[0].t),
-                              shownRows[1] && (shownRows[1].tu || shownRows[1].t) && (shownRows[1].tu || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || prettySlug(shownRows[0].t))
-                                ? shownRows[1].tu || prettySlug(shownRows[1].t)
+                              shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t),
+                              shownRows[1] && (shownRows[1].tu || shownRows[1].t) && (shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t))
+                                ? shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)
                                 : "",
                             ]
                               .filter(Boolean)
@@ -638,10 +641,10 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     query: new URLSearchParams({
                       ...(shownRows[0]?.tu || shownRows[0]?.t
                         ? {
-                            teams: `${shownRows[0].tu || prettySlug(shownRows[0].t)}${
+                            teams: `${shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t)}${
                               (shownRows[1]?.tu || shownRows[1]?.t) &&
-                              (shownRows[1].tu || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || prettySlug(shownRows[0].t))
-                                ? `,${shownRows[1].tu || prettySlug(shownRows[1].t)}`
+                              (shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t))
+                                ? `,${shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)}`
                                 : ""
                             }`,
                           }
@@ -659,7 +662,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                   to={{
                     kind: "counters",
                     query: new URLSearchParams({
-                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: prettySlug(q.get("champ") || shownRows[0]!.c![0]) } : {}),
+                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || shownRows[0]!.c![0]) } : {}),
                       ...(role ? { role } : {}),
                     }).toString() || undefined,
                   }}
@@ -813,7 +816,7 @@ const LeaderSpotlight: React.FC<{
           }`}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <HubLink to={{ kind: "player", slug: c.top.u || prettySlug(c.top.n) }} title={c.top.n} className="shrink-0">
+            <HubLink to={{ kind: "player", slug: c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n) }} title={c.top.n} className="shrink-0">
               <PlayerPhoto name={c.top.n} team={c.top.t} slug={c.top.u ?? undefined} size={22} />
             </HubLink>
             <div className="min-w-0">
@@ -832,7 +835,7 @@ const LeaderSpotlight: React.FC<{
                 <PlayerLink name={c.top.n} u={c.top.u} className="font-semibold text-rw-text hover:text-rw-accent" />
               </div>
               <div className="text-[10px] text-rw-muted flex items-center gap-1 min-w-0">
-                <HubLink to={{ kind: "team", slug: c.top.tu || prettySlug(c.top.t) }} title={c.top.t} className="shrink-0">
+                <HubLink to={{ kind: "team", slug: c.top.tu || resolveTeamAlias(c.top.t) || prettySlug(c.top.t) }} title={c.top.t} className="shrink-0">
                   <TeamLogo name={c.top.t} size={12} />
                 </HubLink>
                 <TeamLink name={c.top.t} u={c.top.tu} className="text-rw-muted hover:text-rw-accent truncate" />

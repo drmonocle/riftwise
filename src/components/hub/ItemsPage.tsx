@@ -12,7 +12,7 @@ import type { HubRoute } from "../../hub/route";
 import { tl, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveChampSlug, resolveItemSlug, resolvePlayerSlug, sameChamp } from "../../hub/data";
+import { bare, loadAliases, loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveChampSlug, resolveItemSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub, hubShareUrl } from "../../hub/route";
@@ -30,11 +30,20 @@ const FIRST_YEAR = 2011;
 function findPlayers(rows: SearchPlayerRow[], typed: string, n = 8): SearchPlayerRow[] {
   const q = normText(typed.trim());
   if (!q) return [];
-  const qPlayer = resolvePlayerSlug(q);
+  const qAlias = searchAlias(q);
+  const qPlayer = resolvePlayerSlug(qAlias || q);
   const fit = (r: SearchPlayerRow) => {
     const s = normText(r[0]);
     const u = playerSlug(r);
-    return s === q || u === qPlayer ? 0 : s.startsWith(q) ? 1 : s.includes(q) ? 2 : r[6] && normText(r[6]).includes(q) ? 3 : -1;
+    return s === q || (qAlias && s === qAlias) || u === qPlayer
+      ? 0
+      : s.startsWith(q) || (qAlias && s.startsWith(qAlias))
+        ? 1
+        : s.includes(q) || (qAlias && s.includes(qAlias))
+          ? 2
+          : r[6] && (normText(r[6]).includes(q) || (qAlias && normText(r[6]).includes(qAlias)))
+            ? 3
+            : -1;
   };
   return rows
     .map((r) => [fit(r), r] as const)
@@ -268,9 +277,9 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
       ) : resolvedItem && champ ? (
         <ItemChampView picks={resolvedPicks} champLabel={champLabel} players={people.data?.players} onPlayer={(s) => set({ player: s })} />
       ) : resolvedItem && year ? (
-        <ItemYearView picks={resolvedPicks} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} />
+        <ItemYearView picks={resolvedPicks} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: resolveChampSlug(c) })} />
       ) : resolvedItem ? (
-        <ItemPlayersView slug={resolvedItem} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: prettySlug(c) })} onYear={(y) => set({ year: y })} />
+        <ItemPlayersView slug={resolvedItem} players={people.data?.players} onPlayer={(s) => set({ player: s })} onChamp={(c) => set({ champ: resolveChampSlug(c) })} onYear={(y) => set({ year: y })} />
       ) : (
         <ItemStats
           loading={items.loading}
@@ -361,7 +370,7 @@ const PlayerItemsView: React.FC<{
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(champ || prettySlug(g[0][2]))}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(champ || g[0][2]))}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
@@ -373,8 +382,8 @@ const PlayerItemsView: React.FC<{
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: name,
-                  ...(champ ? { champ } : g[0]?.[2] ? { champ: prettySlug(g[0][2]) } : {}),
+                  q: slug,
+                  ...(champ ? { champ: resolveChampSlug(champ) } : g[0]?.[2] ? { champ: resolveChampSlug(g[0][2]) } : {}),
                   ...(year ? { year } : {}),
                 }).toString() || undefined,
               }}
@@ -398,7 +407,7 @@ const PlayerItemsView: React.FC<{
             </HubLink>
             {g[0]?.[7] && (
               <HubLink
-                to={{ kind: "prep", a: prettySlug(g[0][7]), ...(g[0][8] ? { b: prettySlug(g[0][8]) } : {}), ...(year ? { period: `y${year}` } : {}) }}
+                to={{ kind: "prep", a: resolveTeamAlias(g[0][7]) || prettySlug(g[0][7]), ...(g[0][8] ? { b: resolveTeamAlias(g[0][8]) || prettySlug(g[0][8]) } : {}), ...(year ? { period: `y${year}` } : {}) }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
               >
@@ -409,7 +418,7 @@ const PlayerItemsView: React.FC<{
               to={{
                 kind: "draft",
                 query: new URLSearchParams({
-                  ...(g[0]?.[7] ? { teams: `${prettySlug(g[0][7])}${g[0][8] ? `,${prettySlug(g[0][8])}` : ""}` } : {}),
+                  ...(g[0]?.[7] ? { teams: `${resolveTeamAlias(g[0][7]) || prettySlug(g[0][7])}${g[0][8] ? `,${resolveTeamAlias(g[0][8]) || prettySlug(g[0][8])}` : ""}` } : {}),
                   ...(champ || g[0]?.[2] ? { champ: champ || g[0][2] } : {}),
                   ...(year ? { p: `y${year}` } : {}),
                 }).toString(),
@@ -423,7 +432,7 @@ const PlayerItemsView: React.FC<{
               to={{
                 kind: "rankings",
                 ...(g[0]?.[7]
-                  ? { query: `q=${encodeURIComponent([prettySlug(g[0][7]), g[0][8] ? prettySlug(g[0][8]) : ""].filter(Boolean).join(","))}` }
+                  ? { query: `q=${encodeURIComponent([resolveTeamAlias(g[0][7]) || prettySlug(g[0][7]), g[0][8] ? resolveTeamAlias(g[0][8]) || prettySlug(g[0][8]) : ""].filter(Boolean).join(","))}` }
                   : {}),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -502,7 +511,7 @@ const PlayerItemsView: React.FC<{
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(prettySlug(champ || list[0][1][0][2]))}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(champ || list[0][1][0][2]))}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline font-semibold"
                 data-nocapture="1"
@@ -531,8 +540,8 @@ const PlayerItemsView: React.FC<{
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: name,
-                  ...(champ ? { champ } : list[0]?.[1]?.[0]?.[2] ? { champ: prettySlug(list[0][1][0][2]) } : {}),
+                  q: slug,
+                  ...(champ ? { champ: resolveChampSlug(champ) } : list[0]?.[1]?.[0]?.[2] ? { champ: resolveChampSlug(list[0][1][0][2]) } : {}),
                   ...(year ? { year } : {}),
                 }).toString() || undefined,
               }}
@@ -558,8 +567,8 @@ const PlayerItemsView: React.FC<{
               <HubLink
                 to={{
                   kind: "prep",
-                  a: prettySlug(list[0][1][0][7]),
-                  ...(list[0][1][0][8] ? { b: prettySlug(list[0][1][0][8]) } : {}),
+                  a: resolveTeamAlias(list[0][1][0][7]) || prettySlug(list[0][1][0][7]),
+                  ...(list[0][1][0][8] ? { b: resolveTeamAlias(list[0][1][0][8]) || prettySlug(list[0][1][0][8]) } : {}),
                   ...(year ? { period: `y${year}` } : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -573,7 +582,7 @@ const PlayerItemsView: React.FC<{
                 kind: "draft",
                 query: new URLSearchParams({
                   ...(list[0]?.[1]?.[0]?.[7]
-                    ? { teams: `${prettySlug(list[0][1][0][7])}${list[0][1][0][8] ? `,${prettySlug(list[0][1][0][8])}` : ""}` }
+                    ? { teams: `${resolveTeamAlias(list[0][1][0][7]) || prettySlug(list[0][1][0][7])}${list[0][1][0][8] ? `,${resolveTeamAlias(list[0][1][0][8]) || prettySlug(list[0][1][0][8])}` : ""}` }
                     : {}),
                   ...(champ || list[0]?.[1]?.[0]?.[2] ? { champ: champ || list[0][1][0][2] } : {}),
                   ...(year ? { p: `y${year}` } : {}),
@@ -588,7 +597,7 @@ const PlayerItemsView: React.FC<{
               to={{
                 kind: "rankings",
                 ...(list[0]?.[1]?.[0]?.[7]
-                  ? { query: `q=${encodeURIComponent([prettySlug(list[0][1][0][7]), list[0][1][0][8] ? prettySlug(list[0][1][0][8]) : ""].filter(Boolean).join(","))}` }
+                  ? { query: `q=${encodeURIComponent([resolveTeamAlias(list[0][1][0][7]) || prettySlug(list[0][1][0][7]), list[0][1][0][8] ? resolveTeamAlias(list[0][1][0][8]) || prettySlug(list[0][1][0][8]) : ""].filter(Boolean).join(","))}` }
                   : {}),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -703,8 +712,8 @@ const PlayerItemsView: React.FC<{
                             kind: "items",
                             query: new URLSearchParams({
                               player: slug,
-                              item: prettySlug(it),
-                              champ: prettySlug(c),
+                              item: resolveItemSlug(it),
+                              champ: resolveChampSlug(c),
                               ...(year ? { year } : {}),
                             }).toString(),
                           }}
@@ -772,13 +781,18 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
     ? it.players.filter(([n, u]) => {
         const pTeam = teamBySlug.get(u) || "";
         const hay = `${n} ${u} ${pTeam}`.toLowerCase();
-        return terms.some(
-          (t) =>
+        return terms.some((t) => {
+          const tAlias = searchAlias(t);
+          return (
             hay.includes(t) ||
+            (tAlias ? hay.includes(tAlias) : false) ||
             (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
             resolvePlayerSlug(t) === u ||
-            Boolean(pTeam && (aliases.data?.team[t] || prettySlug(t)) === prettySlug(pTeam)),
-        );
+            (tAlias ? resolvePlayerSlug(tAlias) === u : false) ||
+            Boolean(pTeam && resolveTeamAlias(t, aliases.data?.team) === resolveTeamAlias(pTeam, aliases.data?.team)) ||
+            Boolean(pTeam && tAlias && resolveTeamAlias(tAlias, aliases.data?.team) === resolveTeamAlias(pTeam, aliases.data?.team))
+          );
+        });
       })
     : it.players;
   return (
@@ -822,7 +836,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(prettySlug(it.c[0][0]))}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(it.c[0][0]))}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -833,8 +847,8 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                 to={{
                   kind: "leaders",
                   query: new URLSearchParams({
-                    ...(it.c?.[0] ? { champ: prettySlug(it.c[0][0]) } : {}),
-                    q: filteredPlayers.slice(0, 2).map((p) => p[0]).join(","),
+                    ...(it.c?.[0] ? { champ: resolveChampSlug(it.c[0][0]) } : {}),
+                    q: filteredPlayers.slice(0, 2).map((p) => p[1] || p[0]).join(","),
                   }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -850,32 +864,34 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
               >
                 {tl("Pro tier list")} →
               </HubLink>
-              {teamBySlug.get(filteredPlayers[0][1]) && (
-                <HubLink
-                  to={{
-                    kind: "prep",
-                    a: prettySlug(teamBySlug.get(filteredPlayers[0][1])!),
-                    ...(filteredPlayers[1] && teamBySlug.get(filteredPlayers[1][1]) && prettySlug(teamBySlug.get(filteredPlayers[1][1])!) !== prettySlug(teamBySlug.get(filteredPlayers[0][1])!)
-                      ? { b: prettySlug(teamBySlug.get(filteredPlayers[1][1])!) }
-                      : {}),
-                  }}
-                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Match prep")} →
-                </HubLink>
-              )}
+              {teamBySlug.get(filteredPlayers[0][1]) && (() => {
+                const ta = resolveTeamAlias(teamBySlug.get(filteredPlayers[0][1])!, aliases.data?.team) || prettySlug(teamBySlug.get(filteredPlayers[0][1])!);
+                const tbRaw = filteredPlayers[1] ? teamBySlug.get(filteredPlayers[1][1]) : undefined;
+                const tb = tbRaw ? resolveTeamAlias(tbRaw, aliases.data?.team) || prettySlug(tbRaw) : undefined;
+                return (
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: ta,
+                      ...(tb && tb !== ta ? { b: tb } : {}),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                );
+              })()}
               <HubLink
                 to={{
                   kind: "draft",
                   query: new URLSearchParams({
                     ...(teamBySlug.get(filteredPlayers[0][1])
-                      ? {
-                          teams: `${prettySlug(teamBySlug.get(filteredPlayers[0][1])!)}${
-                            filteredPlayers[1] && teamBySlug.get(filteredPlayers[1][1]) && prettySlug(teamBySlug.get(filteredPlayers[1][1])!) !== prettySlug(teamBySlug.get(filteredPlayers[0][1])!)
-                              ? `,${prettySlug(teamBySlug.get(filteredPlayers[1][1])!)}`
-                              : ""
-                          }`,
-                        }
+                      ? (() => {
+                          const ta = resolveTeamAlias(teamBySlug.get(filteredPlayers[0][1])!, aliases.data?.team) || prettySlug(teamBySlug.get(filteredPlayers[0][1])!);
+                          const tbRaw = filteredPlayers[1] ? teamBySlug.get(filteredPlayers[1][1]) : undefined;
+                          const tb = tbRaw ? resolveTeamAlias(tbRaw, aliases.data?.team) || prettySlug(tbRaw) : undefined;
+                          return { teams: `${ta}${tb && tb !== ta ? `,${tb}` : ""}` };
+                        })()
                       : {}),
                     ...(it.c?.[0] ? { champ: it.c[0][0] } : {}),
                   }).toString() || undefined,
@@ -888,18 +904,12 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                 to={{
                   kind: "rankings",
                   ...(teamBySlug.get(filteredPlayers[0][1])
-                    ? {
-                        query: `q=${encodeURIComponent(
-                          [
-                            prettySlug(teamBySlug.get(filteredPlayers[0][1])!),
-                            filteredPlayers[1] && teamBySlug.get(filteredPlayers[1][1]) && prettySlug(teamBySlug.get(filteredPlayers[1][1])!) !== prettySlug(teamBySlug.get(filteredPlayers[0][1])!)
-                              ? prettySlug(teamBySlug.get(filteredPlayers[1][1])!)
-                              : "",
-                          ]
-                            .filter(Boolean)
-                            .join(","),
-                        )}`,
-                      }
+                    ? (() => {
+                        const ta = resolveTeamAlias(teamBySlug.get(filteredPlayers[0][1])!, aliases.data?.team) || prettySlug(teamBySlug.get(filteredPlayers[0][1])!);
+                        const tbRaw = filteredPlayers[1] ? teamBySlug.get(filteredPlayers[1][1]) : undefined;
+                        const tb = tbRaw ? resolveTeamAlias(tbRaw, aliases.data?.team) || prettySlug(tbRaw) : undefined;
+                        return { query: `q=${encodeURIComponent([ta, tb && tb !== ta ? tb : ""].filter(Boolean).join(","))}` };
+                      })()
                     : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -950,7 +960,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
             label={tl("Most built on")}
             value={<ChampLink name={top[0]} size={18} />}
             sub={tl("{n} games", { n: fmtNum(top[1]) })}
-            to={{ kind: "items", query: new URLSearchParams({ item: slug, champ: prettySlug(top[0]) }).toString() }}
+            to={{ kind: "items", query: new URLSearchParams({ item: slug, champ: resolveChampSlug(top[0]) }).toString() }}
           />
         )}
       </div>
@@ -978,7 +988,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                     </HubLink>
                     <PlayerLink name={n} u={u} />
                     {teamBySlug.get(u) && (
-                      <HubLink to={{ kind: "team", slug: prettySlug(teamBySlug.get(u)!) }} title={teamBySlug.get(u)!}>
+                      <HubLink to={{ kind: "team", slug: resolveTeamAlias(teamBySlug.get(u)!, aliases.data?.team) || prettySlug(teamBySlug.get(u)!) }} title={teamBySlug.get(u)!}>
                         <TeamLogo name={teamBySlug.get(u)!} size={13} />
                       </HubLink>
                     )}
@@ -1043,13 +1053,18 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
         if (!p) return false;
         const u = playerSlug(p);
         const hay = `${p[0]} ${p[2] || ""} ${u}`.toLowerCase();
-        return terms.some(
-          (t) =>
+        return terms.some((t) => {
+          const tAlias = searchAlias(t);
+          return (
             hay.includes(t) ||
+            (tAlias ? hay.includes(tAlias) : false) ||
             (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
             resolvePlayerSlug(t) === u ||
-            Boolean(p[2] && (aliases.data?.team[t] || prettySlug(t)) === prettySlug(p[2])),
-        );
+            (tAlias ? resolvePlayerSlug(tAlias) === u : false) ||
+            Boolean(p[2] && resolveTeamAlias(t, aliases.data?.team) === resolveTeamAlias(p[2], aliases.data?.team)) ||
+            Boolean(p[2] && tAlias && resolveTeamAlias(tAlias, aliases.data?.team) === resolveTeamAlias(p[2], aliases.data?.team))
+          );
+        });
       })
     : rows;
   const shown = all || terms.length ? filteredRows : filteredRows.slice(0, 100);
@@ -1112,7 +1127,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                   query: new URLSearchParams({
                     ...(champ ? { champ } : {}),
                     ...(year ? { year } : {}),
-                    q: filteredRows.slice(0, 2).map((r) => players?.[r.k]?.[0]).filter(Boolean).join(","),
+                    q: [topA, topB].filter(Boolean).join(","),
                   }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1131,33 +1146,35 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
               >
                 {tl("Pro tier list")} →
               </HubLink>
-              {players?.[filteredRows[0].k]?.[2] && (
-                <HubLink
-                  to={{
-                    kind: "prep",
-                    a: prettySlug(players[filteredRows[0].k][2]!),
-                    ...(filteredRows[1] && players?.[filteredRows[1].k]?.[2] && prettySlug(players[filteredRows[1].k][2]!) !== prettySlug(players[filteredRows[0].k][2]!)
-                      ? { b: prettySlug(players[filteredRows[1].k][2]!) }
-                      : {}),
-                    ...(year ? { period: `y${year}` } : {}),
-                  }}
-                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Match prep")} →
-                </HubLink>
-              )}
+              {players?.[filteredRows[0].k]?.[2] && (() => {
+                const ta = resolveTeamAlias(players[filteredRows[0].k][2]!, aliases.data?.team) || prettySlug(players[filteredRows[0].k][2]!);
+                const tbRaw = filteredRows[1] ? players?.[filteredRows[1].k]?.[2] : undefined;
+                const tb = tbRaw ? resolveTeamAlias(tbRaw, aliases.data?.team) || prettySlug(tbRaw) : undefined;
+                return (
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: ta,
+                      ...(tb && tb !== ta ? { b: tb } : {}),
+                      ...(year ? { period: `y${year}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                );
+              })()}
               <HubLink
                 to={{
                   kind: "draft",
                   query: new URLSearchParams({
                     ...(players?.[filteredRows[0].k]?.[2]
-                      ? {
-                          teams: `${prettySlug(players[filteredRows[0].k][2]!)}${
-                            filteredRows[1] && players?.[filteredRows[1].k]?.[2] && prettySlug(players[filteredRows[1].k][2]!) !== prettySlug(players[filteredRows[0].k][2]!)
-                              ? `,${prettySlug(players[filteredRows[1].k][2]!)}`
-                              : ""
-                          }`,
-                        }
+                      ? (() => {
+                          const ta = resolveTeamAlias(players[filteredRows[0].k][2]!, aliases.data?.team) || prettySlug(players[filteredRows[0].k][2]!);
+                          const tbRaw = filteredRows[1] ? players?.[filteredRows[1].k]?.[2] : undefined;
+                          const tb = tbRaw ? resolveTeamAlias(tbRaw, aliases.data?.team) || prettySlug(tbRaw) : undefined;
+                          return { teams: `${ta}${tb && tb !== ta ? `,${tb}` : ""}` };
+                        })()
                       : {}),
                     ...(champ ? { champ } : {}),
                     ...(year ? { p: `y${year}` } : {}),
@@ -1171,18 +1188,12 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                 to={{
                   kind: "rankings",
                   ...(players?.[filteredRows[0].k]?.[2]
-                    ? {
-                        query: `q=${encodeURIComponent(
-                          [
-                            prettySlug(players[filteredRows[0].k][2]!),
-                            filteredRows[1] && players?.[filteredRows[1].k]?.[2] && prettySlug(players[filteredRows[1].k][2]!) !== prettySlug(players[filteredRows[0].k][2]!)
-                              ? prettySlug(players[filteredRows[1].k][2]!)
-                              : "",
-                          ]
-                            .filter(Boolean)
-                            .join(","),
-                        )}`,
-                      }
+                    ? (() => {
+                        const ta = resolveTeamAlias(players[filteredRows[0].k][2]!, aliases.data?.team) || prettySlug(players[filteredRows[0].k][2]!);
+                        const tbRaw = filteredRows[1] ? players?.[filteredRows[1].k]?.[2] : undefined;
+                        const tb = tbRaw ? resolveTeamAlias(tbRaw, aliases.data?.team) || prettySlug(tbRaw) : undefined;
+                        return { query: `q=${encodeURIComponent([ta, tb && tb !== ta ? tb : ""].filter(Boolean).join(","))}` };
+                      })()
                     : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1261,7 +1272,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                             </HubLink>
                             <PlayerLink name={p[0]} u={u} />
                             {p[2] && (
-                              <HubLink to={{ kind: "team", slug: prettySlug(p[2]) }} title={p[2]} className="shrink-0">
+                              <HubLink to={{ kind: "team", slug: resolveTeamAlias(p[2], aliases.data?.team) || prettySlug(p[2]) }} title={p[2]} className="shrink-0">
                                 <TeamLogo name={p[2]} size={13} />
                               </HubLink>
                             )}
@@ -1333,13 +1344,18 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
           if (!p) return false;
           const u = playerSlug(p);
           const hay = `${p[0]} ${p[2] || ""} ${u}`.toLowerCase();
-          return terms.some(
-            (t) =>
+          return terms.some((t) => {
+            const tAlias = searchAlias(t);
+            return (
               hay.includes(t) ||
+              (tAlias ? hay.includes(tAlias) : false) ||
               (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
               resolvePlayerSlug(t) === u ||
-              Boolean(p[2] && (aliases.data?.team[t] || prettySlug(t)) === prettySlug(p[2])),
-          );
+              (tAlias ? resolvePlayerSlug(tAlias) === u : false) ||
+              Boolean(p[2] && resolveTeamAlias(t, aliases.data?.team) === resolveTeamAlias(p[2], aliases.data?.team)) ||
+              Boolean(p[2] && tAlias && resolveTeamAlias(tAlias, aliases.data?.team) === resolveTeamAlias(p[2], aliases.data?.team))
+            );
+          });
         })
       : y.p
     : [];
@@ -1381,7 +1397,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(prettySlug(y.c[0][0]))}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(y.c[0][0]))}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1405,8 +1421,8 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                   kind: "leaders",
                   query: new URLSearchParams({
                     ...(year ? { year } : {}),
-                    ...(y?.c?.[0] ? { champ: prettySlug(y.c[0][0]) } : {}),
-                    q: filteredP.slice(0, 2).map(([k]) => players?.[k]?.[0]).filter(Boolean).join(","),
+                    ...(y?.c?.[0] ? { champ: resolveChampSlug(y.c[0][0]) } : {}),
+                    q: [topA, topB].filter(Boolean).join(","),
                   }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1425,33 +1441,35 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
               >
                 {tl("Pro tier list")} →
               </HubLink>
-              {players?.[filteredP[0][0]]?.[2] && (
-                <HubLink
-                  to={{
-                    kind: "prep",
-                    a: prettySlug(players[filteredP[0][0]][2]!),
-                    ...(filteredP[1] && players?.[filteredP[1][0]]?.[2] && prettySlug(players[filteredP[1][0]][2]!) !== prettySlug(players[filteredP[0][0]][2]!)
-                      ? { b: prettySlug(players[filteredP[1][0]][2]!) }
-                      : {}),
-                    ...(year ? { period: `y${year}` } : {}),
-                  }}
-                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Match prep")} →
-                </HubLink>
-              )}
+              {players?.[filteredP[0][0]]?.[2] && (() => {
+                const ta = resolveTeamAlias(players[filteredP[0][0]][2]!, aliases.data?.team) || prettySlug(players[filteredP[0][0]][2]!);
+                const tbRaw = filteredP[1] ? players?.[filteredP[1][0]]?.[2] : undefined;
+                const tb = tbRaw ? resolveTeamAlias(tbRaw, aliases.data?.team) || prettySlug(tbRaw) : undefined;
+                return (
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: ta,
+                      ...(tb && tb !== ta ? { b: tb } : {}),
+                      ...(year ? { period: `y${year}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                );
+              })()}
               <HubLink
                 to={{
                   kind: "draft",
                   query: new URLSearchParams({
                     ...(players?.[filteredP[0][0]]?.[2]
-                      ? {
-                          teams: `${prettySlug(players[filteredP[0][0]][2]!)}${
-                            filteredP[1] && players?.[filteredP[1][0]]?.[2] && prettySlug(players[filteredP[1][0]][2]!) !== prettySlug(players[filteredP[0][0]][2]!)
-                              ? `,${prettySlug(players[filteredP[1][0]][2]!)}`
-                              : ""
-                          }`,
-                        }
+                      ? (() => {
+                          const ta = resolveTeamAlias(players[filteredP[0][0]][2]!, aliases.data?.team) || prettySlug(players[filteredP[0][0]][2]!);
+                          const tbRaw = filteredP[1] ? players?.[filteredP[1][0]]?.[2] : undefined;
+                          const tb = tbRaw ? resolveTeamAlias(tbRaw, aliases.data?.team) || prettySlug(tbRaw) : undefined;
+                          return { teams: `${ta}${tb && tb !== ta ? `,${tb}` : ""}` };
+                        })()
                       : {}),
                     ...(y?.c?.[0] ? { champ: y.c[0][0] } : {}),
                     ...(year ? { p: `y${year}` } : {}),
@@ -1465,18 +1483,12 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                 to={{
                   kind: "rankings",
                   ...(players?.[filteredP[0][0]]?.[2]
-                    ? {
-                        query: `q=${encodeURIComponent(
-                          [
-                            prettySlug(players[filteredP[0][0]][2]!),
-                            filteredP[1] && players?.[filteredP[1][0]]?.[2] && prettySlug(players[filteredP[1][0]][2]!) !== prettySlug(players[filteredP[0][0]][2]!)
-                              ? prettySlug(players[filteredP[1][0]][2]!)
-                              : "",
-                          ]
-                            .filter(Boolean)
-                            .join(","),
-                        )}`,
-                      }
+                    ? (() => {
+                        const ta = resolveTeamAlias(players[filteredP[0][0]][2]!, aliases.data?.team) || prettySlug(players[filteredP[0][0]][2]!);
+                        const tbRaw = filteredP[1] ? players?.[filteredP[1][0]]?.[2] : undefined;
+                        const tb = tbRaw ? resolveTeamAlias(tbRaw, aliases.data?.team) || prettySlug(tbRaw) : undefined;
+                        return { query: `q=${encodeURIComponent([ta, tb && tb !== ta ? tb : ""].filter(Boolean).join(","))}` };
+                      })()
                     : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1551,7 +1563,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                             </HubLink>
                             <PlayerLink name={p[0]} u={u} />
                             {p[2] && (
-                              <HubLink to={{ kind: "team", slug: prettySlug(p[2]) }} title={p[2]} className="shrink-0">
+                              <HubLink to={{ kind: "team", slug: resolveTeamAlias(p[2], aliases.data?.team) || prettySlug(p[2]) }} title={p[2]} className="shrink-0">
                                 <TeamLogo name={p[2]} size={13} />
                               </HubLink>
                             )}
@@ -1644,7 +1656,7 @@ const ItemStats: React.FC<{
             <HubLink
               to={{
                 kind: "counters",
-                ...(activeChamp ? { query: `champ=${encodeURIComponent(prettySlug(activeChamp))}` } : {}),
+                ...(activeChamp ? { query: `champ=${encodeURIComponent(resolveChampSlug(activeChamp))}` } : {}),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -1806,7 +1818,7 @@ const ItemStats: React.FC<{
                       {(r[5] || []).map((c) => (
                         <HubLink
                           key={c}
-                          to={{ kind: "items", query: new URLSearchParams({ item: r[1], champ: prettySlug(c) }).toString() }}
+                          to={{ kind: "items", query: new URLSearchParams({ item: r[1], champ: resolveChampSlug(c) }).toString() }}
                           title={`${itemName(r[0])} · ${champName(c)}`}
                         >
                           <ChampIcon name={c} size={18} />
@@ -1971,11 +1983,11 @@ const ChampSpread: React.FC<{ games: PlayerGameRow[]; picks?: Picks }> = ({ game
                 query: new URLSearchParams({
                   player: picks.player,
                   item: picks.item,
-                  champ: prettySlug(c),
+                  champ: resolveChampSlug(c),
                   ...(picks.year ? { year: picks.year } : {}),
                 }).toString(),
               }
-            : { kind: "champ", slug: prettySlug(c) }
+            : { kind: "champ", slug: resolveChampSlug(c) }
         }
         className="flex items-center gap-1 hover:text-rw-accent"
       >
@@ -1999,19 +2011,25 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
     ? games.filter((r) => {
         const hay = normText(`${champName(r[2])} ${r[2]} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""}`);
         return gTerms.some((t) => {
-          const canonTeam = aliases.data?.team[t] || prettySlug(t);
+          const tAlias = searchAlias(t);
+          const canonTeam = resolveTeamAlias(t, aliases.data?.team);
+          const canonAliasTeam = tAlias ? resolveTeamAlias(tAlias, aliases.data?.team) : "";
+          const r7Canon = r[7] ? resolveTeamAlias(r[7], aliases.data?.team) : "";
+          const r8Canon = r[8] ? resolveTeamAlias(r[8], aliases.data?.team) : "";
           return (
             hay.includes(t) ||
+            (tAlias ? hay.includes(tAlias) : false) ||
             (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
             matchesChampSearch(r[2], t) ||
-            Boolean(r[7] && canonTeam === prettySlug(r[7])) ||
-            Boolean(r[8] && canonTeam === prettySlug(r[8])) ||
+            Boolean(r7Canon && (canonTeam === r7Canon || (canonAliasTeam && canonAliasTeam === r7Canon))) ||
+            Boolean(r8Canon && (canonTeam === r8Canon || (canonAliasTeam && canonAliasTeam === r8Canon))) ||
             Boolean(r[11] && matchesPeriodEvent(r[11], r[9], t))
           );
         });
       })
     : games;
   const shown = all || gTerms.length ? filteredGames : filteredGames.slice(0, 50);
+  const tSlug = (name?: string) => (name ? resolveTeamAlias(name, aliases.data?.team) || prettySlug(name) : "");
   return (
     <>
       {games.length >= 10 && (
@@ -2029,8 +2047,8 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
               <HubLink
                 to={{
                   kind: "prep",
-                  a: prettySlug(filteredGames[0][7]),
-                  b: prettySlug(filteredGames[0][8]),
+                  a: tSlug(filteredGames[0][7]),
+                  b: tSlug(filteredGames[0][8]),
                   ...(/^\d{4}$/.test((filteredGames[0][0] || "").slice(0, 4)) ? { period: `y${(filteredGames[0][0] || "").slice(0, 4)}` } : {}),
                 }}
                 className="text-[11px] text-rw-accent hover:underline font-semibold"
@@ -2041,8 +2059,8 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                 to={{
                   kind: "compare",
                   mode: "team",
-                  a: prettySlug(filteredGames[0][7]),
-                  b: prettySlug(filteredGames[0][8]),
+                  a: tSlug(filteredGames[0][7]),
+                  b: tSlug(filteredGames[0][8]),
                   ...(/^\d{4}$/.test((filteredGames[0][0] || "").slice(0, 4)) ? { period: `y${(filteredGames[0][0] || "").slice(0, 4)}` } : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -2052,7 +2070,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(prettySlug(filteredGames[0][7]))},${encodeURIComponent(prettySlug(filteredGames[0][8]))}${/^\d{4}$/.test((filteredGames[0][0] || "").slice(0, 4)) ? `&p=y${encodeURIComponent((filteredGames[0][0] || "").slice(0, 4))}` : ""}`,
+                  query: `teams=${encodeURIComponent(tSlug(filteredGames[0][7]))},${encodeURIComponent(tSlug(filteredGames[0][8]))}${/^\d{4}$/.test((filteredGames[0][0] || "").slice(0, 4)) ? `&p=y${encodeURIComponent((filteredGames[0][0] || "").slice(0, 4))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -2061,7 +2079,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(prettySlug(filteredGames[0][7]))}&vs=${encodeURIComponent(prettySlug(filteredGames[0][8]))}${filteredGames[0][2] ? `&champ=${encodeURIComponent(filteredGames[0][2])}` : ""}`,
+                  query: `team=${encodeURIComponent(tSlug(filteredGames[0][7]))}&vs=${encodeURIComponent(tSlug(filteredGames[0][8]))}${filteredGames[0][2] ? `&champ=${encodeURIComponent(filteredGames[0][2])}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -2089,7 +2107,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
                   </span>
                 )}
-                <HubLink to={{ kind: "champ", slug: prettySlug(r[2]) }} className="shrink-0">
+                <HubLink to={{ kind: "champ", slug: resolveChampSlug(r[2]) }} className="shrink-0">
                   <ChampIcon name={r[2]} size={18} />
                 </HubLink>
                 <span className="truncate min-w-0 inline-flex items-center gap-1">
@@ -2104,7 +2122,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     <span className="text-rw-text tabular-nums shrink-0">{hide ? "–" : `${r[3]}/${r[4]}/${r[5]}`}</span>
                   )}
                   {r[7] && (
-                    <HubLink to={{ kind: "team", slug: prettySlug(r[7]) }} title={r[7]} className="shrink-0">
+                    <HubLink to={{ kind: "team", slug: tSlug(r[7]) }} title={r[7]} className="shrink-0">
                       <TeamLogo name={r[7]} size={13} />
                     </HubLink>
                   )}
@@ -2113,8 +2131,8 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                       to={{
                         kind: "compare",
                         mode: "team",
-                        a: prettySlug(r[7]),
-                        b: prettySlug(r[8]),
+                        a: tSlug(r[7]),
+                        b: tSlug(r[8]),
                         period: /^\d{4}$/.test((r[0] || "").slice(0, 4)) ? `y${(r[0] || "").slice(0, 4)}` : undefined,
                       }}
                       className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
@@ -2125,7 +2143,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                   ) : (
                     <span className="text-rw-muted shrink-0">{tl("vs")}</span>
                   )}
-                  <HubLink to={{ kind: "team", slug: prettySlug(r[8]) }} title={r[8]} className="shrink-0">
+                  <HubLink to={{ kind: "team", slug: tSlug(r[8]) }} title={r[8]} className="shrink-0">
                     <TeamLogo name={r[8]} size={13} />
                   </HubLink>
                   <TeamLink name={r[8]} className="truncate" />
@@ -2155,8 +2173,8 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     <HubLink
                       to={{
                         kind: "prep",
-                        a: prettySlug(r[7]),
-                        b: prettySlug(r[8]),
+                        a: tSlug(r[7]),
+                        b: tSlug(r[8]),
                         ...(/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? { period: `y${(r[0] || "").slice(0, 4)}` } : {}),
                       }}
                       className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
@@ -2166,7 +2184,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(prettySlug(r[7]))},${encodeURIComponent(prettySlug(r[8]))}${/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? `&p=y${encodeURIComponent((r[0] || "").slice(0, 4))}` : ""}`,
+                        query: `teams=${encodeURIComponent(tSlug(r[7]))},${encodeURIComponent(tSlug(r[8]))}${/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? `&p=y${encodeURIComponent((r[0] || "").slice(0, 4))}` : ""}`,
                       }}
                       className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
                     >
@@ -2175,7 +2193,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(prettySlug(r[7]))}&vs=${encodeURIComponent(prettySlug(r[8]))}${r[2] ? `&champ=${encodeURIComponent(r[2])}` : ""}${/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? `&year=${encodeURIComponent((r[0] || "").slice(0, 4))}` : ""}`,
+                        query: `team=${encodeURIComponent(tSlug(r[7]))}&vs=${encodeURIComponent(tSlug(r[8]))}${r[2] ? `&champ=${encodeURIComponent(r[2])}` : ""}${/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? `&year=${encodeURIComponent((r[0] || "").slice(0, 4))}` : ""}`,
                       }}
                       className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
                     >

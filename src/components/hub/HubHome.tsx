@@ -34,7 +34,7 @@ import { ShareMatchButton } from "../ShareMatchButton";
 import { SwissStandings } from "../SwissStandings";
 import { INTL_EVENTS, intlMatchNow } from "../../intlNow";
 import { LatestResults } from "../IdleHome";
-import { bare, normText, prettySlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias } from "../../hub/data";
+import { bare, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import { BroadcastCardButton, SectionCard, rankingsCard } from "./BroadcastCard";
 import type { TabKey } from "../Navigation";
@@ -958,10 +958,10 @@ const PatchMovers: React.FC = () => {
           const wrTone = wr.now == null ? "" : wr.now >= 0.55 ? "text-rw-teal font-semibold" : wr.now < 0.45 ? "text-rw-red" : "text-rw-sub";
           return (
             <li key={c} className="flex items-center gap-2 min-w-0">
-              <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="shrink-0">
+              <HubLink to={{ kind: "champ", slug: resolveChampSlug(c) }} className="shrink-0">
                 <ChampIcon name={c} size={22} />
               </HubLink>
-              <HubLink to={{ kind: "champ", slug: prettySlug(c) }} className="font-semibold text-rw-text hover:text-rw-accent truncate">
+              <HubLink to={{ kind: "champ", slug: resolveChampSlug(c) }} className="font-semibold text-rw-text hover:text-rw-accent truncate">
                 {champName(c)}
               </HubLink>
               <span className="ml-auto flex items-center gap-1.5 font-num tabular-nums text-[11px] whitespace-nowrap shrink-0">
@@ -1443,16 +1443,18 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
         const regCanon = e.r ? resolveRegionFilter(e.r) : null;
         const hay = normText(`${e.n} ${e.l || ""} ${lgSlug} ${e.r || ""} ${e.w || ""} ${e.wu || ""} ${winSlug} ${e.u || ""}`);
         return terms.some((t) => {
-          const resolvedT = resolveLeagueSlug(t);
-          const canonTeam = resolveTeamAlias(t);
+          const qAlias = searchAlias(t);
+          const resolvedT = resolveLeagueSlug(qAlias || t);
+          const canonTeam = resolveTeamAlias(qAlias || t);
           const canonReg = resolveRegionFilter(t);
           return (
             hay.includes(t) ||
+            (qAlias !== null && hay.includes(qAlias)) ||
             (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
             (resolvedT && lgSlug === resolvedT) ||
             Boolean(winSlug && canonTeam && canonTeam === winSlug) ||
             Boolean(regCanon && canonReg && canonReg === regCanon) ||
-            resolveEventSlug(t) === e.u ||
+            resolveEventSlug(qAlias || t) === e.u ||
             matchesPeriodEvent(e.u, e.n, t)
           );
         });
