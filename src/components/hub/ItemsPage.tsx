@@ -12,7 +12,8 @@ import type { HubRoute } from "../../hub/route";
 import { tl, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, sameChamp } from "../../hub/data";
+import { bare, loadAliases, loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveChampSlug, resolveItemSlug, resolvePlayerSlug, sameChamp } from "../../hub/data";
+import { matchesPeriodEvent } from "../../hub/period";
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub, hubShareUrl } from "../../hub/route";
 import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
@@ -65,7 +66,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   const q = new URLSearchParams(query || "");
   const picks: Picks = {
     player: resolvePlayerSlug(prettySlug(q.get("player") || "")),
-    item: prettySlug(q.get("item") || ""),
+    item: resolveItemSlug(q.get("item") || ""),
     champ: resolveChampSlug(q.get("champ") || ""),
     year: q.get("year") || "",
   };
@@ -110,7 +111,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
               aria-label={tl("Player")}
               onChange={(e) => setTyped(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && found[0]) {
+                if ((e.key === "Enter" || (e.key === "Tab" && !e.shiftKey && typed.trim())) && found[0]) {
                   set({ player: playerSlug(found[0]) });
                   setTyped("");
                 }
@@ -148,9 +149,30 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
             aria-label={tl("Item")}
             key={`item:${item}`}
             onChange={(e) => {
-              const v = normText(e.target.value.trim());
-              const hit = (items.data || []).find((r) => normText(r[0]) === v || normText(itemName(r[0])) === v);
+              const raw = e.target.value.trim();
+              const v = normText(raw);
+              const aliasSlug = raw.length >= 2 ? resolveItemSlug(raw) : "";
+              const isAlias = aliasSlug && aliasSlug !== prettySlug(raw);
+              const hit = (items.data || []).find(
+                (r) =>
+                  normText(r[0]) === v ||
+                  normText(itemName(r[0])) === v ||
+                  (isAlias && (r[1] === aliasSlug || r[1].replace(/-/g, "") === aliasSlug.replace(/-/g, ""))),
+              );
               if (hit) set({ item: hit[1] });
+            }}
+            onBlur={(e) => {
+              const v = (e.currentTarget.value || "").trim();
+              if (!v) return;
+              const hit = (items.data || []).find((r) => matchesItemSearch(r[0], itemName(r[0]), v));
+              if (hit && hit[1] !== item) set({ item: hit[1] });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey && e.currentTarget.value.trim())) {
+                const v = (e.currentTarget.value || "").trim();
+                const hit = (items.data || []).find((r) => matchesItemSearch(r[0], itemName(r[0]), v));
+                if (hit) set({ item: hit[1] });
+              }
             }}
             className={`${sel} w-56`}
           />
@@ -165,12 +187,26 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
             aria-label={tl("Champion")}
             key={`champ:${champ}`}
             onChange={(e) => {
-              const v = normText(e.target.value.trim());
-              const hit = champs.find((r) => normText(r[0]) === v || normText(champName(r[0])) === v);
+              const raw = e.target.value.trim();
+              const v = normText(raw);
+              const aliasSlug = raw.length >= 2 ? resolveChampSlug(raw) : "";
+              const isAlias = aliasSlug && aliasSlug !== prettySlug(raw);
+              const hit = champs.find(
+                (r) =>
+                  normText(r[0]) === v ||
+                  normText(champName(r[0])) === v ||
+                  (isAlias && (r[1] === aliasSlug || prettySlug(r[0]) === aliasSlug)),
+              );
               if (hit) set({ champ: hit[1] || prettySlug(hit[0]) });
             }}
+            onBlur={(e) => {
+              const v = (e.currentTarget.value || "").trim();
+              if (!v) return;
+              const hit = champs.find((r) => matchesChampSearch(r[0], v));
+              if (hit && (hit[1] || prettySlug(hit[0])) !== champ) set({ champ: hit[1] || prettySlug(hit[0]) });
+            }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey && e.currentTarget.value.trim())) {
                 const v = (e.currentTarget.value || "").trim();
                 const hit = champs.find((r) => matchesChampSearch(r[0], v));
                 if (hit) set({ champ: hit[1] || prettySlug(hit[0]) });
@@ -451,8 +487,7 @@ const PlayerItemsView: React.FC<{
         (!fTerms.length ||
           fTerms.some(
             (f) =>
-              normText(itemName(it)).includes(f) ||
-              normText(it).includes(f) ||
+              matchesItemSearch(it, itemName(it), f) ||
               g.some((r) => matchesChampSearch(r[2], f)),
           )),
     )
@@ -716,6 +751,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
   onYear,
 }) => {
   const st = useLoad(() => loadHubItem(slug), [slug]);
+  const aliases = useLoad(loadAliases, []);
   const [search, setSearch] = useState("");
   const teamBySlug = useMemo(() => {
     const m = new Map<string, string>();
@@ -734,8 +770,15 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
     .filter(Boolean);
   const filteredPlayers = terms.length
     ? it.players.filter(([n, u]) => {
-        const hay = `${n} ${u} ${teamBySlug.get(u) || ""}`.toLowerCase();
-        return terms.some((t) => hay.includes(t) || resolvePlayerSlug(t) === u);
+        const pTeam = teamBySlug.get(u) || "";
+        const hay = `${n} ${u} ${pTeam}`.toLowerCase();
+        return terms.some(
+          (t) =>
+            hay.includes(t) ||
+            (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+            resolvePlayerSlug(t) === u ||
+            Boolean(pTeam && (aliases.data?.team[t] || prettySlug(t)) === prettySlug(pTeam)),
+        );
       })
     : it.players;
   return (
@@ -969,6 +1012,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
   const { item, champ, year } = picks;
   const st = useLoad(() => loadHubItemChamp(item, champ), [item, champ]);
   const head = useLoad(() => loadHubItem(item), [item]);
+  const aliases = useLoad(loadAliases, []);
   const [all, setAll] = useState(false);
   const [search, setSearch] = useState("");
   if (st.loading || head.loading) return <Loading />;
@@ -999,7 +1043,13 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
         if (!p) return false;
         const u = playerSlug(p);
         const hay = `${p[0]} ${p[2] || ""} ${u}`.toLowerCase();
-        return terms.some((t) => hay.includes(t) || resolvePlayerSlug(t) === u);
+        return terms.some(
+          (t) =>
+            hay.includes(t) ||
+            (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+            resolvePlayerSlug(t) === u ||
+            Boolean(p[2] && (aliases.data?.team[t] || prettySlug(t)) === prettySlug(p[2])),
+        );
       })
     : rows;
   const shown = all || terms.length ? filteredRows : filteredRows.slice(0, 100);
@@ -1267,6 +1317,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
   const { item, year } = picks;
   const st = useLoad(() => loadHubItemYear(item, year), [item, year]);
   const head = useLoad(() => loadHubItem(item), [item]);
+  const aliases = useLoad(loadAliases, []);
   const [search, setSearch] = useState("");
   if (st.loading || head.loading) return <Loading />;
   const label = itemName(head.data?.n || item);
@@ -1282,7 +1333,13 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
           if (!p) return false;
           const u = playerSlug(p);
           const hay = `${p[0]} ${p[2] || ""} ${u}`.toLowerCase();
-          return terms.some((t) => hay.includes(t) || resolvePlayerSlug(t) === u);
+          return terms.some(
+            (t) =>
+              hay.includes(t) ||
+              (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+              resolvePlayerSlug(t) === u ||
+              Boolean(p[2] && (aliases.data?.team[t] || prettySlug(t)) === prettySlug(p[2])),
+          );
         })
       : y.p
     : [];
@@ -1552,8 +1609,7 @@ const ItemStats: React.FC<{
       (!terms.length ||
         terms.some(
           (t) =>
-            normText(itemName(r[0])).includes(t) ||
-            normText(r[0]).includes(t) ||
+            matchesItemSearch(r[0], itemName(r[0]), t) ||
             (r[5] || []).some((c) => matchesChampSearch(c, t)),
         )),
   );
@@ -1932,6 +1988,7 @@ const ChampSpread: React.FC<{ games: PlayerGameRow[]; picks?: Picks }> = ({ game
 /** The games, newest first: result, champion, KDA, opponent and event, each linked to its match page. */
 const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ games, spoilerKey }) => {
   const hiddenNow = useHiddenCheck();
+  const aliases = useLoad(loadAliases, []);
   const [all, setAll] = useState(false);
   const [gameFilter, setGameFilter] = useState("");
   const gTerms = gameFilter
@@ -1941,7 +1998,17 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
   const filteredGames = gTerms.length
     ? games.filter((r) => {
         const hay = normText(`${champName(r[2])} ${r[2]} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""}`);
-        return gTerms.some((t) => hay.includes(t) || matchesChampSearch(r[2], t));
+        return gTerms.some((t) => {
+          const canonTeam = aliases.data?.team[t] || prettySlug(t);
+          return (
+            hay.includes(t) ||
+            (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+            matchesChampSearch(r[2], t) ||
+            Boolean(r[7] && canonTeam === prettySlug(r[7])) ||
+            Boolean(r[8] && canonTeam === prettySlug(r[8])) ||
+            Boolean(r[11] && matchesPeriodEvent(r[11], r[9], t))
+          );
+        });
       })
     : games;
   const shown = all || gTerms.length ? filteredGames : filteredGames.slice(0, 50);

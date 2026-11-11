@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, tc, roleName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadHubChamp, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, loadHubChamp, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveItemSlug, resolvePlayerSlug } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import type { HubChamp } from "../../hub/types";
@@ -147,11 +147,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
   const [playersRecent, setPlayersRecent] = useState(() => qSpan === "12m");
   const resolveInitialUsed = (): { kind: "item" | "key" | "spells"; v: string } | null => {
     if (qItem) {
-      const target = prettySlug(qItem);
-      const fromBuild = (c.builds?.items || []).find(([it]) => prettySlug(it) === target || normText(itemName(it)) === normText(qItem))?.[0];
+      const target = resolveItemSlug(qItem);
+      const fromBuild = (c.builds?.items || []).find(([it]) => prettySlug(it) === target || matchesItemSearch(it, itemName(it), qItem))?.[0];
       if (fromBuild) return { kind: "item", v: fromBuild };
       for (const r of c.recent) {
-        const hit = (r.it || []).find((it) => prettySlug(it) === target || normText(itemName(it)) === normText(qItem));
+        const hit = (r.it || []).find((it) => prettySlug(it) === target || matchesItemSearch(it, itemName(it), qItem));
         if (hit) return { kind: "item", v: hit };
       }
     }
@@ -265,7 +265,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
       Boolean(r.team && canonTeam === prettySlug(r.team)) ||
       Boolean(r.opp && canonTeam === prettySlug(r.opp)) ||
       Boolean(r.en && matchesPeriodEvent(prettySlug(r.en), r.en, t)) ||
-      Boolean((r.it || []).some((it) => normText(itemName(it)).includes(t) || normText(it).includes(t))) ||
+      Boolean((r.it || []).some((it) => matchesItemSearch(it, itemName(it), t))) ||
       Boolean(r.ks && (normText(runeName(r.ks)).includes(t) || normText(r.ks).includes(t))) ||
       Boolean((r.sp || []).some((sp) => normText(spellName(sp)).includes(t) || normText(sp).includes(t)))
     );

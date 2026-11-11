@@ -50,7 +50,7 @@ describe("champion names", () => {
   });
 });
 
-import { searchHub, type HubIndex } from "../hub/data";
+import { matchesItemSearch, resolveItemSlug, searchHub, type HubIndex } from "../hub/data";
 describe("team search by old names and short names", () => {
   const index: HubIndex = {
     teams: [
@@ -77,5 +77,16 @@ describe("team search by old names and short names", () => {
     expect(searchHub(index, "Team SoloMid").team[0].name).toBe("TSM");
     expect(searchHub(index, "Evil Geniuses").team[0].name).toBe("Evil Geniuses.NA");
     expect(searchHub(index, "EG").team[0].name).toBe("Evil Geniuses.NA");
+  });
+  it("resolves common item abbreviations and shorthands", () => {
+    expect(resolveItemSlug("ie")).toBe("infinity-edge");
+    expect(resolveItemSlug("bork")).toBe("blade-of-the-ruined-king");
+    expect(resolveItemSlug("zhonya")).toBe("zhonyas-hourglass");
+    expect(resolveItemSlug("rabadon")).toBe("rabadons-deathcap");
+    expect(resolveItemSlug("ldr")).toBe("lord-dominiks-regards");
+    expect(matchesItemSearch("Zhonya's Hourglass", "Zhonya's Hourglass", "zhonya")).toBe(true);
+    expect(matchesItemSearch("Blade of The Ruined King", "Blade of The Ruined King", "bork")).toBe(true);
+    expect(matchesItemSearch("Infinity Edge", "Infinity Edge", "ie")).toBe(true);
+    expect(matchesItemSearch("Infinity Edge", "Infinity Edge", "zhonya")).toBe(false);
   });
 });

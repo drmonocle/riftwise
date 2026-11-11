@@ -260,6 +260,80 @@ export function matchesChampSearch(c: string, term: string): boolean {
   return false;
 }
 
+const ITEM_SLUG_ALIASES: Record<string, string> = {
+  ie: "infinity-edge",
+  bt: "bloodthirster",
+  ga: "guardian-angel",
+  bork: "blade-of-the-ruined-king",
+  botrk: "blade-of-the-ruined-king",
+  rfc: "rapid-firecannon",
+  pd: "phantom-dancer",
+  ldr: "lord-dominiks-regards",
+  eon: "edge-of-night",
+  dd: "deaths-dance",
+  bc: "black-cleaver",
+  roa: "rod-of-ages",
+  liandry: "liandrys-torment",
+  liandrys: "liandrys-torment",
+  zhonya: "zhonyas-hourglass",
+  zhonyas: "zhonyas-hourglass",
+  hourglass: "zhonyas-hourglass",
+  rabadon: "rabadons-deathcap",
+  rabadons: "rabadons-deathcap",
+  dcap: "rabadons-deathcap",
+  deathcap: "rabadons-deathcap",
+  seraph: "seraphs-embrace",
+  seraphs: "seraphs-embrace",
+  qss: "quicksilver-sash",
+  er: "essence-reaver",
+  triforce: "trinity-force",
+  jaksho: "jaksho-the-protean",
+  "jak-sho": "jaksho-the-protean",
+  sterak: "steraks-gage",
+  steraks: "steraks-gage",
+  warmog: "warmogs-armor",
+  warmogs: "warmogs-armor",
+  randuin: "randuins-omen",
+  randuins: "randuins-omen",
+  rylai: "rylais-crystal-scepter",
+  rylais: "rylais-crystal-scepter",
+  shurelya: "shurelyas-battlesong",
+  shurelyas: "shurelyas-battlesong",
+  guinsoo: "guinsoos-rageblade",
+  guinsoos: "guinsoos-rageblade",
+  rageblade: "guinsoos-rageblade",
+  youmuu: "youmuus-ghostblade",
+  youmuus: "youmuus-ghostblade",
+  ghostblade: "youmuus-ghostblade",
+  mikael: "mikaels-blessing",
+  mikaels: "mikaels-blessing",
+  locket: "locket-of-the-iron-solari",
+};
+export function resolveItemSlug(slug: string): string {
+  const raw = (slug || "").trim().toLowerCase();
+  if (ITEM_SLUG_ALIASES[raw]) return ITEM_SLUG_ALIASES[raw];
+  const p = prettySlug(slug);
+  return ITEM_SLUG_ALIASES[p] || p;
+}
+
+export function matchesItemSearch(rawName: string, localizedName: string, term: string): boolean {
+  const q = normText(term.trim());
+  if (!q) return true;
+  const disp = normText(localizedName || rawName);
+  const raw = normText(rawName);
+  if (disp.includes(q) || raw.includes(q)) return true;
+  const bq = bare(q);
+  const bDisp = bare(disp);
+  const bRaw = bare(raw);
+  if (bq.length >= 2 && (bDisp.includes(bq) || bRaw.includes(bq))) return true;
+  const alias = ITEM_SLUG_ALIASES[q] || ITEM_SLUG_ALIASES[prettySlug(q)];
+  if (alias) {
+    const ba = bare(alias);
+    if (ba && (bDisp === ba || bRaw === ba || bDisp.startsWith(ba) || bRaw.startsWith(ba))) return true;
+  }
+  return false;
+}
+
 async function champFile<T>(dir: "champ" | "matchups", slug: string): Promise<T> {
   const first = resolveChampSlug(slug);
   try {
@@ -801,9 +875,9 @@ export const loadPlayerItems = (slug: string): Promise<import("./types").PlayerI
   }
   return p;
 };
-export const loadHubItem = (slug: string) => load<import("./types").HubItem>(`hub/items/${prettySlug(slug)}.json`);
+export const loadHubItem = (slug: string) => load<import("./types").HubItem>(`hub/items/${resolveItemSlug(slug)}.json`);
 export const loadHubItemChamp = async (item: string, champ: string) => {
-  const it = prettySlug(item);
+  const it = resolveItemSlug(item);
   const first = resolveChampSlug(champ);
   try {
     return await load<import("./types").HubItemChamp>(`hub/items/${it}/c/${first}.json`);
@@ -815,7 +889,7 @@ export const loadHubItemChamp = async (item: string, champ: string) => {
     throw err;
   }
 };
-export const loadHubItemYear = (item: string, year: string) => load<import("./types").HubItemYear>(`hub/items/${prettySlug(item)}/y/${year}.json`);
+export const loadHubItemYear = (item: string, year: string) => load<import("./types").HubItemYear>(`hub/items/${resolveItemSlug(item)}/y/${year}.json`);
 export const loadItemIndex = () => load<import("./types").ItemIndexRow[]>("hub/items/index.json");
 /** top-league teams' ratings over the last 120 days: slug -> [date, rating][] */
 export const loadRatingsHistory = () => load<Record<string, [string, number][]>>("hub/ratings-history.json");
