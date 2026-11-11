@@ -92,9 +92,21 @@ const pSlug = (n: string, u?: string | null) => u || resolvePlayerSlug(n) || pre
 
 /** One team in a series' top card: its logo next to the score and its name, the winner's in the accent. Phones: the
  *  logo over the short name. */
-const SeriesSide: React.FC<{ team: HubSeries["a"]; won: boolean; align: "left" | "right"; period?: string }> = ({ team, won, align, period }) => {
+const SeriesSide: React.FC<{ team: HubSeries["a"]; oppSlug?: string; topChamp?: string; won: boolean; align: "left" | "right"; period?: string }> = ({
+  team,
+  oppSlug,
+  topChamp,
+  won,
+  align,
+  period,
+}) => {
   const u = sideSlug(team);
-  const pQuery = period ? `p=${encodeURIComponent(period)}` : undefined;
+  const pQuery =
+    new URLSearchParams({
+      ...(period ? { p: period } : {}),
+      ...(oppSlug && oppSlug !== u ? { q: oppSlug } : {}),
+      ...(topChamp ? { champ: resolveChampSlug(topChamp) } : {}),
+    }).toString() || undefined;
   const name = (
     <>
       <span className="sm:hidden">{team.c || team.n}</span>
@@ -163,7 +175,12 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
           className="absolute inset-0 rounded-[inherit] pointer-events-none bg-[radial-gradient(640px_220px_at_50%_0%,color-mix(in_oklab,var(--rw-accent)_12%,transparent),transparent_70%)]"
         />
         <div className="relative text-[13px] text-rw-sub flex flex-wrap items-center gap-x-2 gap-y-1">
-          <EventLink name={s.en} u={s.e} className="text-rw-accent font-semibold hover:underline" />
+          <EventLink
+            name={s.en}
+            u={s.e}
+            query={slugA || slugB ? `q=${encodeURIComponent([slugA, slugB].filter(Boolean).join(","))}` : undefined}
+            className="text-rw-accent font-semibold hover:underline"
+          />
           {s.stage && (
             <span>
               ·{" "}
@@ -239,7 +256,17 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
         </div>
         {/* the page's main heading: both teams and the score (short names on phones) */}
         <h1 className="relative mt-4 sm:mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-6">
-          <SeriesSide team={s.a} won={!hidden && s.w === 1} align="right" period={seriesPeriod} />
+          <SeriesSide
+            team={s.a}
+            oppSlug={slugB}
+            topChamp={
+              (game?.blue === "b" ? game?.t?.red?.picks?.[0] : game?.t?.blue?.picks?.[0]) ||
+              game?.p?.find((p) => p.s === (game?.blue === "b" ? 2 : 1) && p.c)?.c
+            }
+            won={!hidden && s.w === 1}
+            align="right"
+            period={seriesPeriod}
+          />
           <span className="flex flex-col items-center gap-1 min-w-[4.5rem]">
             <span className="block font-num text-[32px] sm:text-[44px] font-bold text-rw-text tabular-nums text-center leading-none">
               {scoreA} <span className="text-rw-muted/60">–</span> {scoreB}
@@ -251,7 +278,17 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
               </span>
             )}
           </span>
-          <SeriesSide team={s.b} won={!hidden && s.w === 2} align="left" period={seriesPeriod} />
+          <SeriesSide
+            team={s.b}
+            oppSlug={slugA}
+            topChamp={
+              (game?.blue === "b" ? game?.t?.blue?.picks?.[0] : game?.t?.red?.picks?.[0]) ||
+              game?.p?.find((p) => p.s === (game?.blue === "b" ? 1 : 2) && p.c)?.c
+            }
+            won={!hidden && s.w === 2}
+            align="left"
+            period={seriesPeriod}
+          />
         </h1>
         {hidden && (
           <div className="relative mt-3 text-center">
@@ -629,7 +666,18 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
           <div key={m.label} className="rounded-lg border border-rw-border/70 bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
             <div className="flex items-center justify-between text-[10px] font-mono tabular-nums">
               <span className="font-bold text-rw-side-a">
-                <TeamLink name={codeA} u={s.a.u} query={pQuery} className="hover:underline" /> {m.fmt(m.a)}
+                <TeamLink
+                  name={codeA}
+                  u={s.a.u}
+                  query={
+                    new URLSearchParams({
+                      ...(seriesPeriod ? { p: seriesPeriod } : s.e ? { p: `e:${s.e}` } : {}),
+                      ...(slugB && slugB !== slugA ? { q: slugB } : {}),
+                    }).toString() || undefined
+                  }
+                  className="hover:underline"
+                />{" "}
+                {m.fmt(m.a)}
               </span>
               {slugA && slugB ? (
                 <HubLink
@@ -647,7 +695,18 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
                 </span>
               )}
               <span className="font-bold text-rw-side-b">
-                {m.fmt(m.b)} <TeamLink name={codeB} u={s.b.u} query={pQuery} className="hover:underline" />
+                {m.fmt(m.b)}{" "}
+                <TeamLink
+                  name={codeB}
+                  u={s.b.u}
+                  query={
+                    new URLSearchParams({
+                      ...(seriesPeriod ? { p: seriesPeriod } : s.e ? { p: `e:${s.e}` } : {}),
+                      ...(slugA && slugA !== slugB ? { q: slugA } : {}),
+                    }).toString() || undefined
+                  }
+                  className="hover:underline"
+                />
               </span>
             </div>
             <div className="h-1.5 rounded-full overflow-hidden flex bg-rw-raised">
@@ -1518,18 +1577,24 @@ const PlayerBars: React.FC<{
     ].filter(Boolean) as { label: string; b: number; r: number; fmt: (x: number) => string }[]
   );
 
-  const pCtxQ = (p: GamePlayer, tU?: string | null) =>
-    new URLSearchParams({
-      ...(period ? { p: period } : {}),
-      ...(tU ? { team: tU } : {}),
-      ...(p.r ? { role: normalizeRole(p.r) } : {}),
-      ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
-    }).toString() || undefined;
-  const side = (p: GamePlayer, right: boolean) => {
+  const pCtxQ = (p: GamePlayer, tU?: string | null, oppP?: GamePlayer, oppTU?: string | null) => {
+    const pS = pSlug(p.n, p.u);
+    const oS = oppP ? pSlug(oppP.n, oppP.u) : "";
+    return (
+      new URLSearchParams({
+        ...(period ? { p: period } : eventSlug ? { p: `e:${eventSlug}` } : {}),
+        ...(tU ? { team: tU } : {}),
+        ...(oS && oS !== pS ? { q: oS } : oppTU && oppTU !== tU ? { q: oppTU } : {}),
+        ...(p.r ? { role: normalizeRole(p.r) } : {}),
+        ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
+      }).toString() || undefined
+    );
+  };
+  const side = (p: GamePlayer, right: boolean, oppP?: GamePlayer) => {
     const v = getVal(p, m);
     const w = v ? (v / max) * 100 : 0;
     const pS = pSlug(p.n, p.u);
-    const sQ = pCtxQ(p, right ? redU : blueU);
+    const sQ = pCtxQ(p, right ? redU : blueU, oppP, right ? blueU : redU);
     return (
       <div className={`flex items-center gap-2 min-w-0 ${right ? "" : "flex-row-reverse"}`}>
         {pS ? (
@@ -1738,7 +1803,21 @@ const PlayerBars: React.FC<{
                 <div key={it.label} className="rounded-lg border border-rw-border/70 bg-rw-bg/40 px-2.5 py-1.5 space-y-1">
                   <div className="flex items-center justify-between text-[10px] font-mono tabular-nums">
                     {blueU ? (
-                      <HubLink to={{ kind: "team", slug: blueU, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="font-bold hover:underline" style={{ color: BLUE }}>
+                      <HubLink
+                        to={{
+                          kind: "team",
+                          slug: blueU,
+                          tab: "stats",
+                          query:
+                            new URLSearchParams({
+                              ...(period ? { p: period } : eventSlug ? { p: `e:${eventSlug}` } : {}),
+                              ...(redU && redU !== blueU ? { q: redU } : {}),
+                              ...(blue[0]?.c ? { champ: resolveChampSlug(blue[0].c) } : {}),
+                            }).toString() || undefined,
+                        }}
+                        className="font-bold hover:underline"
+                        style={{ color: BLUE }}
+                      >
                         {it.fmt(it.b)}
                       </HubLink>
                     ) : (
@@ -1757,7 +1836,21 @@ const PlayerBars: React.FC<{
                       <span className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted">{it.label}</span>
                     )}
                     {redU ? (
-                      <HubLink to={{ kind: "team", slug: redU, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="font-bold hover:underline" style={{ color: RED }}>
+                      <HubLink
+                        to={{
+                          kind: "team",
+                          slug: redU,
+                          tab: "stats",
+                          query:
+                            new URLSearchParams({
+                              ...(period ? { p: period } : eventSlug ? { p: `e:${eventSlug}` } : {}),
+                              ...(blueU && blueU !== redU ? { q: blueU } : {}),
+                              ...(red[0]?.c ? { champ: resolveChampSlug(red[0].c) } : {}),
+                            }).toString() || undefined,
+                        }}
+                        className="font-bold hover:underline"
+                        style={{ color: RED }}
+                      >
                         {it.fmt(it.r)}
                       </HubLink>
                     ) : (
@@ -1778,11 +1871,35 @@ const PlayerBars: React.FC<{
 
         <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-3 text-[10px] uppercase tracking-wider font-bold">
           <span className="truncate text-right" style={{ color: BLUE }}>
-            <TeamLink name={blueName} u={blueU} query={period ? `p=${encodeURIComponent(period)}` : undefined} className="hover:underline" /> · {fmt(total(blue))}
+            <TeamLink
+              name={blueName}
+              u={blueU}
+              query={
+                new URLSearchParams({
+                  ...(period ? { p: period } : eventSlug ? { p: `e:${eventSlug}` } : {}),
+                  ...(redU && redU !== blueU ? { q: redU } : {}),
+                  ...(blue[0]?.c ? { champ: resolveChampSlug(blue[0].c) } : {}),
+                }).toString() || undefined
+              }
+              className="hover:underline"
+            />{" "}
+            · {fmt(total(blue))}
           </span>
           <span />
           <span className="truncate" style={{ color: RED }}>
-            <TeamLink name={redName} u={redU} query={period ? `p=${encodeURIComponent(period)}` : undefined} className="hover:underline" /> · {fmt(total(red))}
+            <TeamLink
+              name={redName}
+              u={redU}
+              query={
+                new URLSearchParams({
+                  ...(period ? { p: period } : eventSlug ? { p: `e:${eventSlug}` } : {}),
+                  ...(blueU && blueU !== redU ? { q: blueU } : {}),
+                  ...(red[0]?.c ? { champ: resolveChampSlug(red[0].c) } : {}),
+                }).toString() || undefined
+              }
+              className="hover:underline"
+            />{" "}
+            · {fmt(total(red))}
           </span>
         </div>
         {rows.map(({ r, b, o }) => {
@@ -1819,9 +1936,9 @@ const PlayerBars: React.FC<{
                       <ChampIcon name={b.c} size={14} />
                     </HubLink>
                   )}
-                  <PlayerLink name={b.n} u={b.u} query={pCtxQ(b, blueU)} className="truncate hover:text-rw-accent hover:underline" />
+                  <PlayerLink name={b.n} u={b.u} query={pCtxQ(b, blueU, o, redU)} className="truncate hover:text-rw-accent hover:underline" />
                 </div>
-                {side(b, false)}
+                {side(b, false, o)}
               </div>
               <div className="flex flex-col items-center w-14 shrink-0">
                 {pSlug(b.n, b.u) && pSlug(o.n, o.u) ? (
@@ -1842,7 +1959,7 @@ const PlayerBars: React.FC<{
               </div>
               <div className="min-w-0">
                 <div className="text-[10px] text-rw-sub truncate inline-flex items-center gap-1 w-full">
-                  <PlayerLink name={o.n} u={o.u} query={pCtxQ(o, redU)} className="truncate hover:text-rw-accent hover:underline" />
+                  <PlayerLink name={o.n} u={o.u} query={pCtxQ(o, redU, b, blueU)} className="truncate hover:text-rw-accent hover:underline" />
                   {o.c && (
                     <HubLink
                       to={{
@@ -1863,7 +1980,7 @@ const PlayerBars: React.FC<{
                     </HubLink>
                   )}
                 </div>
-                {side(o, true)}
+                {side(o, true, b)}
               </div>
             </div>
           );
@@ -2365,7 +2482,17 @@ const SideHeader: React.FC<{ name: string; u: string | null; oppU?: string | nul
   patch,
 }) => {
   const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
-  const pQuery = period ? `p=${encodeURIComponent(period)}` : eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : undefined;
+  const p0Slug = p0 ? pSlug(p0.n, p0.u) : "";
+  const oppP0Slug = oppP0 ? pSlug(oppP0.n, oppP0.u) : "";
+  const p0Role = p0?.r ? normalizeRole(p0.r) : "";
+  const p0Champ = p0?.c || st?.picks?.[0] || "";
+  const oppP0Champ = oppP0?.c || "";
+  const pQuery =
+    new URLSearchParams({
+      ...(period ? { p: period } : eventSlug ? { p: `e:${eventSlug}` } : {}),
+      ...(oppU && oppU !== u ? { q: oppU } : {}),
+      ...(p0Champ ? { champ: resolveChampSlug(p0Champ) } : {}),
+    }).toString() || undefined;
   const obj: [string, React.ReactNode][] = [];
   if (st?.k != null) obj.push([tl("Kills"), st.k]);
   if (st?.gold != null) obj.push([tl("Gold"), fmtGold(st.gold)]);
@@ -2381,11 +2508,6 @@ const SideHeader: React.FC<{ name: string; u: string | null; oppU?: string | nul
   const firsts = [st?.fb === 1 ? tl("First blood") : null, st?.ft === 1 ? tl("First tower") : null].filter((x): x is string => !!x);
   const drakes = st?.drakes ? Object.entries(st.drakes).map(([k, n]) => `${tl(DRAKE_LABEL[k] || k)}${n && n > 1 ? ` ×${n}` : ""}`) : [];
   const yr = period && /^y\d{4}$/.test(period) ? period.slice(1) : undefined;
-  const p0Slug = p0 ? pSlug(p0.n, p0.u) : "";
-  const oppP0Slug = oppP0 ? pSlug(oppP0.n, oppP0.u) : "";
-  const p0Role = p0?.r ? normalizeRole(p0.r) : "";
-  const p0Champ = p0?.c || st?.picks?.[0] || "";
-  const oppP0Champ = oppP0?.c || "";
   return (
     <div className={`min-w-0 ${right ? "text-right" : ""}`}>
       <div className={`flex items-center gap-2 ${right ? "justify-end" : ""}`}>
@@ -2432,7 +2554,7 @@ const SideHeader: React.FC<{ name: string; u: string | null; oppU?: string | nul
             <span key={l} className="text-rw-muted">
               {l}{" "}
               {u ? (
-                <HubLink to={{ kind: "team", slug: u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="text-rw-text font-semibold hover:text-rw-accent hover:underline" title={tl("Stats")}>
+                <HubLink to={{ kind: "team", slug: u, tab: "stats", ...(pQuery ? { query: pQuery } : {}) }} className="text-rw-text font-semibold hover:text-rw-accent hover:underline" title={tl("Stats")}>
                   {v}
                 </HubLink>
               ) : (
@@ -2449,7 +2571,7 @@ const SideHeader: React.FC<{ name: string; u: string | null; oppU?: string | nul
             u ? (
               <HubLink
                 key={f}
-                to={{ kind: "team", slug: u, tab: "stats", ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                to={{ kind: "team", slug: u, tab: "stats", ...(pQuery ? { query: pQuery } : {}) }}
                 className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rw-accent/15 border border-rw-accent/40 text-rw-text hover:border-rw-accent"
                 title={tl("Stats")}
               >
@@ -2508,7 +2630,12 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
             key={i}
             to={
               teamSlug
-                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}${effPeriod ? `&p=${encodeURIComponent(effPeriod)}` : ""}` }
+                ? {
+                    kind: "team",
+                    slug: teamSlug,
+                    tab: "champions",
+                    query: `champ=${encodeURIComponent(resolveChampSlug(c))}${oppSlug && oppSlug !== teamSlug ? `&q=${encodeURIComponent(oppSlug)}` : ""}${effPeriod ? `&p=${encodeURIComponent(effPeriod)}` : ""}`,
+                  }
                 : { kind: "champ", slug: resolveChampSlug(c), ...(effPeriod ? { query: `p=${encodeURIComponent(effPeriod)}` } : {}) }
             }
             className={`opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-opacity ${i === 3 ? "ml-2" : ""}`}
@@ -2550,7 +2677,12 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
             key={i}
             to={
               teamSlug
-                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}${effPeriod ? `&p=${encodeURIComponent(effPeriod)}` : ""}` }
+                ? {
+                    kind: "team",
+                    slug: teamSlug,
+                    tab: "champions",
+                    query: `champ=${encodeURIComponent(resolveChampSlug(c))}${oppSlug && oppSlug !== teamSlug ? `&q=${encodeURIComponent(oppSlug)}` : ""}${effPeriod ? `&p=${encodeURIComponent(effPeriod)}` : ""}`,
+                  }
                 : { kind: "champ", slug: resolveChampSlug(c), ...(effPeriod ? { query: `p=${encodeURIComponent(effPeriod)}` } : {}) }
             }
             className={`flex flex-col items-center hover:opacity-85 ${i === 3 ? "ml-2" : ""}`}
@@ -2583,7 +2715,12 @@ const Scoreboard: React.FC<{
   patch?: string;
 }> = ({ name, u, oppU, side, players, oppPlayers, hidden, won, minutes, ratings, top, period, eventSlug, patch }) => {
   const color = side === "blue" ? "#4a9eff" : "var(--rw-red)";
-  const pQuery = period ? `p=${encodeURIComponent(period)}` : undefined;
+  const pQuery =
+    new URLSearchParams({
+      ...(period ? { p: period } : eventSlug ? { p: `e:${eventSlug}` } : {}),
+      ...(oppU && oppU !== u ? { q: oppU } : {}),
+      ...(players[0]?.c ? { champ: resolveChampSlug(players[0].c) } : {}),
+    }).toString() || undefined;
   const totalK = players.reduce((s, p) => s + p.k, 0);
   const totalDmg = players.reduce((s, p) => s + (p.dm || 0), 0);
   const totalGold = players.reduce((s, p) => s + (p.gd || 0), 0);
@@ -2852,6 +2989,14 @@ const PlayerRow: React.FC<{
   const pQuery = period ? `p=${encodeURIComponent(period)}` : undefined;
   const pS = pSlug(p.n, p.u);
   const oppS = oppP ? pSlug(oppP.n, oppP.u) : "";
+  const playerRowQuery =
+    new URLSearchParams({
+      ...(period ? { p: period } : eventSlug ? { p: `e:${eventSlug}` } : {}),
+      ...(teamU ? { team: teamU } : {}),
+      ...(oppS && oppS !== pS ? { q: oppS } : oppU && oppU !== teamU ? { q: oppU } : {}),
+      ...(p.r ? { role: normalizeRole(p.r) } : {}),
+      ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
+    }).toString() || undefined;
   return (
     <div className="border-t border-rw-border pt-2 first:border-0 first:pt-0 text-xs">
       <div className="flex items-center gap-2 min-w-0">
@@ -2880,16 +3025,7 @@ const PlayerRow: React.FC<{
               to={{
                 kind: "player",
                 slug: pS,
-                ...(period || teamU || p.r || p.c
-                  ? {
-                      query: new URLSearchParams({
-                        ...(period ? { p: period } : {}),
-                        ...(teamU ? { team: teamU } : {}),
-                        ...(p.r ? { role: normalizeRole(p.r) } : {}),
-                        ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
-                      }).toString(),
-                    }
-                  : {}),
+                ...(playerRowQuery ? { query: playerRowQuery } : {}),
               }}
               className="shrink-0 hover:opacity-80"
               title={p.n}
@@ -2899,14 +3035,7 @@ const PlayerRow: React.FC<{
             <PlayerLink
               name={p.n}
               u={p.u}
-              query={
-                new URLSearchParams({
-                  ...(period ? { p: period } : {}),
-                  ...(teamU ? { team: teamU } : {}),
-                  ...(p.r ? { role: normalizeRole(p.r) } : {}),
-                  ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
-                }).toString() || undefined
-              }
+              query={playerRowQuery}
               className="font-semibold text-rw-text hover:text-rw-accent hover:underline truncate"
             />
             {p.r &&
@@ -2916,16 +3045,7 @@ const PlayerRow: React.FC<{
                     kind: "player",
                     slug: pS,
                     tab: "stats",
-                    ...(period || teamU || p.r || p.c
-                      ? {
-                          query: new URLSearchParams({
-                            ...(period ? { p: period } : {}),
-                            ...(teamU ? { team: teamU } : {}),
-                            ...(p.r ? { role: normalizeRole(p.r) } : {}),
-                            ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
-                          }).toString(),
-                        }
-                      : {}),
+                    ...(playerRowQuery ? { query: playerRowQuery } : {}),
                   }}
                   className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline shrink-0"
                   title={tl("Stats")}
@@ -2944,7 +3064,7 @@ const PlayerRow: React.FC<{
                     kind: "player",
                     slug: pS,
                     tab: "champions",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(p.c))}${teamU ? `&team=${encodeURIComponent(teamU)}` : ""}${p.r ? `&role=${encodeURIComponent(normalizeRole(p.r))}` : ""}${period ? `&p=${encodeURIComponent(period)}` : eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                    query: playerRowQuery,
                   }}
                   className="hover:text-rw-accent hover:underline"
                   title={`${p.n} · ${champName(p.c)}`}
@@ -2997,16 +3117,7 @@ const PlayerRow: React.FC<{
                   kind: "player",
                   slug: pS,
                   tab: "stats",
-                  ...(period || teamU || p.r || p.c
-                    ? {
-                        query: new URLSearchParams({
-                          ...(period ? { p: period } : {}),
-                          ...(teamU ? { team: teamU } : {}),
-                          ...(p.r ? { role: normalizeRole(p.r) } : {}),
-                          ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
-                        }).toString(),
-                      }
-                    : {}),
+                  ...(playerRowQuery ? { query: playerRowQuery } : {}),
                 }}
                 className="hover:text-rw-accent hover:underline"
                 title={tl("Stats")}
@@ -3094,16 +3205,7 @@ const PlayerRow: React.FC<{
               kind: "player",
               slug: pS,
               tab: "stats",
-              ...(period || teamU || p.r || p.c
-                ? {
-                    query: new URLSearchParams({
-                      ...(period ? { p: period } : {}),
-                      ...(teamU ? { team: teamU } : {}),
-                      ...(p.r ? { role: normalizeRole(p.r) } : {}),
-                      ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
-                    }).toString(),
-                  }
-                : {}),
+              ...(playerRowQuery ? { query: playerRowQuery } : {}),
             }}
             className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline tabular-nums"
             title={tl("Stats")}
@@ -3161,16 +3263,7 @@ const PlayerRow: React.FC<{
                   kind: "player",
                   slug: pS,
                   tab: "stats",
-                  ...(period || teamU || p.r || p.c
-                    ? {
-                        query: new URLSearchParams({
-                          ...(period ? { p: period } : {}),
-                          ...(teamU ? { team: teamU } : {}),
-                          ...(p.r ? { role: normalizeRole(p.r) } : {}),
-                          ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
-                        }).toString(),
-                      }
-                    : {}),
+                  ...(playerRowQuery ? { query: playerRowQuery } : {}),
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
