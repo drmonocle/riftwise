@@ -442,7 +442,7 @@ export const DraftTendencies: React.FC<{
                                 : period?.startsWith("p:")
                                   ? { key: `p${period.slice(2)}` }
                                   : {}),
-                            ...((d.b1[0] || d.r12[0]) ? { q: (d.b1[0] || d.r12[0])[0] } : {}),
+                            ...((d.b1[0] || d.r12[0]) ? { q: resolveChampSlug((d.b1[0] || d.r12[0])[0]) } : {}),
                             ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
                           }).toString(),
                         }
@@ -465,7 +465,7 @@ export const DraftTendencies: React.FC<{
                     kind: "leaders",
                     query: new URLSearchParams({
                       ...(resolvedSlug || teamName ? { q: resolvedSlug || teamName! } : {}),
-                      ...((d.b1[0] || d.r12[0]) ? { champ: (d.b1[0] || d.r12[0])[0] } : {}),
+                      ...((d.b1[0] || d.r12[0]) ? { champ: resolveChampSlug((d.b1[0] || d.r12[0])[0]) } : {}),
                       ...(period?.startsWith("y") && period.length === 5 ? { year: period.slice(1) } : {}),
                       ...(period?.startsWith("e:") ? { event: period.slice(2) } : {}),
                     }).toString(),
@@ -601,7 +601,7 @@ export const DraftTendencies: React.FC<{
                       kind: "team",
                       slug: resolvedSlug,
                       tab: "champions",
-                      query: `champ=${encodeURIComponent(c)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      query: `champ=${encodeURIComponent(resolveChampSlug(c))}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                     }}
                     className="text-rw-muted hover:text-rw-accent hover:underline"
                   >

@@ -97,7 +97,7 @@ export const RosterMoves: React.FC = () => {
                           ...(yr0 ? { year: yr0 } : {}),
                           ...(role0 ? { role: role0 } : {}),
                           ...(terms.length > 0 && list[0]
-                            ? { q: list.length === 1 ? list[0].n : `${list[0].to.n},${list[0].from.n}` }
+                            ? { q: list.length === 1 ? list[0].u : `${list[0].to.u},${list[0].from.u}` }
                             : {}),
                         }).toString(),
                       }

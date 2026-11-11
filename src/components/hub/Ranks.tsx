@@ -744,13 +744,13 @@ export const PlayerRanks: React.FC<{
             hide={prefs.hide}
             rankTo={(r) => ({
               kind: "leaders",
-              query: new URLSearchParams({ league: lu, year, role: me.r, stat: r.key, q: name || me.n || slug }).toString(),
+              query: new URLSearchParams({ league: lu, year, role: me.r, stat: r.key, q: slug }).toString(),
             })}
             lastTo={{ kind: "player", slug, tab: "matches" }}
           />
           <p className="text-[10px] text-rw-muted">
             <HubLink
-              to={{ kind: "leaders", query: new URLSearchParams({ league: lu, year, role: me.r, q: name || me.n || slug }).toString() }}
+              to={{ kind: "leaders", query: new URLSearchParams({ league: lu, year, role: me.r, q: slug }).toString() }}
               className="hover:text-rw-accent hover:underline"
             >
               {tl(
@@ -839,7 +839,7 @@ export const PlayerRanks: React.FC<{
                     scope: lu,
                     key: `y${year}`,
                     ...(me?.r ? { role: me.r } : {}),
-                    ...(games?.[0]?.[2] ? { q: games[0][2] } : {}),
+                    ...(games?.[0]?.[2] ? { q: resolveChampSlug(games[0][2]) } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

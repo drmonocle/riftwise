@@ -392,7 +392,7 @@ export const OwnStorylines: React.FC<{
                         ? {
                             query: new URLSearchParams({
                               ...(noteYr ? { key: `y${noteYr}` } : noteEv ? { event: noteEv } : {}),
-                              ...(noteChamp ? { q: noteChamp } : {}),
+                              ...(noteChamp ? { q: resolveChampSlug(noteChamp) } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -407,8 +407,8 @@ export const OwnStorylines: React.FC<{
                       query: new URLSearchParams({
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
-                        ...(noteChamp ? { champ: noteChamp } : {}),
-                        q: who.team || who.slug,
+                        ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
+                        q: who.slug,
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -491,7 +491,7 @@ export const OwnStorylines: React.FC<{
                       query: new URLSearchParams({
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
-                        ...(noteChamp ? { champ: noteChamp } : {}),
+                        ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                         q: who.slug,
                       }).toString(),
                     }}
@@ -515,7 +515,7 @@ export const OwnStorylines: React.FC<{
                         ? {
                             query: new URLSearchParams({
                               ...(noteYr ? { key: `y${noteYr}` } : noteEv ? { event: noteEv } : {}),
-                              ...(noteChamp ? { q: noteChamp } : {}),
+                              ...(noteChamp ? { q: resolveChampSlug(noteChamp) } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -621,7 +621,7 @@ export const HomeStorylines: React.FC = () => {
                         ? {
                             query: new URLSearchParams({
                               ...(topPlayers[0] || topTeams[0] ? { q: [topPlayers[0], topTeams[0]].filter(Boolean).join(",") } : {}),
-                              ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                              ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -644,7 +644,7 @@ export const HomeStorylines: React.FC = () => {
                   <HubLink
                     to={{
                       kind: "tiers",
-                      ...(topChamps[0] ? { query: `q=${encodeURIComponent(topChamps[0])}` } : {}),
+                      ...(topChamps[0] ? { query: `q=${encodeURIComponent(resolveChampSlug(topChamps[0]))}` } : {}),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -730,7 +730,7 @@ export const HomeStorylines: React.FC = () => {
                           ? {
                               query: new URLSearchParams({
                                 ...(filteredYr ? { key: `y${filteredYr}` } : filteredEv ? { event: filteredEv } : {}),
-                                ...(filteredChamp ? { q: filteredChamp } : {}),
+                                ...(filteredChamp ? { q: resolveChampSlug(filteredChamp) } : {}),
                               }).toString(),
                             }
                           : {}),
@@ -745,7 +745,7 @@ export const HomeStorylines: React.FC = () => {
                         query: new URLSearchParams({
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
-                          ...(filteredChamp ? { champ: filteredChamp } : {}),
+                          ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
                           q: [a, b].filter(Boolean).join(","),
                         }).toString(),
                       }}
@@ -805,7 +805,7 @@ export const HomeStorylines: React.FC = () => {
                         query: new URLSearchParams({
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
-                          ...(filteredChamp ? { champ: filteredChamp } : {}),
+                          ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
                           q: [playerSlugs[0], playerSlugs[1]].filter(Boolean).join(","),
                         }).toString(),
                       }}
@@ -823,7 +823,7 @@ export const HomeStorylines: React.FC = () => {
                           ? {
                               query: new URLSearchParams({
                                 ...(filteredYr ? { key: `y${filteredYr}` } : filteredEv ? { event: filteredEv } : {}),
-                                ...(filteredChamp ? { q: filteredChamp } : {}),
+                                ...(filteredChamp ? { q: resolveChampSlug(filteredChamp) } : {}),
                               }).toString(),
                             }
                           : {}),
