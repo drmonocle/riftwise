@@ -1900,7 +1900,7 @@ const Tendencies: React.FC<{ side: Side; other?: Side; rows: TeamGameRow[]; peri
     >
       <Playstyle t={t} />
       <TeamEarly t={t} />
-      <DraftTendencies rows={rows} teamName={side.team.name} teamSlug={side.team.u} period={period} periodLabel={periodLabel} />
+      <DraftTendencies rows={rows} teamName={side.team.name} teamSlug={side.team.u} oppSlug={other?.team.u} period={period} periodLabel={periodLabel} />
     </Section>
   );
 };

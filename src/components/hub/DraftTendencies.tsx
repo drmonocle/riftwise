@@ -339,9 +339,10 @@ export const DraftTendencies: React.FC<{
   rows: TeamGameRow[];
   teamName?: string;
   teamSlug?: string;
+  oppSlug?: string;
   period?: string;
   periodLabel?: string;
-}> = ({ rows, teamName, teamSlug, period, periodLabel }) => {
+}> = ({ rows, teamName, teamSlug, oppSlug, period, periodLabel }) => {
   const d = useMemo(() => draftTendencies(rows), [rows]);
   if (d.games < 3) return null;
   const resolvedSlug = teamSlug || (teamName ? resolveTeamAlias(teamName) || prettySlug(teamName) : undefined);
@@ -364,7 +365,10 @@ export const DraftTendencies: React.FC<{
           <h4 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{tl("Draft tendencies")}</h4>
           {resolvedSlug ? (
             <HubLink
-              to={{ kind: "finder", query: `team=${encodeURIComponent(resolvedSlug)}${periodParam}` }}
+              to={{
+                kind: "finder",
+                query: `team=${encodeURIComponent(resolvedSlug)}${oppSlug ? `&vs=${encodeURIComponent(oppSlug)}` : ""}${periodParam}`,
+              }}
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
             >
               {tl("{n} games with the draft order", { n: d.games })}
@@ -378,14 +382,14 @@ export const DraftTendencies: React.FC<{
             {resolvedSlug && (
               <>
                 <HubLink
-                  to={{ kind: "prep", a: resolvedSlug, ...(period && period !== "all" ? { period } : {}) }}
+                  to={{ kind: "prep", a: resolvedSlug, ...(oppSlug ? { b: oppSlug } : {}), ...(period && period !== "all" ? { period } : {}) }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
                   {tl("Match prep")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "compare", mode: "team", a: resolvedSlug, ...(period && period !== "all" ? { period } : {}) }}
+                  to={{ kind: "compare", mode: "team", a: resolvedSlug, ...(oppSlug ? { b: oppSlug } : {}), ...(period && period !== "all" ? { period } : {}) }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -395,7 +399,7 @@ export const DraftTendencies: React.FC<{
                   to={{
                     kind: "draft",
                     query: new URLSearchParams({
-                      teams: resolvedSlug,
+                      teams: oppSlug ? `${resolvedSlug},${oppSlug}` : resolvedSlug,
                       ...(period && period !== "all" ? { p: period } : {}),
                       ...((d.b1[0] || d.r12[0]) ? { champ: resolveChampSlug((d.b1[0] || d.r12[0])[0]) } : {}),
                       ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
@@ -434,7 +438,19 @@ export const DraftTendencies: React.FC<{
                       <HubLink
                         to={{
                           kind: "items",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(topOpeners[0]))}${resolvedSlug ? `&team=${encodeURIComponent(resolvedSlug)}` : ""}${period?.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : ""}`,
+                          query: new URLSearchParams({
+                            champ: resolveChampSlug(topOpeners[0]),
+                            ...(resolvedSlug ? { team: resolvedSlug } : {}),
+                            ...(oppSlug ? { vs: oppSlug } : {}),
+                            ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
+                            ...(period?.startsWith("y") && period.length === 5
+                              ? { year: period.slice(1) }
+                              : period?.startsWith("e:")
+                                ? { event: resolveEventSlug(period.slice(2)) }
+                                : period?.startsWith("p:")
+                                  ? { patch: period.slice(2) }
+                                  : {}),
+                          }).toString(),
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                         data-nocapture="1"
@@ -469,7 +485,12 @@ export const DraftTendencies: React.FC<{
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings", query: `q=${encodeURIComponent(resolvedSlug)}` }}
+                  to={{
+                    kind: "rankings",
+                    query: new URLSearchParams({
+                      q: oppSlug ? `${resolvedSlug},${oppSlug}` : resolvedSlug,
+                    }).toString(),
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -479,7 +500,7 @@ export const DraftTendencies: React.FC<{
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      ...(resolvedSlug || teamName ? { q: resolvedSlug || teamName! } : {}),
+                      ...(resolvedSlug || teamName ? { q: oppSlug && resolvedSlug ? `${resolvedSlug},${oppSlug}` : resolvedSlug || teamName! } : {}),
                       ...((d.b1[0] || d.r12[0]) ? { champ: resolveChampSlug((d.b1[0] || d.r12[0])[0]) } : {}),
                       ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
                       ...(period?.startsWith("y") && period.length === 5 ? { year: period.slice(1) } : {}),
@@ -504,7 +525,12 @@ export const DraftTendencies: React.FC<{
                   {tl("Champions")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(resolvedSlug)}${periodParam}` }}
+                  to={{
+                    kind: "finder",
+                    query: `team=${encodeURIComponent(resolvedSlug)}${oppSlug ? `&vs=${encodeURIComponent(oppSlug)}` : ""}${
+                      (d.b1[0] || d.r12[0]) ? `&champ=${encodeURIComponent(resolveChampSlug((d.b1[0] || d.r12[0])[0]))}` : ""
+                    }${d.firstRole[0] ? `&role=${encodeURIComponent(ROLES[d.firstRole[0][0]])}` : ""}${periodParam}`,
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
