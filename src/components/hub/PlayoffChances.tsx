@@ -271,7 +271,15 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                           </span>
                         )}
                         <HubLink
-                          to={{ kind: "finder", query: new URLSearchParams({ event: e.u, team: r.u }).toString() }}
+                          to={{
+                            kind: "finder",
+                            query: new URLSearchParams({
+                              event: e.u,
+                              team: r.u,
+                              ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
+                              ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                            }).toString(),
+                          }}
                           className="hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -281,7 +289,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                     </td>
                     <td className="px-2 py-1 text-right tabular-nums text-rw-muted max-sm:hidden" data-sort={r.left}>
                       <HubLink
-                        to={{ kind: "event", slug: e.u, tab: "matches" }}
+                        to={{ kind: "event", slug: e.u, tab: "matches", query: `q=${encodeURIComponent(r.u)}` }}
                         className="hover:text-rw-accent hover:underline"
                         title={tl("Matches")}
                       >

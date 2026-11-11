@@ -341,19 +341,26 @@ export const DraftTendencies: React.FC<{
   teamName?: string;
   teamSlug?: string;
   oppSlug?: string;
+  rosterSlugs?: string[];
   period?: string;
   periodLabel?: string;
-}> = ({ rows, teamName, teamSlug, oppSlug, period, periodLabel }) => {
+}> = ({ rows, teamName, teamSlug, oppSlug, rosterSlugs, period, periodLabel }) => {
   const d = useMemo(() => draftTendencies(rows), [rows]);
   if (d.games < 3) return null;
   const resolvedSlug = teamSlug || (teamName ? resolveTeamAlias(teamName) || prettySlug(teamName) : undefined);
+  const patchYear =
+    period?.startsWith("p:")
+      ? rows[0]?.[0] && /^\d{4}/.test(rows[0][0])
+        ? rows[0][0].slice(0, 4)
+        : undefined
+      : undefined;
   const periodParam =
     period?.startsWith("y") && period.length === 5
       ? `&year=${encodeURIComponent(period.slice(1))}`
       : period?.startsWith("e:")
         ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
         : period?.startsWith("p:")
-          ? `&patch=${encodeURIComponent(period.slice(2))}`
+          ? `&patch=${encodeURIComponent(period.slice(2))}${patchYear ? `&year=${encodeURIComponent(patchYear)}` : ""}`
           : "";
   const roleStr = (shares: [number, number][]) =>
     shares.length ? shares.slice(0, 2).map(([r, v]) => `${roleName(ROLES[r])} ${Math.round(v * 100)}%`).join(" · ") : "–";
@@ -426,7 +433,7 @@ export const DraftTendencies: React.FC<{
                           ...(period?.startsWith("y") && period.length === 5
                             ? { patch: period, year: period.slice(1) }
                             : period?.startsWith("p:")
-                              ? { patch: period.slice(2) }
+                              ? { patch: period.slice(2), ...(patchYear ? { year: patchYear } : {}) }
                               : period?.startsWith("e:")
                                 ? { event: resolveEventSlug(period.slice(2)) }
                                 : {}),
@@ -446,13 +453,15 @@ export const DraftTendencies: React.FC<{
                         ...(topOpenerSlugs[1] ? { vschamp: topOpenerSlugs[1] } : {}),
                         ...(resolvedSlug ? { team: resolvedSlug } : {}),
                         ...(oppSlug ? { vs: oppSlug } : {}),
+                        ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
+                        ...(rosterSlugs?.[1] ? { vsplayer: rosterSlugs[1] } : {}),
                         ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
                         ...(period?.startsWith("y") && period.length === 5
                           ? { year: period.slice(1) }
                           : period?.startsWith("e:")
                             ? { event: resolveEventSlug(period.slice(2)) }
                             : period?.startsWith("p:")
-                              ? { patch: period.slice(2) }
+                              ? { patch: period.slice(2), ...(patchYear ? { year: patchYear } : {}) }
                               : {}),
                       }).toString(),
                     }}
@@ -472,7 +481,7 @@ export const DraftTendencies: React.FC<{
                                 : period?.startsWith("e:")
                                   ? { event: resolveEventSlug(period.slice(2)) }
                                   : period?.startsWith("p:")
-                                    ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
+                                    ? { key: `p${period.slice(2)}`, patch: period.slice(2), ...(patchYear ? { year: patchYear } : {}) }
                                     : {}),
                               ...(topOpenerStr ? { q: topOpenerStr } : {}),
                               ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
@@ -501,10 +510,10 @@ export const DraftTendencies: React.FC<{
                     to={{
                       kind: "leaders",
                       query: new URLSearchParams({
-                        ...(resolvedSlug || teamName ? { q: oppSlug && resolvedSlug ? `${resolvedSlug},${oppSlug}` : resolvedSlug || teamName! } : {}),
+                        ...(resolvedSlug || teamName ? { q: [resolvedSlug || teamName!, oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(",") } : {}),
                         ...(topOpenerSlugs[0] ? { champ: topOpenerSlugs[0] } : {}),
                         ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
-                        ...(period?.startsWith("y") && period.length === 5 ? { year: period.slice(1) } : {}),
+                        ...(period?.startsWith("y") && period.length === 5 ? { year: period.slice(1) } : patchYear ? { year: patchYear } : {}),
                         ...(period?.startsWith("e:") ? { event: resolveEventSlug(period.slice(2)) } : {}),
                       }).toString(),
                     }}
@@ -529,6 +538,8 @@ export const DraftTendencies: React.FC<{
                     to={{
                       kind: "finder",
                       query: `team=${encodeURIComponent(resolvedSlug)}${oppSlug ? `&vs=${encodeURIComponent(oppSlug)}` : ""}${
+                        rosterSlugs?.[0] ? `&player=${encodeURIComponent(rosterSlugs[0])}` : ""
+                      }${rosterSlugs?.[1] ? `&vsplayer=${encodeURIComponent(rosterSlugs[1])}` : ""}${
                         topOpenerSlugs[0] ? `&champ=${encodeURIComponent(topOpenerSlugs[0])}` : ""
                       }${topOpenerSlugs[1] ? `&vschamp=${encodeURIComponent(topOpenerSlugs[1])}` : ""}${d.firstRole[0] ? `&role=${encodeURIComponent(ROLES[d.firstRole[0][0]])}` : ""}${periodParam}`,
                     }}

@@ -748,10 +748,19 @@ export const PlayerRanks: React.FC<{
           <Bars
             rows={rows}
             hide={prefs.hide}
-            rankTo={(r) => ({
-              kind: "leaders",
-              query: new URLSearchParams({ league: lu, year, role: me.r, stat: r.key, q: slug }).toString(),
-            })}
+            rankTo={(r) => {
+              const meTeamSlug = me.t ? me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) : "";
+              return {
+                kind: "leaders",
+                query: new URLSearchParams({
+                  league: lu,
+                  year,
+                  role: me.r,
+                  stat: r.key,
+                  q: [slug, meTeamSlug].filter(Boolean).join(","),
+                }).toString(),
+              };
+            }}
             lastTo={{ kind: "player", slug, tab: "matches", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
           />
           <p className="text-[10px] text-rw-muted">
@@ -931,6 +940,19 @@ export const PlayerRanks: React.FC<{
                     >
                       {tl("Power rankings")} →
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "best",
+                        query: new URLSearchParams({
+                          ...(lu ? { league: lu } : {}),
+                          ...(year ? { year } : {}),
+                          q: [slug, topPeer?.u, meTeam, peerTeam && peerTeam !== meTeam ? peerTeam : ""].filter(Boolean).join(","),
+                        }).toString(),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Best games")} →
+                    </HubLink>
                   </>
                 );
               })()}
@@ -1040,7 +1062,7 @@ export const TeamRanks: React.FC<{
         <Bars
           rows={rows}
           hide={prefs.hide}
-          rankTo={() => ({ kind: "league", slug: lu, year })}
+          rankTo={() => ({ kind: "league", slug: lu, year, query: `q=${encodeURIComponent(slug)}` })}
           lastTo={{ kind: "team", slug, tab: "matches", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
         />
         <p className="text-[10px] text-rw-muted">

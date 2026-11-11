@@ -1419,7 +1419,19 @@ export const PlayerOpponents: React.FC<{
                 query={(period || scope) && (period || scope) !== "all" ? `p=${encodeURIComponent((period || scope)!)}` : undefined}
               />
               <HubLink
-                to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(resolveOppSlug(expanded.opp, expanded.u))}${periodQuerySuffix(period || scope)}` }}
+                to={{
+                  kind: "finder",
+                  query: (() => {
+                    const subTeam = scopedRows.map((r) => (r[7] ? resolveOppSlug(r[7]) : "")).find(Boolean) || "";
+                    const primaryRole = scopedRows.map((r) => r[10] || "").find(Boolean) || "";
+                    const expSlug = resolveOppSlug(expanded.opp, expanded.u);
+                    const expC0 = expanded.champs[0]?.c ? resolveChampSlug(expanded.champs[0].c) : undefined;
+                    const expC1 = [...expanded.champs, ...opps.flatMap((o) => o.champs)]
+                      .map((c) => resolveChampSlug(c.c))
+                      .find((s) => Boolean(s) && s !== expC0);
+                    return `player=${encodeURIComponent(slug)}${subTeam ? `&team=${encodeURIComponent(subTeam)}` : ""}&vs=${encodeURIComponent(expSlug)}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${expC0 ? `&champ=${encodeURIComponent(expC0)}` : ""}${expC1 ? `&vschamp=${encodeURIComponent(expC1)}` : ""}${periodQuerySuffix(period || scope)}`;
+                  })(),
+                }}
                 className="text-rw-muted font-normal tabular-nums hover:text-rw-accent hover:underline"
               >
                 · {expanded.w}–{expanded.g - expanded.w} ({Math.round((expanded.w / expanded.g) * 100)}%) · KDA {expanded.kda.toFixed(2)}
@@ -1713,16 +1725,46 @@ export const PlayerOpponents: React.FC<{
                     </span>
                   </td>
                   <td className={td} data-sort={o.g ? o.w / o.g : -1}>
-                    <WinBar w={o.w} g={o.g} />
+                    <HubLink
+                      to={{ kind: "finder", query: rowFinderQuery }}
+                      className="hover:opacity-90"
+                      title={tl("Game finder")}
+                    >
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <WinBar w={o.w} g={o.g} />
+                      </span>
+                    </HubLink>
                   </td>
                   {hasRating && (
-                    <td className={td} data-sort={o.rating ?? -1}>{o.rating != null ? <RatingBadge v={o.rating} /> : <span className="text-rw-muted">–</span>}</td>
+                    <td className={td} data-sort={o.rating ?? -1}>
+                      {o.rating != null ? (
+                        <HubLink
+                          to={{ kind: "finder", query: rowFinderQuery }}
+                          className="hover:opacity-90"
+                          title={tl("Game finder")}
+                        >
+                          <span onClick={(e) => e.stopPropagation()}>
+                            <RatingBadge v={o.rating} />
+                          </span>
+                        </HubLink>
+                      ) : (
+                        <span className="text-rw-muted">–</span>
+                      )}
+                    </td>
                   )}
                   <td className={td} data-sort={o.kda}>
-                    <KdaBar
-                      kda={o.kda}
-                      sub={`${(o.k / o.g).toFixed(1)}/${(o.d / o.g).toFixed(1)}/${(o.a / o.g).toFixed(1)}`}
-                    />
+                    <HubLink
+                      to={{ kind: "finder", query: rowFinderQuery }}
+                      className="hover:opacity-90"
+                      title={tl("Game finder")}
+                    >
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <KdaBar
+                          kda={o.kda}
+                          sub={`${(o.k / o.g).toFixed(1)}/${(o.d / o.g).toFixed(1)}/${(o.a / o.g).toFixed(1)}`}
+                        />
+                      </span>
+                    </HubLink>
                   </td>
                   {hasDpm && (
                     <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.dpm ?? -1}>
@@ -2113,7 +2155,15 @@ export const TeamOpponentsChart: React.FC<{
                     </span>
                   </td>
                   <td className={td} data-sort={o.g ? o.w / o.g : -1}>
-                    <WinBar w={o.w} g={o.g} />
+                    <HubLink
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(oppSlug)}${rowYr ? `&year=${encodeURIComponent(rowYr)}` : ""}` }}
+                      className="hover:opacity-90"
+                      title={tl("Game finder")}
+                    >
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <WinBar w={o.w} g={o.g} />
+                      </span>
+                    </HubLink>
                   </td>
                   <td className={`${td} text-rw-muted tabular-nums`} data-sort={o.last || ""}>
                     <HubLink
@@ -2498,7 +2548,23 @@ export const TeamPeriodOpponents: React.FC<{
               </HubLink>
               <TeamLink name={expanded.opp} u={expanded.u} query={pVal ? `p=${encodeURIComponent(pVal)}` : undefined} />
               <HubLink
-                to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(resolveOppSlug(expanded.opp, expanded.u))}${pSuffix}` }}
+                to={{
+                  kind: "finder",
+                  query: (() => {
+                    const expSlug = resolveOppSlug(expanded.opp, expanded.u);
+                    const pickCounts = new Map<string, number>();
+                    for (const g of expanded.games) {
+                      for (const c of g[20] || []) {
+                        const cs = c ? resolveChampSlug(c) : "";
+                        if (cs) pickCounts.set(cs, (pickCounts.get(cs) || 0) + 1);
+                      }
+                    }
+                    const sortedPicks = [...pickCounts.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);
+                    const expChamp = sortedPicks[0];
+                    const expSecChamp = sortedPicks.find((c) => c !== expChamp);
+                    return `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(expSlug)}${expChamp ? `&champ=${encodeURIComponent(expChamp)}` : ""}${expSecChamp ? `&vschamp=${encodeURIComponent(expSecChamp)}` : ""}${pSuffix}`;
+                  })(),
+                }}
                 className="text-rw-muted font-normal tabular-nums hover:text-rw-accent hover:underline"
               >
                 · {expanded.w}–{expanded.g - expanded.w} ({Math.round((expanded.w / expanded.g) * 100)}%)
@@ -2773,7 +2839,15 @@ export const TeamPeriodOpponents: React.FC<{
                     </span>
                   </td>
                   <td className={td} data-sort={o.g ? o.w / o.g : -1}>
-                    <WinBar w={o.w} g={o.g} />
+                    <HubLink
+                      to={{ kind: "finder", query: rowFinderQuery }}
+                      className="hover:opacity-90"
+                      title={tl("Game finder")}
+                    >
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <WinBar w={o.w} g={o.g} />
+                      </span>
+                    </HubLink>
                   </td>
                   {hasGd15 && (
                     <td className={`${td} tabular-nums`} data-sort={o.gd15 ?? -99999}>
