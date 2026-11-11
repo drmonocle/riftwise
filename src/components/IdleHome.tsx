@@ -340,6 +340,7 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
   const ratings = useLoad(() => loadRatings().catch(() => null), []);
   const top = useMemo(() => (ratings.data?.teams || []).filter((t) => t[9] === 1).sort((a, b) => b[5] - a[5]).slice(0, 5), [ratings.data]);
   if (!top.length) return null;
+  const topLg = top[0]?.[4] && (!top[1]?.[4] || top[1][4] === top[0][4]) ? resolveLeagueSlug(top[0][4]) : "";
   const open = (slug?: string) => {
     navigateHub(slug ? { kind: "team", slug } : { kind: "rankings" });
     onSelectTab("stats");
@@ -387,7 +388,10 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
               <button
                 type="button"
                 onClick={() => {
-                  navigateHub({ kind: "finder", query: `team=${encodeURIComponent(top[0][0])}&vs=${encodeURIComponent(top[1][0])}` });
+                  navigateHub({
+                    kind: "finder",
+                    query: `team=${encodeURIComponent(top[0][0])}&vs=${encodeURIComponent(top[1][0])}${topLg ? `&league=${encodeURIComponent(topLg)}` : ""}`,
+                  });
                   onSelectTab("stats");
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
@@ -401,7 +405,11 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
             type="button"
             onClick={() => {
               const tq = [top[0]?.[0] || top[0]?.[1], top[1]?.[0] || top[1]?.[1]].filter(Boolean).join(",");
-              navigateHub({ kind: "leaders", ...(tq ? { query: `q=${encodeURIComponent(tq)}` } : {}) });
+              const qStr = new URLSearchParams({
+                ...(tq ? { q: tq } : {}),
+                ...(topLg ? { league: topLg } : {}),
+              }).toString();
+              navigateHub({ kind: "leaders", ...(qStr ? { query: qStr } : {}) });
               onSelectTab("stats");
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
@@ -412,7 +420,11 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
             type="button"
             onClick={() => {
               const bq = [top[0]?.[0] || top[0]?.[1], top[1]?.[0] || top[1]?.[1]].filter(Boolean).join(",");
-              navigateHub({ kind: "best", ...(bq ? { query: `q=${encodeURIComponent(bq)}` } : {}) });
+              const qStr = new URLSearchParams({
+                ...(bq ? { q: bq } : {}),
+                ...(topLg ? { league: topLg } : {}),
+              }).toString();
+              navigateHub({ kind: "best", ...(qStr ? { query: qStr } : {}) });
               onSelectTab("stats");
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
@@ -422,7 +434,7 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
           <button
             type="button"
             onClick={() => {
-              navigateHub({ kind: "tiers" });
+              navigateHub({ kind: "tiers", ...(topLg ? { scope: topLg } : {}) });
               onSelectTab("stats");
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"

@@ -743,38 +743,125 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   {l}
                 </HubLink>
               ))}
-              {settings.followedTeams.length > 0 && (
+              {settings.followedTeams.length > 0 && (() => {
+                const tSlugs = settings.followedTeams
+                  .slice(0, 6)
+                  .map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t));
+                const lg = settings.followedLeagues.length === 1 ? resolveLeagueSlug(settings.followedLeagues[0]) : "";
+                return (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a: tSlugs[0],
+                        ...(tSlugs[1] ? { b: tSlugs[1] } : {}),
+                      }}
+                      className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(tSlugs[0])}${tSlugs[1] ? `,${encodeURIComponent(tSlugs[1])}` : ""}`,
+                      }}
+                      className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a: tSlugs[0],
+                        ...(tSlugs[1] ? { b: tSlugs[1] } : {}),
+                      }}
+                      className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "rankings",
+                        query: new URLSearchParams({
+                          ...(lg ? { league: lg } : {}),
+                          q: tSlugs.join(","),
+                        }).toString(),
+                      }}
+                      className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")} →
+                    </HubLink>
+                  </>
+                );
+              })()}
+              {settings.followedTeams.length === 0 && settings.followedPlayers.length > 0 && (
                 <HubLink
                   to={{
-                    kind: "rankings",
-                    query: `q=${encodeURIComponent(
-                      settings.followedTeams
-                        .slice(0, 6)
-                        .map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t))
-                        .join(","),
-                    )}`,
+                    kind: "compare",
+                    mode: "player",
+                    a: resolvePlayerSlug(settings.followedPlayers[0]),
+                    ...(settings.followedPlayers[1] ? { b: resolvePlayerSlug(settings.followedPlayers[1]) } : {}),
                   }}
                   className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
                 >
-                  {tl("Power rankings")} →
+                  {tl("Compare")} →
                 </HubLink>
               )}
               {(settings.followedPlayers.length > 0 || settings.followedTeams.length > 0) && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      query: new URLSearchParams({
+                        ...(settings.followedLeagues.length === 1 ? { league: resolveLeagueSlug(settings.followedLeagues[0]) } : {}),
+                        q: (settings.followedPlayers.length > 0
+                          ? settings.followedPlayers.slice(0, 6).map((p) => resolvePlayerSlug(p))
+                          : settings.followedTeams
+                              .slice(0, 6)
+                              .map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t))
+                        ).join(","),
+                      }).toString(),
+                    }}
+                    className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                  >
+                    {tl("Player leaderboards")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: new URLSearchParams({
+                        ...(settings.followedLeagues.length === 1 ? { league: resolveLeagueSlug(settings.followedLeagues[0]) } : {}),
+                        ...(settings.followedTeams.length >= 1
+                          ? {
+                              team: teamSlug(catalog ? pickTeamByCode(catalog.teams, settings.followedTeams[0])?.name : undefined, settings.followedTeams[0]),
+                              ...(settings.followedTeams.length >= 2
+                                ? { vs: teamSlug(catalog ? pickTeamByCode(catalog.teams, settings.followedTeams[1])?.name : undefined, settings.followedTeams[1]) }
+                                : {}),
+                            }
+                          : settings.followedPlayers.length >= 1
+                            ? {
+                                player: resolvePlayerSlug(settings.followedPlayers[0]),
+                                ...(settings.followedPlayers.length >= 2 ? { vsplayer: resolvePlayerSlug(settings.followedPlayers[1]) } : {}),
+                              }
+                            : {}),
+                      }).toString(),
+                    }}
+                    className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
+                </>
+              )}
+              {settings.followedLeagues.length > 0 && (
                 <HubLink
                   to={{
-                    kind: "leaders",
-                    query: `q=${encodeURIComponent(
-                      (settings.followedPlayers.length > 0
-                        ? settings.followedPlayers.slice(0, 6).map((p) => resolvePlayerSlug(p))
-                        : settings.followedTeams
-                            .slice(0, 6)
-                            .map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t))
-                      ).join(","),
-                    )}`,
+                    kind: "tiers",
+                    ...(settings.followedLeagues.length === 1 ? { scope: resolveLeagueSlug(settings.followedLeagues[0]) } : {}),
                   }}
                   className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
                 >
-                  {tl("Player leaderboards")} →
+                  {tl("Pro tier list")} →
                 </HubLink>
               )}
             </div>

@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
-import { bare, loadAliases, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadAliases, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { normalizeRole } from "../../hub/champAgg";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
@@ -824,6 +824,8 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
     });
   }, [rosters, q, aliases.data]);
   const shownRosters = open || q ? filteredRosters : filteredRosters.slice(0, 4);
+  const qRole = q ? normalizeRole(q) || (searchAlias(q) ? normalizeRole(searchAlias(q)) : null) : null;
+  const normLg = leagueSlug ? resolveLeagueSlug(leagueSlug) : "";
   return (
     <Section
       title={tl("Team rosters")}
@@ -855,7 +857,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(tSlug(filteredRosters[0].t, filteredRosters[0].u))}${filteredRosters[1] ? `,${encodeURIComponent(tSlug(filteredRosters[1].t, filteredRosters[1].u))}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                  query: `teams=${encodeURIComponent(tSlug(filteredRosters[0].t, filteredRosters[0].u))}${filteredRosters[1] ? `,${encodeURIComponent(tSlug(filteredRosters[1].t, filteredRosters[1].u))}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}${qRole ? `&role=${encodeURIComponent(qRole)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -893,9 +895,10 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                   kind: "leaders",
                   query:
                     new URLSearchParams({
-                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(normLg ? { league: normLg } : {}),
                       ...(yr ? { year: yr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
+                      ...(qRole ? { role: qRole } : {}),
                       ...((q || filteredRosters.length <= 2) && filteredRosters.length >= 1
                         ? { q: filteredRosters.slice(0, 2).map((t) => tSlug(t.t, t.u)).join(",") }
                         : {}),
@@ -910,7 +913,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                   kind: "rankings",
                   query:
                     new URLSearchParams({
-                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(normLg ? { league: normLg } : {}),
                       ...(filteredRosters[0]
                         ? {
                             q: [
@@ -932,9 +935,10 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                   kind: "tiers",
                   query:
                     new URLSearchParams({
-                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(normLg ? { league: normLg } : {}),
                       ...(yr ? { year: yr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
+                      ...(qRole ? { role: qRole } : {}),
                     }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -945,7 +949,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `event=${encodeURIComponent(eventSlug)}${
+                    query: `event=${encodeURIComponent(eventSlug)}${qRole ? `&role=${encodeURIComponent(qRole)}` : ""}${
                       q.trim() && filteredRosters.length === 1
                         ? `&team=${encodeURIComponent(tSlug(filteredRosters[0].t, filteredRosters[0].u))}`
                         : q.trim() && filteredRosters.length >= 2
@@ -1082,13 +1086,14 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
   hidden,
 }) => {
   if (!e.regions || e.regions.length === 0 || hidden) return null;
+  const lgSlug = e.lu ? resolveLeagueSlug(e.lu) : "";
   return (
     <Section
       title={tl("Region vs region")}
       right={
         <span className="flex flex-wrap items-center gap-2">
           <HubLink
-            to={{ kind: "rankings", ...(e.lu ? { query: `league=${encodeURIComponent(e.lu)}` } : {}) }}
+            to={{ kind: "rankings", ...(lgSlug ? { query: `league=${encodeURIComponent(lgSlug)}` } : {}) }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >
@@ -1112,7 +1117,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             to={{
               kind: "leaders",
               query: new URLSearchParams({
-                ...(e.lu ? { league: e.lu } : {}),
+                ...(lgSlug ? { league: lgSlug } : {}),
                 ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
               }).toString(),
@@ -1127,7 +1132,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
               kind: "best",
               query:
                 new URLSearchParams({
-                  ...(e.lu ? { league: e.lu } : {}),
+                  ...(lgSlug ? { league: lgSlug } : {}),
                   ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 }).toString() || undefined,
             }}
@@ -1148,7 +1153,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
               kind: "tiers",
               query:
                 new URLSearchParams({
-                  ...(e.lu ? { league: e.lu } : {}),
+                  ...(lgSlug ? { league: lgSlug } : {}),
                   ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                   event: e.u,
                 }).toString() || undefined,

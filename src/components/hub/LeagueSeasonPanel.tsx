@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { bare, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { normalizeRole } from "../../hub/champAgg";
 import type { EventPlayer } from "../../hub/types";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
@@ -77,6 +77,14 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
       })
     : allTeams;
   const headerTeams = teams.length >= 1 ? teams : allTeams;
+  const lgSlug = resolveLeagueSlug(league);
+  const qRole =
+    terms.map((term) => normalizeRole(term) || (searchAlias(term) ? normalizeRole(searchAlias(term)) : null)).find(Boolean) ||
+    (terms.length > 0 && regular.length === 1 && regular[0].r ? normalizeRole(regular[0].r) || regular[0].r : "");
+  const qChampRaw =
+    terms.map((term) => allRegular.flatMap((p) => p.c || []).find((c) => matchesChampSearch(c, term))).find(Boolean) ||
+    (terms.length > 0 && regular.length === 1 && regular[0].c?.[0] ? regular[0].c[0] : "");
+  const qChamp = qChampRaw ? resolveChampSlug(qChampRaw) : "";
   return (
     <Section
       title={tl("{name} {year} at a glance", { name, year })}
@@ -97,8 +105,10 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
             to={{
               kind: "leaders",
               query: new URLSearchParams({
-                league,
+                league: lgSlug,
                 year,
+                ...(qRole ? { role: qRole } : {}),
+                ...(qChamp ? { champ: qChamp } : {}),
                 ...(terms.length > 0 && regular.length === 1
                   ? { q: regular[0].u || resolvePlayerSlug(regular[0].n) || regular[0].n }
                   : headerTeams.length >= 1
@@ -115,17 +125,39 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
           >
             {tl("Full leaderboard")}
           </HubLink>
-          <HubLink to={{ kind: "champions", query: `league=${league}&year=${year}` }} className="text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "champions",
+              query: new URLSearchParams({
+                league: lgSlug,
+                year,
+                ...(qRole ? { role: qRole } : {}),
+                ...(qChamp ? { q: qChamp } : {}),
+              }).toString(),
+            }}
+            className="text-rw-accent hover:underline"
+          >
             {tl("Champion picks")}
           </HubLink>
-          <HubLink to={{ kind: "tiers", query: `league=${league}&key=y${year}` }} className="text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "tiers",
+              query: new URLSearchParams({
+                league: lgSlug,
+                key: `y${year}`,
+                ...(qRole ? { role: qRole } : {}),
+                ...(qChamp ? { q: qChamp } : {}),
+              }).toString(),
+            }}
+            className="text-rw-accent hover:underline"
+          >
             {tl("Tier list")}
           </HubLink>
           <HubLink
             to={{
               kind: "rankings",
               query: new URLSearchParams({
-                league,
+                league: lgSlug,
                 ...(headerTeams.length >= 1
                   ? {
                       q: headerTeams
@@ -144,7 +176,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
             to={{
               kind: "best",
               query: new URLSearchParams({
-                league,
+                league: lgSlug,
                 year,
                 ...(headerTeams.length >= 1
                   ? {
@@ -163,12 +195,14 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
           <HubLink
             to={{
               kind: "finder",
-              query: `league=${league}&year=${year}${
-                headerTeams.length >= 1
-                  ? `&team=${encodeURIComponent(tSlug(headerTeams[0].t, headerTeams[0].u))}${
-                      terms.length && headerTeams[1] ? `&vs=${encodeURIComponent(tSlug(headerTeams[1].t, headerTeams[1].u))}` : ""
-                    }`
-                  : ""
+              query: `league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}${qRole ? `&role=${encodeURIComponent(qRole)}` : ""}${qChamp ? `&champ=${encodeURIComponent(qChamp)}` : ""}${
+                terms.length > 0 && regular.length === 1
+                  ? `&player=${encodeURIComponent(pSlug(regular[0].n, regular[0].u))}`
+                  : headerTeams.length >= 1
+                    ? `&team=${encodeURIComponent(tSlug(headerTeams[0].t, headerTeams[0].u))}${
+                        terms.length && headerTeams[1] ? `&vs=${encodeURIComponent(tSlug(headerTeams[1].t, headerTeams[1].u))}` : ""
+                      }`
+                    : ""
               }`,
             }}
             className="text-rw-accent hover:underline"
@@ -191,7 +225,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(tSlug(headerTeams[0].t, headerTeams[0].u))}${headerTeams[1] ? `,${encodeURIComponent(tSlug(headerTeams[1].t, headerTeams[1].u))}` : ""}&p=y${encodeURIComponent(year)}`,
+                  query: `teams=${encodeURIComponent(tSlug(headerTeams[0].t, headerTeams[0].u))}${headerTeams[1] ? `,${encodeURIComponent(tSlug(headerTeams[1].t, headerTeams[1].u))}` : ""}&p=y${encodeURIComponent(year)}${qRole ? `&role=${encodeURIComponent(qRole)}` : ""}${qChamp ? `&champ=${encodeURIComponent(qChamp)}` : ""}`,
                 }}
                 className="text-rw-accent hover:underline"
               >

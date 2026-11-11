@@ -1,7 +1,7 @@
 /** gol.gg-style stat tables for one tournament: every player and every team, sortable by any column. */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { bare, loadAliases, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadAliases, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
@@ -352,7 +352,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             to={{
               kind: "leaders",
               query: new URLSearchParams({
-                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                 ...((e.start || e.end || "").slice(0, 4) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
@@ -371,7 +371,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             to={{
               kind: "champions",
               query: new URLSearchParams({
-                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                 ...((e.start || e.end || "").slice(0, 4) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
@@ -387,7 +387,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             to={{
               kind: "tiers",
               query: new URLSearchParams({
-                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                 ...((e.start || e.end || "").slice(0, 4) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
@@ -432,7 +432,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
               kind: "rankings",
               query:
                 new URLSearchParams({
-                  ...(e.lu ? { league: e.lu } : {}),
+                  ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                   ...(rows[0]?.t
                     ? {
                         q: [
@@ -567,14 +567,17 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             <HubLink
               to={{
                 kind: "items",
-                query: `player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}${rows[0].c?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(rows[0].c[0]))}` : ""}`,
+                query: `player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}&event=${encodeURIComponent(e.u)}${rows[0].c?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(rows[0].c[0]))}` : ""}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}`,
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Item history")} →
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}` }}
+              to={{
+                kind: "finder",
+                query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}`,
+              }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Game finder")} →
@@ -815,7 +818,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
             to={{
               kind: "champions",
               query: new URLSearchParams({
-                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                 ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
               }).toString(),
@@ -829,7 +832,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
             to={{
               kind: "tiers",
               query: new URLSearchParams({
-                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                 ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
                 event: e.u,
               }).toString(),
@@ -844,7 +847,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               kind: "rankings",
               query:
                 new URLSearchParams({
-                  ...(e.lu ? { league: e.lu } : {}),
+                  ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                   ...(rows[0]
                     ? {
                         q: [tSlug(rows[0].t, rows[0].u), rows[1] ? tSlug(rows[1].t, rows[1].u) : ""]
@@ -889,7 +892,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
             to={{
               kind: "leaders",
               query: new URLSearchParams({
-                ...(e.lu ? { league: e.lu } : {}),
+                ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                 ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
                 ...(rows.length >= 1
