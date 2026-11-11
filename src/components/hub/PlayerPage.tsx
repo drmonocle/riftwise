@@ -548,7 +548,7 @@ const PlayerView: React.FC<{
                       {tl("Player leaderboards")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "tournaments", ...(evYr ? { query: `year=${encodeURIComponent(evYr)}` } : {}) }}
+                      to={{ kind: "tournaments", ...(evYr ? { year: evYr } : {}) }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Tournaments")} →
@@ -1365,7 +1365,7 @@ const PlayerView: React.FC<{
               <HubLink
                 to={{
                   kind: "tournaments",
-                  ...(p.titles[0]?.date && /^\d{4}/.test(p.titles[0].date) ? { query: `year=${encodeURIComponent(p.titles[0].date.slice(0, 4))}` } : {}),
+                  ...(p.titles[0]?.date && /^\d{4}/.test(p.titles[0].date) ? { year: p.titles[0].date.slice(0, 4) } : {}),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1507,7 +1507,7 @@ const PlayerView: React.FC<{
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(pentaChamp))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(pentaChamp))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${pentaYr ? `&patch=y${encodeURIComponent(pentaYr)}&year=${encodeURIComponent(pentaYr)}` : ""}`,
                         }}
                         className="text-[11px] text-rw-accent hover:underline"
                       >
@@ -1725,7 +1725,7 @@ const PlayerChampionsTab: React.FC<{
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(shownChamps[0].c))}&vs=${encodeURIComponent(resolveChampSlug(shownChamps[1].c))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(shownChamps[0].c))}&vs=${encodeURIComponent(resolveChampSlug(shownChamps[1].c))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${/^y\d{4}$/.test(period) ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1736,7 +1736,7 @@ const PlayerChampionsTab: React.FC<{
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(shownChamps[0].c))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(shownChamps[0].c))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${/^y\d{4}$/.test(period) ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1781,7 +1781,7 @@ const PlayerChampionsTab: React.FC<{
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(p.u)}${(search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? `&champ=${encodeURIComponent(resolveChampSlug(shownChamps[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
+                    query: `player=${encodeURIComponent(p.u)}${(search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? `&champ=${encodeURIComponent(resolveChampSlug(shownChamps[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : ""}`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -1796,7 +1796,7 @@ const PlayerChampionsTab: React.FC<{
                       ...(/^y\d{4}$/.test(period)
                         ? { year: period.slice(1) }
                         : period.startsWith("e:")
-                          ? { event: period.slice(2) }
+                          ? { event: resolveEventSlug(period.slice(2)) }
                           : {}),
                       ...((search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? { champ: resolveChampSlug(shownChamps[0].c) } : {}),
                     }).toString(),
@@ -1814,7 +1814,7 @@ const PlayerChampionsTab: React.FC<{
                         : period.startsWith("p:")
                           ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
                           : period.startsWith("e:")
-                            ? { event: period.slice(2) }
+                            ? { event: resolveEventSlug(period.slice(2)) }
                             : {}),
                       ...(p.role ? { role: p.role } : {}),
                       ...((search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? { q: resolveChampSlug(shownChamps[0].c) } : {}),
@@ -1827,7 +1827,7 @@ const PlayerChampionsTab: React.FC<{
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `player=${encodeURIComponent(p.u)}${(search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? `&champ=${encodeURIComponent(resolveChampSlug(shownChamps[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+                    query: `player=${encodeURIComponent(p.u)}${(search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? `&champ=${encodeURIComponent(resolveChampSlug(shownChamps[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
