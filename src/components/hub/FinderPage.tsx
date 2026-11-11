@@ -1504,7 +1504,26 @@ const FinderBody: React.FC<{
                       >
                         {events[g[2]]?.[0] ? (
                           <HubLink
-                            to={{ kind: "event", slug: events[g[2]][0] }}
+                            to={{
+                              kind: "event",
+                              slug: events[g[2]][0],
+                              query:
+                                new URLSearchParams({
+                                  ...([
+                                    g[12] || (g[10] ? resolveTeamAlias(g[10]) || prettySlug(g[10]) : ""),
+                                    g[13] || (g[11] ? resolveTeamAlias(g[11]) || prettySlug(g[11]) : ""),
+                                  ].some(Boolean)
+                                    ? {
+                                        q: [
+                                          g[12] || (g[10] ? resolveTeamAlias(g[10]) || prettySlug(g[10]) : ""),
+                                          g[13] || (g[11] ? resolveTeamAlias(g[11]) || prettySlug(g[11]) : ""),
+                                        ]
+                                          .filter(Boolean)
+                                          .join(","),
+                                      }
+                                    : {}),
+                                }).toString() || undefined,
+                            }}
                             className="hover:text-rw-accent hover:underline"
                           >
                             {events[g[2]][1]}
@@ -1516,6 +1535,7 @@ const FinderBody: React.FC<{
                       <TeamCell
                         name={g[10]}
                         u={g[12]}
+                        vs={g[13] || (g[11] ? resolveTeamAlias(g[11]) || prettySlug(g[11]) : undefined)}
                         focus={sideCond && s === 0}
                         won={g[3] === 1}
                         period={events[g[2]]?.[0] ? `e:${events[g[2]][0]}` : g[0]?.slice(0, 4) ? `y${g[0].slice(0, 4)}` : undefined}
@@ -1523,40 +1543,52 @@ const FinderBody: React.FC<{
                       <TeamCell
                         name={g[11]}
                         u={g[13]}
+                        vs={g[12] || (g[10] ? resolveTeamAlias(g[10]) || prettySlug(g[10]) : undefined)}
                         focus={sideCond && s === 1}
                         won={g[3] === 0}
                         period={events[g[2]]?.[0] ? `e:${events[g[2]][0]}` : g[0]?.slice(0, 4) ? `y${g[0].slice(0, 4)}` : undefined}
                       />
                       <td className={`${td} font-semibold text-rw-text`} data-sort={(g[3] === 1 ? g[10] : g[11]) || ""}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
-                          {(g[3] === 1 ? g[10] : g[11]) && (
-                            <HubLink
-                              to={{
-                                kind: "team",
-                                slug: (g[3] === 1 ? g[12] : g[13]) || resolveTeamAlias((g[3] === 1 ? g[10] : g[11])!) || prettySlug((g[3] === 1 ? g[10] : g[11])!),
-                                ...(events[g[2]]?.[0] ? { query: `p=e:${encodeURIComponent(events[g[2]][0])}` } : g[0]?.slice(0, 4) ? { query: `p=y${g[0].slice(0, 4)}` } : {}),
-                              }}
-                              className="shrink-0"
-                            >
-                              <TeamLogo name={(g[3] === 1 ? g[10] : g[11])!} size={14} />
-                            </HubLink>
-                          )}
-                          {(g[3] === 1 ? g[10] : g[11]) ? (
-                            <HubLink
-                              to={{
-                                kind: "team",
-                                slug: (g[3] === 1 ? g[12] : g[13]) || resolveTeamAlias((g[3] === 1 ? g[10] : g[11])!) || prettySlug((g[3] === 1 ? g[10] : g[11])!),
-                                ...(events[g[2]]?.[0] ? { query: `p=e:${encodeURIComponent(events[g[2]][0])}` } : g[0]?.slice(0, 4) ? { query: `p=y${g[0].slice(0, 4)}` } : {}),
-                              }}
-                              className="hover:text-rw-accent"
-                            >
-                              {(g[3] === 1 ? g[10] : g[11])!}
-                            </HubLink>
-                          ) : g[3] === 1 ? (
-                            <span>{tl("Blue")}</span>
-                          ) : (
-                            <span>{tl("Red")}</span>
-                          )}
+                          {(() => {
+                            const winName = g[3] === 1 ? g[10] : g[11];
+                            const winSlug = winName ? (g[3] === 1 ? g[12] : g[13]) || resolveTeamAlias(winName) || prettySlug(winName) : "";
+                            const loseName = g[3] === 1 ? g[11] : g[10];
+                            const loseSlug = loseName ? (g[3] === 1 ? g[13] : g[12]) || resolveTeamAlias(loseName) || prettySlug(loseName) : "";
+                            const winQuery =
+                              new URLSearchParams({
+                                ...(events[g[2]]?.[0] ? { p: `e:${events[g[2]][0]}` } : g[0]?.slice(0, 4) ? { p: `y${g[0].slice(0, 4)}` } : {}),
+                                ...(loseSlug ? { q: loseSlug } : {}),
+                              }).toString() || undefined;
+                            return winName ? (
+                              <>
+                                <HubLink
+                                  to={{
+                                    kind: "team",
+                                    slug: winSlug,
+                                    ...(winQuery ? { query: winQuery } : {}),
+                                  }}
+                                  className="shrink-0"
+                                >
+                                  <TeamLogo name={winName} size={14} />
+                                </HubLink>
+                                <HubLink
+                                  to={{
+                                    kind: "team",
+                                    slug: winSlug,
+                                    ...(winQuery ? { query: winQuery } : {}),
+                                  }}
+                                  className="hover:text-rw-accent"
+                                >
+                                  {winName}
+                                </HubLink>
+                              </>
+                            ) : g[3] === 1 ? (
+                              <span>{tl("Blue")}</span>
+                            ) : (
+                              <span>{tl("Red")}</span>
+                            );
+                          })()}
                         </span>
                       </td>
                       <td className={`${td} text-rw-sub`} data-sort={patchSort(g[1])}>
@@ -1588,8 +1620,20 @@ const FinderBody: React.FC<{
                           ""
                         )}
                       </td>
-                      <Picks list={g[5]} period={events[g[2]]?.[0] ? `e:${events[g[2]][0]}` : g[0]?.slice(0, 4) ? `y${g[0].slice(0, 4)}` : undefined} />
-                      <Picks list={g[6]} period={events[g[2]]?.[0] ? `e:${events[g[2]][0]}` : g[0]?.slice(0, 4) ? `y${g[0].slice(0, 4)}` : undefined} />
+                      <Picks
+                        list={g[5]}
+                        oppList={g[6]}
+                        team={g[12] || (g[10] ? resolveTeamAlias(g[10]) || prettySlug(g[10]) : undefined)}
+                        vs={g[13] || (g[11] ? resolveTeamAlias(g[11]) || prettySlug(g[11]) : undefined)}
+                        period={events[g[2]]?.[0] ? `e:${events[g[2]][0]}` : g[0]?.slice(0, 4) ? `y${g[0].slice(0, 4)}` : undefined}
+                      />
+                      <Picks
+                        list={g[6]}
+                        oppList={g[5]}
+                        team={g[13] || (g[11] ? resolveTeamAlias(g[11]) || prettySlug(g[11]) : undefined)}
+                        vs={g[12] || (g[10] ? resolveTeamAlias(g[10]) || prettySlug(g[10]) : undefined)}
+                        period={events[g[2]]?.[0] ? `e:${events[g[2]][0]}` : g[0]?.slice(0, 4) ? `y${g[0].slice(0, 4)}` : undefined}
+                      />
                     </tr>
                   ))}
                 </tbody>
@@ -1848,6 +1892,12 @@ const Cohort: React.FC<{
                     slug: resolveChampSlug(c),
                     query:
                       new URLSearchParams({
+                        ...(player ? { player: resolvePlayerSlug(prettySlug(player)) } : {}),
+                        ...(team ? { team: resolveTeamAlias(team) || prettySlug(team) } : {}),
+                        ...(vs ? { vs: resolveTeamAlias(vs) || prettySlug(vs) } : {}),
+                        ...(rows.find(([rc]) => rc !== c)?.[0]
+                          ? { vschamp: resolveChampSlug(rows.find(([rc]) => rc !== c)![0]) }
+                          : {}),
                         ...(event ? { event } : patch ? { p: `p:${patch}` } : year ? { p: `y${year}` } : {}),
                         ...(role ? { role } : {}),
                       }).toString() || undefined,
@@ -2030,67 +2080,100 @@ function downloadCohort(found: Found, events: [string, string][], name: string) 
 const TeamCell: React.FC<{
   name?: string;
   u?: string | null;
+  vs?: string | null;
   focus: boolean;
   won: boolean;
   period?: string;
-}> = ({ name, u, focus, won, period }) => (
-  <td
-    className={`${td} ${won ? "text-rw-text font-semibold" : "text-rw-sub"} ${focus ? "underline decoration-rw-accent decoration-2 underline-offset-4" : ""}`}
-    data-sort={name || ""}
-  >
-    <span className="inline-flex items-center gap-1.5 min-w-0">
-      {name && (
-        <HubLink
-          to={{ kind: "team", slug: u || resolveTeamAlias(name) || prettySlug(name), ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
-          className="shrink-0"
-        >
-          <TeamLogo name={name} size={14} />
-        </HubLink>
-      )}
-      {u ? (
-        <HubLink to={{ kind: "team", slug: u, ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="hover:text-rw-accent">
-          {name}
-        </HubLink>
-      ) : name ? (
-        <HubLink
-          to={{ kind: "team", slug: resolveTeamAlias(name) || prettySlug(name), ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
-          className="hover:text-rw-accent"
-        >
-          {name}
-        </HubLink>
-      ) : (
-        "–"
-      )}
-    </span>
-  </td>
-);
+}> = ({ name, u, vs, focus, won, period }) => {
+  const query =
+    new URLSearchParams({
+      ...(period ? { p: period } : {}),
+      ...(vs ? { q: vs } : {}),
+    }).toString() || undefined;
+  return (
+    <td
+      className={`${td} ${won ? "text-rw-text font-semibold" : "text-rw-sub"} ${focus ? "underline decoration-rw-accent decoration-2 underline-offset-4" : ""}`}
+      data-sort={name || ""}
+    >
+      <span className="inline-flex items-center gap-1.5 min-w-0">
+        {name && (
+          <HubLink
+            to={{ kind: "team", slug: u || resolveTeamAlias(name) || prettySlug(name), ...(query ? { query } : {}) }}
+            className="shrink-0"
+          >
+            <TeamLogo name={name} size={14} />
+          </HubLink>
+        )}
+        {u ? (
+          <HubLink to={{ kind: "team", slug: u, ...(query ? { query } : {}) }} className="hover:text-rw-accent">
+            {name}
+          </HubLink>
+        ) : name ? (
+          <HubLink
+            to={{ kind: "team", slug: resolveTeamAlias(name) || prettySlug(name), ...(query ? { query } : {}) }}
+            className="hover:text-rw-accent"
+          >
+            {name}
+          </HubLink>
+        ) : (
+          "–"
+        )}
+      </span>
+    </td>
+  );
+};
 
-const Picks: React.FC<{ list: ChampPick[]; period?: string }> = ({ list, period }) => (
+const Picks: React.FC<{ list: ChampPick[]; oppList?: ChampPick[]; team?: string; vs?: string; period?: string }> = ({
+  list,
+  oppList,
+  team,
+  vs,
+  period,
+}) => (
   <td className={td}>
     <span className="flex gap-0.5">
-      {list.map((p, i) => (
-        <HubLink
-          key={`${p[0]}-${i}`}
-          to={
-            p[9]
-              ? {
-                  kind: "player",
-                  slug: p[9],
-                  tab: "champions",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(p[0]))}${period ? `&p=${encodeURIComponent(period)}` : ""}`,
-                }
-              : {
-                  kind: "champ",
-                  slug: resolveChampSlug(p[0]),
-                  ...(period ? { query: period.startsWith("e:") ? `event=${encodeURIComponent(period.slice(2))}` : `p=${encodeURIComponent(period)}` } : {}),
-                }
-          }
-          title={p[8] ? `${p[8]}: ${champName(p[0])}` : champName(p[0])}
-          className="hover:opacity-80"
-        >
-          <ChampIcon name={p[0]} size={20} />
-        </HubLink>
-      ))}
+      {list.map((p, i) => {
+        const role = p[1] >= 0 ? ROLES[p[1]] : undefined;
+        const opp = oppList?.find((op) => op[1] === p[1] && op[1] >= 0) || oppList?.[i];
+        const vsChamp = opp && opp[0] !== p[0] ? resolveChampSlug(opp[0]) : undefined;
+        const vsPlayer = opp?.[9] && opp[9] !== p[9] ? opp[9] : undefined;
+        return (
+          <HubLink
+            key={`${p[0]}-${i}`}
+            to={
+              p[9]
+                ? {
+                    kind: "player",
+                    slug: p[9],
+                    tab: "champions",
+                    query: new URLSearchParams({
+                      champ: resolveChampSlug(p[0]),
+                      ...(role ? { role } : {}),
+                      ...(team ? { team } : {}),
+                      ...(vsPlayer || vs ? { q: (vsPlayer || vs)! } : {}),
+                      ...(period ? { p: period } : {}),
+                    }).toString(),
+                  }
+                : {
+                    kind: "champ",
+                    slug: resolveChampSlug(p[0]),
+                    query:
+                      new URLSearchParams({
+                        ...(team ? { team } : {}),
+                        ...(vs ? { vs } : {}),
+                        ...(role ? { role } : {}),
+                        ...(vsChamp ? { vschamp: vsChamp } : {}),
+                        ...(period ? (period.startsWith("e:") ? { event: period.slice(2) } : { p: period }) : {}),
+                      }).toString() || undefined,
+                  }
+            }
+            title={p[8] ? `${p[8]}: ${champName(p[0])}` : champName(p[0])}
+            className="hover:opacity-80"
+          >
+            <ChampIcon name={p[0]} size={20} />
+          </HubLink>
+        );
+      })}
     </span>
   </td>
 );
