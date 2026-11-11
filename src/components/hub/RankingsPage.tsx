@@ -479,7 +479,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               kind: "champions",
               query: new URLSearchParams({
                 ...(leagueSlug ? { league: leagueSlug } : {}),
-                ...(asOfYr ? { year: asOfYr } : {}),
+                ...(asOfYr ? { key: `y${asOfYr}`, year: asOfYr } : {}),
               }).toString(),
             }}
             className="text-rw-accent hover:underline"
@@ -490,8 +490,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
             to={{
               kind: "tiers",
               query: new URLSearchParams({
-                ...(leagueSlug ? { scope: leagueSlug } : {}),
-                ...(asOfYr ? { key: `y${asOfYr}` } : {}),
+                ...(leagueSlug ? { scope: leagueSlug, league: leagueSlug } : {}),
+                ...(asOfYr ? { key: `y${asOfYr}`, year: asOfYr } : {}),
               }).toString(),
             }}
             className="text-rw-accent hover:underline"
@@ -637,8 +637,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
-                      ...(leagueSlug ? { scope: leagueSlug } : {}),
-                      ...(asOfYr ? { key: `y${asOfYr}` } : {}),
+                      ...(leagueSlug ? { scope: leagueSlug, league: leagueSlug } : {}),
+                      ...(asOfYr ? { key: `y${asOfYr}`, year: asOfYr } : {}),
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -973,7 +973,17 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 return (
                   <>
                     <HubLink
-                      to={{ kind: "tiers", ...(topLgSlug ? { query: `scope=${encodeURIComponent(topLgSlug)}` } : {}) }}
+                      to={{
+                        kind: "tiers",
+                        ...(topLgSlug || asOfYr
+                          ? {
+                              query: new URLSearchParams({
+                                ...(topLgSlug ? { scope: topLgSlug, league: topLgSlug } : {}),
+                                ...(asOfYr ? { key: `y${asOfYr}`, year: asOfYr } : {}),
+                              }).toString(),
+                            }
+                          : {}),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →

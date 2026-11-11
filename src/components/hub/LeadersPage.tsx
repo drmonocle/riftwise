@@ -441,8 +441,8 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 to={{
                   kind: "tiers",
                   query: new URLSearchParams({
-                    ...(league ? { scope: league } : {}),
-                    ...(year ? { key: `y${year}` } : {}),
+                    ...(league ? { scope: league, league } : {}),
+                    ...(year ? { key: `y${year}`, year } : {}),
                     ...(event ? { event } : {}),
                     ...(role ? { role } : {}),
                     ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
@@ -614,7 +614,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     kind: "champions",
                     query: new URLSearchParams({
                       ...(league ? { league } : {}),
-                      ...(year ? { year } : {}),
+                      ...(year ? { key: `y${year}`, year } : {}),
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
                       ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
@@ -628,8 +628,8 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
-                      ...(league ? { scope: league } : {}),
-                      ...(year ? { key: `y${year}` } : {}),
+                      ...(league ? { scope: league, league } : {}),
+                      ...(year ? { key: `y${year}`, year } : {}),
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
                       ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
@@ -665,10 +665,12 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: new URLSearchParams({
-                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || shownRows[0]!.c![0]) } : {}),
-                      ...(role ? { role } : {}),
-                    }).toString() || undefined,
+                    query:
+                      new URLSearchParams({
+                        ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || shownRows[0]!.c![0]) } : {}),
+                        ...(role ? { role } : {}),
+                        ...(event ? { event } : year ? { patch: `y${year}`, year } : {}),
+                      }).toString() || undefined,
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
                 >
