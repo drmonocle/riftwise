@@ -807,12 +807,17 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
       : null;
   const tPageQuery = (t: EventTeamStats) => {
     const ts = tSlug(t.t, t.u);
-    const vsTeam = pair ? (pair[0] === ts ? pair[1] : pair[1] === ts ? pair[0] : "") : "";
+    const vsTeam =
+      (pair ? (pair[0] === ts ? pair[1] : pair[1] === ts ? pair[0] : "") : "") ||
+      rows.map((r) => tSlug(r.t, r.u)).find((s) => Boolean(s) && s !== ts) ||
+      "";
     const tPlayer = (e.players || []).filter((p) => tSlug(p.t, p.tu) === ts).sort((a, b) => b.g - a.g)[0];
     const tpSlug = tPlayer ? pSlug(tPlayer.n, tPlayer.u) : "";
+    const topEvChamp = e.champs?.[0]?.c ? resolveChampSlug(e.champs[0].c) : "";
     return new URLSearchParams({
       p: `e:${e.u}`,
       ...(vsTeam ? { q: vsTeam } : tpSlug ? { q: tpSlug } : {}),
+      ...(topEvChamp ? { champ: topEvChamp } : {}),
     }).toString();
   };
   const tFinderQuery = (t: EventTeamStats, side?: "b" | "r") => {

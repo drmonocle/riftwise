@@ -974,21 +974,23 @@ export const FactCard: React.FC<{
                 ...(r.team ? { team: r.team } : cardTeams[0] ? { team: cardTeams[0] } : {}),
                 ...(vsChampSlug ? { vschamp: vsChampSlug } : {}),
               }).toString() || undefined;
+            const vsTeamSlug = (r.team || cardTeams[0]) ? cardTeams.find((t) => t !== (r.team || cardTeams[0])) : undefined;
+            const vsPlayerSlug = r.player ? cardPlayers.find((p) => p !== r.player) : undefined;
             const playerRowQ =
               r.player
                 ? new URLSearchParams({
                     ...(eventSlug ? { p: `e:${eventSlug}` } : evYr ? { p: `y${evYr}` } : {}),
-                    ...(r.team ? { team: r.team } : {}),
-                    ...(rChampSlug ? { champ: rChampSlug } : {}),
+                    ...(r.team ? { team: r.team } : cardTeams[0] ? { team: cardTeams[0] } : {}),
+                    ...(vsPlayerSlug ? { q: vsPlayerSlug } : vsTeamSlug ? { q: vsTeamSlug } : {}),
+                    ...(rChampSlug ? { champ: rChampSlug } : cardChamps[0] ? { champ: cardChamps[0] } : {}),
                   }).toString() || undefined
                 : evQ;
-            const vsTeamSlug = r.team ? cardTeams.find((t) => t !== r.team) : undefined;
             const teamRowQ =
               r.team
                 ? new URLSearchParams({
                     ...(eventSlug ? { p: `e:${eventSlug}` } : evYr ? { p: `y${evYr}` } : {}),
                     ...(r.player ? { q: r.player } : vsTeamSlug ? { q: vsTeamSlug } : {}),
-                    ...(rChampSlug ? { champ: rChampSlug } : {}),
+                    ...(rChampSlug ? { champ: rChampSlug } : cardChamps[0] ? { champ: cardChamps[0] } : {}),
                   }).toString() || undefined
                 : evQ;
             return (
