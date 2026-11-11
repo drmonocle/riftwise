@@ -1036,7 +1036,16 @@ const PatchMovers: React.FC = () => {
         })}
       </ul>
       <HubLink
-        to={{ kind: "champions", ...(p ? { query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}` } : {}) }}
+        to={{
+          kind: "champions",
+          ...(p
+            ? {
+                query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}${
+                  rows.length > 0 ? `&q=${encodeURIComponent(rows.slice(0, 2).map((r) => resolveChampSlug(r.m[0])).join(","))}` : ""
+                }`,
+              }
+            : {}),
+        }}
         className={more}
       >
         {p ? tl("Patch {patch}, tier list, counters, items →", { patch: p.p }) : tl("Pick, ban and win rates →")}
@@ -1134,7 +1143,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                       <HubLink
                         to={{
                           kind: "draft",
-                          query: `teams=${encodeURIComponent(t0)}${t1 && t1 !== t0 ? `,${encodeURIComponent(t1)}` : ""}${potmYr ? `&p=y${encodeURIComponent(potmYr)}` : ""}`,
+                          query: `teams=${encodeURIComponent(t0)}${t1 && t1 !== t0 ? `,${encodeURIComponent(t1)}` : ""}${r0 ? `&role=${encodeURIComponent(r0)}` : ""}${potmYr ? `&p=y${encodeURIComponent(potmYr)}` : ""}`,
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -1161,7 +1170,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                       <HubLink
                         to={{
                           kind: "items",
-                          query: `player=${encodeURIComponent(p0)}${p1 && p1 !== p0 ? `&vsplayer=${encodeURIComponent(p1)}` : ""}${r0 ? `&role=${encodeURIComponent(r0)}` : ""}${potmYr ? `&year=${encodeURIComponent(potmYr)}` : ""}`,
+                          query: `player=${encodeURIComponent(p0)}${p1 && p1 !== p0 ? `&vsplayer=${encodeURIComponent(p1)}` : ""}${t0 ? `&team=${encodeURIComponent(t0)}` : ""}${t1 && t1 !== t0 ? `&vs=${encodeURIComponent(t1)}` : ""}${r0 ? `&role=${encodeURIComponent(r0)}` : ""}${potmYr ? `&year=${encodeURIComponent(potmYr)}` : ""}`,
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -1170,7 +1179,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                       <HubLink
                         to={{
                           kind: "finder",
-                          query: `player=${encodeURIComponent(p0)}${p1 && p1 !== p0 ? `&vsplayer=${encodeURIComponent(p1)}` : ""}${r0 ? `&role=${encodeURIComponent(r0)}` : ""}${potmYr ? `&year=${encodeURIComponent(potmYr)}` : ""}`,
+                          query: `player=${encodeURIComponent(p0)}${p1 && p1 !== p0 ? `&vsplayer=${encodeURIComponent(p1)}` : ""}${t0 ? `&team=${encodeURIComponent(t0)}` : ""}${t1 && t1 !== t0 ? `&vs=${encodeURIComponent(t1)}` : ""}${r0 ? `&role=${encodeURIComponent(r0)}` : ""}${potmYr ? `&year=${encodeURIComponent(potmYr)}` : ""}`,
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -1701,7 +1710,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                         kind: "finder",
                         query: new URLSearchParams({
                           ...(singleLg ? { league: singleLg } : {}),
-                          ...(q.trim() && wTeams[0] ? { team: wTeams[0] } : {}),
+                          ...(r0w ? { team: r0w, ...(r1w && r1w !== r0w ? { vs: r1w } : {}) } : {}),
                           year,
                         }).toString(),
                       }}

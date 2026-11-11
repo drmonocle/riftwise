@@ -352,7 +352,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                 kind: "items",
                 query: new URLSearchParams({
                   team: teamRowSlug(list[0]),
-                  ...(words.trim() && list[1] && teamRowSlug(list[1]) !== teamRowSlug(list[0])
+                  ...(list[1] && teamRowSlug(list[1]) !== teamRowSlug(list[0])
                     ? { vs: teamRowSlug(list[1]) }
                     : {}),
                   ...(region ? { league: resolveLeagueSlug(region) || region } : {}),
@@ -460,16 +460,14 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             kind: "finder",
             query:
               new URLSearchParams({
-                ...(list.length === 1
-                  ? { team: teamRowSlug(list[0]) }
-                  : words.trim() && list.length >= 2
-                    ? {
-                        team: teamRowSlug(list[0]),
-                        vs: teamRowSlug(list[1]),
-                      }
-                    : list[0]
-                      ? { team: teamRowSlug(list[0]) }
-                      : {}),
+                ...(list[0]
+                  ? {
+                      team: teamRowSlug(list[0]),
+                      ...(list[1] && teamRowSlug(list[1]) !== teamRowSlug(list[0])
+                        ? { vs: teamRowSlug(list[1]) }
+                        : {}),
+                    }
+                  : {}),
                 ...(region ? { league: resolveLeagueSlug(region) || region } : {}),
                 ...(since !== "all" ? { year: since } : {}),
               }).toString() || undefined,
@@ -796,8 +794,12 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                 kind: "items",
                 query: new URLSearchParams({
                   player: playerRowSlug(list[0]),
-                  ...(words.trim() && list[1] && playerRowSlug(list[1]) !== playerRowSlug(list[0])
+                  ...(list[1] && playerRowSlug(list[1]) !== playerRowSlug(list[0])
                     ? { vsplayer: playerRowSlug(list[1]) }
+                    : {}),
+                  ...(list[0][2] ? { team: teamSlugOf(list[0][2]) } : {}),
+                  ...(list[0][2] && list[1]?.[2] && teamSlugOf(list[0][2]) !== teamSlugOf(list[1][2])
+                    ? { vs: teamSlugOf(list[1][2]) }
                     : {}),
                   ...((role || ROLE_OF[list[0][5]]) ? { role: role || ROLE_OF[list[0][5]] } : {}),
                   ...(since !== "all" ? { year: since } : {}),
@@ -909,8 +911,12 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                 ...(list[0]
                   ? {
                       player: playerRowSlug(list[0]),
-                      ...(words.trim() && list[1] && playerRowSlug(list[1]) !== playerRowSlug(list[0])
+                      ...(list[1] && playerRowSlug(list[1]) !== playerRowSlug(list[0])
                         ? { vsplayer: playerRowSlug(list[1]) }
+                        : {}),
+                      ...(list[0][2] ? { team: teamSlugOf(list[0][2]) } : {}),
+                      ...(list[0][2] && list[1]?.[2] && teamSlugOf(list[0][2]) !== teamSlugOf(list[1][2])
+                        ? { vs: teamSlugOf(list[1][2]) }
                         : {}),
                     }
                   : {}),
