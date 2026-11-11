@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Crown, ClipboardCopy } from "lucide-react";
 import { tl, tn, regionName } from "../../i18n";
-import { loadLeague, loadLeagues, loadPatches, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolveRegionFilter, resolveTeamAlias } from "../../hub/data";
+import { loadLeague, loadLeagues, loadPatches, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolveRegionFilter, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { HubLeague, LeagueRow, LeagueStep, PatchMove, PatchRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
@@ -140,7 +140,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "counters",
                         ...(topC
-                          ? { query: `champ=${encodeURIComponent(prettySlug(topC))}${secC ? `&vs=${encodeURIComponent(secC)}` : ""}` }
+                          ? { query: `champ=${encodeURIComponent(resolveChampSlug(topC))}${secC ? `&vs=${encodeURIComponent(resolveChampSlug(secC))}` : ""}` }
                           : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -155,7 +155,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                             to={{
                               kind: "items",
                               query: new URLSearchParams({
-                                ...(topC ? { champ: prettySlug(topC) } : {}),
+                                ...(topC ? { champ: resolveChampSlug(topC) } : {}),
                                 ...(topPYear ? { year: topPYear } : {}),
                               }).toString(),
                             }}
@@ -184,7 +184,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                         query:
                           new URLSearchParams({
                             ...(topP ? { p: `p:${topP.p}` } : {}),
-                            ...(topC ? { champ: prettySlug(topC) } : {}),
+                            ...(topC ? { champ: resolveChampSlug(topC) } : {}),
                           }).toString() || undefined,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -244,7 +244,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${prettySlug(p.c[0][0])}${p.c[1] ? `&vs=${encodeURIComponent(p.c[1][0])}` : ""}`,
+                        query: `champ=${encodeURIComponent(resolveChampSlug(p.c[0][0]))}${p.c[1] ? `&vs=${encodeURIComponent(resolveChampSlug(p.c[1][0]))}` : ""}`,
                       }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
@@ -265,7 +265,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                           to={{
                             kind: "items",
                             query: new URLSearchParams({
-                              ...(p.c[0] ? { champ: prettySlug(p.c[0][0]) } : {}),
+                              ...(p.c[0] ? { champ: resolveChampSlug(p.c[0][0]) } : {}),
                               ...(pYear ? { year: pYear } : {}),
                             }).toString(),
                           }}
@@ -276,7 +276,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `p=p:${encodeURIComponent(p.p)}${p.c[0]?.[0] ? `&champ=${encodeURIComponent(prettySlug(p.c[0][0]))}` : ""}`,
+                            query: `p=p:${encodeURIComponent(p.p)}${p.c[0]?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(p.c[0][0]))}` : ""}`,
                           }}
                           className="text-rw-accent hover:underline font-semibold"
                         >
@@ -571,12 +571,16 @@ const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string; 
       const hayBare = bare(hay);
       const rowReg = l.r ? resolveRegionFilter(l.r) : null;
       return terms.some((t) => {
-        const canonReg = resolveRegionFilter(t);
+        const qAlias = searchAlias(t);
+        const canonReg = resolveRegionFilter(t) || (qAlias ? resolveRegionFilter(qAlias) : null);
         return (
           hay.includes(t) ||
+          (qAlias && hay.includes(qAlias)) ||
           resolveLeagueSlug(t) === l.u ||
+          Boolean(qAlias && resolveLeagueSlug(qAlias) === l.u) ||
           Boolean(rowReg && canonReg && canonReg === rowReg) ||
-          (t.length >= 2 && hayBare.includes(bare(t)))
+          (t.length >= 2 && hayBare.includes(bare(t))) ||
+          Boolean(qAlias && bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias)))
         );
       });
     };
@@ -829,6 +833,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
   const season = year && years.includes(year) ? year : undefined;
   const events = season ? l.events.filter((e) => e.y === season) : l.events;
   const pick = (y?: string) => navigateHub({ kind: "league", slug: l.u, year: y }, { replace: true });
+  const teamSlug = (n: string) => resolveTeamAlias(n) || prettySlug(n);
   return (
     <div className="space-y-3">
       <EntityHero
@@ -914,7 +919,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                     new URLSearchParams({
                       ...(l.titles[0]
                         ? {
-                            teams: `${l.titles[0].u || prettySlug(l.titles[0].t)}${l.titles[1] ? `,${l.titles[1].u || prettySlug(l.titles[1].t)}` : ""}`,
+                            teams: `${l.titles[0].u || teamSlug(l.titles[0].t)}${l.titles[1] ? `,${l.titles[1].u || teamSlug(l.titles[1].t)}` : ""}`,
                           }
                         : {}),
                       ...(season ? { p: `y${season}` } : {}),
@@ -978,8 +983,8 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                       to={{
                         kind: "compare",
                         mode: "team",
-                        a: l.titles[0].u || prettySlug(l.titles[0].t),
-                        ...(l.titles[1] ? { b: l.titles[1].u || prettySlug(l.titles[1].t) } : {}),
+                        a: l.titles[0].u || teamSlug(l.titles[0].t),
+                        ...(l.titles[1] ? { b: l.titles[1].u || teamSlug(l.titles[1].t) } : {}),
                         ...(season ? { period: `y${season}` } : {}),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -989,8 +994,8 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                     <HubLink
                       to={{
                         kind: "prep",
-                        a: l.titles[0].u || prettySlug(l.titles[0].t),
-                        ...(l.titles[1] ? { b: l.titles[1].u || prettySlug(l.titles[1].t) } : {}),
+                        a: l.titles[0].u || teamSlug(l.titles[0].t),
+                        ...(l.titles[1] ? { b: l.titles[1].u || teamSlug(l.titles[1].t) } : {}),
                         ...(season ? { period: `y${season}` } : {}),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -1000,7 +1005,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(l.titles[0].u || prettySlug(l.titles[0].t))}${l.titles[1] ? `,${encodeURIComponent(l.titles[1].u || prettySlug(l.titles[1].t))}` : ""}${season ? `&p=y${encodeURIComponent(season)}` : ""}`,
+                        query: `teams=${encodeURIComponent(l.titles[0].u || teamSlug(l.titles[0].t))}${l.titles[1] ? `,${encodeURIComponent(l.titles[1].u || teamSlug(l.titles[1].t))}` : ""}${season ? `&p=y${encodeURIComponent(season)}` : ""}`,
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1021,7 +1026,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                       league: l.s || l.u,
                       ...(l.titles[0]
                         ? {
-                            q: `${l.titles[0].u || prettySlug(l.titles[0].t)}${l.titles[1] ? `,${l.titles[1].u || prettySlug(l.titles[1].t)}` : ""}`,
+                            q: `${l.titles[0].u || teamSlug(l.titles[0].t)}${l.titles[1] ? `,${l.titles[1].u || teamSlug(l.titles[1].t)}` : ""}`,
                           }
                         : {}),
                     }).toString(),
@@ -1053,7 +1058,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                       ...(season ? { year: season } : {}),
                       ...(l.titles[0]
                         ? {
-                            q: `${l.titles[0].u || prettySlug(l.titles[0].t)}${l.titles[1] ? `,${l.titles[1].u || prettySlug(l.titles[1].t)}` : ""}`,
+                            q: `${l.titles[0].u || teamSlug(l.titles[0].t)}${l.titles[1] ? `,${l.titles[1].u || teamSlug(l.titles[1].t)}` : ""}`,
                           }
                         : {}),
                     }).toString(),
@@ -1084,7 +1089,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
                 <li key={t.t} className="space-y-0.5 min-w-0">
                   <div className="flex items-center justify-between gap-2 min-w-0">
                     <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                      <HubLink to={{ kind: "team", slug: t.u || prettySlug(t.t) }} title={t.t} className="shrink-0">
+                      <HubLink to={{ kind: "team", slug: t.u || teamSlug(t.t) }} title={t.t} className="shrink-0">
                         <TeamLogo name={t.t} size={16} />
                       </HubLink>
                       <TeamLink name={t.t} u={t.u} />
@@ -1193,13 +1198,18 @@ const LeagueEventsSection: React.FC<{
       const hay = normText(`${e.n} ${e.u} ${e.w || ""} ${e.wu || ""} ${e.y || ""}`);
       const hayBare = bare(hay);
       const winCanon = e.wu || e.w ? resolveTeamAlias(e.wu || e.w || "") : "";
-      return terms.some(
-        (t) =>
+      return terms.some((t) => {
+        const qAlias = searchAlias(t);
+        return (
           hay.includes(t) ||
+          (qAlias && hay.includes(qAlias)) ||
           (t.length >= 2 && hayBare.includes(bare(t))) ||
-          Boolean(winCanon && resolveTeamAlias(t) === winCanon) ||
-          matchesPeriodEvent(e.u, e.n, t),
-      );
+          Boolean(qAlias && bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias))) ||
+          Boolean(winCanon && (resolveTeamAlias(t) === winCanon || (qAlias && resolveTeamAlias(qAlias) === winCanon))) ||
+          matchesPeriodEvent(e.u, e.n, t) ||
+          Boolean(qAlias && matchesPeriodEvent(e.u, e.n, qAlias))
+        );
+      });
     });
   }, [events, evSearch]);
   const singleEvSlug = evSearch.trim() && shownEvents.length === 1 ? shownEvents[0].u : "";
@@ -1209,7 +1219,7 @@ const LeagueEventsSection: React.FC<{
         new Set(
           shownEvents
             .filter((e) => e.w && !isHidden(`event:${e.u}`, e.en))
-            .map((e) => e.wu || prettySlug(e.w!)),
+            .map((e) => e.wu || resolveTeamAlias(e.w!) || prettySlug(e.w!)),
         ),
       ),
     [shownEvents, isHidden],
@@ -1428,7 +1438,7 @@ const LeagueEventRow: React.FC<{ e: HubLeague["events"][number] }> = ({
           ) : (
             <span className="flex items-center gap-1.5">
               {!e.rs && <Crown className="w-3 h-3 text-rw-accent shrink-0" />}
-              <HubLink to={{ kind: "team", slug: e.wu || prettySlug(e.w) }} title={e.w} className="shrink-0">
+              <HubLink to={{ kind: "team", slug: e.wu || resolveTeamAlias(e.w) || prettySlug(e.w) }} title={e.w} className="shrink-0">
                 <TeamLogo name={e.w} size={15} />
               </HubLink>
               <TeamLink name={e.w} u={e.wu} />

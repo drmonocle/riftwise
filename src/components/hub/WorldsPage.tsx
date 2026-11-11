@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { eventName, eventTitle, stageName, tk, tl } from "../../i18n";
-import { bare, loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, normText, prettySlug, resolveTeamAlias } from "../../hub/data";
+import { bare, loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, normText, prettySlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import {
@@ -697,8 +697,14 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
         const oppCanon = opp ? resolveTeamAlias(opp) || (oppT?.n ? resolveTeamAlias(oppT.n) : "") : "";
         const hay = normText(`${u} ${t?.n || ""} ${t?.c || ""} ${w}-${l} ${opp || ""} ${oppT?.n || ""} ${oppT?.c || ""}`);
         return terms.some((q) => {
-          if (hay.includes(q) || (bare(q).length >= 2 && bare(hay).includes(bare(q)))) return true;
-          const qCanon = resolveTeamAlias(q);
+          const qAlias = searchAlias(q);
+          if (
+            hay.includes(q) ||
+            (bare(q).length >= 2 && bare(hay).includes(bare(q))) ||
+            (qAlias && (hay.includes(qAlias) || (bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias)))))
+          )
+            return true;
+          const qCanon = resolveTeamAlias(q) || (qAlias ? resolveTeamAlias(qAlias) : "");
           return Boolean(qCanon && (qCanon === uCanon || (oppCanon && qCanon === oppCanon)));
         });
       })
@@ -1280,7 +1286,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 <td className="px-2 py-1" data-sort={x.as}>
                   <span className="flex items-center gap-1.5 min-w-0">
                     <Trophy className="w-3 h-3 text-rw-accent shrink-0" />
-                    <HubLink to={{ kind: "team", slug: x.u || prettySlug(x.as) }} className="shrink-0 hover:opacity-80" title={x.as}>
+                    <HubLink to={{ kind: "team", slug: x.u || runnerSlug(x.as) }} className="shrink-0 hover:opacity-80" title={x.as}>
                       <TeamLogo name={x.as} size={16} className="shrink-0" />
                     </HubLink>
                     <TeamLink name={x.as} u={x.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
@@ -1393,7 +1399,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
             .map((r, idx) => (
               <span key={`${r.team}-${r.from}-${idx}`} className="inline-flex items-center gap-1">
                 {idx > 0 && <span className="text-rw-muted mr-1">·</span>}
-                <HubLink to={{ kind: "team", slug: r.u || prettySlug(r.team) }} className="shrink-0 hover:opacity-80" title={r.team}>
+                <HubLink to={{ kind: "team", slug: r.u || runnerSlug(r.team) }} className="shrink-0 hover:opacity-80" title={r.team}>
                   <TeamLogo name={r.team} size={13} className="shrink-0" />
                 </HubLink>
                 <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />

@@ -12,7 +12,7 @@ import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { normalizeRole, ROLES, champAgg, matchedEventLabel, matchEventIndices } from "../../hub/champAgg";
 import { card, ChampIcon, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
-import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, prettySlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
+import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, resolveChampSlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
 import { SectionCard } from "./BroadcastCard";
 
 const TIERS: { t: string; min: number; color: string }[] = [
@@ -195,8 +195,8 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                   ...(topChamp || role
                     ? {
                         query: new URLSearchParams({
-                          ...(topChamp ? { champ: prettySlug(topChamp.c) } : {}),
-                          ...(secondChamp && role ? { vs: secondChamp.c } : {}),
+                          ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
+                          ...(secondChamp && role ? { vs: resolveChampSlug(secondChamp.c) } : {}),
                           ...(role ? { role } : {}),
                         }).toString(),
                       }
@@ -217,7 +217,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                         : key.startsWith("y")
                           ? { p: key }
                           : {}),
-                    ...(topChamp ? { champ: topChamp.c } : {}),
+                    ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
                     ...(role ? { role } : {}),
                   }).toString() || undefined,
                 }}
@@ -229,7 +229,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                 to={{
                   kind: "items",
                   query: new URLSearchParams({
-                    ...(topChamp ? { champ: prettySlug(topChamp.c) } : {}),
+                    ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
                     ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
                     ...(evSlug ? { event: evSlug } : {}),
                   }).toString(),
@@ -438,7 +438,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${prettySlug(byRole.get(r)![0].c)}${byRole.get(r)![1] ? `&vs=${encodeURIComponent(byRole.get(r)![1].c)}` : ""}&role=${encodeURIComponent(r)}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(byRole.get(r)![0].c))}${byRole.get(r)![1] ? `&vs=${encodeURIComponent(resolveChampSlug(byRole.get(r)![1].c))}` : ""}&role=${encodeURIComponent(r)}`,
                         }}
                         className="text-[11px] font-semibold text-rw-accent hover:underline"
                       >
@@ -470,7 +470,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `champ=${prettySlug(byRole.get(r)![0].c)}${key.startsWith("y") ? `&year=${encodeURIComponent(key.slice(1))}` : ""}${evSlug ? `&event=${encodeURIComponent(evSlug)}` : ""}`,
+                        query: `champ=${encodeURIComponent(resolveChampSlug(byRole.get(r)![0].c))}${key.startsWith("y") ? `&year=${encodeURIComponent(key.slice(1))}` : ""}${evSlug ? `&event=${encodeURIComponent(evSlug)}` : ""}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
@@ -487,7 +487,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                               : key.startsWith("y")
                                 ? { p: key }
                                 : {}),
-                          champ: byRole.get(r)![0].c,
+                          champ: resolveChampSlug(byRole.get(r)![0].c),
                           role: r,
                         }).toString(),
                       }}
@@ -571,7 +571,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                               className="flex flex-col gap-1 rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-1.5 text-xs hover:border-rw-accent/60"
                             >
                               <div className="flex items-center gap-2">
-                                <HubLink to={{ kind: "champ", slug: prettySlug(c.c) }} className="flex items-center gap-2 font-semibold text-rw-text hover:text-rw-accent">
+                                <HubLink to={{ kind: "champ", slug: resolveChampSlug(c.c) }} className="flex items-center gap-2 font-semibold text-rw-text hover:text-rw-accent">
                                   <ChampIcon name={c.c} size={32} />
                                   <span>{champName(c.c)}</span>
                                 </HubLink>
@@ -597,7 +597,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                   )}
                                 </HubLink>
                                 <HubLink
-                                  to={{ kind: "counters", query: `champ=${prettySlug(c.c)}&role=${r}` }}
+                                  to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}&role=${r}` }}
                                   className="text-[10px] text-rw-accent hover:underline ml-1"
                                 >
                                   {tl("Counter-picks")}
@@ -605,7 +605,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                 <HubLink
                                   to={{
                                     kind: "items",
-                                    query: `champ=${prettySlug(c.c)}${key.startsWith("y") ? `&year=${encodeURIComponent(key.slice(1))}` : ""}${evSlug ? `&event=${encodeURIComponent(evSlug)}` : ""}`,
+                                    query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}${key.startsWith("y") ? `&year=${encodeURIComponent(key.slice(1))}` : ""}${evSlug ? `&event=${encodeURIComponent(evSlug)}` : ""}`,
                                   }}
                                   className="text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
                                 >
@@ -640,7 +640,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                           ) : (
                             <HubLink
                               key={c.c}
-                              to={{ kind: "champ", slug: prettySlug(c.c) }}
+                              to={{ kind: "champ", slug: resolveChampSlug(c.c) }}
                               className="block rounded hover:ring-1 hover:ring-rw-accent"
                               title={`${champName(c.c)}: ${tl("presence {p}", { p: `${fmtDec(c.presence * 100)}%` })} · ${tl("{n} picks", { n: c.p })}${
                                 c.wr != null && c.p >= 10 ? ` · ${tl("{p} win rate", { p: `${fmtDec(c.wr * 100)}%` })}` : ""

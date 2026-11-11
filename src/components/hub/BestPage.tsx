@@ -7,7 +7,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
 import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
-import { bare, loadAliases, loadBest, loadBestIndex, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadAliases, loadBest, loadBestIndex, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
@@ -92,16 +92,23 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   const [spoilerHidden, reveal] = useHidden("best", latestDate);
   const rawTeam = team.trim();
   const isVsQuery = /\s+vs\.?\s+|\s+v\s+/i.test(rawTeam);
+  const teamSlug = (n: string) => resolveTeamAlias(n, aliases.data?.team) || prettySlug(n);
   const teamTerms = useMemo(() => {
     if (!rawTeam) return [];
     const parts = isVsQuery ? rawTeam.split(/\s+vs\.?\s+|\s+v\s+/i) : rawTeam.split(/[,|]+/);
     return parts
       .map((s) => s.trim())
       .filter(Boolean)
-      .map((s) => ({
-        norm: normText(s),
-        aliasSlug: aliases.data?.team[s.toLowerCase()],
-      }));
+      .map((s) => {
+        const alias = searchAlias(s);
+        return {
+          norm: normText(s),
+          alias,
+          aliasSlug:
+            resolveTeamAlias(s, aliases.data?.team) ||
+            (alias ? resolveTeamAlias(alias, aliases.data?.team) : undefined),
+        };
+      });
   }, [rawTeam, isVsQuery, aliases.data]);
   const shown = rows.filter((r) => {
     if (spoilerHidden && isFresh(dateOf(r))) return false;
@@ -112,17 +119,25 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
         view === "series"
           ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9], (r as BestSeries)[3], (r as BestSeries)[4]]
           : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10], (r as BestGame)[4], (r as BestGame)[5]];
-      const matchesTerm = (term: { norm: string; aliasSlug?: string }) => {
+      const aCanon = aSlug || resolveTeamAlias(a, aliases.data?.team);
+      const bCanon = bSlug || resolveTeamAlias(b, aliases.data?.team);
+      const matchesTerm = (term: { norm: string; alias?: string | null; aliasSlug?: string }) => {
         const bTerm = bare(term.norm);
+        const bAlias = term.alias ? bare(term.alias) : "";
         const matchName =
           normText(a).includes(term.norm) ||
           normText(b).includes(term.norm) ||
           normText(en || "").includes(term.norm) ||
-          (bTerm.length >= 2 && (bare(a).includes(bTerm) || bare(b).includes(bTerm)));
+          (term.alias && (normText(a).includes(term.alias) || normText(b).includes(term.alias) || normText(en || "").includes(term.alias))) ||
+          (bTerm.length >= 2 && (bare(a).includes(bTerm) || bare(b).includes(bTerm))) ||
+          (bAlias.length >= 2 && (bare(a).includes(bAlias) || bare(b).includes(bAlias)));
         const matchSlug =
-          (aSlug && (aSlug === term.aliasSlug || normText(aSlug).includes(term.norm) || (bTerm.length >= 2 && bare(aSlug).includes(bTerm)))) ||
-          (bSlug && (bSlug === term.aliasSlug || normText(bSlug).includes(term.norm) || (bTerm.length >= 2 && bare(bSlug).includes(bTerm))));
-        const matchEvent = matchesPeriodEvent(eSlug || "", en || "", term.norm);
+          Boolean(term.aliasSlug && (aCanon === term.aliasSlug || bCanon === term.aliasSlug)) ||
+          (aSlug && (normText(aSlug).includes(term.norm) || (bTerm.length >= 2 && bare(aSlug).includes(bTerm)))) ||
+          (bSlug && (normText(bSlug).includes(term.norm) || (bTerm.length >= 2 && bare(bSlug).includes(bTerm))));
+        const matchEvent =
+          matchesPeriodEvent(eSlug || "", en || "", term.norm) ||
+          Boolean(term.alias && matchesPeriodEvent(eSlug || "", en || "", term.alias));
         return Boolean(matchName || matchSlug || matchEvent);
       };
       if (isVsQuery && teamTerms.length >= 2) {
@@ -154,12 +169,12 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                 const r0 = shown[0];
                 const a =
                   view === "series"
-                    ? (r0 as BestSeries)[7] || prettySlug((r0 as BestSeries)[6])
-                    : (r0 as BestGame)[8] || prettySlug((r0 as BestGame)[7]);
+                    ? (r0 as BestSeries)[7] || teamSlug((r0 as BestSeries)[6])
+                    : (r0 as BestGame)[8] || teamSlug((r0 as BestGame)[7]);
                 const b =
                   view === "series"
-                    ? (r0 as BestSeries)[9] || prettySlug((r0 as BestSeries)[8])
-                    : (r0 as BestGame)[10] || prettySlug((r0 as BestGame)[9]);
+                    ? (r0 as BestSeries)[9] || teamSlug((r0 as BestSeries)[8])
+                    : (r0 as BestGame)[10] || teamSlug((r0 as BestGame)[9]);
                 const dt = view === "series" ? (r0 as BestSeries)[2] : (r0 as BestGame)[3];
                 const p = dt && /^\d{4}/.test(dt) ? `y${dt.slice(0, 4)}` : undefined;
                 return (
@@ -388,8 +403,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
               view === "series"
                 ? [(first as BestSeries)[6], (first as BestSeries)[7], (first as BestSeries)[8], (first as BestSeries)[9]]
                 : [(first as BestGame)[7], (first as BestGame)[8], (first as BestGame)[9], (first as BestGame)[10]];
-            const sa = aSlug || prettySlug(aName);
-            const sb = bSlug || prettySlug(bName);
+            const sa = aSlug || teamSlug(aName);
+            const sb = bSlug || teamSlug(bName);
             if (!sa || !sb || sa === sb) return null;
             return (
               <span className="inline-flex items-center gap-2 ml-auto">
@@ -507,7 +522,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
 
 const Team: React.FC<{ name: string; u?: string | null; won: boolean }> = ({ name, u, won }) => (
   <span className={`inline-flex items-center gap-1 ${won ? "font-bold text-rw-teal" : "text-rw-text"}`}>
-    <HubLink to={{ kind: "team", slug: u || prettySlug(name) }} title={name} className="shrink-0">
+    <HubLink to={{ kind: "team", slug: u || resolveTeamAlias(name) || prettySlug(name) }} title={name} className="shrink-0">
       <TeamLogo name={name} size={15} />
     </HubLink>
     <TeamLink name={name} u={u} className={won ? "font-bold text-rw-teal hover:underline" : "text-rw-text hover:text-rw-accent hover:underline"} />
@@ -520,8 +535,8 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
   const pctKa = totalK > 0 && ka != null ? Math.round((ka / totalK) * 100) : 50;
   const y = (date || "").slice(0, 4);
   const period = /^\d{4}$/.test(y) ? `y${y}` : undefined;
-  const sa = aSlug || (a ? prettySlug(a) : "");
-  const sb = bSlug || (b ? prettySlug(b) : "");
+  const sa = aSlug || (a ? resolveTeamAlias(a) || prettySlug(a) : "");
+  const sb = bSlug || (b ? resolveTeamAlias(b) || prettySlug(b) : "");
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>
@@ -539,8 +554,8 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
           <Team name={a} u={aSlug} won={w === 1} />
           <HubLink
             to={
-              aSlug || bSlug
-                ? { kind: "compare", mode: "team", a: aSlug || prettySlug(a), b: bSlug || prettySlug(b), period }
+              sa && sb
+                ? { kind: "compare", mode: "team", a: sa, b: sb, period }
                 : { kind: "match", slug, game: n }
             }
             className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -642,8 +657,8 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
   const pctWa = totalS > 0 ? Math.round((wa / totalS) * 100) : 50;
   const y = (date || "").slice(0, 4);
   const period = /^\d{4}$/.test(y) ? `y${y}` : undefined;
-  const sa = aSlug || (a ? prettySlug(a) : "");
-  const sb = bSlug || (b ? prettySlug(b) : "");
+  const sa = aSlug || (a ? resolveTeamAlias(a) || prettySlug(a) : "");
+  const sb = bSlug || (b ? resolveTeamAlias(b) || prettySlug(b) : "");
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>
