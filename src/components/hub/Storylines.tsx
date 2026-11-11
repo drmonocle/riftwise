@@ -7,7 +7,7 @@ import { Sparkles } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
 import { load } from "../../stats";
-import { bare, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { ChampIcon, HubLink, PlayerPhoto, RevealButton, Section, TeamLogo, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
@@ -318,7 +318,8 @@ export const OwnStorylines: React.FC<{
             {(() => {
               const noteChamp = notes.list.find((nt) => nt.c)?.c;
               const noteYr = notes.list.find((nt) => nt.y)?.y;
-              const noteEv = notes.list.find((nt) => nt.e)?.e;
+              const rawNoteEv = notes.list.find((nt) => nt.e)?.e;
+              const noteEv = rawNoteEv ? resolveEventSlug(rawNoteEv) : undefined;
               return who.kind === "team" ? (
                 <>
                   <HubLink
@@ -576,8 +577,8 @@ export const HomeStorylines: React.FC = () => {
         all.length > 6 ? (
           <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
             {terms.length === 0 && (() => {
-              const topTeams = Array.from(new Set(all.filter((r) => r.t === "team").map((r) => r.u)));
-              const topPlayers = Array.from(new Set(all.filter((r) => r.t === "player").map((r) => r.u || resolvePlayerSlug(r.name) || r.name)));
+              const topTeams = Array.from(new Set(all.filter((r) => r.t === "team").map((r) => r.u || resolveTeamAlias(r.name) || prettySlug(r.name))));
+              const topPlayers = Array.from(new Set(all.filter((r) => r.t === "player").map((r) => r.u || resolvePlayerSlug(r.name) || prettySlug(r.name))));
               const topChamps = Array.from(new Set(all.map((r) => r.c).filter(Boolean) as string[]));
               return (
                 <>
@@ -670,8 +671,9 @@ export const HomeStorylines: React.FC = () => {
             {terms.length > 0 && (() => {
               const filteredChamp = rows.find((r) => r.c)?.c;
               const filteredYr = rows.find((r) => r.y)?.y;
-              const filteredEv = rows.find((r) => r.e)?.e;
-              const teamSlugs = Array.from(new Set(rows.filter((r) => r.t === "team").map((r) => r.u)));
+              const rawFilteredEv = rows.find((r) => r.e)?.e;
+              const filteredEv = rawFilteredEv ? resolveEventSlug(rawFilteredEv) : undefined;
+              const teamSlugs = Array.from(new Set(rows.filter((r) => r.t === "team").map((r) => r.u || resolveTeamAlias(r.name) || prettySlug(r.name))));
               if (teamSlugs.length >= 1) {
                 const a = teamSlugs[0];
                 const b = teamSlugs[1];
@@ -756,7 +758,7 @@ export const HomeStorylines: React.FC = () => {
                   </>
                 );
               }
-              const playerSlugs = Array.from(new Set(rows.filter((r) => r.t === "player").map((r) => r.u)));
+              const playerSlugs = Array.from(new Set(rows.filter((r) => r.t === "player").map((r) => r.u || resolvePlayerSlug(r.name) || prettySlug(r.name))));
               if (playerSlugs.length >= 1) {
                 return (
                   <>
@@ -849,14 +851,17 @@ export const HomeStorylines: React.FC = () => {
           </span>
         ) : undefined
       }
-      lines={rows.map((r, i) => ({
-        key: `${r.u}-${i}`,
-        who: { name: r.name, to: { kind: r.t, slug: r.u } },
-        text: noteText(r, { kind: r.t, slug: r.u }),
-        plain: notePlainText(r),
-        champ: r.c,
-        asOf: r.asOf,
-      }))}
+      lines={rows.map((r, i) => {
+        const entitySlug = r.t === "team" ? r.u || resolveTeamAlias(r.name) || prettySlug(r.name) : r.u || resolvePlayerSlug(r.name) || prettySlug(r.name);
+        return {
+          key: `${entitySlug}-${i}`,
+          who: { name: r.name, to: { kind: r.t, slug: entitySlug } },
+          text: noteText(r, { kind: r.t, slug: entitySlug }),
+          plain: notePlainText(r),
+          champ: r.c,
+          asOf: r.asOf,
+        };
+      })}
     />
   );
 };

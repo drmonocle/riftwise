@@ -142,17 +142,22 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     params.get("patch") ||
     "";
   const periodYearMatch = /^y(\d{4})$/i.exec(rawPeriod);
+  const patchMatch = /^(?:p:?|patch\s*)?(\d+\.\d+[a-z]?)$/i.exec(rawPeriod.trim());
+  const patchNum = patchMatch ? patchMatch[1] : "";
   const year =
     ("year" in current && current.year ? current.year : "") ||
     params.get("year") ||
     (periodYearMatch ? periodYearMatch[1] : "");
-  const period = rawPeriod || (year ? `y${year}` : "");
+  const event = params.get("event") || (rawPeriod.startsWith("e:") ? rawPeriod.slice(2) : "");
+  const period = patchNum ? `p:${patchNum}` : rawPeriod || (event ? `e:${event}` : year ? `y${year}` : "");
+  const metaKey = patchNum ? `p${patchNum}` : periodYearMatch ? `y${periodYearMatch[1]}` : year ? `y${year}` : rawPeriod === "all" ? "all" : "";
   const league =
     params.get("league") ||
-    ((current.kind === "champions" || current.kind === "tiers") ? params.get("scope") || "" : "");
-  const event = params.get("event") || "";
+    (current.kind === "champions" || current.kind === "tiers" ? params.get("scope") || "" : "") ||
+    (current.kind === "worlds" || current.kind === "msi" || current.kind === "first-stand" ? current.kind : "");
   const role = params.get("role") || "";
   const champ = params.get("champ") || "";
+  const vsChamp = (current.kind === "counters" ? params.get("vs") : params.get("vschamp")) || "";
   const region = params.get("region") || "";
   const q = params.get("q") || "";
 
@@ -198,6 +203,9 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     if (playerA) next.set("player", playerA);
     if (playerB) next.set("vsplayer", playerB);
     if (champ) next.set("champ", champ);
+    if (vsChamp) next.set("vschamp", vsChamp);
+    if (role) next.set("role", role);
+    if (patchNum) next.set("patch", patchNum);
     if (event) next.set("event", event);
     if (league) next.set("league", league);
     if (year) next.set("year", year);
@@ -208,6 +216,8 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     const next = new URLSearchParams();
     if (playerA) next.set("player", playerA);
     if (champ) next.set("champ", champ);
+    if (event) next.set("event", event);
+    if (year) next.set("year", year);
     const qs = next.toString();
     return { kind: "items", ...(qs ? { query: qs } : {}) };
   }
@@ -221,25 +231,33 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
   if (targetKind === "champions" || targetKind === "tiers") {
     const next = new URLSearchParams();
     if (league) next.set("scope", league);
-    if (period) next.set("key", period);
+    if (metaKey) next.set("key", metaKey);
     if (event) next.set("event", event);
     if (role) next.set("role", role);
-    if (q || champ) next.set("q", q || champ);
+    const cq = vsChamp && champ ? `${champ},${vsChamp}` : q || champ;
+    if (cq) next.set("q", cq);
     const qs = next.toString();
     return { kind: targetKind, ...(qs ? { query: qs } : {}) };
   }
   if (targetKind === "counters") {
     const next = new URLSearchParams();
-    if (champ || q) next.set("champ", champ || q);
+    const qParts = !champ && q ? q.split(",").map((s) => s.trim()).filter(Boolean) : [];
+    const c1 = champ || qParts[0] || "";
+    const c2 = vsChamp || qParts[1] || "";
+    if (c1) next.set("champ", c1);
+    if (c2) next.set("vs", c2);
     if (role) next.set("role", role);
     if (event) next.set("event", event);
-    if (period) next.set("patch", period);
+    const cPatch = patchNum || (periodYearMatch ? `y${periodYearMatch[1]}` : year ? `y${year}` : rawPeriod === "all" ? "all" : "");
+    if (cPatch) next.set("patch", cPatch);
     const qs = next.toString();
     return { kind: "counters", ...(qs ? { query: qs } : {}) };
   }
   if (targetKind === "patches") {
     const next = new URLSearchParams();
-    if (q || champ) next.set("q", q || champ);
+    const pq = vsChamp && champ ? `${champ},${vsChamp}` : q || champ;
+    if (pq) next.set("q", pq);
+    else if (patchNum) next.set("patch", patchNum);
     const qs = next.toString();
     return { kind: "patches", ...(qs ? { query: qs } : {}) };
   }
@@ -286,6 +304,30 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     if (q) next.set("q", q);
     const qs = next.toString();
     return { kind: "tournaments", ...(year ? { year } : {}), ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "leagues") {
+    const next = new URLSearchParams();
+    const lq = q || league || region;
+    if (lq) next.set("q", lq);
+    const qs = next.toString();
+    return { kind: "leagues", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "records") {
+    const next = new URLSearchParams();
+    if (year) next.set("year", year);
+    const rq = q || [playerA, playerB, teamA, teamB].filter(Boolean).join(",");
+    if (rq) next.set("q", rq);
+    const qs = next.toString();
+    return { kind: "records", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "titles") {
+    const next = new URLSearchParams();
+    if (current.kind === "worlds" || league === "worlds") next.set("kind", "Worlds");
+    else if (league && league !== "msi" && league !== "first-stand") next.set("kind", "Leagues");
+    const tq = q || [teamA, teamB].filter(Boolean).join(",") || (league && league !== "worlds" ? league : "");
+    if (tq) next.set("q", tq);
+    const qs = next.toString();
+    return { kind: "titles", ...(qs ? { query: qs } : {}) };
   }
   if (targetKind === "worlds" || targetKind === "msi" || targetKind === "first-stand") {
     return { kind: targetKind, ...(year ? { year } : {}) };

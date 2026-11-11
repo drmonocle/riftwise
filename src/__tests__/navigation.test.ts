@@ -209,6 +209,34 @@ describe("search shortcuts", () => {
     expect(siblingSectionRoute({ kind: "champions", query: "scope=lck&key=y2025&role=Mid&q=azir" }, "champions")).toEqual({
       kind: "champions",
     });
+    expect(siblingSectionRoute({ kind: "counters", query: "champ=azir&vs=orianna&role=Mid&patch=16.5" }, "tiers")).toEqual({
+      kind: "tiers",
+      query: "key=p16.5&role=Mid&q=azir%2Corianna",
+    });
+    expect(siblingSectionRoute({ kind: "counters", query: "champ=azir&vs=orianna&role=Mid&patch=16.5" }, "finder")).toEqual({
+      kind: "finder",
+      query: "champ=azir&vschamp=orianna&role=Mid&patch=16.5",
+    });
+    expect(siblingSectionRoute({ kind: "tiers", query: "key=p16.5&q=azir,orianna&role=Mid" }, "counters")).toEqual({
+      kind: "counters",
+      query: "champ=azir&vs=orianna&role=Mid&patch=16.5",
+    });
+    expect(siblingSectionRoute({ kind: "tiers", query: "key=p16.5" }, "patches")).toEqual({
+      kind: "patches",
+      query: "patch=16.5",
+    });
+    expect(siblingSectionRoute({ kind: "tournaments", year: "2025", query: "league=lck&q=t1" }, "leagues")).toEqual({
+      kind: "leagues",
+      query: "q=t1",
+    });
+    expect(siblingSectionRoute({ kind: "worlds", year: "2024" }, "titles")).toEqual({
+      kind: "titles",
+      query: "kind=Worlds",
+    });
+    expect(siblingSectionRoute({ kind: "tournaments", year: "2025", query: "q=faker" }, "records")).toEqual({
+      kind: "records",
+      query: "year=2025&q=faker",
+    });
   });
   it("leaves other searches alone", () => {
     expect(matchupShortcuts(INDEX, "faker")).toEqual([]);

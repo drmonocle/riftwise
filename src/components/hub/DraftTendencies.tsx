@@ -9,7 +9,7 @@ import { winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
 import { ROLES } from "../../hub/champAgg";
 import { champName } from "../../champions";
-import { prettySlug, resolveChampSlug, resolveTeamAlias } from "../../hub/data";
+import { prettySlug, resolveChampSlug, resolveEventSlug, resolveTeamAlias } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { ChampLink, HubLink } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -169,7 +169,7 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
     period?.startsWith("y") && period.length === 5
       ? `&year=${encodeURIComponent(period.slice(1))}`
       : period?.startsWith("e:")
-        ? `&event=${encodeURIComponent(period.slice(2))}`
+        ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
         : period?.startsWith("p:")
           ? `&patch=${encodeURIComponent(period.slice(2))}`
           : "";
@@ -276,7 +276,7 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: s
     period?.startsWith("y") && period.length === 5
       ? `&year=${encodeURIComponent(period.slice(1))}`
       : period?.startsWith("e:")
-        ? `&event=${encodeURIComponent(period.slice(2))}`
+        ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
         : period?.startsWith("p:")
           ? `&patch=${encodeURIComponent(period.slice(2))}`
           : "";
@@ -345,7 +345,7 @@ export const DraftTendencies: React.FC<{
     period?.startsWith("y") && period.length === 5
       ? `&year=${encodeURIComponent(period.slice(1))}`
       : period?.startsWith("e:")
-        ? `&event=${encodeURIComponent(period.slice(2))}`
+        ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
         : period?.startsWith("p:")
           ? `&patch=${encodeURIComponent(period.slice(2))}`
           : "";
@@ -438,7 +438,7 @@ export const DraftTendencies: React.FC<{
                             ...(period?.startsWith("y") && period.length === 5
                               ? { key: period }
                               : period?.startsWith("e:")
-                                ? { event: period.slice(2) }
+                                ? { event: resolveEventSlug(period.slice(2)) }
                                 : period?.startsWith("p:")
                                   ? { key: `p${period.slice(2)}` }
                                   : {}),
@@ -467,7 +467,7 @@ export const DraftTendencies: React.FC<{
                       ...(resolvedSlug || teamName ? { q: resolvedSlug || teamName! } : {}),
                       ...((d.b1[0] || d.r12[0]) ? { champ: resolveChampSlug((d.b1[0] || d.r12[0])[0]) } : {}),
                       ...(period?.startsWith("y") && period.length === 5 ? { year: period.slice(1) } : {}),
-                      ...(period?.startsWith("e:") ? { event: period.slice(2) } : {}),
+                      ...(period?.startsWith("e:") ? { event: resolveEventSlug(period.slice(2)) } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
