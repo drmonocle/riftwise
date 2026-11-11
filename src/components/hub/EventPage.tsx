@@ -266,6 +266,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                                   .join(","),
                               }
                             : {}),
+                        ...(!resultsHidden && e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
                       }).toString(),
                     }}
                     className={heroBtn()}
@@ -281,7 +282,16 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                           ? { year: (e.start || e.end || "").slice(0, 4), key: `y${(e.start || e.end || "").slice(0, 4)}` }
                           : {}),
                         ...(e.u ? { event: e.u } : {}),
-                        ...(!resultsHidden && e.champs?.[0]?.c ? { q: resolveChampSlug(e.champs[0].c) } : {}),
+                        ...(!resultsHidden && e.champs?.[0]?.c
+                          ? {
+                              q: [
+                                resolveChampSlug(e.champs[0].c),
+                                e.champs[1]?.c ? resolveChampSlug(e.champs[1].c) : "",
+                              ]
+                                .filter(Boolean)
+                                .join(","),
+                            }
+                          : {}),
                       }).toString() || undefined,
                     }}
                     className={heroBtn()}
@@ -312,7 +322,16 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                                   .join(","),
                               }
                             : {}),
-                        ...(!resultsHidden && e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
+                        ...(!resultsHidden && e.champs?.[0]?.c
+                          ? {
+                              champ: [
+                                resolveChampSlug(e.champs[0].c),
+                                e.champs[1]?.c ? resolveChampSlug(e.champs[1].c) : "",
+                              ]
+                                .filter(Boolean)
+                                .join(","),
+                            }
+                          : {}),
                       }).toString(),
                     }}
                     className={heroBtn()}
@@ -383,6 +402,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                                 ...(e.teams[1] ? { vs: tSlug(e.teams[1].t, e.teams[1].u) } : {}),
                               }
                             : {}),
+                        ...(!resultsHidden && e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
                         event: e.u,
                       }).toString(),
                     }}
@@ -510,7 +530,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(tSlug(e.results[0].t, e.results[0].u))}${e.results[1] ? `,${encodeURIComponent(tSlug(e.results[1].t, e.results[1].u))}` : ""}&p=e:${encodeURIComponent(e.u)}`,
+                        query: `teams=${encodeURIComponent(tSlug(e.results[0].t, e.results[0].u))}${e.results[1] ? `,${encodeURIComponent(tSlug(e.results[1].t, e.results[1].u))}` : ""}&p=e:${encodeURIComponent(e.u)}${e.champs?.[0]?.c ? `&champ=${encodeURIComponent([resolveChampSlug(e.champs[0].c), e.champs[1]?.c ? resolveChampSlug(e.champs[1].c) : ""].filter(Boolean).join(","))}` : ""}`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -537,6 +557,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                           ...(e.results[1] ? { vs: tSlug(e.results[1].t, e.results[1].u) } : {}),
                           ...(e.lu ? { league: e.lu } : {}),
                           ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                          ...(e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
@@ -586,6 +607,16 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                         ? { year: (e.start || e.end || "").slice(0, 4), key: `y${(e.start || e.end || "").slice(0, 4)}` }
                         : {}),
                       event: e.u,
+                      ...(e.champs?.[0]?.c
+                        ? {
+                            q: [
+                              resolveChampSlug(e.champs[0].c),
+                              e.champs[1]?.c ? resolveChampSlug(e.champs[1].c) : "",
+                            ]
+                              .filter(Boolean)
+                              .join(","),
+                          }
+                        : {}),
                     }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -609,6 +640,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                               .join(","),
                           }
                         : {}),
+                      ...(e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -771,6 +803,16 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                               .join(","),
                           }
                         : {}),
+                    ...(!resultsHidden && e.champs?.[0]?.c
+                      ? {
+                          champ: [
+                            resolveChampSlug(e.champs[0].c),
+                            e.champs[1]?.c ? resolveChampSlug(e.champs[1].c) : "",
+                          ]
+                            .filter(Boolean)
+                            .join(","),
+                        }
+                      : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -795,6 +837,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                             ...(e.teams[1] ? { vs: tSlug(e.teams[1].t, e.teams[1].u) } : {}),
                           }
                         : {}),
+                    ...(!resultsHidden && e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -841,6 +884,16 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       ? { year: (e.start || e.end || "").slice(0, 4), key: `y${(e.start || e.end || "").slice(0, 4)}` }
                       : {}),
                     event: e.u,
+                    ...(!resultsHidden && e.champs?.[0]?.c
+                      ? {
+                          q: [
+                            resolveChampSlug(e.champs[0].c),
+                            e.champs[1]?.c ? resolveChampSlug(e.champs[1].c) : "",
+                          ]
+                            .filter(Boolean)
+                            .join(","),
+                        }
+                      : {}),
                   }).toString() || undefined,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -899,6 +952,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                               .join(","),
                           }
                         : {}),
+                    ...(!resultsHidden && e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1011,7 +1065,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `teams=${encodeURIComponent(tSlug(filteredTeams[0].t, filteredTeams[0].u))}${filteredTeams[1] ? `,${encodeURIComponent(tSlug(filteredTeams[1].t, filteredTeams[1].u))}` : ""}&p=e:${encodeURIComponent(e.u)}`,
+                            query: `teams=${encodeURIComponent(tSlug(filteredTeams[0].t, filteredTeams[0].u))}${filteredTeams[1] ? `,${encodeURIComponent(tSlug(filteredTeams[1].t, filteredTeams[1].u))}` : ""}&p=e:${encodeURIComponent(e.u)}${!resultsHidden && e.champs?.[0]?.c ? `&champ=${encodeURIComponent([resolveChampSlug(e.champs[0].c), e.champs[1]?.c ? resolveChampSlug(e.champs[1].c) : ""].filter(Boolean).join(","))}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -1038,6 +1092,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                               ...(filteredTeams[1] ? { vs: tSlug(filteredTeams[1].t, filteredTeams[1].u) } : {}),
                               ...(e.lu ? { league: e.lu } : {}),
                               ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                              ...(!resultsHidden && e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
                             }).toString(),
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
@@ -1080,6 +1135,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                               ...((tTerms.length > 0 || filteredTeams.length <= 2) && filteredTeams.length >= 1
                                 ? { q: filteredTeams.slice(0, 2).map((t) => tSlug(t.t, t.u)).join(",") }
                                 : {}),
+                              ...(e.champs?.[0]?.c ? { champ: resolveChampSlug(e.champs[0].c) } : {}),
                             }).toString(),
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
@@ -1108,6 +1164,16 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                               ...(e.lu ? { scope: e.lu, league: e.lu } : {}),
                               ...(e.start || e.end ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) } : {}),
                               event: e.u,
+                              ...(e.champs?.[0]?.c
+                                ? {
+                                    q: [
+                                      resolveChampSlug(e.champs[0].c),
+                                      e.champs[1]?.c ? resolveChampSlug(e.champs[1].c) : "",
+                                    ]
+                                      .filter(Boolean)
+                                      .join(","),
+                                  }
+                                : {}),
                             }).toString() || undefined,
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
@@ -2430,7 +2496,23 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
               <HubLink
                 to={{
                   kind: "items",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}${e.lu ? `&league=${encodeURIComponent(e.lu)}` : ""}${/^\d{4}$/.test(year) ? `&year=${year}` : ""}&event=${encodeURIComponent(e.u)}`,
+                  query: new URLSearchParams({
+                    champ: resolveChampSlug(rows[0].c),
+                    ...(e.lu ? { league: e.lu } : {}),
+                    ...(/^\d{4}$/.test(year) ? { year } : {}),
+                    ...(e.results?.[0]
+                      ? {
+                          team: tSlug(e.results[0].t, e.results[0].u),
+                          ...(e.results[1] ? { vs: tSlug(e.results[1].t, e.results[1].u) } : {}),
+                        }
+                      : e.teams?.[0]
+                        ? {
+                            team: tSlug(e.teams[0].t, e.teams[0].u),
+                            ...(e.teams[1] ? { vs: tSlug(e.teams[1].t, e.teams[1].u) } : {}),
+                          }
+                        : {}),
+                    event: e.u,
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -2455,7 +2537,29 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
           <HubLink
             to={{
               kind: "draft",
-              query: `p=e:${encodeURIComponent(e.u)}${rows[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}` : ""}`,
+              query: new URLSearchParams({
+                p: `e:${e.u}`,
+                ...(e.results?.[0]
+                  ? {
+                      teams: [
+                        tSlug(e.results[0].t, e.results[0].u),
+                        e.results[1] ? tSlug(e.results[1].t, e.results[1].u) : "",
+                      ]
+                        .filter(Boolean)
+                        .join(","),
+                    }
+                  : e.teams?.[0]
+                    ? {
+                        teams: [
+                          tSlug(e.teams[0].t, e.teams[0].u),
+                          e.teams[1] ? tSlug(e.teams[1].t, e.teams[1].u) : "",
+                        ]
+                          .filter(Boolean)
+                          .join(","),
+                      }
+                    : {}),
+                ...(rows[0]?.c ? { champ: [resolveChampSlug(rows[0].c), rows[1]?.c ? resolveChampSlug(rows[1].c) : ""].filter(Boolean).join(",") } : {}),
+              }).toString(),
             }}
             className="text-[11px] text-rw-accent hover:underline"
           >
