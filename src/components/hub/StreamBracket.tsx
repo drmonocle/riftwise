@@ -148,6 +148,42 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           />
         </h3>
         <div className="flex flex-wrap items-center gap-2">
+          {ev.standings?.[0]?.rows?.length && (() => {
+            const topSlugs = ev.standings[0].rows
+              .slice(0, 2)
+              .map((r) => resolveTeamAlias(r.t) || prettySlug(r.t))
+              .filter(Boolean);
+            const [ta, tb] = topSlugs;
+            if (!ta) return null;
+            return (
+              <>
+                <HubLink
+                  to={{ kind: "prep", a: ta, ...(tb && tb !== ta ? { b: tb } : {}), period: `e:${ev.u}` }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "draft",
+                    query: new URLSearchParams({
+                      teams: `${ta}${tb && tb !== ta ? `,${tb}` : ""}`,
+                      p: `e:${ev.u}`,
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{ kind: "compare", mode: "team", a: ta, ...(tb && tb !== ta ? { b: tb } : {}), period: `e:${ev.u}` }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </HubLink>
+              </>
+            );
+          })()}
           <HubLink
             to={{ kind: "finder", query: `event=${encodeURIComponent(ev.u)}` }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Trophy } from "lucide-react";
 import { tl, tk, roleName, regionName, eventTitle, tc, tn, fmtDec } from "../../i18n";
 import { winRate } from "../../stats";
-import { bare, loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
+import { bare, loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
 import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import { PageTabs, type PageTab } from "./PageTabs";
 import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
@@ -90,18 +90,18 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       ? `y${/^y:?(\d{4})$/.exec(rawPeriod)![1]}`
       : rawPeriod && /^\d{4}$/.test(rawPeriod)
         ? `y${rawPeriod}`
-        : rawPeriod ||
-          (yParam && /^\d{4}$/.test(yParam)
-            ? `y${yParam}`
-            : urlParams.get("event")
-              ? urlParams.get("event")!.startsWith("e:")
-                ? urlParams.get("event")!
-                : `e:${urlParams.get("event")!}`
-              : urlParams.get("patch")
-                ? urlParams.get("patch")!.startsWith("p:")
-                  ? urlParams.get("patch")!
-                  : `p:${urlParams.get("patch")!.replace(/^p/i, "")}`
-                : "");
+        : rawPeriod && rawPeriod.startsWith("e:")
+          ? `e:${resolveEventSlug(rawPeriod.slice(2))}`
+          : rawPeriod ||
+            (yParam && /^\d{4}$/.test(yParam)
+              ? `y${yParam}`
+              : urlParams.get("event")
+                ? `e:${resolveEventSlug(urlParams.get("event")!.startsWith("e:") ? urlParams.get("event")!.slice(2) : urlParams.get("event")!)}`
+                : urlParams.get("patch")
+                  ? urlParams.get("patch")!.startsWith("p:")
+                    ? urlParams.get("patch")!
+                    : `p:${urlParams.get("patch")!.replace(/^p/i, "")}`
+                  : "");
   const qParam = urlParams.get("q") || urlParams.get("vs") || urlParams.get("team") || urlParams.get("event") || "";
   const [allEvents, setAllEvents] = useState(false);
   const [eventSearch, setEventSearch] = useState(qParam);
@@ -987,7 +987,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       {tl("Titles")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "tournaments", ...(titleYr ? { year: titleYr } : {}) }}
+                      to={{ kind: "tournaments", ...(titleYr ? { query: `year=${encodeURIComponent(titleYr)}` } : {}) }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Tournaments")} →
@@ -2354,7 +2354,7 @@ const TeamChampGames: React.FC<{
                       <HubLink
                         to={{
                           kind: "items",
-                          query: `player=${encodeURIComponent(playersSummary[0].u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                          query: `player=${encodeURIComponent(playersSummary[0].u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
                         }}
                         className="text-rw-accent hover:underline"
                       >
@@ -2444,7 +2444,7 @@ const TeamChampGames: React.FC<{
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))},${encodeURIComponent(resolveChampSlug(draftPartners[0][0]))}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                            query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))},${encodeURIComponent(resolveChampSlug(draftPartners[0][0]))}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
                           }}
                           className="text-rw-accent hover:underline"
                         >
