@@ -40,6 +40,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
           const hide = hidden && isFresh(r[0]);
           const won = r[3] > r[4];
           const oppSlug = r[2] || tSlug(r[1]);
+          const rowQ = r[6] ? `p=e:${encodeURIComponent(r[6])}` : /^\d{4}/.test(r[0]) ? `p=y${r[0].slice(0, 4)}` : undefined;
           return (
             <li key={i} className="flex items-center justify-between gap-2 min-w-0">
               <span className="truncate min-w-0">
@@ -75,10 +76,10 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                       "vs"
                     )}{" "}
                     <span className="inline-flex items-center gap-1 align-baseline">
-                      <HubLink to={{ kind: "team", slug: oppSlug }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                      <HubLink to={{ kind: "team", slug: oppSlug, ...(rowQ ? { query: rowQ } : {}) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                         <TeamLogo name={r[1]} size={13} />
                       </HubLink>
-                      <TeamLink name={r[1]} u={r[2]} />
+                      <TeamLink name={r[1]} u={r[2]} query={rowQ} />
                     </span>{" "}
                   </>
                 )}
@@ -528,6 +529,8 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
   const wa = rows.filter((r) => r[3] > r[4]).length;
   const ga = rows.reduce((t, r) => t + r[3], 0);
   const gb = rows.reduce((t, r) => t + r[4], 0);
+  const h2hEv = event !== "all" ? resolveEventSlug(event) : "";
+  const h2hQ = h2hEv ? `p=e:${encodeURIComponent(h2hEv)}` : year !== "all" ? `p=y${encodeURIComponent(year)}` : undefined;
   return (
     <Section
       title={tl("Every series between them")}
@@ -539,7 +542,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 kind: "prep",
                 a,
                 b,
-                period: event !== "all" ? `e:${event}` : year !== "all" ? `y${year}` : undefined,
+                period: h2hEv ? `e:${h2hEv}` : year !== "all" ? `y${year}` : undefined,
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
@@ -551,7 +554,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 mode: "team",
                 a,
                 b,
-                period: event !== "all" ? `e:${event}` : year !== "all" ? `y${year}` : undefined,
+                period: h2hEv ? `e:${h2hEv}` : year !== "all" ? `y${year}` : undefined,
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -560,7 +563,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
             <HubLink
               to={{
                 kind: "draft",
-                query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${event !== "all" ? `&p=e:${encodeURIComponent(event)}` : year !== "all" ? `&p=y${encodeURIComponent(year)}` : ""}`,
+                query: `teams=${encodeURIComponent(a)},${encodeURIComponent(b)}${h2hEv ? `&p=e:${encodeURIComponent(h2hEv)}` : year !== "all" ? `&p=y${encodeURIComponent(year)}` : ""}`,
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -578,8 +581,8 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
             <HubLink
               to={{
                 kind: "tiers",
-                ...(event !== "all"
-                  ? { query: `event=${encodeURIComponent(event)}` }
+                ...(h2hEv
+                  ? { query: `event=${encodeURIComponent(h2hEv)}` }
                   : year !== "all"
                     ? { query: `key=y${encodeURIComponent(year)}` }
                     : {}),
@@ -591,7 +594,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
             <HubLink
               to={{
                 kind: "finder",
-                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -602,7 +605,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 kind: "leaders",
                 query: new URLSearchParams({
                   q: `${a},${b}`,
-                  ...(event !== "all" ? { event } : year !== "all" ? { year } : {}),
+                  ...(h2hEv ? { event: h2hEv } : year !== "all" ? { year } : {}),
                 }).toString(),
               }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -618,7 +621,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 mode: "team",
                 a,
                 b,
-                ...(event !== "all" ? { period: `e:${event}` } : year !== "all" ? { period: `y${year}` } : {}),
+                ...(h2hEv ? { period: `e:${h2hEv}` } : year !== "all" ? { period: `y${year}` } : {}),
               })}
             />
             <SectionCard
@@ -651,14 +654,14 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               <div className="rounded-lg border border-rw-border bg-rw-bg/60 px-2.5 py-2 space-y-1">
                 <div className="flex items-center justify-between text-xs font-bold tabular-nums">
                   <span className="inline-flex items-center gap-1.5 text-rw-side-a truncate min-w-0">
-                    <HubLink to={{ kind: "team", slug: a }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                    <HubLink to={{ kind: "team", slug: a, ...(h2hQ ? { query: h2hQ } : {}) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                       <TeamLogo name={aName} size={15} />
                     </HubLink>
-                    <TeamLink name={aName} u={a} className="truncate hover:underline" />{" "}
+                    <TeamLink name={aName} u={a} query={h2hQ} className="truncate hover:underline" />{" "}
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                        query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
                       }}
                       className="hover:underline"
                     >
@@ -668,7 +671,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                      query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
                     }}
                     className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted hover:text-rw-accent hover:underline"
                   >
@@ -678,14 +681,14 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(b)}&vs=${encodeURIComponent(a)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                        query: `team=${encodeURIComponent(b)}&vs=${encodeURIComponent(a)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
                       }}
                       className="hover:underline"
                     >
                       {rows.length - wa}
                     </HubLink>{" "}
-                    <TeamLink name={bName} u={b} className="truncate hover:underline" />
-                    <HubLink to={{ kind: "team", slug: b }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                    <TeamLink name={bName} u={b} query={h2hQ} className="truncate hover:underline" />
+                    <HubLink to={{ kind: "team", slug: b, ...(h2hQ ? { query: h2hQ } : {}) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                       <TeamLogo name={bName} size={15} />
                     </HubLink>
                   </span>
@@ -699,14 +702,14 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                 <div className="rounded-lg border border-rw-border bg-rw-bg/60 px-2.5 py-2 space-y-1">
                   <div className="flex items-center justify-between text-xs font-bold tabular-nums">
                     <span className="inline-flex items-center gap-1.5 text-rw-side-a truncate min-w-0">
-                      <HubLink to={{ kind: "team", slug: a }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                      <HubLink to={{ kind: "team", slug: a, ...(h2hQ ? { query: h2hQ } : {}) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                         <TeamLogo name={aName} size={15} />
                       </HubLink>
-                      <TeamLink name={aName} u={a} className="truncate hover:underline" />{" "}
+                      <TeamLink name={aName} u={a} query={h2hQ} className="truncate hover:underline" />{" "}
                       <HubLink
                         to={{
                           kind: "finder",
-                          query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                          query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
                         }}
                         className="hover:underline"
                       >
@@ -716,7 +719,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                        query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
                       }}
                       className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted hover:text-rw-accent hover:underline"
                     >
@@ -726,14 +729,14 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
                       <HubLink
                         to={{
                           kind: "finder",
-                          query: `team=${encodeURIComponent(b)}&vs=${encodeURIComponent(a)}${event !== "all" ? `&event=${encodeURIComponent(event)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                          query: `team=${encodeURIComponent(b)}&vs=${encodeURIComponent(a)}${h2hEv ? `&event=${encodeURIComponent(h2hEv)}` : year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
                         }}
                         className="hover:underline"
                       >
                         {gb}
                       </HubLink>{" "}
-                      <TeamLink name={bName} u={b} className="truncate hover:underline" />
-                      <HubLink to={{ kind: "team", slug: b }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                      <TeamLink name={bName} u={b} query={h2hQ} className="truncate hover:underline" />
+                      <HubLink to={{ kind: "team", slug: b, ...(h2hQ ? { query: h2hQ } : {}) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                         <TeamLogo name={bName} size={15} />
                       </HubLink>
                     </span>
@@ -1096,6 +1099,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
         {shown.slice(0, n).map((r, i) => {
           const hide = hidden && isFresh(r[0]);
           const its = itemsOf.get(r);
+          const rowQ = r[11] ? `p=e:${encodeURIComponent(r[11])}` : /^\d{4}/.test(r[0]) ? `p=y${r[0].slice(0, 4)}` : undefined;
           return (
             <li key={i} className="min-w-0">
             <div className="flex items-center justify-between gap-2 min-w-0">
@@ -1112,7 +1116,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
                   </span>
                 )}
-                <HubLink to={{ kind: "champ", slug: resolveChampSlug(r[2]) }} className="hover:opacity-80" title={champName(r[2])}>
+                <HubLink to={{ kind: "champ", slug: resolveChampSlug(r[2]), ...(rowQ ? { query: rowQ } : {}) }} className="hover:opacity-80" title={champName(r[2])}>
                   <ChampIcon name={r[2]} size={18} />
                 </HubLink>
                 <span className="truncate min-w-0">
@@ -1128,7 +1132,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                   )}{" "}
                   <span className="text-rw-sub inline-flex items-center gap-1 align-baseline">
                     {r[7] && (
-                      <HubLink to={{ kind: "team", slug: tSlug(r[7]) }} title={r[7]} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                      <HubLink to={{ kind: "team", slug: tSlug(r[7]), ...(rowQ ? { query: rowQ } : {}) }} title={r[7]} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                         <TeamLogo name={r[7]} size={13} />
                       </HubLink>
                     )}
@@ -1142,10 +1146,10 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     >
                       vs
                     </HubLink>
-                    <HubLink to={{ kind: "team", slug: tSlug(r[8]) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                    <HubLink to={{ kind: "team", slug: tSlug(r[8]), ...(rowQ ? { query: rowQ } : {}) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                       <TeamLogo name={r[8]} size={13} />
                     </HubLink>
-                    <TeamLink name={r[8]} />
+                    <TeamLink name={r[8]} query={rowQ} />
                     {r[10] ? (
                       <>
                         {" · "}

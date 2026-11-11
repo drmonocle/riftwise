@@ -134,10 +134,10 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       value: (p) => p.n.toLowerCase(),
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "player", slug: pSlug(p.n, p.u) }} className="shrink-0 hover:opacity-80" title={p.n}>
+          <HubLink to={{ kind: "player", slug: pSlug(p.n, p.u), query: `p=e:${encodeURIComponent(e.u)}` }} className="shrink-0 hover:opacity-80" title={p.n}>
             <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
           </HubLink>
-          <PlayerLink name={p.n} u={p.u} />
+          <PlayerLink name={p.n} u={p.u} query={`p=e:${encodeURIComponent(e.u)}`} />
         </span>
       ),
     },
@@ -147,10 +147,10 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       value: (p) => p.t.toLowerCase(),
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 max-w-[9rem] truncate align-bottom">
-          <HubLink to={{ kind: "team", slug: tSlug(p.t, p.tu) }} className="shrink-0 hover:opacity-80" title={p.t}>
+          <HubLink to={{ kind: "team", slug: tSlug(p.t, p.tu), query: `p=e:${encodeURIComponent(e.u)}` }} className="shrink-0 hover:opacity-80" title={p.t}>
             <TeamLogo name={p.t} size={14} />
           </HubLink>
-          <TeamLink name={p.t} u={p.tu} className="truncate" />
+          <TeamLink name={p.t} u={p.tu} query={`p=e:${encodeURIComponent(e.u)}`} className="truncate" />
         </span>
       ),
     },
@@ -387,7 +387,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             to={{
               kind: "tiers",
               query: new URLSearchParams({
-                ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
+                ...(e.lu ? { scope: resolveLeagueSlug(e.lu), league: resolveLeagueSlug(e.lu) } : {}),
                 ...((e.start || e.end || "").slice(0, 4) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
@@ -645,10 +645,10 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
       value: (t) => t.t.toLowerCase(),
       render: (t) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "team", slug: tSlug(t.t, t.u) }} className="shrink-0 hover:opacity-80" title={t.t}>
+          <HubLink to={{ kind: "team", slug: tSlug(t.t, t.u), query: `p=e:${encodeURIComponent(e.u)}` }} className="shrink-0 hover:opacity-80" title={t.t}>
             <TeamLogo name={t.t} size={15} />
           </HubLink>
-          <TeamLink name={t.t} u={t.u} />
+          <TeamLink name={t.t} u={t.u} query={`p=e:${encodeURIComponent(e.u)}`} />
         </span>
       ),
     },
@@ -832,7 +832,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
             to={{
               kind: "tiers",
               query: new URLSearchParams({
-                ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
+                ...(e.lu ? { scope: resolveLeagueSlug(e.lu), league: resolveLeagueSlug(e.lu) } : {}),
                 ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
                 event: e.u,
               }).toString(),

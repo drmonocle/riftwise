@@ -40,6 +40,7 @@ function matchLines(
   stakes: Record<string, TeamStakes>,
 ): StoryLine[] {
   const lines: StoryLine[] = [];
+  const mYr = m.startTimeUtc?.slice(0, 4);
   for (const [name, code] of [
     [m.team1Name, m.team1Code],
     [m.team2Name, m.team2Code],
@@ -47,27 +48,29 @@ function matchLines(
     const u = findHubTeam(index, name, code);
     const s = u ? stakes[u] : undefined;
     if (!u || !s) continue;
-    s.l.forEach((nt, i) =>
+    s.l.forEach((nt, i) => {
+      const yr = nt.y ? String(nt.y) : mYr;
       lines.push({
         key: `${u}-${i}`,
-        who: { name: s.n, team: s.n, to: { kind: "team", slug: u } },
+        who: { name: s.n, team: s.n, to: { kind: "team", slug: u, ...(yr ? { query: `p=y${encodeURIComponent(yr)}` } : {}) } },
         text: noteText(nt, { kind: "team", slug: u }),
         plain: notePlainText(nt),
         champ: nt.c,
         asOf: s.a || undefined,
-      }),
-    );
+      });
+    });
     for (const [pn, pu, , asOf, notes] of s.p)
-      notes.forEach((nt, i) =>
+      notes.forEach((nt, i) => {
+        const yr = nt.y ? String(nt.y) : mYr;
         lines.push({
           key: `${pu}-${i}`,
-          who: { name: pn, team: s.n, to: { kind: "player", slug: pu } },
+          who: { name: pn, team: s.n, to: { kind: "player", slug: pu, ...(yr ? { query: `p=y${encodeURIComponent(yr)}` } : {}) } },
           text: noteText(nt, { kind: "player", slug: pu }),
           plain: notePlainText(nt),
           champ: nt.c,
           asOf,
-        }),
-      );
+        });
+      });
   }
   return lines;
 }
@@ -250,7 +253,12 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   kind: "tiers",
                   query:
                     new URLSearchParams({
-                      ...(blocks[0]?.m.leagueSlug ? { scope: resolveLeagueSlug(blocks[0].m.leagueSlug) } : {}),
+                      ...(blocks[0]?.m.leagueSlug
+                        ? {
+                            scope: resolveLeagueSlug(blocks[0].m.leagueSlug),
+                            league: resolveLeagueSlug(blocks[0].m.leagueSlug),
+                          }
+                        : {}),
                       ...(blocks[0]?.m.startTimeUtc ? { key: `y${blocks[0].m.startTimeUtc.slice(0, 4)}` } : {}),
                     }).toString() || undefined,
                 }}
@@ -330,7 +338,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     kind: "tiers",
                     query:
                       new URLSearchParams({
-                        ...(lg ? { scope: lg } : {}),
+                        ...(lg ? { scope: lg, league: lg } : {}),
                         ...(p ? { key: p } : {}),
                       }).toString() || undefined,
                   }}
@@ -381,12 +389,14 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
         {blocks.map(({ m, lines }) => {
           const t1Slug = teamSlug(data.index, m.team1Name, m.team1Code);
           const t2Slug = teamSlug(data.index, m.team2Name, m.team2Code);
+          const mYr = m.startTimeUtc?.slice(0, 4);
+          const mPeriodQ = mYr && /^\d{4}$/.test(mYr) ? `p=y${encodeURIComponent(mYr)}` : undefined;
           return (
           <div key={m.matchId} className="space-y-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs border-b border-rw-border pb-1">
               <span className="inline-flex items-center gap-1 font-bold text-rw-text">
                 <HubLink
-                  to={{ kind: "team", slug: t1Slug }}
+                  to={{ kind: "team", slug: t1Slug, ...(mPeriodQ ? { query: mPeriodQ } : {}) }}
                   className="inline-flex items-center gap-1 hover:text-rw-accent"
                 >
                   <TeamLogo name={m.team1Name || m.team1Code} code={m.team1Code} src={m.team1Image} sizeClass="w-3.5 h-3.5" />
@@ -406,7 +416,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   vs
                 </HubLink>
                 <HubLink
-                  to={{ kind: "team", slug: t2Slug }}
+                  to={{ kind: "team", slug: t2Slug, ...(mPeriodQ ? { query: mPeriodQ } : {}) }}
                   className="inline-flex items-center gap-1 hover:text-rw-accent"
                 >
                   <TeamLogo name={m.team2Name || m.team2Code} code={m.team2Code} src={m.team2Image} sizeClass="w-3.5 h-3.5" />
@@ -416,7 +426,11 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               <span className="text-rw-muted">
                 {m.leagueSlug || m.leagueName ? (
                   <HubLink
-                    to={{ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) }}
+                    to={{
+                      kind: "league",
+                      slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
+                      ...(mYr && /^\d{4}$/.test(mYr) ? { year: mYr } : {}),
+                    }}
                     className="hover:text-rw-accent hover:underline"
                   >
                     {m.leagueName}

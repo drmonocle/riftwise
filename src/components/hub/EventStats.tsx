@@ -755,6 +755,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
           const nums = !f.plain ? f.rows.map((r) => parseV(r.value)) : [];
           const validNums = nums.filter((v): v is number => v != null && isFinite(v) && v > 0);
           const maxNum = validNums.length >= 2 ? Math.max(...validNums) : 0;
+          const evQ = eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : undefined;
           return f.rows.map((r, i) => {
             const vNum = nums[i];
             const barPct = maxNum > 0 && vNum != null && vNum > 0 ? Math.max(4, Math.min(100, Math.round((vNum / maxNum) * 100))) : 0;
@@ -768,11 +769,11 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                 )}
                 {!f.plain && <span className="relative w-4 text-rw-muted text-right shrink-0">{i + 1}.</span>}
                 {r.champ ? (
-                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ) }} className="relative shrink-0">
+                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ), ...(evQ ? { query: evQ } : {}) }} className="relative shrink-0">
                     <ChampIcon name={r.champ} size={18} />
                   </HubLink>
                 ) : r.player ? (
-                  <HubLink to={{ kind: "player", slug: r.player }} className="relative shrink-0">
+                  <HubLink to={{ kind: "player", slug: r.player, ...(evQ ? { query: evQ } : {}) }} className="relative shrink-0">
                     <PlayerPhoto
                       name={r.team && /^[A-Z0-9]{2,6}\s+\S/.test(r.label) ? r.label.replace(/^[A-Z0-9]{2,6}\s+/, "") : r.label}
                       team={r.team ?? undefined}
@@ -781,17 +782,17 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                     />
                   </HubLink>
                 ) : r.team ? (
-                  <HubLink to={{ kind: "team", slug: r.team }} className="relative shrink-0">
+                  <HubLink to={{ kind: "team", slug: r.team, ...(evQ ? { query: evQ } : {}) }} className="relative shrink-0">
                     <TeamLogo name={r.team} code={r.label.length <= 5 && !/\s/.test(r.label) ? r.label : undefined} size={16} />
                   </HubLink>
                 ) : null}
                 <span className="relative min-w-0 flex-1">
                   {r.player ? (
-                    <PlayerLink name={r.label} u={r.player} />
+                    <PlayerLink name={r.label} u={r.player} query={evQ} />
                   ) : r.team ? (
-                    <TeamLink name={r.label} u={r.team} />
+                    <TeamLink name={r.label} u={r.team} query={evQ} />
                   ) : r.champ ? (
-                    <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ) }} className="hover:text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ), ...(evQ ? { query: evQ } : {}) }} className="hover:text-rw-accent hover:underline">
                       {r.label}
                     </HubLink>
                   ) : r.match ? (
@@ -816,7 +817,7 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                       kind: "player",
                       slug: r.player,
                       tab: "stats",
-                      ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}),
+                      ...(evQ ? { query: evQ } : {}),
                     }}
                     className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums"
                   >
@@ -828,14 +829,14 @@ export const FactCard: React.FC<{ f: Fact; link: string; shareId: string; eventS
                       kind: "team",
                       slug: r.team,
                       tab: "stats",
-                      ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}),
+                      ...(evQ ? { query: evQ } : {}),
                     }}
                     className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums"
                   >
                     {r.value}
                   </HubLink>
                 ) : r.champ ? (
-                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ) }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
+                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ), ...(evQ ? { query: evQ } : {}) }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
                     {r.value}
                   </HubLink>
                 ) : eventSlug ? (

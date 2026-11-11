@@ -214,7 +214,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               const yr = done[0]?.startTimeUtc?.slice(0, 4);
               const lg = done[0]?.leagueSlug ? resolveLeagueSlug(done[0].leagueSlug) : "";
               const q = new URLSearchParams({
-                ...(lg ? { scope: lg } : {}),
+                ...(lg ? { scope: lg, league: lg } : {}),
                 ...(yr ? { key: `y${yr}` } : {}),
               }).toString();
               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -245,12 +245,19 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           const shown = !settings.spoilerMode || isRevealed(`match:${m.matchId}`);
           const w1 = shown && m.team1Score > m.team2Score;
           const w2 = shown && m.team2Score > m.team1Score;
+          const mYr = m.startTimeUtc?.slice(0, 4);
           return (
             <li key={m.matchId} className="flex items-center gap-2 px-3 py-2 text-xs min-w-0">
               {!oneEvent && (
                 <button
                   type="button"
-                  onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) })}
+                  onClick={() =>
+                    navigateHub({
+                      kind: "league",
+                      slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
+                      ...(mYr && /^\d{4}$/.test(mYr) ? { year: mYr } : {}),
+                    })
+                  }
                   className="w-24 shrink-0 text-[11px] text-rw-muted hover:text-rw-accent hover:underline truncate text-left transition-colors"
                   title={m.leagueName}
                 >
@@ -259,7 +266,13 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               )}
               <button
                 type="button"
-                onClick={() => navigateHub({ kind: "team", slug: teamSlug(m.team1Name, m.team1Code) })}
+                onClick={() =>
+                  navigateHub({
+                    kind: "team",
+                    slug: teamSlug(m.team1Name, m.team1Code),
+                    ...(mYr && /^\d{4}$/.test(mYr) ? { query: `p=y${encodeURIComponent(mYr)}` } : {}),
+                  })
+                }
                 className={`flex-1 min-w-0 inline-flex items-center justify-end gap-2 text-right truncate hover:text-rw-accent hover:underline transition-colors ${w1 ? "font-bold text-rw-text" : "text-rw-sub"}`}
               >
                 <span className="truncate">{m.team1Name}</span>
@@ -303,7 +316,13 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               )}
               <button
                 type="button"
-                onClick={() => navigateHub({ kind: "team", slug: teamSlug(m.team2Name, m.team2Code) })}
+                onClick={() =>
+                  navigateHub({
+                    kind: "team",
+                    slug: teamSlug(m.team2Name, m.team2Code),
+                    ...(mYr && /^\d{4}$/.test(mYr) ? { query: `p=y${encodeURIComponent(mYr)}` } : {}),
+                  })
+                }
                 className={`flex-1 min-w-0 inline-flex items-center gap-2 text-left truncate hover:text-rw-accent hover:underline transition-colors ${w2 ? "font-bold text-rw-text" : "text-rw-sub"}`}
               >
                 <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={20} className="shrink-0" />
@@ -434,7 +453,10 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
           <button
             type="button"
             onClick={() => {
-              navigateHub({ kind: "tiers", ...(topLg ? { scope: topLg } : {}) });
+              navigateHub({
+                kind: "tiers",
+                ...(topLg ? { query: `scope=${encodeURIComponent(topLg)}&league=${encodeURIComponent(topLg)}` } : {}),
+              });
               onSelectTab("stats");
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"

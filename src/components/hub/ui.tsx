@@ -333,7 +333,7 @@ export const HubLink: React.FC<{
 );
 
 /** Team name, linked to its page when it has one (falls back to resolveTeamAlias(name) when u is omitted or empty). */
-export const TeamLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
+export const TeamLink: React.FC<{ name: string; u?: string | null; query?: string; className?: string }> = ({ name, u, query, className }) => {
   const slug =
     u ||
     (u === undefined && name && name.toUpperCase() !== "TBD"
@@ -342,7 +342,7 @@ export const TeamLink: React.FC<{ name: string; u?: string | null; className?: s
         ? resolveTeamAlias(name)
         : null);
   return slug ? (
-    <HubLink to={{ kind: "team", slug }} className={className}>
+    <HubLink to={{ kind: "team", slug, ...(query ? { query } : {}) }} className={className}>
       {name}
     </HubLink>
   ) : (
@@ -350,10 +350,10 @@ export const TeamLink: React.FC<{ name: string; u?: string | null; className?: s
   );
 };
 
-export const PlayerLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
+export const PlayerLink: React.FC<{ name: string; u?: string | null; query?: string; className?: string }> = ({ name, u, query, className }) => {
   const slug = u || (name ? resolvePlayerSlug(name) : null);
   return slug ? (
-    <HubLink to={{ kind: "player", slug }} className={className}>
+    <HubLink to={{ kind: "player", slug, ...(query ? { query } : {}) }} className={className}>
       {name}
     </HubLink>
   ) : (
@@ -420,8 +420,8 @@ export const SpellIcon: React.FC<{ name: string; size?: number }> = ({ name, siz
 export const RuneIcon: React.FC<{ name: string; size?: number }> = ({ name, size = 18 }) => <Pic src={runeIcon(name)} alt={runeName(name)} size={size} round />;
 
 /** Champion picture + name, linked to the champion page. */
-export const ChampLink: React.FC<{ name: string; size?: number; showName?: boolean }> = ({ name, size = 20, showName = true }) => (
-  <HubLink to={{ kind: "champ", slug: resolveChampSlug(name) }} className="inline-flex items-center gap-1.5 min-w-0 text-rw-text hover:text-rw-accent">
+export const ChampLink: React.FC<{ name: string; size?: number; showName?: boolean; query?: string }> = ({ name, size = 20, showName = true, query }) => (
+  <HubLink to={{ kind: "champ", slug: resolveChampSlug(name), ...(query ? { query } : {}) }} className="inline-flex items-center gap-1.5 min-w-0 text-rw-text hover:text-rw-accent">
     <ChampIcon name={name} size={size} />
     {showName && <span className="truncate">{champName(name)}</span>}
   </HubLink>

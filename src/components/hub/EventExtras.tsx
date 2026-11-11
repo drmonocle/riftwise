@@ -61,7 +61,8 @@ const GameLine: React.FC<{
   label: string;
   r: GameRef | null;
   value: string;
-}> = ({ label, r, value }) =>
+  slug?: string;
+}> = ({ label, r, value, slug }) =>
   r ? (
     <li className="flex flex-wrap items-baseline justify-between gap-x-2 min-w-0">
       <span className="text-rw-sub shrink-0">{label}</span>
@@ -82,21 +83,29 @@ const GameLine: React.FC<{
           </HubLink>
         ) : (
           <span className="text-rw-text inline-flex items-center gap-1">
-            <HubLink to={{ kind: "team", slug: tSlug(r.a) }} className="shrink-0 hover:opacity-80" title={r.a}>
+            <HubLink
+              to={{ kind: "team", slug: tSlug(r.a), ...(slug ? { query: `p=e:${encodeURIComponent(slug)}` } : {}) }}
+              className="shrink-0 hover:opacity-80"
+              title={r.a}
+            >
               <TeamLogo name={r.a} size={13} />
             </HubLink>
-            <TeamLink name={r.a} />
+            <TeamLink name={r.a} query={slug ? `p=e:${encodeURIComponent(slug)}` : undefined} />
             <HubLink
-              to={{ kind: "compare", mode: "team", a: tSlug(r.a), b: tSlug(r.b) }}
+              to={{ kind: "compare", mode: "team", a: tSlug(r.a), b: tSlug(r.b), ...(slug ? { period: `e:${slug}` } : {}) }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
               title={tl("Compare")}
             >
               vs
             </HubLink>
-            <HubLink to={{ kind: "team", slug: tSlug(r.b) }} className="shrink-0 hover:opacity-80" title={r.b}>
+            <HubLink
+              to={{ kind: "team", slug: tSlug(r.b), ...(slug ? { query: `p=e:${encodeURIComponent(slug)}` } : {}) }}
+              className="shrink-0 hover:opacity-80"
+              title={r.b}
+            >
               <TeamLogo name={r.b} size={13} />
             </HubLink>
-            <TeamLink name={r.b} />
+            <TeamLink name={r.b} query={slug ? `p=e:${encodeURIComponent(slug)}` : undefined} />
           </span>
         )}
       </span>
@@ -119,10 +128,12 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
   const totalDrakes = drakes.reduce((s, [, n]) => s + n, 0) || 1;
   const featGame = o.best || o.bloody || o.long || o.short;
   const yr = year && /^\d{4}$/.test(year) ? year : slug && /\d{4}/.test(slug) ? /\d{4}/.exec(slug)![0] : undefined;
+  const normLg = leagueSlug ? resolveLeagueSlug(leagueSlug) : "";
+  const evQ = slug ? `p=e:${encodeURIComponent(slug)}` : undefined;
   const tiersQuery =
     new URLSearchParams({
-      ...(leagueSlug ? { league: leagueSlug } : {}),
-      ...(yr ? { year: yr } : {}),
+      ...(normLg ? { scope: normLg, league: normLg } : {}),
+      ...(yr ? { key: `y${yr}` } : {}),
       ...(slug ? { event: slug } : {}),
     }).toString() || undefined;
   return (
@@ -351,21 +362,21 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   </HubLink>
                 ) : (
                   <span className="text-rw-text inline-flex items-center gap-1">
-                    <HubLink to={{ kind: "team", slug: tSlug(o.best.a) }} className="shrink-0 hover:opacity-80" title={o.best.a}>
+                    <HubLink to={{ kind: "team", slug: tSlug(o.best.a), ...(evQ ? { query: evQ } : {}) }} className="shrink-0 hover:opacity-80" title={o.best.a}>
                       <TeamLogo name={o.best.a} size={13} />
                     </HubLink>
-                    <TeamLink name={o.best.a} />
+                    <TeamLink name={o.best.a} query={evQ} />
                     <HubLink
-                      to={{ kind: "compare", mode: "team", a: tSlug(o.best.a), b: tSlug(o.best.b) }}
+                      to={{ kind: "compare", mode: "team", a: tSlug(o.best.a), b: tSlug(o.best.b), ...(slug ? { period: `e:${slug}` } : {}) }}
                       className="text-rw-muted hover:text-rw-accent hover:underline"
                       title={tl("Compare")}
                     >
                       vs
                     </HubLink>
-                    <HubLink to={{ kind: "team", slug: tSlug(o.best.b) }} className="shrink-0 hover:opacity-80" title={o.best.b}>
+                    <HubLink to={{ kind: "team", slug: tSlug(o.best.b), ...(evQ ? { query: evQ } : {}) }} className="shrink-0 hover:opacity-80" title={o.best.b}>
                       <TeamLogo name={o.best.b} size={13} />
                     </HubLink>
-                    <TeamLink name={o.best.b} />
+                    <TeamLink name={o.best.b} query={evQ} />
                   </span>
                 )}
               </span>
@@ -375,16 +386,19 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
             label={tl("Shortest game")}
             r={o.short}
             value={o.short ? mmss(o.short.v) : ""}
+            slug={slug}
           />
           <GameLine
             label={tl("Longest game")}
             r={o.long}
             value={o.long ? mmss(o.long.v) : ""}
+            slug={slug}
           />
           <GameLine
             label={tl("Most kills in a game")}
             r={o.bloody}
             value={o.bloody ? tl("{n} kills", { n: o.bloody.v }) : ""}
+            slug={slug}
           />
           {o.farm && (
             <li className="flex flex-wrap items-baseline justify-between gap-x-2 min-w-0">
@@ -401,10 +415,10 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                     {tl("{n} CS/min", { n: o.farm.v })}
                   </span>
                 )}
-                <HubLink to={{ kind: "player", slug: pSlug(o.farm.n, o.farm.u) }} className="shrink-0 hover:opacity-80" title={o.farm.n}>
+                <HubLink to={{ kind: "player", slug: pSlug(o.farm.n, o.farm.u), ...(evQ ? { query: evQ } : {}) }} className="shrink-0 hover:opacity-80" title={o.farm.n}>
                   <PlayerPhoto name={o.farm.n} slug={o.farm.u ?? undefined} size={15} />
                 </HubLink>
-                <PlayerLink name={o.farm.n} u={o.farm.u} />
+                <PlayerLink name={o.farm.n} u={o.farm.u} query={evQ} />
                 {o.farm.g ? (
                   <HubLink
                     to={{ kind: "match", slug: o.farm.g, game: o.farm.gn }}
@@ -594,8 +608,8 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   kind: "tiers",
                   query:
                     new URLSearchParams({
-                      ...(leagueSlug ? { league: leagueSlug } : {}),
-                      ...(yr ? { year: yr } : {}),
+                      ...(normLg ? { scope: normLg, league: normLg } : {}),
+                      ...(yr ? { key: `y${yr}` } : {}),
                       ...(slug ? { event: slug } : {}),
                       ...(o.pentas[0]?.c ? { q: resolveChampSlug(o.pentas[0].c) } : {}),
                     }).toString() || undefined,
@@ -628,13 +642,13 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
           <ul className="space-y-1">
             {o.pentas.map((p, i) => (
               <li key={i} className="flex items-center gap-1.5">
-                <HubLink to={{ kind: "champ", slug: resolveChampSlug(p.c) }} className="hover:opacity-80" title={champName(p.c)}>
+                <HubLink to={{ kind: "champ", slug: resolveChampSlug(p.c), ...(evQ ? { query: evQ } : {}) }} className="hover:opacity-80" title={champName(p.c)}>
                   <ChampIcon name={p.c} size={16} />
                 </HubLink>
-                <HubLink to={{ kind: "player", slug: pSlug(p.n, p.u) }} className="shrink-0 hover:opacity-80" title={p.n}>
+                <HubLink to={{ kind: "player", slug: pSlug(p.n, p.u), ...(evQ ? { query: evQ } : {}) }} className="shrink-0 hover:opacity-80" title={p.n}>
                   <PlayerPhoto name={p.n} slug={p.u ?? undefined} size={16} />
                 </HubLink>
-                <PlayerLink name={p.n} u={p.u} />
+                <PlayerLink name={p.n} u={p.u} query={evQ} />
                 {p.x > 1 &&
                   (p.g ? (
                     <HubLink to={{ kind: "match", slug: p.g, game: p.gn }} className="text-rw-accent hover:underline">
@@ -745,10 +759,10 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
               const maxM = Math.max(1, ...o.mvp.map((m) => m.v));
               return o.mvp.map((m) => (
                 <span key={m.n} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-rw-border bg-rw-bg/50">
-                  <HubLink to={{ kind: "player", slug: pSlug(m.n, m.u) }} className="shrink-0 hover:opacity-80" title={m.n}>
+                  <HubLink to={{ kind: "player", slug: pSlug(m.n, m.u), ...(evQ ? { query: evQ } : {}) }} className="shrink-0 hover:opacity-80" title={m.n}>
                     <PlayerPhoto name={m.n} slug={m.u ?? undefined} size={16} />
                   </HubLink>
-                  <PlayerLink name={m.n} u={m.u} />
+                  <PlayerLink name={m.n} u={m.u} query={evQ} />
                   <span className="w-6 h-1 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
                     <span className="h-full bg-rw-accent/85 rounded-full" style={{ width: `${Math.round((m.v / maxM) * 100)}%` }} />
                   </span>
@@ -935,8 +949,8 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                   kind: "tiers",
                   query:
                     new URLSearchParams({
-                      ...(normLg ? { league: normLg } : {}),
-                      ...(yr ? { year: yr } : {}),
+                      ...(normLg ? { scope: normLg, league: normLg } : {}),
+                      ...(yr ? { key: `y${yr}` } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                       ...(qRole ? { role: qRole } : {}),
                     }).toString() || undefined,
@@ -1013,10 +1027,14 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
             className="bg-rw-bg border border-rw-border rounded-lg p-2 text-xs min-w-0"
           >
             <div className="font-semibold mb-1.5 flex items-center gap-1.5 truncate">
-              <HubLink to={{ kind: "team", slug: tSlug(t.t, t.u) }} className="shrink-0 hover:opacity-80" title={t.t}>
+              <HubLink
+                to={{ kind: "team", slug: tSlug(t.t, t.u), ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}) }}
+                className="shrink-0 hover:opacity-80"
+                title={t.t}
+              >
                 <TeamLogo name={t.t} size={16} />
               </HubLink>
-              <TeamLink name={t.t} u={t.u} />
+              <TeamLink name={t.t} u={t.u} query={eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : undefined} />
               {t.r && (
                 <HubLink to={{ kind: "leagues", query: `q=${encodeURIComponent(t.r)}` }} className="text-rw-muted hover:text-rw-accent hover:underline text-[10px] ml-0.5">
                   {regionName(t.r, t.r)}
@@ -1036,10 +1054,14 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
               {t.p.map(([n, u, role, flag], i) => (
                 <li key={i} className="flex items-center justify-between gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                    <HubLink to={{ kind: "player", slug: pSlug(n, u) }} className="shrink-0 hover:opacity-80" title={n}>
+                    <HubLink
+                      to={{ kind: "player", slug: pSlug(n, u), ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}) }}
+                      className="shrink-0 hover:opacity-80"
+                      title={n}
+                    >
                       <PlayerPhoto name={n} team={t.t} slug={u ?? undefined} size={16} />
                     </HubLink>
-                    <PlayerLink name={n} u={u} />
+                    <PlayerLink name={n} u={u} query={eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : undefined} />
                   </span>
                   <span className="inline-flex items-center gap-1 text-rw-muted shrink-0 text-[10px]">
                     {role ? (
@@ -1153,8 +1175,8 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
               kind: "tiers",
               query:
                 new URLSearchParams({
-                  ...(lgSlug ? { league: lgSlug } : {}),
-                  ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                  ...(lgSlug ? { scope: lgSlug, league: lgSlug } : {}),
+                  ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { key: `y${(e.start || e.end || "").slice(0, 4)}` } : {}),
                   event: e.u,
                 }).toString() || undefined,
             }}
