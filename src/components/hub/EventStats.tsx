@@ -948,6 +948,12 @@ export const FactCard: React.FC<{
           return f.rows.map((r, i) => {
             const vNum = nums[i];
             const barPct = maxNum > 0 && vNum != null && vNum > 0 ? Math.max(4, Math.min(100, Math.round((vNum / maxNum) * 100))) : 0;
+            const champRowQ =
+              new URLSearchParams({
+                ...(eventSlug ? { p: `e:${eventSlug}` } : evYr ? { p: `y${evYr}` } : {}),
+                ...(r.player ? { player: r.player } : {}),
+                ...(r.team ? { team: r.team } : {}),
+              }).toString() || undefined;
             return (
               <li key={i} className="relative overflow-hidden rounded px-1.5 py-0.5 flex items-start gap-2 min-w-0">
                 {barPct > 0 && (
@@ -958,7 +964,7 @@ export const FactCard: React.FC<{
                 )}
                 {!f.plain && <span className="relative w-4 text-rw-muted text-right shrink-0">{i + 1}.</span>}
                 {r.champ ? (
-                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ), ...(evQ ? { query: evQ } : {}) }} className="relative shrink-0">
+                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ), ...(champRowQ ? { query: champRowQ } : {}) }} className="relative shrink-0">
                     <ChampIcon name={r.champ} size={18} />
                   </HubLink>
                 ) : r.player ? (
@@ -981,7 +987,7 @@ export const FactCard: React.FC<{
                   ) : r.team ? (
                     <TeamLink name={r.label} u={r.team} query={evQ} />
                   ) : r.champ ? (
-                    <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ), ...(evQ ? { query: evQ } : {}) }} className="hover:text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ), ...(champRowQ ? { query: champRowQ } : {}) }} className="hover:text-rw-accent hover:underline">
                       {r.label}
                     </HubLink>
                   ) : r.match ? (
@@ -1025,7 +1031,7 @@ export const FactCard: React.FC<{
                     {r.value}
                   </HubLink>
                 ) : r.champ ? (
-                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ), ...(evQ ? { query: evQ } : {}) }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
+                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ), ...(champRowQ ? { query: champRowQ } : {}) }} className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums">
                     {r.value}
                   </HubLink>
                 ) : eventSlug || normLg ? (

@@ -722,7 +722,18 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
           <ul className="space-y-1">
             {o.pentas.map((p, i) => (
               <li key={i} className="flex items-center gap-1.5">
-                <HubLink to={{ kind: "champ", slug: resolveChampSlug(p.c), ...(evQ ? { query: evQ } : {}) }} className="hover:opacity-80" title={champName(p.c)}>
+                <HubLink
+                  to={{
+                    kind: "champ",
+                    slug: resolveChampSlug(p.c),
+                    query: new URLSearchParams({
+                      ...(slug ? { p: `e:${slug}` } : {}),
+                      player: pSlug(p.n, p.u),
+                    }).toString(),
+                  }}
+                  className="hover:opacity-80"
+                  title={champName(p.c)}
+                >
                   <ChampIcon name={p.c} size={16} />
                 </HubLink>
                 <HubLink to={{ kind: "player", slug: pSlug(p.n, p.u), ...(evQ ? { query: evQ } : {}) }} className="shrink-0 hover:opacity-80" title={p.n}>

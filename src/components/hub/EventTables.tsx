@@ -251,7 +251,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
               key={c}
               to={
                 p.u
-                  ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}&p=e:${encodeURIComponent(e.u)}` }
+                  ? {
+                      kind: "player",
+                      slug: p.u,
+                      tab: "champions",
+                      query: `champ=${encodeURIComponent(resolveChampSlug(c))}${p.r ? `&role=${encodeURIComponent(p.r)}` : ""}&p=e:${encodeURIComponent(e.u)}`,
+                    }
                   : { kind: "finder", query: pFinderQuery(p, c) }
               }
               className="hover:opacity-80"
@@ -264,7 +269,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             <HubLink
               to={
                 p.u
-                  ? { kind: "player", slug: p.u, tab: "champions", query: `p=e:${encodeURIComponent(e.u)}` }
+                  ? {
+                      kind: "player",
+                      slug: p.u,
+                      tab: "champions",
+                      query: `${p.r ? `role=${encodeURIComponent(p.r)}&` : ""}p=e:${encodeURIComponent(e.u)}`,
+                    }
                   : { kind: "finder", query: pFinderQuery(p) }
               }
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline ml-0.5"
