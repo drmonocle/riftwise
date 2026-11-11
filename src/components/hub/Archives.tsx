@@ -76,10 +76,17 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                       "vs"
                     )}{" "}
                     <span className="inline-flex items-center gap-1 align-baseline">
-                      <HubLink to={{ kind: "team", slug: oppSlug, ...(rowQ ? { query: rowQ } : {}) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
-                        <TeamLogo name={r[1]} size={13} />
-                      </HubLink>
-                      <TeamLink name={r[1]} u={r[2]} query={rowQ} />
+                      {(() => {
+                        const oppRowQ = [rowQ, teamSlug ? `q=${encodeURIComponent(teamSlug)}` : ""].filter(Boolean).join("&") || undefined;
+                        return (
+                          <>
+                            <HubLink to={{ kind: "team", slug: oppSlug, ...(oppRowQ ? { query: oppRowQ } : {}) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                              <TeamLogo name={r[1]} size={13} />
+                            </HubLink>
+                            <TeamLink name={r[1]} u={r[2]} query={oppRowQ} />
+                          </>
+                        );
+                      })()}
                     </span>{" "}
                   </>
                 )}
@@ -105,7 +112,14 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                     r[6] ? (
                       <>
                         {" · "}
-                        <HubLink to={{ kind: "event", slug: r[6] }} className="hover:text-rw-accent hover:underline">
+                        <HubLink
+                          to={{
+                            kind: "event",
+                            slug: r[6],
+                            ...((teamSlug || oppSlug) ? { query: `q=${encodeURIComponent([teamSlug, oppSlug].filter(Boolean).join(","))}` } : {}),
+                          }}
+                          className="hover:text-rw-accent hover:underline"
+                        >
                           {stageLabel(r[8])}
                         </HubLink>
                       </>
@@ -1312,7 +1326,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                   to={{
                     kind: "champ",
                     slug: resolveChampSlug(r[2]),
-                    query: `player=${encodeURIComponent(slug)}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${rowQ ? `&${rowQ}` : ""}`,
+                    query: `player=${encodeURIComponent(slug)}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${rowQ ? `&${rowQ}` : ""}`,
                   }}
                   className="hover:opacity-80"
                   title={champName(r[2])}
@@ -1331,25 +1345,32 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <span className="text-rw-text tabular-nums">{hide ? "?/?/?" : `${r[3]}/${r[4]}/${r[5]}`}</span>
                   )}{" "}
                   <span className="text-rw-sub inline-flex items-center gap-1 align-baseline">
-                    {r[7] && (
-                      <HubLink to={{ kind: "team", slug: tSlug(r[7]), ...(rowQ ? { query: rowQ } : {}) }} title={r[7]} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
-                        <TeamLogo name={r[7]} size={13} />
-                      </HubLink>
-                    )}
-                    <HubLink
-                      to={{
-                        kind: "finder",
-                        query: `player=${encodeURIComponent(slug)}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}&vs=${encodeURIComponent(tSlug(r[8]))}${r[2] ? `&champ=${encodeURIComponent(resolveChampSlug(r[2]))}` : champ !== "all" ? `&champ=${encodeURIComponent(resolveChampSlug(champ))}` : ""}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${r[24] ? `&patch=${encodeURIComponent(r[24])}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : /^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
-                      }}
-                      className="text-rw-muted hover:text-rw-accent hover:underline"
-                      title={tl("Game finder")}
-                    >
-                      vs
-                    </HubLink>
-                    <HubLink to={{ kind: "team", slug: tSlug(r[8]), ...(rowQ ? { query: rowQ } : {}) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
-                      <TeamLogo name={r[8]} size={13} />
-                    </HubLink>
-                    <TeamLink name={r[8]} query={rowQ} />
+                    {(() => {
+                      const tRowQ = [rowQ, `q=${encodeURIComponent(slug)}`].filter(Boolean).join("&");
+                      return (
+                        <>
+                          {r[7] && (
+                            <HubLink to={{ kind: "team", slug: tSlug(r[7]), query: tRowQ }} title={r[7]} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                              <TeamLogo name={r[7]} size={13} />
+                            </HubLink>
+                          )}
+                          <HubLink
+                            to={{
+                              kind: "finder",
+                              query: `player=${encodeURIComponent(slug)}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}&vs=${encodeURIComponent(tSlug(r[8]))}${r[2] ? `&champ=${encodeURIComponent(resolveChampSlug(r[2]))}` : champ !== "all" ? `&champ=${encodeURIComponent(resolveChampSlug(champ))}` : ""}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${r[24] ? `&patch=${encodeURIComponent(r[24])}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : /^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
+                            }}
+                            className="text-rw-muted hover:text-rw-accent hover:underline"
+                            title={tl("Game finder")}
+                          >
+                            vs
+                          </HubLink>
+                          <HubLink to={{ kind: "team", slug: tSlug(r[8]), query: tRowQ }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                            <TeamLogo name={r[8]} size={13} />
+                          </HubLink>
+                          <TeamLink name={r[8]} query={tRowQ} />
+                        </>
+                      );
+                    })()}
                     {r[10] ? (
                       <>
                         {" · "}
