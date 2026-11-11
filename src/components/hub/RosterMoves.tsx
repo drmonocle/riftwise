@@ -7,7 +7,8 @@
 import React, { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
-import { bare, loadLeagues, loadMoves, normText, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadLeagues, loadMoves, normText, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
+import { normalizeRole } from "../../hub/champAgg";
 import { searchAlias } from "../../searchAliases";
 import { fmtDate, HubLink, hubShareUrl, PlayerLink, PlayerPhoto, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -28,15 +29,24 @@ export const RosterMoves: React.FC = () => {
   const list = moves.data.list.filter((m) => {
     if (!all && !terms.length && !(m.lu && top.has(m.lu))) return false;
     if (terms.length) {
-      const hay = normText(`${m.n} ${m.u} ${m.r || ""} ${m.from.n} ${m.from.u} ${m.to.n} ${m.to.u} ${m.lu ? name.get(m.lu) || m.lu : ""}`);
+      const hay = normText(`${m.n} ${m.u} ${m.r || ""} ${m.r ? roleName(m.r) : ""} ${m.from.n} ${m.from.u} ${m.to.n} ${m.to.u} ${m.lu ? name.get(m.lu) || m.lu : ""}`);
       const hayBare = bare(hay);
+      const fromCanon = resolveTeamAlias(m.from.u || m.from.n);
+      const toCanon = resolveTeamAlias(m.to.u || m.to.n);
+      const lgCanon = m.lu ? resolveLeagueSlug(m.lu) : "";
+      const roleCanon = m.r ? normalizeRole(m.r) : null;
       if (
-        !terms.some(
-          (t) =>
-            hay.includes(t) ||
-            (t.length >= 2 && hayBare.includes(bare(t))) ||
-            resolvePlayerSlug(t) === m.u,
-        )
+        !terms.some((t) => {
+          if (hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t)))) return true;
+          if (resolvePlayerSlug(t) === m.u) return true;
+          const canonTeam = resolveTeamAlias(t);
+          if (canonTeam && (canonTeam === fromCanon || canonTeam === toCanon)) return true;
+          const canonLg = resolveLeagueSlug(t);
+          if (lgCanon && canonLg && canonLg === lgCanon) return true;
+          const canonRole = normalizeRole(t);
+          if (roleCanon && canonRole && canonRole === roleCanon) return true;
+          return false;
+        })
       )
         return false;
     }

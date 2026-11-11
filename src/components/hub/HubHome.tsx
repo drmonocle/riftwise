@@ -34,7 +34,8 @@ import { ShareMatchButton } from "../ShareMatchButton";
 import { SwissStandings } from "../SwissStandings";
 import { INTL_EVENTS, intlMatchNow } from "../../intlNow";
 import { LatestResults } from "../IdleHome";
-import { bare, normText, prettySlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, normText, prettySlug, resolveEventSlug, resolveLeagueSlug, resolveRegionFilter, resolveTeamAlias } from "../../hub/data";
+import { matchesPeriodEvent } from "../../hub/period";
 import { BroadcastCardButton, SectionCard, rankingsCard } from "./BroadcastCard";
 import type { TabKey } from "../Navigation";
 
@@ -1380,7 +1381,7 @@ export const EventsBrowse: React.FC<{ year?: string; query?: string; meta: HubMe
   usePageTitle(tl("Tournaments in {year}", { year: y }));
   const state = useLoad(() => loadEventsOfYear(y), [y]);
   const urlScope: "main" | "all" = qp.get("scope") === "all" ? "all" : "main";
-  const urlQ = qp.get("q") || qp.get("league") || "";
+  const urlQ = qp.get("q") || qp.get("league") || qp.get("team") || qp.get("region") || qp.get("event") || "";
   const [scope, setScope] = useState<"main" | "all">(urlScope);
   const [q, setQ] = useState(urlQ);
   useEffect(() => {
@@ -1390,6 +1391,9 @@ export const EventsBrowse: React.FC<{ year?: string; query?: string; meta: HubMe
   const syncUrl = (nextScope: "main" | "all", nextQ: string) => {
     const next = new URLSearchParams(query || "");
     next.delete("league");
+    next.delete("team");
+    next.delete("region");
+    next.delete("event");
     if (nextScope === "all") next.set("scope", "all");
     else next.delete("scope");
     if (nextQ.trim()) next.set("q", nextQ.trim());
@@ -1452,14 +1456,21 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
     return list.filter((e) => {
       if (terms.length) {
         const lgSlug = e.l ? resolveLeagueSlug(e.l) : "";
-        const hay = normText(`${e.n} ${e.l || ""} ${lgSlug} ${e.r || ""} ${e.w || ""} ${e.wu || ""} ${e.u || ""}`);
+        const winSlug = e.wu || e.w ? resolveTeamAlias(e.wu || e.w || "") : "";
+        const regCanon = e.r ? resolveRegionFilter(e.r) : null;
+        const hay = normText(`${e.n} ${e.l || ""} ${lgSlug} ${e.r || ""} ${e.w || ""} ${e.wu || ""} ${winSlug} ${e.u || ""}`);
         return terms.some((t) => {
           const resolvedT = resolveLeagueSlug(t);
+          const canonTeam = resolveTeamAlias(t);
+          const canonReg = resolveRegionFilter(t);
           return (
             hay.includes(t) ||
             (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
             (resolvedT && lgSlug === resolvedT) ||
-            resolveEventSlug(t) === e.u
+            Boolean(winSlug && canonTeam && canonTeam === winSlug) ||
+            Boolean(regCanon && canonReg && canonReg === regCanon) ||
+            resolveEventSlug(t) === e.u ||
+            matchesPeriodEvent(e.u, e.n, t)
           );
         });
       }

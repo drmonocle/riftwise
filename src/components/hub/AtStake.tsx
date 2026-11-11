@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, locale } from "../../i18n";
 import { load } from "../../stats";
 import type { Match } from "../../types";
-import { bare, findHubTeam, loadHubIndexQuick, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug, type HubIndex } from "../../hub/data";
+import { bare, findHubTeam, loadHubIndexQuick, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, type HubIndex } from "../../hub/data";
 import { searchAlias } from "../../searchAliases";
 import { MatchOverviewButton } from "../MatchOverviewButton";
 import { MatchPrepButton } from "../MatchPrepButton";
@@ -125,9 +125,22 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
   const blocks = terms.length
     ? allBlocks
         .map(({ m, lines }) => {
-          const mHay = normText(`${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName}`);
+          const t1Slug = findHubTeam(data.index, m.team1Name, m.team1Code) || resolveTeamAlias(m.team1Name || m.team1Code);
+          const t2Slug = findHubTeam(data.index, m.team2Name, m.team2Code) || resolveTeamAlias(m.team2Name || m.team2Code);
+          const mLgSlug = resolveLeagueSlug(m.leagueSlug || m.leagueName || "");
+          const mHay = normText(`${m.team1Code} ${m.team1Name} ${t1Slug} ${m.team2Code} ${m.team2Name} ${t2Slug} ${m.leagueName} ${m.leagueSlug || ""}`);
           const mHayBare = bare(mHay);
-          if (terms.some((t) => mHay.includes(t) || (t.length >= 2 && mHayBare.includes(bare(t))))) return { m, lines };
+          if (
+            terms.some((t) => {
+              if (mHay.includes(t) || (t.length >= 2 && mHayBare.includes(bare(t)))) return true;
+              const canonTeam = resolveTeamAlias(t);
+              if (canonTeam && (canonTeam === t1Slug || canonTeam === t2Slug)) return true;
+              const canonLg = resolveLeagueSlug(t);
+              if (canonLg && canonLg === mLgSlug) return true;
+              return false;
+            })
+          )
+            return { m, lines };
           const filteredLines = lines.filter((l) => {
             const lHay = normText(`${l.who?.name || ""} ${l.who?.to.slug || ""} ${l.champ || ""} ${l.plain || ""}`);
             const lHayBare = bare(lHay);
@@ -136,6 +149,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 lHay.includes(t) ||
                 (t.length >= 2 && lHayBare.includes(bare(t))) ||
                 (l.who?.to.slug && l.who.to.slug === resolvePlayerSlug(t)) ||
+                (l.who?.to.kind === "team" && l.who.to.slug === resolveTeamAlias(t)) ||
                 (l.champ ? matchesChampSearch(l.champ, t) : false),
             );
           });
@@ -155,7 +169,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
       share="riftwise-on-the-line-today"
       right={
         <span className="flex flex-wrap items-center gap-2 text-[11px]">
-          {!narrow && allBlocks.length > 3 && (
+          {!narrow && (allBlocks.length > 3 || Boolean(search.trim())) && (
             <input
               type="search"
               value={search}

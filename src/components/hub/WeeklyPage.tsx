@@ -8,7 +8,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, Check } from "lucide-react";
 import { tl, tn, locale, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadWeekly, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadAliases, loadWeekly, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import { navigateHub, useHubRoute } from "../../hub/route";
 import type { HubWeekly } from "../../hub/types";
@@ -159,7 +159,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
   const route = useHubRoute();
   const urlQ = useMemo(() => {
     const qp = new URLSearchParams(route.kind === "weekly" && "query" in route ? route.query || "" : "");
-    return qp.get("q") || qp.get("team") || "";
+    return qp.get("q") || qp.get("team") || qp.get("vs") || qp.get("league") || qp.get("event") || "";
   }, [route]);
   const [resultFilter, setResultFilter] = useState(urlQ);
   useEffect(() => {
@@ -182,15 +182,18 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
     .filter(Boolean);
   const shownResults = rTerms.length
     ? w.results.filter((r) => {
-        const hay = normText(`${r.a} ${r.au || ""} ${r.b} ${r.bu || ""} ${r.t} ${r.e || ""}`);
+        const hay = normText(`${r.a} ${r.au || ""} ${r.b} ${r.bu || ""} ${r.t} ${r.e || ""} ${r.st || ""}`);
         const hayBare = bare(hay);
         const rowTeams = [r.au, r.a, r.bu, r.b]
           .filter((tn): tn is string => Boolean(tn))
-          .map((tn) => aliases.data?.team[tn.toLowerCase()] || prettySlug(tn));
+          .map((tn) => resolveTeamAlias(tn, aliases.data?.team));
+        const rowLg = resolveLeagueSlug(r.e || r.t || "");
         return rTerms.some((t) => {
           if (hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t)))) return true;
-          const canonTeam = aliases.data?.team[t] || prettySlug(t);
+          const canonTeam = resolveTeamAlias(t, aliases.data?.team);
           if (canonTeam && rowTeams.includes(canonTeam)) return true;
+          const canonLg = resolveLeagueSlug(t);
+          if (canonLg && canonLg === rowLg) return true;
           if (matchesPeriodEvent(r.e || "", r.t || "", t)) return true;
           return false;
         });
