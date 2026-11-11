@@ -208,6 +208,9 @@ const YearDownloads: React.FC<{
         </div>
         <span className="flex flex-wrap items-center gap-2 text-[11px]">
           {busy && <span className="text-rw-accent">{busy}</span>}
+          <HubLink to={{ kind: "items", query: `year=${encodeURIComponent(activeYear)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Item history")} →
+          </HubLink>
           <HubLink to={{ kind: "finder", query: `year=${encodeURIComponent(activeYear)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Game finder")} →
           </HubLink>
@@ -220,7 +223,10 @@ const YearDownloads: React.FC<{
           <HubLink to={{ kind: "leaders", query: `year=${encodeURIComponent(activeYear)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Player leaderboards")} →
           </HubLink>
-          <HubLink to={{ kind: "tiers", query: `key=y${encodeURIComponent(activeYear)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "champions", query: `key=y${encodeURIComponent(activeYear)}&year=${encodeURIComponent(activeYear)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("Champions")} →
+          </HubLink>
+          <HubLink to={{ kind: "tiers", query: `key=y${encodeURIComponent(activeYear)}&year=${encodeURIComponent(activeYear)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("Pro tier list")} →
           </HubLink>
         </span>
@@ -304,6 +310,18 @@ const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOp
             <>
               <HubLink
                 to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    league: league.u,
+                    ...(activeLeagueYear ? { year: activeLeagueYear } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
                   kind: "finder",
                   query: new URLSearchParams({
                     league: league.u,
@@ -334,10 +352,24 @@ const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOp
               </HubLink>
               <HubLink
                 to={{
+                  kind: "champions",
+                  query: new URLSearchParams({
+                    scope: league.u,
+                    league: league.u,
+                    ...(activeLeagueYear ? { key: `y${activeLeagueYear}`, year: activeLeagueYear } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Champions")} →
+              </HubLink>
+              <HubLink
+                to={{
                   kind: "tiers",
                   query: new URLSearchParams({
                     scope: league.u,
-                    ...(activeLeagueYear ? { key: `y${activeLeagueYear}` } : {}),
+                    league: league.u,
+                    ...(activeLeagueYear ? { key: `y${activeLeagueYear}`, year: activeLeagueYear } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -395,7 +427,17 @@ const LeagueYears: React.FC<{ league: DownloadLeague; initialYear?: string; onOp
                       <EventLink name={name} u={slug} className="text-rw-text hover:text-rw-accent hover:underline" />{" "}
                       <span className="text-rw-muted">
                         ·{" "}
-                        <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(slug)}` }} className="hover:text-rw-accent hover:underline">
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query: new URLSearchParams({
+                              event: slug,
+                              ...(league.u ? { league: league.u } : {}),
+                              ...(y ? { year: y } : {}),
+                            }).toString(),
+                          }}
+                          className="hover:text-rw-accent hover:underline"
+                        >
                           {tn("{n} game", "{n} games", g)}
                         </HubLink>
                       </span>

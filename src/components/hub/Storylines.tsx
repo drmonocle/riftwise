@@ -628,11 +628,22 @@ export const HomeStorylines: React.FC = () => {
               const topPlayers = Array.from(new Set(all.filter((r) => r.t === "player").map((r) => r.u || resolvePlayerSlug(r.name) || prettySlug(r.name))));
               const topChamps = Array.from(new Set(all.map((r) => r.c).filter(Boolean) as string[]));
               const topChampStr = topChamps.slice(0, 2).map((c) => resolveChampSlug(c)).join(",");
+              const topYr = all.find((r) => r.y)?.y;
+              const rawTopEv = all.find((r) => r.e)?.e;
+              const topEv = rawTopEv ? resolveEventSlug(rawTopEv) : undefined;
               return (
                 <>
                   {topTeams.length >= 1 && (
                     <>
-                      <HubLink to={{ kind: "prep", a: topTeams[0], ...(topTeams[1] ? { b: topTeams[1] } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      <HubLink
+                        to={{
+                          kind: "prep",
+                          a: topTeams[0],
+                          ...(topTeams[1] ? { b: topTeams[1] } : {}),
+                          ...(topYr ? { period: `y${topYr}` } : topEv ? { period: `e:${topEv}` } : {}),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
                         {tl("Match prep")} →
                       </HubLink>
                       <HubLink
@@ -640,6 +651,7 @@ export const HomeStorylines: React.FC = () => {
                           kind: "draft",
                           query: new URLSearchParams({
                             teams: [topTeams[0], topTeams[1]].filter(Boolean).join(","),
+                            ...(topYr ? { p: `y${topYr}` } : topEv ? { p: `e:${topEv}` } : {}),
                             ...(topChampStr ? { champ: topChampStr } : {}),
                           }).toString(),
                         }}
@@ -647,7 +659,16 @@ export const HomeStorylines: React.FC = () => {
                       >
                         {tl("Draft board")} →
                       </HubLink>
-                      <HubLink to={{ kind: "compare", mode: "team", a: topTeams[0], ...(topTeams[1] ? { b: topTeams[1] } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                      <HubLink
+                        to={{
+                          kind: "compare",
+                          mode: "team",
+                          a: topTeams[0],
+                          ...(topTeams[1] ? { b: topTeams[1] } : {}),
+                          ...(topYr ? { period: `y${topYr}` } : topEv ? { period: `e:${topEv}` } : {}),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
                         {tl("Compare")} →
                       </HubLink>
                     </>
@@ -656,7 +677,11 @@ export const HomeStorylines: React.FC = () => {
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0]))}${topChamps[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topChamps[1]))}` : ""}`,
+                        query: new URLSearchParams({
+                          champ: resolveChampSlug(topChamps[0]),
+                          ...(topChamps[1] ? { vs: resolveChampSlug(topChamps[1]) } : {}),
+                          ...(topYr ? { patch: `y${topYr}`, year: String(topYr) } : topEv ? { event: topEv } : {}),
+                        }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -666,12 +691,14 @@ export const HomeStorylines: React.FC = () => {
                   <HubLink
                     to={{
                       kind: "items",
-                      ...(topTeams[0] || topPlayers[0] || topChamps[0]
+                      ...(topTeams[0] || topPlayers[0] || topChamps[0] || topYr || topEv
                         ? {
                             query: new URLSearchParams({
                               ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
                               ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
                               ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]), ...(topChamps[1] ? { vschamp: resolveChampSlug(topChamps[1]) } : {}) } : {}),
+                              ...(topYr ? { year: String(topYr) } : {}),
+                              ...(topEv ? { event: topEv } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -694,11 +721,13 @@ export const HomeStorylines: React.FC = () => {
                   <HubLink
                     to={{
                       kind: "leaders",
-                      ...(topPlayers[0] || topTeams[0] || topChamps[0]
+                      ...(topPlayers[0] || topTeams[0] || topChamps[0] || topYr || topEv
                         ? {
                             query: new URLSearchParams({
                               ...(topPlayers[0] || topTeams[0] ? { q: [topPlayers[0], topPlayers[1], topTeams[0], topTeams[1]].filter(Boolean).join(",") } : {}),
                               ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                              ...(topYr ? { year: String(topYr) } : {}),
+                              ...(topEv ? { event: topEv } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -721,7 +750,14 @@ export const HomeStorylines: React.FC = () => {
                   <HubLink
                     to={{
                       kind: "tiers",
-                      ...(topChampStr ? { query: `q=${encodeURIComponent(topChampStr)}` } : {}),
+                      ...(topChampStr || topYr || topEv
+                        ? {
+                            query: new URLSearchParams({
+                              ...(topYr ? { key: `y${topYr}`, year: String(topYr) } : topEv ? { event: topEv } : {}),
+                              ...(topChampStr ? { q: topChampStr } : {}),
+                            }).toString(),
+                          }
+                        : {}),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -730,8 +766,13 @@ export const HomeStorylines: React.FC = () => {
                   <HubLink
                     to={{
                       kind: "best",
-                      ...(topTeams[0] || topPlayers[0]
-                        ? { query: `q=${encodeURIComponent([topTeams[0], topTeams[1], topPlayers[0], topPlayers[1]].filter(Boolean).join(","))}` }
+                      ...(topTeams[0] || topPlayers[0] || topYr
+                        ? {
+                            query: new URLSearchParams({
+                              ...(topYr ? { year: String(topYr) } : {}),
+                              ...(topTeams[0] || topPlayers[0] ? { q: [topTeams[0], topTeams[1], topPlayers[0], topPlayers[1]].filter(Boolean).join(",") } : {}),
+                            }).toString(),
+                          }
                         : {}),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -741,12 +782,14 @@ export const HomeStorylines: React.FC = () => {
                   <HubLink
                     to={{
                       kind: "finder",
-                      ...(topTeams[0] || topPlayers[0] || topChamps[0]
+                      ...(topTeams[0] || topPlayers[0] || topChamps[0] || topYr || topEv
                         ? {
                             query: new URLSearchParams({
                               ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
                               ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
                               ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]), ...(topChamps[1] ? { vschamp: resolveChampSlug(topChamps[1]) } : {}) } : {}),
+                              ...(topYr ? { year: String(topYr) } : {}),
+                              ...(topEv ? { event: topEv } : {}),
                             }).toString(),
                           }
                         : {}),

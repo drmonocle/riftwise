@@ -399,7 +399,7 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                         event: d.parent.u,
                         ...(topT[0] ? { team: topT[0], ...(topT[1] ? { vs: topT[1] } : {}) } : {}),
                         ...(topP[0] ? { player: topP[0], ...(topP[1] ? { vsplayer: topP[1] } : {}) } : {}),
-                        ...(topC[0] ? { champ: topC[0] } : {}),
+                        ...(topC[0] ? { champ: topC[0], ...(topC[1] ? { vschamp: topC[1] } : {}) } : {}),
                       }).toString(),
                     }}
                     className={btn}
@@ -708,7 +708,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                         {tl("Item history")} →
                       </HubLink>
                       <HubLink
-                        to={{ kind: "finder", query: `team=${encodeURIComponent(ko.final.a)}&vs=${encodeURIComponent(ko.final.b)}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}` }}
+                        to={{ kind: "finder", query: `team=${encodeURIComponent(ko.final.a)}&vs=${encodeURIComponent(ko.final.b)}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}&league=world-championship` }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Game finder")} →
@@ -838,7 +838,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                           return `team=${encodeURIComponent(top[0])}${top[1] ? `&vs=${encodeURIComponent(top[1])}` : ""}&`;
                         })()
                       : ""
-                  }event=${encodeURIComponent(main.u)}`,
+                  }event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}&league=world-championship`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1005,7 +1005,7 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(rows[0])}${opp ? `&vs=${encodeURIComponent(opp)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
+                    query: `team=${encodeURIComponent(rows[0])}${opp ? `&vs=${encodeURIComponent(opp)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${eventSlug && /\d{4}/.test(eventSlug) ? `&year=${/\d{4}/.exec(eventSlug)![0]}` : ""}&league=world-championship`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -1074,7 +1074,10 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                   <span className="inline-flex items-center gap-1.5">
                     {eventSlug ? (
                       <HubLink
-                        to={{ kind: "finder", query: `event=${encodeURIComponent(eventSlug)}&team=${encodeURIComponent(u)}` }}
+                        to={{
+                          kind: "finder",
+                          query: `event=${encodeURIComponent(eventSlug)}&team=${encodeURIComponent(u)}${opp ? `&vs=${encodeURIComponent(opp)}` : ""}${/\d{4}/.test(eventSlug) ? `&year=${/\d{4}/.exec(eventSlug)![0]}` : ""}&league=world-championship`,
+                        }}
                         className="hover:text-rw-accent hover:underline"
                         title={tl("Game finder")}
                       >
@@ -1185,7 +1188,7 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
                       {tl("Item history")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "finder", query: `team=${encodeURIComponent(topM.a)}&vs=${encodeURIComponent(topM.b)}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}` }}
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(topM.a)}&vs=${encodeURIComponent(topM.b)}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}&league=${encodeURIComponent(INTL[kind].league)}` }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Game finder")} →
@@ -1471,7 +1474,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `league=${encodeURIComponent(INTL[kind].league)}&team=${encodeURIComponent(shown[0].u || runnerSlug(shown[0].as))}&vs=${encodeURIComponent(runnerSlug(shown[0].l))}${shown[0].e ? `&event=${encodeURIComponent(shown[0].e)}` : `&year=${encodeURIComponent(shown[0].y)}`}`,
+                  query: `league=${encodeURIComponent(INTL[kind].league)}&team=${encodeURIComponent(shown[0].u || runnerSlug(shown[0].as))}&vs=${encodeURIComponent(runnerSlug(shown[0].l))}${shown[0].e ? `&event=${encodeURIComponent(shown[0].e)}` : ""}&year=${encodeURIComponent(shown[0].y)}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1868,7 +1871,7 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `${teams.length >= 1 ? `team=${encodeURIComponent(teams[0].u)}${teams[1] ? `&vs=${encodeURIComponent(teams[1].u)}` : ""}&` : ""}event=${encodeURIComponent(main.u)}`,
+                    query: `${teams.length >= 1 ? `team=${encodeURIComponent(teams[0].u)}${teams[1] ? `&vs=${encodeURIComponent(teams[1].u)}` : ""}&` : ""}event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(year)}&league=world-championship`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -2059,7 +2062,7 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                       {tl("Item history")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "finder", query: `team=${encodeURIComponent(top2[0].u)}${top2[1] ? `&vs=${encodeURIComponent(top2[1].u)}` : ""}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(year)}` }}
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(top2[0].u)}${top2[1] ? `&vs=${encodeURIComponent(top2[1].u)}` : ""}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(year)}&league=world-championship` }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Game finder")} →
@@ -2527,7 +2530,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
             <HubLink
               to={{
                 kind: "finder",
-                query: `${teams.length >= 1 ? `team=${encodeURIComponent(teams[0].u)}${teams[1] ? `&vs=${encodeURIComponent(teams[1].u)}` : ""}&` : ""}event=${encodeURIComponent(main.u)}`,
+                query: `${teams.length >= 1 ? `team=${encodeURIComponent(teams[0].u)}${teams[1] ? `&vs=${encodeURIComponent(teams[1].u)}` : ""}&` : ""}event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(String(d.year))}&league=${encodeURIComponent(INTL[kind].league)}`,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -2647,7 +2650,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                       {tl("Item history")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "finder", query: `team=${encodeURIComponent(top2[0].u)}${top2[1] ? `&vs=${encodeURIComponent(top2[1].u)}` : ""}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}` }}
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(top2[0].u)}${top2[1] ? `&vs=${encodeURIComponent(top2[1].u)}` : ""}&event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(d.year)}&league=${encodeURIComponent(INTL[kind].league)}` }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Game finder")} →

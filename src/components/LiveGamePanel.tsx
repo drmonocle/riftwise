@@ -451,6 +451,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
+                      ...(cA ? { champ: cA } : {}),
                       q: [teamSlug(left.name, left.code), teamSlug(right.name, right.code), pA, pB].filter(Boolean).join(","),
                     }).toString();
                     navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
@@ -1445,6 +1446,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
+                      ...(cA ? { champ: cA } : {}),
                       q: [teamSlug(left.name, left.code), teamSlug(right.name, right.code), pA, pB].filter(Boolean).join(","),
                     }).toString();
                     navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });

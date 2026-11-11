@@ -978,7 +978,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                                     query: new URLSearchParams({
                                       ...(lg ? { league: lg } : {}),
                                       ...(pRole ? { role: pRole } : {}),
-                                      q: pSlug,
+                                      q: [pSlug, tSlug].filter(Boolean).join(","),
                                     }).toString(),
                                   });
                                 }}
@@ -1175,7 +1175,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         query: new URLSearchParams({
                           ...(lg0 ? { league: lg0 } : {}),
                           ...(r0 ? { role: r0 } : {}),
-                          q: a,
+                          q: [a, tA].filter((v, idx, arr) => Boolean(v) && arr.indexOf(v) === idx).join(","),
                         }).toString(),
                       });
                     }}

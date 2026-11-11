@@ -454,6 +454,7 @@ export const LiveNextGamePreview: React.FC<{
                       : draftIntel.period.startsWith("e:")
                         ? { event: draftIntel.period.slice(2) }
                         : {}),
+                    ...(draftIntel.rolesA[0]?.open[0]?.c ? { champ: resolveChampSlug(draftIntel.rolesA[0].open[0].c) } : {}),
                     q: [
                       draftIntel.slugA,
                       draftIntel.slugB,
@@ -718,7 +719,7 @@ export const LiveNextGamePreview: React.FC<{
                             ...(draftIntel.period.startsWith("p:")
                               ? { patch: draftIntel.period.slice(2) }
                               : draftIntel.period.startsWith("y") && draftIntel.period.length === 5
-                                ? { patch: draftIntel.period }
+                                ? { patch: draftIntel.period, year: draftIntel.period.slice(1) }
                                 : draftIntel.period.startsWith("e:")
                                   ? { event: draftIntel.period.slice(2) }
                                   : {}),
