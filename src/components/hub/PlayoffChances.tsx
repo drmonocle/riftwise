@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl } from "../../i18n";
-import { bare, loadRatings, normText, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+import { bare, loadRatings, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { searchAlias } from "../../searchAliases";
 import { hubShareUrl } from "../../hub/route";
 import type { HubEvent } from "../../hub/types";
@@ -49,6 +49,22 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
       })
     : rows;
   const unrated = odds.rows.filter((r) => r.unrated).length;
+  const evChamps = Array.from(new Set((e.champs || []).map((c) => resolveChampSlug(c.c)).filter(Boolean))).slice(0, 2);
+  const topTeam0 = filteredRows[0]?.u || "";
+  const topTeam1 = filteredRows[1]?.u || "";
+  const teamPlayers = Array.from(
+    new Set(
+      [
+        ...(e.players || [])
+          .filter((p) => {
+            const pt = p.tu || (p.t ? resolveTeamAlias(p.t) || prettySlug(p.t) : "");
+            return pt === topTeam0 || (topTeam1 && pt === topTeam1);
+          })
+          .map((p) => p.u || resolvePlayerSlug(p.n) || prettySlug(p.n)),
+        ...(e.players || []).map((p) => p.u || resolvePlayerSlug(p.n) || prettySlug(p.n)),
+      ].filter(Boolean),
+    ),
+  ).slice(0, 2);
   const th = "px-1.5 sm:px-2 py-1 font-normal text-[10px] text-rw-muted whitespace-nowrap";
   const seg = (on: boolean) => `px-2 py-1 pointer-coarse:min-h-9 max-sm:min-h-9 ${on ? "bg-rw-accent/15 text-rw-text" : "text-rw-sub hover:text-rw-text"}`;
   return (
@@ -96,7 +112,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                   data-nocapture="1"
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(filteredRows[0].u)}${filteredRows[1] ? `,${encodeURIComponent(filteredRows[1].u)}` : ""}&p=${encodeURIComponent(`e:${e.u}`)}`,
+                    query: `teams=${encodeURIComponent(filteredRows[0].u)}${filteredRows[1] ? `,${encodeURIComponent(filteredRows[1].u)}` : ""}&p=${encodeURIComponent(`e:${e.u}`)}${evChamps.length ? `&champ=${encodeURIComponent(evChamps.join(","))}` : ""}`,
                   }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
                   title={tl("Draft board")}
@@ -117,6 +133,25 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 >
                   {tl("Compare")} →
                 </HubLink>
+                {evChamps[0] && (
+                  <HubLink
+                    data-nocapture="1"
+                    to={{
+                      kind: "counters",
+                      query: new URLSearchParams({
+                        champ: evChamps[0],
+                        ...(evChamps[1] ? { vs: evChamps[1] } : {}),
+                        event: e.u,
+                        ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                          ? { patch: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) }
+                          : {}),
+                      }).toString(),
+                    }}
+                    className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                )}
                 <HubLink
                   data-nocapture="1"
                   to={{
@@ -125,8 +160,12 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                       event: e.u,
                       ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
                       ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                      ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                      ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
                       ...(filteredRows[0] ? { team: filteredRows[0].u } : {}),
                       ...(filteredRows[1] ? { vs: filteredRows[1].u } : {}),
+                      ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                      ...(evChamps[1] ? { vschamp: evChamps[1] } : {}),
                     }).toString(),
                   }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -141,8 +180,12 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                       event: e.u,
                       ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
                       ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                      ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                      ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
                       ...(filteredRows[0] ? { team: filteredRows[0].u } : {}),
                       ...(filteredRows[1] ? { vs: filteredRows[1].u } : {}),
+                      ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                      ...(evChamps[1] ? { vschamp: evChamps[1] } : {}),
                     }).toString(),
                   }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -173,8 +216,9 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                       ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
                       ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                       event: e.u,
-                      ...(filteredRows[0]
-                        ? { q: `${filteredRows[0].u}${filteredRows[1] ? `,${filteredRows[1].u}` : ""}` }
+                      ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                      ...(filteredRows[0] || teamPlayers.length
+                        ? { q: [filteredRows[0]?.u, filteredRows[1]?.u, ...teamPlayers].filter(Boolean).join(",") }
                         : {}),
                     }).toString(),
                   }}
@@ -193,6 +237,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                         ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
                           ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) }
                           : {}),
+                        ...(evChamps.length ? { q: evChamps.join(",") } : {}),
                       }).toString() || undefined,
                   }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"

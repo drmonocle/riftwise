@@ -9,7 +9,7 @@ import { champName } from "../../champions";
 import { prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import type { EventLines } from "../../hub/worldsFacts";
-import { cinderella, comebacks, editionYear, finals, finalsRecords, hosts, playerTitles, runs, swissRuns, upsets, yearLines, type FileRef, type Run } from "../../hub/intlInsights";
+import { cinderella, comebacks, editionYear, finals, finalsRecords, hosts, playerTitles, regionOf, runs, swissRuns, upsets, yearLines, type FileRef, type Run } from "../../hub/intlInsights";
 import { ChampIcon, HubLink, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo } from "./ui";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
@@ -126,7 +126,29 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
     const yearsList = [...new Set(refs.map((r) => r.year))].sort((a, b) => editionYear(a) - editionYear(b));
     const per = yearsList.map((y) => {
       const sub = refs.filter((r) => r.year === y);
-      return { y, rows: regionStats(sub.map((r) => r.f), sub.map((r) => r.year)).list };
+      const tWins = new Map<string, Map<string, number>>();
+      for (const r of sub) {
+        if (!r.f.rg) continue;
+        for (const u of Object.keys(r.f.rg)) {
+          const rc = regionOf(r.f, u);
+          if (!rc) continue;
+          if (!tWins.has(rc)) tWins.set(rc, new Map());
+          if (!tWins.get(rc)!.has(u)) tWins.get(rc)!.set(u, 0);
+        }
+        for (const s of r.f.s) {
+          const [, , , , ua, , , ub, , wa, wb] = s;
+          const rA = regionOf(r.f, ua);
+          const rB = regionOf(r.f, ub);
+          if (rA && ua && wa != null) tWins.get(rA)?.set(ua, (tWins.get(rA)?.get(ua) || 0) + wa);
+          if (rB && ub && wb != null) tWins.get(rB)?.set(ub, (tWins.get(rB)?.get(ub) || 0) + wb);
+        }
+      }
+      const topTeams = new Map<string, string>();
+      for (const [c, m] of tWins) {
+        const top = [...m.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+        if (top) topTeams.set(c, top);
+      }
+      return { y, rows: regionStats(sub.map((r) => r.f), sub.map((r) => r.year)).list, topTeams };
     });
     const totals = new Map<string, number>();
     for (const p of per) for (const r of p.rows) totals.set(r.code, (totals.get(r.code) || 0) + r.ow + r.ol);
@@ -863,21 +885,24 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               const swissList = (list: typeof clean) =>
                 list.length ? (
                   <span className="inline-flex flex-wrap items-center gap-x-2.5 gap-y-1 align-middle">
-                    {list.map((r, i) => (
-                      <span key={`${r.u}-${r.year}-${i}`} className="inline-flex items-center gap-1">
-                        <HubLink to={{ kind: "team", slug: r.u || teamSlug(r.team) }} className="shrink-0">
-                          <TeamLogo name={r.team} size={13} />
-                        </HubLink>
-                        <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent" />
-                        <HubLink
-                          to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}` }}
-                          className="text-rw-muted hover:text-rw-accent hover:underline"
-                          title={tl("Game finder")}
-                        >
-                          ({yearOnly(r.year)})
-                        </HubLink>
-                      </span>
-                    ))}
+                    {list.map((r, i) => {
+                      const yrQ = `p=y${encodeURIComponent(yearOnly(r.year))}`;
+                      return (
+                        <span key={`${r.u}-${r.year}-${i}`} className="inline-flex items-center gap-1">
+                          <HubLink to={{ kind: "team", slug: r.u || teamSlug(r.team), query: yrQ }} className="shrink-0">
+                            <TeamLogo name={r.team} size={13} />
+                          </HubLink>
+                          <TeamLink name={r.team} u={r.u} query={yrQ} className="text-rw-text hover:text-rw-accent" />
+                          <HubLink
+                            to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}` }}
+                            className="text-rw-muted hover:text-rw-accent hover:underline"
+                            title={tl("Game finder")}
+                          >
+                            ({yearOnly(r.year)})
+                          </HubLink>
+                        </span>
+                      );
+                    })}
                   </span>
                 ) : (
                   "–"
@@ -909,43 +934,48 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           </div>
         ) : (
           <List>
-            {sorted.map((r) => (
-              <li key={r.u} className="flex items-center justify-between gap-2 min-w-0">
-                <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                  <HubLink to={{ kind: "team", slug: r.u || teamSlug(r.team) }} className="shrink-0">
-                    <TeamLogo name={r.team} size={15} />
-                  </HubLink>
-                  <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
-                </span>
-                <span className="flex items-center gap-2 shrink-0">
-                  {chip(r.path)}
-                  <HubLink
-                    to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}` }}
-                    className={`tabular-nums font-bold w-8 text-right hover:underline ${r.wins === 3 ? "text-rw-teal" : r.losses === 3 ? "text-rw-red" : "text-rw-sub"}`}
-                    title={tl("Game finder")}
-                  >
-                    {r.wins}-{r.losses}
-                  </HubLink>
-                </span>
-              </li>
-            ))}
+            {sorted.map((r) => {
+              const yrQ = `p=y${encodeURIComponent(yearOnly(r.year))}`;
+              return (
+                <li key={r.u} className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="inline-flex items-center gap-1.5 truncate min-w-0">
+                    <HubLink to={{ kind: "team", slug: r.u || teamSlug(r.team), query: yrQ }} className="shrink-0">
+                      <TeamLogo name={r.team} size={15} />
+                    </HubLink>
+                    <TeamLink name={r.team} u={r.u} query={yrQ} className="text-rw-text hover:text-rw-accent truncate" />
+                  </span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    {chip(r.path)}
+                    <HubLink
+                      to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(r.u || teamSlug(r.team))}&year=${encodeURIComponent(yearOnly(r.year))}` }}
+                      className={`tabular-nums font-bold w-8 text-right hover:underline ${r.wins === 3 ? "text-rw-teal" : r.losses === 3 ? "text-rw-red" : "text-rw-sub"}`}
+                      title={tl("Game finder")}
+                    >
+                      {r.wins}-{r.losses}
+                    </HubLink>
+                  </span>
+                </li>
+              );
+            })}
           </List>
         )}
       </Section>,
     );
   }
 
-  const runRow = (r: Run, i: number, show: "chance" | "place") => (
-    <Item
-      key={i}
-      left={
-        <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "team", slug: r.u || teamSlug(r.team) }} className="shrink-0">
-            <TeamLogo name={r.team} size={15} />
-          </HubLink>
-          <TeamLink name={r.team} u={r.u} className="text-rw-text hover:text-rw-accent truncate" />
-        </span>
-      }
+  const runRow = (r: Run, i: number, show: "chance" | "place") => {
+    const yrQ = `p=y${encodeURIComponent(yearOnly(r.year))}`;
+    return (
+      <Item
+        key={i}
+        left={
+          <span className="inline-flex items-center gap-1.5 min-w-0">
+            <HubLink to={{ kind: "team", slug: r.u || teamSlug(r.team), query: yrQ }} className="shrink-0">
+              <TeamLogo name={r.team} size={15} />
+            </HubLink>
+            <TeamLink name={r.team} u={r.u} query={yrQ} className="text-rw-text hover:text-rw-accent truncate" />
+          </span>
+        }
       sub={
         <HubLink
           to={{
@@ -968,8 +998,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           placeText(r.place)
         )
       }
-    />
-  );
+      />
+    );
+  };
   if (cind.playIn.length || cind.underdogs.length || (all && cind.debuts.length)) {
     const cindList = [...cind.playIn, ...cind.underdogs, ...(all ? cind.debuts : [])];
     const u0 = cindList[0]?.u || (cindList[0]?.team ? teamSlug(cindList[0].team) : "");
@@ -1671,7 +1702,11 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `league=${encodeURIComponent(intlLeague)}&player=${encodeURIComponent(p.u || prettySlug(p.name))}`,
+                      query: new URLSearchParams({
+                        league: intlLeague,
+                        player: p.u || prettySlug(p.name),
+                        ...(p.team ? { team: teamSlug(p.team) } : {}),
+                      }).toString(),
                     }}
                     className="hover:text-rw-accent hover:underline"
                   >
@@ -1883,10 +1918,10 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 {h.team && (
                   <span className="inline-flex items-center gap-1 truncate text-rw-muted">
                     <span>·</span>
-                    <HubLink to={{ kind: "team", slug: h.teamU || teamSlug(h.team) }} className="shrink-0">
+                    <HubLink to={{ kind: "team", slug: h.teamU || teamSlug(h.team), query: `p=y${encodeURIComponent(yearOnly(h.year))}` }} className="shrink-0">
                       <TeamLogo name={h.team} size={14} />
                     </HubLink>
-                    <TeamLink name={h.team} u={h.teamU} className="truncate text-rw-muted hover:text-rw-accent hover:underline" />
+                    <TeamLink name={h.team} u={h.teamU} query={`p=y${encodeURIComponent(yearOnly(h.year))}`} className="truncate text-rw-muted hover:text-rw-accent hover:underline" />
                   </span>
                 )}
               </span>
@@ -2403,6 +2438,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       const r = y.rows.find((x) => x.code === code);
                       const n = r ? r.ow + r.ol : 0;
                       const pct = n ? Math.round((r!.ow / n) * 100) : null;
+                      const topTeam = y.topTeams.get(code);
                       return (
                         <td
                           key={y.y}
@@ -2415,7 +2451,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                             <span className="text-rw-muted">·</span>
                           ) : (
                             <HubLink
-                              to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(yearOnly(y.y))}` }}
+                              to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&year=${encodeURIComponent(yearOnly(y.y))}${topTeam ? `&team=${encodeURIComponent(topTeam)}` : ""}` }}
                               className="hover:underline"
                             >
                               {pct}

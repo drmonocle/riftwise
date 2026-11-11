@@ -1014,7 +1014,10 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
                 <HubLink
                   to={{
                     kind: "rankings",
-                    query: search.trim() && rows.length <= 4 ? `q=${encodeURIComponent(rows.slice(0, 2).join(","))}` : "league=world-championship",
+                    query: new URLSearchParams({
+                      league: "world-championship",
+                      ...(rows.length >= 1 ? { q: rows.slice(0, 2).join(",") } : {}),
+                    }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1961,7 +1964,7 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `${teams.length >= 1 ? `team=${encodeURIComponent(teams[0].u)}${teams[1] ? `&vs=${encodeURIComponent(teams[1].u)}` : ""}&` : ""}event=${encodeURIComponent(main.u)}`,
+                  query: `${teams.length >= 1 ? `team=${encodeURIComponent(teams[0].u)}${teams[1] ? `&vs=${encodeURIComponent(teams[1].u)}` : ""}&` : ""}event=${encodeURIComponent(main.u)}&year=${encodeURIComponent(year)}&league=world-championship`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
