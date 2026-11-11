@@ -7,7 +7,7 @@ import { tl, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
-import { bare, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug } from "../../hub/data";
+import { bare, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug, resolveEventSlug, resolveTeamAlias } from "../../hub/data";
 import type { PlayerGameRow, TeamGameRow } from "../../hub/types";
 import {
   PeriodKey,
@@ -692,15 +692,18 @@ export const defaultPeriod = (opts: PeriodOption[], preferAll = false, query?: s
     const rawY = params.get("y") || params.get("year");
     const rawEv = params.get("event");
     const rawPatch = params.get("patch");
+    const evSlug = rawEv ? resolveEventSlug(rawEv.startsWith("e:") ? rawEv.slice(2) : rawEv) : null;
     const p =
       params.get("p") ||
       params.get("period") ||
-      (rawY && /^\d{4}$/.test(rawY) ? `y${rawY}` : rawEv ? (rawEv.startsWith("e:") ? rawEv : `e:${rawEv}`) : rawPatch ? (rawPatch.startsWith("p:") ? rawPatch : `p:${rawPatch}`) : null);
+      (rawY && /^\d{4}$/.test(rawY) ? `y${rawY}` : evSlug ? `e:${evSlug}` : rawPatch ? (rawPatch.startsWith("p:") ? rawPatch : `p:${rawPatch}`) : null);
     if (p && (opts.some((o) => o.key === p) || /^(all|last\d+|y\d{4}|p:.+|e:.+)$/.test(p))) return p;
   }
   if (preferAll) return "all";
   return opts.find((o) => o.group === "year")?.key || "all";
 };
+
+const teamSlug = (name: string): string => resolveTeamAlias(name) || prettySlug(name);
 
 // ── players ───────────────────────────────────────────────────────────────
 
@@ -1033,7 +1036,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   <HubLink
                     to={{
                       kind: "prep",
-                      a: prettySlug(who.club),
+                      a: teamSlug(who.club),
                       ...(period !== "all" ? { period } : {}),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1044,7 +1047,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                     to={{
                       kind: "draft",
                       query: new URLSearchParams({
-                        teams: prettySlug(who.club),
+                        teams: teamSlug(who.club),
                         ...(period !== "all" ? { p: period } : {}),
                         ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
                         ...(agg.champs[0] ? { champ: agg.champs[0].c } : {}),
@@ -1088,7 +1091,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
               <HubLink
                 to={{
                   kind: "rankings",
-                  ...(who?.club ? { query: `q=${encodeURIComponent(prettySlug(who.club))}` } : {}),
+                  ...(who?.club ? { query: `q=${encodeURIComponent(teamSlug(who.club))}` } : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1305,7 +1308,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                     <HubLink
                       to={{
                         kind: "prep",
-                        a: prettySlug(who.club),
+                        a: teamSlug(who.club),
                         ...(period !== "all" ? { period } : {}),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1316,7 +1319,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                       to={{
                         kind: "draft",
                         query: new URLSearchParams({
-                          teams: prettySlug(who.club),
+                          teams: teamSlug(who.club),
                           ...(period !== "all" ? { p: period } : {}),
                           ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
                           ...(filteredChamps[0] ? { champ: filteredChamps[0].c } : {}),
@@ -1331,7 +1334,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 <HubLink
                   to={{
                     kind: "rankings",
-                    ...(who?.club ? { query: `q=${encodeURIComponent(prettySlug(who.club))}` } : {}),
+                    ...(who?.club ? { query: `q=${encodeURIComponent(teamSlug(who.club))}` } : {}),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >

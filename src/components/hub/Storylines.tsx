@@ -7,7 +7,7 @@ import { Sparkles } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
 import { load } from "../../stats";
-import { bare, matchesChampSearch, normText, prettySlug, resolveTeamAlias } from "../../hub/data";
+import { bare, matchesChampSearch, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { ChampIcon, HubLink, PlayerPhoto, RevealButton, Section, TeamLogo, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
@@ -418,29 +418,32 @@ export const OwnStorylines: React.FC<{
                 </>
               ) : (
                 <>
-                  {who.team && (
-                    <>
-                      <HubLink
-                        to={{ kind: "prep", a: prettySlug(who.team), ...(noteYr ? { period: `y${noteYr}` } : {}) }}
-                        className="text-rw-sub hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Match prep")} →
-                      </HubLink>
-                      <HubLink
-                        to={{
-                          kind: "draft",
-                          query: new URLSearchParams({
-                            teams: prettySlug(who.team),
-                            ...(noteYr ? { p: `y${noteYr}` } : noteEv ? { p: `e:${noteEv}` } : {}),
-                            ...(noteChamp ? { champ: noteChamp } : {}),
-                          }).toString(),
-                        }}
-                        className="text-rw-sub hover:text-rw-accent hover:underline"
-                      >
-                        {tl("Draft board")} →
-                      </HubLink>
-                    </>
-                  )}
+                  {who.team && (() => {
+                    const whoTeamSlug = resolveTeamAlias(who.team) || prettySlug(who.team);
+                    return (
+                      <>
+                        <HubLink
+                          to={{ kind: "prep", a: whoTeamSlug, ...(noteYr ? { period: `y${noteYr}` } : {}) }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "draft",
+                            query: new URLSearchParams({
+                              teams: whoTeamSlug,
+                              ...(noteYr ? { p: `y${noteYr}` } : noteEv ? { p: `e:${noteEv}` } : {}),
+                              ...(noteChamp ? { champ: noteChamp } : {}),
+                            }).toString(),
+                          }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Draft board")} →
+                        </HubLink>
+                      </>
+                    );
+                  })()}
                   <HubLink
                     to={{ kind: "compare", mode: "player", a: who.slug, ...(noteYr ? { period: `y${noteYr}` } : {}) }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -499,7 +502,7 @@ export const OwnStorylines: React.FC<{
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(who.team ? { query: `q=${encodeURIComponent(prettySlug(who.team))}` } : {}),
+                      ...(who.team ? { query: `q=${encodeURIComponent(resolveTeamAlias(who.team) || prettySlug(who.team))}` } : {}),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -544,14 +547,17 @@ export const HomeStorylines: React.FC = () => {
         const hay = normText(`${r.name} ${r.u} ${r.c || ""} ${r.c ? champName(r.c) : ""} ${r.e || ""} ${notePlainText(r)}`);
         const hayBare = bare(hay);
         const rTeam = r.t === "team" ? resolveTeamAlias(r.u || r.name) : "";
+        const rPlayer = r.t === "player" ? r.u || resolvePlayerSlug(r.name) : "";
         return terms.some((t) => {
           const tb = bare(t);
           const qTeam = rTeam ? resolveTeamAlias(t) : "";
+          const qPlayer = rPlayer ? resolvePlayerSlug(t) : "";
           return (
             hay.includes(t) ||
             (tb.length >= 2 && hayBare.includes(tb)) ||
             (r.c ? matchesChampSearch(r.c, t) : false) ||
             Boolean(qTeam && qTeam === rTeam) ||
+            Boolean(qPlayer && qPlayer === rPlayer) ||
             Boolean(r.e && matchesPeriodEvent(r.e, undefined, t))
           );
         });
@@ -569,7 +575,7 @@ export const HomeStorylines: React.FC = () => {
           <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
             {terms.length === 0 && (() => {
               const topTeams = Array.from(new Set(all.filter((r) => r.t === "team").map((r) => r.u)));
-              const topPlayers = Array.from(new Set(all.filter((r) => r.t === "player").map((r) => r.name)));
+              const topPlayers = Array.from(new Set(all.filter((r) => r.t === "player").map((r) => r.u || resolvePlayerSlug(r.name) || r.name)));
               const topChamps = Array.from(new Set(all.map((r) => r.c).filter(Boolean) as string[]));
               return (
                 <>

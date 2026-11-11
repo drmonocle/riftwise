@@ -31,6 +31,9 @@ interface TeamStakes {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+const teamSlug = (index: HubIndex, name?: string | null, code?: string | null): string =>
+  findHubTeam(index, name || "", code || "") || resolveTeamAlias(name || "") || resolveTeamAlias(code || "") || prettySlug(name || code || "");
+
 function matchLines(
   m: Match,
   index: HubIndex,
@@ -184,8 +187,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
             <span className="flex items-center gap-2" data-nocapture="1">
               {blocks.length >= 1 && (() => {
                 const m0 = blocks[0].m;
-                const a = findHubTeam(data.index, m0.team1Name, m0.team1Code) || prettySlug(m0.team1Name || m0.team1Code);
-                const b = findHubTeam(data.index, m0.team2Name, m0.team2Code) || prettySlug(m0.team2Name || m0.team2Code);
+                const a = teamSlug(data.index, m0.team1Name, m0.team1Code);
+                const b = teamSlug(data.index, m0.team2Name, m0.team2Code);
                 const p = m0.startTimeUtc ? `y${m0.startTimeUtc.slice(0, 4)}` : undefined;
                 return (
                   <>
@@ -215,7 +218,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       ...(blocks[0]?.m.leagueSlug ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug) } : {}),
                       ...(blocks[0]?.m
                         ? {
-                            q: `${findHubTeam(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code) || prettySlug(blocks[0].m.team1Name || blocks[0].m.team1Code)},${findHubTeam(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code) || prettySlug(blocks[0].m.team2Name || blocks[0].m.team2Code)}`,
+                            q: `${teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code)},${teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code)}`,
                           }
                         : {}),
                     }).toString() || undefined,
@@ -233,7 +236,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       ...(blocks[0]?.m.startTimeUtc ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
                       ...(blocks[0]?.m
                         ? {
-                            q: `${findHubTeam(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code) || prettySlug(blocks[0].m.team1Name || blocks[0].m.team1Code)},${findHubTeam(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code) || prettySlug(blocks[0].m.team2Name || blocks[0].m.team2Code)}`,
+                            q: `${teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code)},${teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code)}`,
                           }
                         : {}),
                     }).toString() || undefined,
@@ -268,8 +271,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
           )}
           {terms.length > 0 && blocks.length >= 1 && (() => {
             const m0 = blocks[0].m;
-            const a = findHubTeam(data.index, m0.team1Name, m0.team1Code) || prettySlug(m0.team1Name || m0.team1Code);
-            const b = findHubTeam(data.index, m0.team2Name, m0.team2Code) || prettySlug(m0.team2Name || m0.team2Code);
+            const a = teamSlug(data.index, m0.team1Name, m0.team1Code);
+            const b = teamSlug(data.index, m0.team2Name, m0.team2Code);
             const yr = m0.startTimeUtc ? m0.startTimeUtc.slice(0, 4) : undefined;
             const p = yr ? `y${yr}` : undefined;
             const lg = m0.leagueSlug ? resolveLeagueSlug(m0.leagueSlug) : undefined;
@@ -358,12 +361,15 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
         {tl("Milestones and streaks for the matches in the next 24 hours.")}
       </p>
       <div className={`${narrow ? "grid" : GRID_COLS} gap-x-6 gap-y-3 items-start`}>
-        {blocks.map(({ m, lines }) => (
+        {blocks.map(({ m, lines }) => {
+          const t1Slug = teamSlug(data.index, m.team1Name, m.team1Code);
+          const t2Slug = teamSlug(data.index, m.team2Name, m.team2Code);
+          return (
           <div key={m.matchId} className="space-y-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs border-b border-rw-border pb-1">
               <span className="inline-flex items-center gap-1 font-bold text-rw-text">
                 <HubLink
-                  to={{ kind: "team", slug: findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code) }}
+                  to={{ kind: "team", slug: t1Slug }}
                   className="inline-flex items-center gap-1 hover:text-rw-accent"
                 >
                   <TeamLogo name={m.team1Name || m.team1Code} code={m.team1Code} src={m.team1Image} sizeClass="w-3.5 h-3.5" />
@@ -373,8 +379,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   to={{
                     kind: "compare",
                     mode: "team",
-                    a: findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
-                    b: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
+                    a: t1Slug,
+                    b: t2Slug,
                     period: m.startTimeUtc ? `y${m.startTimeUtc.slice(0, 4)}` : undefined,
                   }}
                   className="text-rw-muted hover:text-rw-accent hover:underline font-normal"
@@ -383,7 +389,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   vs
                 </HubLink>
                 <HubLink
-                  to={{ kind: "team", slug: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code) }}
+                  to={{ kind: "team", slug: t2Slug }}
                   className="inline-flex items-center gap-1 hover:text-rw-accent"
                 >
                   <TeamLogo name={m.team2Name || m.team2Code} code={m.team2Code} src={m.team2Image} sizeClass="w-3.5 h-3.5" />
@@ -405,8 +411,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 <HubLink
                   to={{
                     kind: "prep",
-                    a: findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
-                    b: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
+                    a: t1Slug,
+                    b: t2Slug,
                     period: m.startTimeUtc ? `y${m.startTimeUtc.slice(0, 4)}` : undefined,
                   }}
                   className="hover:text-rw-accent hover:underline"
@@ -421,11 +427,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(
-                      findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
-                    )},${encodeURIComponent(
-                      findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
-                    )}${m.startTimeUtc ? `&p=y${encodeURIComponent(m.startTimeUtc.slice(0, 4))}` : ""}`,
+                    query: `teams=${encodeURIComponent(t1Slug)},${encodeURIComponent(t2Slug)}${m.startTimeUtc ? `&p=y${encodeURIComponent(m.startTimeUtc.slice(0, 4))}` : ""}`,
                   }}
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >
@@ -435,8 +437,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   to={{
                     kind: "compare",
                     mode: "team",
-                    a: findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
-                    b: findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
+                    a: t1Slug,
+                    b: t2Slug,
                     period: m.startTimeUtc ? `y${m.startTimeUtc.slice(0, 4)}` : undefined,
                   }}
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
@@ -446,11 +448,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(
-                      findHubTeam(data.index, m.team1Name, m.team1Code) || prettySlug(m.team1Name || m.team1Code),
-                    )}&vs=${encodeURIComponent(
-                      findHubTeam(data.index, m.team2Name, m.team2Code) || prettySlug(m.team2Name || m.team2Code),
-                    )}${m.startTimeUtc ? `&year=${encodeURIComponent(m.startTimeUtc.slice(0, 4))}` : ""}`,
+                    query: `team=${encodeURIComponent(t1Slug)}&vs=${encodeURIComponent(t2Slug)}${m.startTimeUtc ? `&year=${encodeURIComponent(m.startTimeUtc.slice(0, 4))}` : ""}`,
                   }}
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >
@@ -460,7 +458,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
             </div>
             <StoryBullets lines={lines} spoilerKey={`stakes:${m.matchId}`} />
           </div>
-        ))}
+          );
+        })}
       </div>
     </Section>
   );

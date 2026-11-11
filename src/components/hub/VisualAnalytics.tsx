@@ -8,7 +8,7 @@ import React, { useEffect, useId, useMemo, useState } from "react";
 import { tl, tc, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { loadPlayerGames, loadPlayerGames2y, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { loadPlayerGames, loadPlayerGames2y, prettySlug, resolveEventSlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
 import type { HubChamp, HubPlayer, HubTeam, PlayerGameRow, PlayerTimeline } from "../../hub/types";
 import { playerAgg, type PlayerAgg } from "../../hub/period";
 import { playerRowLine, rateLine } from "../../hub/playerRating";
@@ -33,6 +33,8 @@ import { smoothPath, useWidth } from "../../useWidth";
 const clamp = (v: number, lo = 6, hi = 96) => Math.max(lo, Math.min(hi, v));
 const signed = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+" : ""}${fmtNum(v)}`);
 const pct = (v: number | null | undefined) => (v == null ? "–" : `${fmtDec(v)}%`);
+const teamSlug = (name?: string | null, u?: string | null): string =>
+  u || (name ? resolveTeamAlias(name) : null) || prettySlug(name || "");
 
 /** Role-aware playstyle tags derived from a player's aggregated stats and Oracle's Elixir timeline. */
 export function playerPlaystyleTags(agg: PlayerAgg, role: string, careerChamps: number): { tag: string; why: string; good?: boolean }[] {
@@ -302,7 +304,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                     <HubLink
                       to={{
                         kind: "prep",
-                        a: prettySlug(p.club),
+                        a: teamSlug(p.club, p.clubU),
                         ...(periodKey ? { period: periodKey } : {}),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -313,7 +315,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                       to={{
                         kind: "draft",
                         query: new URLSearchParams({
-                          teams: prettySlug(p.club),
+                          teams: teamSlug(p.club, p.clubU),
                           ...(periodKey ? { p: periodKey } : {}),
                           ...(p.role ? { role: p.role } : {}),
                           ...(agg.champs[0] ? { champ: agg.champs[0].c } : {}),
@@ -372,7 +374,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                 <HubLink
                   to={{
                     kind: "rankings",
-                    ...(p.club ? { query: `q=${encodeURIComponent(prettySlug(p.club))}` } : {}),
+                    ...(p.club ? { query: `q=${encodeURIComponent(teamSlug(p.club, p.clubU))}` } : {}),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -610,8 +612,8 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 <HubLink
                   to={{
                     kind: "prep",
-                    a: prettySlug((sel?.team || p.club)!),
-                    ...(sel?.opp ? { b: prettySlug(sel.opp) } : {}),
+                    a: sel?.team ? teamSlug(sel.team) : teamSlug(p.club, p.clubU),
+                    ...(sel?.opp ? { b: teamSlug(sel.opp) } : {}),
                     ...(sel?.date && /^\d{4}/.test(sel.date) ? { period: `y${sel.date.slice(0, 4)}` } : {}),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -622,7 +624,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   to={{
                     kind: "draft",
                     query: new URLSearchParams({
-                      teams: [prettySlug((sel?.team || p.club)!), sel?.opp ? prettySlug(sel.opp) : ""].filter(Boolean).join(","),
+                      teams: [sel?.team ? teamSlug(sel.team) : teamSlug(p.club, p.clubU), sel?.opp ? teamSlug(sel.opp) : ""].filter(Boolean).join(","),
                       ...(sel?.date && /^\d{4}/.test(sel.date) ? { p: `y${sel.date.slice(0, 4)}` } : {}),
                       ...(p.role ? { role: p.role } : {}),
                       ...(sel?.champ ? { champ: sel.champ } : {}),
@@ -698,7 +700,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
               to={{
                 kind: "rankings",
                 query: new URLSearchParams({
-                  q: [sel?.team || p.club ? prettySlug((sel?.team || p.club)!) : "", sel?.opp ? prettySlug(sel.opp) : ""].filter(Boolean).join(","),
+                  q: [sel?.team ? teamSlug(sel.team) : p.club ? teamSlug(p.club, p.clubU) : "", sel?.opp ? teamSlug(sel.opp) : ""].filter(Boolean).join(","),
                 }).toString(),
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -964,7 +966,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `player=${encodeURIComponent(p.u)}&vs=${encodeURIComponent(prettySlug(sel.opp))}${
+                        query: `player=${encodeURIComponent(p.u)}&vs=${encodeURIComponent(teamSlug(sel.opp))}${
                           sel.date && sel.date.length >= 4 ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""
                         }`,
                       }}
@@ -972,10 +974,10 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     >
                       vs
                     </HubLink>
-                  <HubLink to={{ kind: "team", slug: prettySlug(sel.opp) }} className="shrink-0">
+                  <HubLink to={{ kind: "team", slug: teamSlug(sel.opp) }} className="shrink-0">
                     <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
                   </HubLink>
-                  <TeamLink name={sel.opp} u={prettySlug(sel.opp)} />
+                  <TeamLink name={sel.opp} u={teamSlug(sel.opp)} />
                   <span className="text-rw-muted">·</span>
                   <EventLink name={sel.event} u={sel.row[11]} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
                 </span>
@@ -1029,7 +1031,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                       {sel.team && sel.opp && (
                         <>
                           <HubLink
-                            to={{ kind: "prep", a: prettySlug(sel.team), b: prettySlug(sel.opp), ...(selYr ? { period: `y${selYr}` } : {}) }}
+                            to={{ kind: "prep", a: teamSlug(sel.team), b: teamSlug(sel.opp), ...(selYr ? { period: `y${selYr}` } : {}) }}
                             className="text-rw-sub hover:text-rw-accent hover:underline"
                           >
                             {tl("Match prep")}
@@ -1038,7 +1040,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                             to={{
                               kind: "draft",
                               query: new URLSearchParams({
-                                teams: `${prettySlug(sel.team)},${prettySlug(sel.opp)}`,
+                                teams: `${teamSlug(sel.team)},${teamSlug(sel.opp)}`,
                                 ...(selYr ? { p: `y${selYr}` } : {}),
                                 ...(p.role ? { role: p.role } : {}),
                                 ...(sel.champ ? { champ: sel.champ } : {}),
@@ -1088,7 +1090,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   to={{
                     kind: "rankings",
                     query: new URLSearchParams({
-                      q: [sel.team ? prettySlug(sel.team) : "", sel.opp ? prettySlug(sel.opp) : ""].filter(Boolean).join(","),
+                      q: [sel.team ? teamSlug(sel.team) : "", sel.opp ? teamSlug(sel.opp) : ""].filter(Boolean).join(","),
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1169,7 +1171,7 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                 {p.club && (
                   <>
                     <HubLink
-                      to={{ kind: "prep", a: prettySlug(p.club) }}
+                      to={{ kind: "prep", a: teamSlug(p.club, p.clubU) }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Match prep")} →
@@ -1178,7 +1180,7 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                       to={{
                         kind: "draft",
                         query: new URLSearchParams({
-                          teams: prettySlug(p.club),
+                          teams: teamSlug(p.club, p.clubU),
                           ...(p.role ? { role: p.role } : {}),
                           ...(topChamps[0]?.c ? { champ: topChamps[0].c } : {}),
                         }).toString(),
@@ -1221,7 +1223,7 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                 <HubLink
                   to={{
                     kind: "rankings",
-                    ...(p.club ? { query: `q=${encodeURIComponent(prettySlug(p.club))}` } : {}),
+                    ...(p.club ? { query: `q=${encodeURIComponent(teamSlug(p.club, p.clubU))}` } : {}),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1377,7 +1379,8 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
             <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
               {(() => {
                 const opp0 = t.recent[0]?.opp;
-                const oppSlug = opp0 ? t.opps.find((o) => o.n === opp0)?.u || prettySlug(opp0) : undefined;
+                const oppSlug = opp0 ? teamSlug(opp0, t.opps.find((o) => o.n === opp0)?.u) : undefined;
+                const lg = t.rating?.league ? resolveLeagueSlug(t.rating.league) || t.rating.league : undefined;
                 return (
                   <>
                     <HubLink
@@ -1411,7 +1414,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       to={{
                         kind: "rankings",
                         query: new URLSearchParams({
-                          ...(t.rating?.league ? { league: t.rating.league } : {}),
+                          ...(lg ? { league: lg } : {}),
                           q: `${t.u}${oppSlug ? `,${oppSlug}` : ""}`,
                         }).toString(),
                       }}
@@ -1422,7 +1425,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     <HubLink
                       to={{
                         kind: "tiers",
-                        ...(t.rating?.league ? { query: `scope=${encodeURIComponent(resolveLeagueSlug(t.rating.league) || t.rating.league)}` } : {}),
+                        ...(lg ? { query: `scope=${encodeURIComponent(lg)}` } : {}),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1432,7 +1435,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       to={{
                         kind: "leaders",
                         query: new URLSearchParams({
-                          ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
+                          ...(lg ? { league: lg } : {}),
                           q: `${t.name}${opp0 ? `,${opp0}` : ""}`,
                         }).toString(),
                       }}
@@ -1599,7 +1602,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                 </div>
 
                 {sel && (() => {
-                  const oppSlug = t.opps.find((o) => o.n === sel.opp)?.u || prettySlug(sel.opp);
+                  const oppSlug = teamSlug(sel.opp, t.opps.find((o) => o.n === sel.opp)?.u);
                   const selPeriod = /^\d{4}/.test(sel.date) ? `y${sel.date.slice(0, 4)}` : undefined;
                   return (
                   <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rw-border bg-rw-bg/60 px-3 py-1.5 text-xs">
@@ -1660,7 +1663,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                         {tl("Compare")}
                       </HubLink>
                       {(() => {
-                        const lg = t.rating?.league ? resolveLeagueSlug(t.rating.league) : undefined;
+                        const lg = t.rating?.league ? resolveLeagueSlug(t.rating.league) || t.rating.league : undefined;
                         return (
                           <>
                             <HubLink
@@ -1692,7 +1695,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                               to={{
                                 kind: "rankings",
                                 query: new URLSearchParams({
-                                  ...(t.rating?.league ? { league: t.rating.league } : {}),
+                                  ...(lg ? { league: lg } : {}),
                                   q: `${t.u},${oppSlug}`,
                                 }).toString(),
                               }}
@@ -1706,7 +1709,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                                 query: new URLSearchParams({
                                   ...(lg ? { league: lg } : {}),
                                   ...(selPeriod ? { year: selPeriod.slice(1) } : {}),
-                                  ...(sel.e ? { event: prettySlug(sel.e) } : {}),
+                                  ...(sel.e ? { event: resolveEventSlug(sel.e) } : {}),
                                   q: `${t.name},${sel.opp}`,
                                 }).toString(),
                               }}
@@ -1944,13 +1947,15 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             {(() => {
               const rec0 = c.recent?.find((r) => r.team && r.opp);
               if (!rec0) return null;
+              const tA = teamSlug(rec0.team);
+              const tB = teamSlug(rec0.opp);
               return (
                 <>
                   <HubLink
                     to={{
                       kind: "prep",
-                      a: prettySlug(rec0.team),
-                      b: prettySlug(rec0.opp),
+                      a: tA,
+                      b: tB,
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -1960,8 +1965,8 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     to={{
                       kind: "compare",
                       mode: "team",
-                      a: prettySlug(rec0.team),
-                      b: prettySlug(rec0.opp),
+                      a: tA,
+                      b: tB,
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -1978,7 +1983,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                   return new URLSearchParams({
                     champ: c.name,
                     ...(primaryRole ? { role: primaryRole } : {}),
-                    ...(rec0 ? { teams: `${prettySlug(rec0.team)},${prettySlug(rec0.opp)}` } : {}),
+                    ...(rec0 ? { teams: `${teamSlug(rec0.team)},${teamSlug(rec0.opp)}` } : {}),
                     ...(sel ? { p: `p:${sel.p}` } : {}),
                   }).toString();
                 })(),
@@ -2016,7 +2021,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                 kind: "rankings",
                 ...((() => {
                   const rec0 = c.recent?.find((r) => r.team && r.opp);
-                  return rec0 ? { query: `q=${encodeURIComponent(prettySlug(rec0.team))},${encodeURIComponent(prettySlug(rec0.opp))}` } : {};
+                  return rec0 ? { query: `q=${encodeURIComponent(teamSlug(rec0.team))},${encodeURIComponent(teamSlug(rec0.opp))}` } : {};
                 })()),
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -2293,7 +2298,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                         kind: "rankings",
                         ...((() => {
                           const rec0 = c.recent?.find((r) => r.team && r.opp);
-                          return rec0 ? { query: `q=${encodeURIComponent(prettySlug(rec0.team))},${encodeURIComponent(prettySlug(rec0.opp))}` } : {};
+                          return rec0 ? { query: `q=${encodeURIComponent(teamSlug(rec0.team))},${encodeURIComponent(teamSlug(rec0.opp))}` } : {};
                         })()),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
