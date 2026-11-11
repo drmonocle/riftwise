@@ -985,8 +985,8 @@ const NextMatchCard: React.FC<{
                 const yr = m.startTimeUtc?.slice(0, 4);
                 navigateHub({
                   kind: "prep",
-                  a: prettySlug(m.team1Name || m.team1Code),
-                  b: prettySlug(m.team2Name || m.team2Code),
+                  a: teamSlug(m.team1Name, m.team1Code),
+                  b: teamSlug(m.team2Name, m.team2Code),
                   ...(yr ? { period: `y${yr}` } : {}),
                 });
               }}

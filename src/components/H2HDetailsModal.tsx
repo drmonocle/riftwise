@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList, GitCompare } from "lucide-react";
-import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug, resolveEventSlug, resolveLeagueSlug, resolveTeamAlias } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { RIOT_PREFIX } from "../hub/riotMatch";
 import { findSeriesSlug } from "../hub/seriesLookup";
@@ -379,7 +379,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            navigateHub({ kind: "event", slug: prettySlug(m.tournament) });
+                            navigateHub({ kind: "event", slug: resolveEventSlug(m.tournament) || prettySlug(m.tournament) });
                             onClose();
                           }}
                           className="text-rw-text hover:text-rw-accent hover:underline truncate block max-w-full text-left"

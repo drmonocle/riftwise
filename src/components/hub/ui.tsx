@@ -332,9 +332,15 @@ export const HubLink: React.FC<{
   </a>
 );
 
-/** Team name, linked to its page when it has one (falls back to resolveTeamAlias(name) when u is omitted). */
+/** Team name, linked to its page when it has one (falls back to resolveTeamAlias(name) when u is omitted or empty). */
 export const TeamLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
-  const slug = u === undefined ? (name && name.toUpperCase() !== "TBD" ? resolveTeamAlias(name) || prettySlug(name) : null) : u;
+  const slug =
+    u ||
+    (u === undefined && name && name.toUpperCase() !== "TBD"
+      ? resolveTeamAlias(name) || prettySlug(name)
+      : name && name.toUpperCase() !== "TBD"
+        ? resolveTeamAlias(name)
+        : null);
   return slug ? (
     <HubLink to={{ kind: "team", slug }} className={className}>
       {name}
@@ -345,7 +351,7 @@ export const TeamLink: React.FC<{ name: string; u?: string | null; className?: s
 };
 
 export const PlayerLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
-  const slug = u === undefined ? (name ? resolvePlayerSlug(name) : null) : u;
+  const slug = u || (name ? resolvePlayerSlug(name) : null);
   return slug ? (
     <HubLink to={{ kind: "player", slug }} className={className}>
       {name}
@@ -356,7 +362,7 @@ export const PlayerLink: React.FC<{ name: string; u?: string | null; className?:
 };
 
 export const EventLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
-  const slug = u === undefined ? (name ? resolveEventSlug(name) : null) : u;
+  const slug = (u ? resolveEventSlug(u) : null) || (name ? resolveEventSlug(name) : null);
   return slug ? (
     <HubLink to={{ kind: "event", slug }} className={className}>
       {name}

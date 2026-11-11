@@ -157,7 +157,9 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               navigateHub({
                 kind: "rankings",
                 query: new URLSearchParams({
-                  ...(s.team.rating?.rank == null && s.team.rating?.league ? { league: s.team.rating.league } : {}),
+                  ...(s.team.rating?.rank == null && s.team.rating?.league
+                    ? { league: resolveLeagueSlug(s.team.rating.league) || s.team.rating.league }
+                    : {}),
                   q: s.team.u,
                 }).toString(),
               });
@@ -338,8 +340,15 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   key={role}
                   type="button"
                   onClick={() => {
+                    const yr = match.startTimeUtc?.slice(0, 4);
                     onClose();
-                    navigateHub({ kind: "compare", mode: "player", a: a.u, b: b.u });
+                    navigateHub({
+                      kind: "compare",
+                      mode: "player",
+                      a: a.u,
+                      b: b.u,
+                      ...(yr ? { period: `y${yr}` } : {}),
+                    });
                   }}
                   title={tl("Compare {a} and {b}", { a: a.n, b: b.n })}
                   className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 py-1 rounded border border-rw-border/80 bg-rw-bg/70 hover:border-rw-accent/60 text-[11px] transition-colors"
@@ -556,7 +565,9 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               navigateHub({
                 kind: "rankings",
                 query: new URLSearchParams({
-                  ...(x.team.rating?.rank == null && x.team.rating?.league ? { league: x.team.rating.league } : {}),
+                  ...(x.team.rating?.rank == null && x.team.rating?.league
+                    ? { league: resolveLeagueSlug(x.team.rating.league) || x.team.rating.league }
+                    : {}),
                   q: `${x.team.u},${y.team.u}`,
                 }).toString(),
               });

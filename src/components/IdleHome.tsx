@@ -142,7 +142,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                 ...(yr ? { year: yr } : {}),
                 ...(done[0]
                   ? {
-                      q: `${done[0].team1Name || done[0].team1Code},${done[0].team2Name || done[0].team2Code}`,
+                      q: `${teamSlug(done[0].team1Name, done[0].team1Code)},${teamSlug(done[0].team2Name, done[0].team2Code)}`,
                     }
                   : {}),
               }).toString();
@@ -198,7 +198,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                 ...(yr ? { year: yr } : {}),
                 ...(done[0]
                   ? {
-                      q: `${done[0].team1Name || done[0].team1Code},${done[0].team2Name || done[0].team2Code}`,
+                      q: `${teamSlug(done[0].team1Name, done[0].team1Code)},${teamSlug(done[0].team2Name, done[0].team2Code)}`,
                     }
                   : {}),
               }).toString();
@@ -458,12 +458,12 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
                 <span className="w-4 text-rw-muted font-num tabular-nums">{i + 1}</span>
                 <TeamLogo name={t[1]} code={t[2]} size={16} />
                 <span className="font-semibold text-rw-text flex-1 min-w-0 truncate">{t[1]}</span>
-                {t[4] ? (
+                {t[4] || t[3] ? (
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigateHub({ kind: "league", slug: t[4]! });
+                      navigateHub({ kind: "league", slug: t[4] || resolveLeagueSlug(t[3]) });
                       onSelectTab("stats");
                     }}
                     className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
