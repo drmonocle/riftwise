@@ -284,10 +284,31 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
     });
   const early = players.some((p) => p.tn || p.fbn);
   if (early) cols.splice(cols.length - 1, 0, ...playerEarlyCols(pStatLink));
-  const topTeams = Array.from(new Set(rows.map((r) => (r.t ? tSlug(r.t, r.tu) : "")).filter(Boolean))).slice(0, 2);
-  const topPlayers = Array.from(new Set(rows.map((r) => pSlug(r.n, r.u)).filter(Boolean))).slice(0, 2);
+  const roleFallbackPlayers = rows[0] ? players.filter((p) => p.r === rows[0].r) : [];
+  const topTeams = Array.from(
+    new Set(
+      [...rows, ...roleFallbackPlayers, ...players]
+        .map((r) => (r.t ? tSlug(r.t, r.tu) : ""))
+        .filter(Boolean),
+    ),
+  ).slice(0, 2);
+  const topPlayers = Array.from(
+    new Set(
+      [...rows, ...roleFallbackPlayers, ...players]
+        .map((r) => pSlug(r.n, r.u))
+        .filter(Boolean),
+    ),
+  ).slice(0, 2);
   const topChamps = Array.from(
-    new Set(rows.flatMap((r) => (r.c || []).slice(0, 2)).map((c) => resolveChampSlug(c)).filter(Boolean)),
+    new Set(
+      [
+        ...rows.flatMap((r) => (r.c || []).slice(0, 2)),
+        ...roleFallbackPlayers.flatMap((r) => (r.c || []).slice(0, 2)),
+        ...(e.champs || []).map((c) => c.c),
+      ]
+        .map((c) => resolveChampSlug(c))
+        .filter(Boolean),
+    ),
   ).slice(0, 2);
   return (
     <Section
@@ -369,7 +390,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 event: e.u,
                 ...(role !== "All" ? { role } : {}),
                 ...(topChamps[0] ? { champ: topChamps[0] } : {}),
-                ...(topPlayers.length ? { q: topPlayers.join(",") } : {}),
+                ...(topPlayers.length || topTeams.length ? { q: [...topPlayers, ...topTeams].filter(Boolean).join(",") } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -430,7 +451,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                       topTeams[0] ? `&team=${encodeURIComponent(topTeams[0])}` : ""
                     }${topTeams[1] ? `&vs=${encodeURIComponent(topTeams[1])}` : ""}${
                       topPlayers[1] ? `&vsplayer=${encodeURIComponent(topPlayers[1])}` : ""
-                    }${topChamps[0] ? `&champ=${encodeURIComponent(topChamps[0])}` : ""}`
+                    }${topChamps[0] ? `&champ=${encodeURIComponent(topChamps[0])}` : ""}${
+                      topChamps[1] ? `&vschamp=${encodeURIComponent(topChamps[1])}` : ""
+                    }`
                   : ""
               }`,
             }}
@@ -582,6 +605,8 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                     : {}),
                   ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
                   ...(rows[1].t && rows[1].t !== rows[0].t ? { vs: tSlug(rows[1].t, rows[1].tu) } : {}),
+                  ...(rows[0].c?.[0] ? { champ: resolveChampSlug(rows[0].c[0]) } : {}),
+                  ...(rows[1].c?.[0] && rows[1].c[0] !== rows[0].c?.[0] ? { vschamp: resolveChampSlug(rows[1].c[0]) } : {}),
                   ...(role !== "All" ? { role } : {}),
                 }).toString(),
               }}
@@ -594,7 +619,13 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
         {search.trim() && rows.length === 1 && (
           <>
             <HubLink
-              to={{ kind: "compare", mode: "player", a: pSlug(rows[0].n, rows[0].u), period: `e:${e.u}` }}
+              to={{
+                kind: "compare",
+                mode: "player",
+                a: pSlug(rows[0].n, rows[0].u),
+                ...(topPlayers[1] ? { b: topPlayers[1] } : {}),
+                period: `e:${e.u}`,
+              }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Compare")} →
@@ -602,7 +633,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             {rows[0].t && (
               <>
                 <HubLink
-                  to={{ kind: "prep", a: tSlug(rows[0].t, rows[0].tu), period: `e:${e.u}` }}
+                  to={{
+                    kind: "prep",
+                    a: tSlug(rows[0].t, rows[0].tu),
+                    ...(topTeams[1] ? { b: topTeams[1] } : {}),
+                    period: `e:${e.u}`,
+                  }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
                   {tl("Match prep")} →
@@ -611,18 +647,10 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                   to={{
                     kind: "draft",
                     query: new URLSearchParams({
-                      teams: tSlug(rows[0].t, rows[0].tu),
+                      teams: topTeams.join(","),
                       p: `e:${e.u}`,
                       ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
-                      ...(rows[0].c?.[0]
-                        ? {
-                            champ: rows[0].c
-                              .slice(0, 2)
-                              .filter(Boolean)
-                              .map((c) => resolveChampSlug(c))
-                              .join(","),
-                          }
-                        : {}),
+                      ...(topChamps.length ? { champ: topChamps.join(",") } : {}),
                     }).toString(),
                   }}
                   className="text-rw-accent hover:underline font-semibold"
@@ -636,9 +664,11 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 kind: "items",
                 query: new URLSearchParams({
                   player: pSlug(rows[0].n, rows[0].u),
+                  ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                   event: e.u,
                   ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
-                  ...(rows[0].c?.[0] ? { champ: resolveChampSlug(rows[0].c[0]) } : {}),
+                  ...(topTeams[1] ? { vs: topTeams[1] } : {}),
+                  ...(topChamps[0] ? { champ: topChamps[0] } : {}),
                   ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
                 }).toString(),
               }}
@@ -652,7 +682,11 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 query: new URLSearchParams({
                   event: e.u,
                   player: pSlug(rows[0].n, rows[0].u),
+                  ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                   ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
+                  ...(topTeams[1] ? { vs: topTeams[1] } : {}),
+                  ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                  ...(topChamps[1] ? { vschamp: topChamps[1] } : {}),
                   ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
                 }).toString(),
               }}
@@ -853,24 +887,42 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
   const cols = all.filter((c) => c.key !== "grub" || teams.some((t) => t.grub > 0));
   const early = teams.some((t) => t.tn || t.fbn || t.pln);
   if (early) cols.push(...teamEarlyCols(tStatLink));
+  const topTeam0 = rows[0] ? tSlug(rows[0].t, rows[0].u) : "";
+  const topTeam1 =
+    [...rows, ...teams]
+      .map((t) => tSlug(t.t, t.u))
+      .find((s) => Boolean(s) && s !== topTeam0) || "";
   const pair =
     rows.length === 2 || (search.trim() && rows.length >= 2)
       ? [tSlug(rows[0].t, rows[0].u), tSlug(rows[1].t, rows[1].u)]
       : null;
-  const evChamps = (e.champs || []).slice(0, 2).map((c) => resolveChampSlug(c.c)).filter(Boolean);
+  const evChamps = Array.from(new Set((e.champs || []).map((c) => resolveChampSlug(c.c)).filter(Boolean))).slice(0, 2);
+  const teamPlayers = Array.from(
+    new Set(
+      [
+        ...(e.players || [])
+          .filter((p) => {
+            const pt = p.t ? tSlug(p.t, p.tu) : "";
+            return pt === topTeam0 || (topTeam1 && pt === topTeam1);
+          })
+          .map((p) => pSlug(p.n, p.u)),
+        ...(e.players || []).map((p) => pSlug(p.n, p.u)),
+      ].filter(Boolean),
+    ),
+  ).slice(0, 2);
   return (
     <Section
       title={tl("Team stats")}
       share={`${e.u}-teams`}
       right={
         <span className="flex flex-wrap items-center gap-2">
-          {rows.length >= 1 && (
+          {topTeam0 && (
             <>
               <HubLink
                 to={{
                   kind: "prep",
-                  a: tSlug(rows[0].t, rows[0].u),
-                  ...(rows[1] ? { b: tSlug(rows[1].t, rows[1].u) } : {}),
+                  a: topTeam0,
+                  ...(topTeam1 ? { b: topTeam1 } : {}),
                   period: `e:${e.u}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -882,8 +934,8 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                 to={{
                   kind: "compare",
                   mode: "team",
-                  a: tSlug(rows[0].t, rows[0].u),
-                  ...(rows[1] ? { b: tSlug(rows[1].t, rows[1].u) } : {}),
+                  a: topTeam0,
+                  ...(topTeam1 ? { b: topTeam1 } : {}),
                   period: `e:${e.u}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -896,8 +948,10 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                   kind: "items",
                   query: new URLSearchParams({
                     event: e.u,
-                    team: tSlug(rows[0].t, rows[0].u),
-                    ...(rows[1] ? { vs: tSlug(rows[1].t, rows[1].u) } : {}),
+                    ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                    ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
+                    team: topTeam0,
+                    ...(topTeam1 ? { vs: topTeam1 } : {}),
                     ...(evChamps[0] ? { champ: evChamps[0] } : {}),
                     ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                     ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
@@ -908,6 +962,25 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               >
                 {tl("Item history")} →
               </HubLink>
+              {evChamps[0] && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: new URLSearchParams({
+                      champ: evChamps[0],
+                      ...(evChamps[1] ? { vs: evChamps[1] } : {}),
+                      event: e.u,
+                      ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                        ? { patch: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) }
+                        : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
             </>
           )}
           <HubLink
@@ -946,13 +1019,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               query:
                 new URLSearchParams({
                   ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
-                  ...(rows[0]
-                    ? {
-                        q: [tSlug(rows[0].t, rows[0].u), rows[1] ? tSlug(rows[1].t, rows[1].u) : ""]
-                          .filter(Boolean)
-                          .join(","),
-                      }
-                    : {}),
+                  ...(topTeam0 ? { q: [topTeam0, topTeam1].filter(Boolean).join(",") } : {}),
                 }).toString() || undefined,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -963,7 +1030,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
           <HubLink
             to={{
               kind: "draft",
-              query: `${rows[0] ? `teams=${encodeURIComponent(tSlug(rows[0].t, rows[0].u))}${rows[1] ? `,${encodeURIComponent(tSlug(rows[1].t, rows[1].u))}` : ""}&` : ""}p=e:${encodeURIComponent(e.u)}${evChamps.length ? `&champ=${encodeURIComponent(evChamps.join(","))}` : ""}`,
+              query: `${topTeam0 ? `teams=${encodeURIComponent(topTeam0)}${topTeam1 ? `,${encodeURIComponent(topTeam1)}` : ""}&` : ""}p=e:${encodeURIComponent(e.u)}${evChamps.length ? `&champ=${encodeURIComponent(evChamps.join(","))}` : ""}`,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -973,15 +1040,13 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
           <HubLink
             to={{
               kind: "finder",
-              query: `event=${encodeURIComponent(e.u)}${
-                rows.length >= 1
-                  ? `&team=${encodeURIComponent(tSlug(rows[0].t, rows[0].u))}${
-                      rows[1] && tSlug(rows[1].t, rows[1].u) !== tSlug(rows[0].t, rows[0].u)
-                        ? `&vs=${encodeURIComponent(tSlug(rows[1].t, rows[1].u))}`
-                        : ""
-                    }`
-                  : ""
-              }`,
+              query: new URLSearchParams({
+                event: e.u,
+                ...(topTeam0 ? { team: topTeam0 } : {}),
+                ...(topTeam1 ? { vs: topTeam1 } : {}),
+                ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                ...(evChamps[1] ? { vschamp: evChamps[1] } : {}),
+              }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -996,8 +1061,8 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                 ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
                 ...(evChamps[0] ? { champ: evChamps[0] } : {}),
-                ...(rows.length >= 1
-                  ? { q: rows.slice(0, 2).map((t) => tSlug(t.t, t.u)).join(",") }
+                ...(topTeam0 || teamPlayers.length
+                  ? { q: [topTeam0, topTeam1, ...teamPlayers].filter(Boolean).join(",") }
                   : {}),
               }).toString(),
             }}
@@ -1075,6 +1140,8 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                   kind: "items",
                   query: new URLSearchParams({
                     event: e.u,
+                    ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                    ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
                     team: pair[0],
                     vs: pair[1],
                     ...(evChamps[0] ? { champ: evChamps[0] } : {}),
@@ -1090,7 +1157,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(pair[0])}&vs=${encodeURIComponent(pair[1])}${evChamps[0] ? `&champ=${encodeURIComponent(evChamps[0])}` : ""}`,
+                  query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(pair[0])}&vs=${encodeURIComponent(pair[1])}${evChamps[0] ? `&champ=${encodeURIComponent(evChamps[0])}` : ""}${evChamps[1] ? `&vschamp=${encodeURIComponent(evChamps[1])}` : ""}`,
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -1101,7 +1168,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
           {search.trim() && rows.length === 1 && (
             <span className="flex items-center gap-2 text-[11px]">
               <HubLink
-                to={{ kind: "prep", a: tSlug(rows[0].t, rows[0].u), period: `e:${e.u}` }}
+                to={{ kind: "prep", a: topTeam0, ...(topTeam1 ? { b: topTeam1 } : {}), period: `e:${e.u}` }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Match prep")}
@@ -1110,7 +1177,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(tSlug(rows[0].t, rows[0].u))}&p=e:${encodeURIComponent(e.u)}${evChamps.length ? `&champ=${encodeURIComponent(evChamps.join(","))}` : ""}`,
+                  query: `teams=${encodeURIComponent(topTeam0)}${topTeam1 ? `,${encodeURIComponent(topTeam1)}` : ""}&p=e:${encodeURIComponent(e.u)}${evChamps.length ? `&champ=${encodeURIComponent(evChamps.join(","))}` : ""}`,
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -1118,7 +1185,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               </HubLink>
               <span className="text-rw-muted">·</span>
               <HubLink
-                to={{ kind: "compare", mode: "team", a: tSlug(rows[0].t, rows[0].u), period: `e:${e.u}` }}
+                to={{ kind: "compare", mode: "team", a: topTeam0, ...(topTeam1 ? { b: topTeam1 } : {}), period: `e:${e.u}` }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Compare")}
@@ -1129,7 +1196,10 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                   kind: "items",
                   query: new URLSearchParams({
                     event: e.u,
-                    team: tSlug(rows[0].t, rows[0].u),
+                    ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                    ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
+                    team: topTeam0,
+                    ...(topTeam1 ? { vs: topTeam1 } : {}),
                     ...(evChamps[0] ? { champ: evChamps[0] } : {}),
                     ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                     ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
@@ -1143,7 +1213,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(tSlug(rows[0].t, rows[0].u))}${evChamps[0] ? `&champ=${encodeURIComponent(evChamps[0])}` : ""}`,
+                  query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(topTeam0)}${topTeam1 ? `&vs=${encodeURIComponent(topTeam1)}` : ""}${evChamps[0] ? `&champ=${encodeURIComponent(evChamps[0])}` : ""}${evChamps[1] ? `&vschamp=${encodeURIComponent(evChamps[1])}` : ""}`,
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >

@@ -101,30 +101,34 @@ export const FactGroups: React.FC<{
       .filter((f): f is Fact => f !== null);
   }, [facts, terms.join("|")]);
   const allRows = useMemo(() => filteredFacts.flatMap((f) => f.rows), [filteredFacts]);
+  const fallbackRows = useMemo(() => facts.flatMap((f) => f.rows), [facts]);
   const topTeams = useMemo(() => {
+    if (!allRows.some((r) => r.team)) return [];
     const out: string[] = [];
-    for (const r of allRows) {
+    for (const r of [...allRows, ...fallbackRows]) {
       if (r.team && !out.includes(r.team)) out.push(r.team);
       if (out.length >= 2) break;
     }
     return out;
-  }, [allRows]);
+  }, [allRows, fallbackRows]);
   const topPlayers = useMemo(() => {
+    if (!allRows.some((r) => r.player)) return [];
     const out: string[] = [];
-    for (const r of allRows) {
+    for (const r of [...allRows, ...fallbackRows]) {
       if (r.player && !out.includes(r.player)) out.push(r.player);
       if (out.length >= 2) break;
     }
     return out;
-  }, [allRows]);
+  }, [allRows, fallbackRows]);
   const topChamps = useMemo(() => {
+    if (!allRows.some((r) => r.champ)) return [];
     const out: string[] = [];
-    for (const r of allRows) {
+    for (const r of [...allRows, ...fallbackRows]) {
       if (r.champ && !out.includes(r.champ)) out.push(r.champ);
       if (out.length >= 2) break;
     }
     return out;
-  }, [allRows]);
+  }, [allRows, fallbackRows]);
   const evYr =
     year && /^\d{4}$/.test(year)
       ? year
@@ -186,7 +190,7 @@ export const FactGroups: React.FC<{
                 kind: "items",
                 query:
                   new URLSearchParams({
-                    ...(terms.length > 0 && topPlayers[0]
+                    ...(topPlayers[0]
                       ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) }
                       : {}),
                     ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
@@ -207,7 +211,7 @@ export const FactGroups: React.FC<{
                   ...(normLg ? { league: normLg } : {}),
                   ...(evYr ? { year: evYr } : {}),
                   ...(terms.length > 0 && (topPlayers[0] || topTeams[0])
-                    ? { q: (topPlayers.length >= 1 ? topPlayers : topTeams).join(",") }
+                    ? { q: [...topPlayers, ...topTeams].filter(Boolean).join(",") }
                     : eventSlug
                       ? { q: eventSlug }
                       : {}),
@@ -225,12 +229,10 @@ export const FactGroups: React.FC<{
                     ...(normLg ? { league: normLg } : {}),
                     ...(evYr ? { year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
-                    ...(topChamps[0] && terms.length > 0 ? { champ: resolveChampSlug(topChamps[0]) } : {}),
-                    ...(topPlayers.length >= 1
-                      ? { q: topPlayers.join(",") }
-                      : topTeams.length >= 1
-                        ? { q: topTeams.join(",") }
-                        : {}),
+                    ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                    ...(topPlayers.length >= 1 || topTeams.length >= 1
+                      ? { q: [...topPlayers, ...topTeams].filter(Boolean).join(",") }
+                      : {}),
                   }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
@@ -301,13 +303,14 @@ export const FactGroups: React.FC<{
                     ...(normLg ? { league: normLg } : {}),
                     ...(evYr ? { year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
-                    ...(terms.length > 0 && topPlayers[0]
+                    ...(topPlayers[0]
                       ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) }
                       : {}),
-                    ...((!terms.length || !topPlayers[0]) && topTeams[0]
+                    ...(topTeams[0]
                       ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) }
                       : {}),
                     ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                    ...(topChamps[1] ? { vschamp: resolveChampSlug(topChamps[1]) } : {}),
                   }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
@@ -502,7 +505,7 @@ export const FactCard: React.FC<{
                         ...(evYr ? { year: evYr } : {}),
                         ...(eventSlug ? { event: eventSlug } : {}),
                         ...(cardChamps[0] ? { champ: cardChamps[0] } : {}),
-                        q: cardPlayers.join(","),
+                        q: [...cardPlayers, ...cardTeams].filter(Boolean).join(","),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -519,6 +522,7 @@ export const FactCard: React.FC<{
                       ...(cardTeams[0] ? { team: cardTeams[0] } : {}),
                       ...(cardTeams[1] ? { vs: cardTeams[1] } : {}),
                       ...(cardChamps[0] ? { champ: cardChamps[0] } : {}),
+                      ...(cardChamps[1] ? { vschamp: cardChamps[1] } : {}),
                       ...(normLg ? { league: normLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
@@ -676,6 +680,21 @@ export const FactCard: React.FC<{
               </>
             ) : cardChamps[0] ? (
               <>
+                {cardTeams[0] && (
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: cardTeams[0],
+                      ...(cardTeams[1] ? { b: cardTeams[1] } : {}),
+                      ...(eventSlug ? { period: `e:${eventSlug}` } : evYr ? { period: `y${evYr}` } : {}),
+                    }}
+                    className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
+                    data-nocapture="1"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                )}
                 <HubLink
                   to={{
                     kind: "counters",
@@ -747,6 +766,7 @@ export const FactCard: React.FC<{
                     kind: "finder",
                     query: new URLSearchParams({
                       champ: cardChamps[0],
+                      ...(cardChamps[1] ? { vschamp: cardChamps[1] } : {}),
                       ...(cardTeams[0] ? { team: cardTeams[0] } : {}),
                       ...(cardTeams[1] ? { vs: cardTeams[1] } : {}),
                       ...(normLg ? { league: normLg } : {}),
@@ -778,6 +798,7 @@ export const FactCard: React.FC<{
                     kind: "leaders",
                     query: new URLSearchParams({
                       champ: cardChamps[0],
+                      ...(cardTeams.length >= 1 ? { q: cardTeams.join(",") } : {}),
                       ...(normLg ? { league: normLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
