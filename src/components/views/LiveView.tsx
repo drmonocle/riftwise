@@ -26,10 +26,11 @@ import { H2HMeter } from "../H2HMeter";
 import { tl, tc, locale } from "../../i18n";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { riotImg } from "../../riotImage";
-import { prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 
 const teamSlug = (name?: string, code?: string) =>
   (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
+const playerSlug = (name: string) => resolvePlayerSlug(name) || prettySlug(name);
 import { navigateHub } from "../../hub/route";
 import { lazyPart } from "../../lazyPart";
 import { formatMatchTime } from "../../matchTime";
@@ -239,6 +240,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                   m={m}
                   schedule={schedule}
                   settings={settings}
+                  catalog={catalog}
                   flash={flashMatchId === m.matchId}
                   onToggleFollow={toggleTeamFollow}
                   onSelectTeam={onSelectTeam}
@@ -285,6 +287,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
                 show={nextShow}
                 schedule={schedule}
                 settings={settings}
+                catalog={catalog}
                 onToggleFollow={toggleTeamFollow}
                 onSelectTeam={onSelectTeam}
                 onOpenUrl={onOpenUrl}
@@ -358,6 +361,7 @@ export const LiveView: React.FC<LiveViewProps> = ({
               show={nextShow}
               schedule={schedule}
               settings={settings}
+              catalog={catalog}
               onToggleFollow={toggleTeamFollow}
               onSelectTeam={onSelectTeam}
               onOpenUrl={onOpenUrl}
@@ -485,11 +489,23 @@ const LiveMatchBlock: React.FC<{
   m: Match;
   schedule: Match[];
   settings: AppSettings;
+  catalog?: CatalogData;
   flash: boolean;
   onToggleFollow: (code: string) => void;
   onSelectTeam?: (teamCode: string, teamName?: string) => void;
   onOpenUrl: (url: string) => void;
-}> = ({ m, schedule, settings, flash, onToggleFollow, onSelectTeam, onOpenUrl }) => {
+}> = ({ m, schedule, settings, catalog, flash, onToggleFollow, onSelectTeam, onOpenUrl }) => {
+  const pAEntry =
+    (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === (m.team1Code || "").toUpperCase() && pl.role.toLowerCase() === "mid") ||
+    (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === (m.team1Code || "").toUpperCase());
+  const pBEntry =
+    (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === (m.team2Code || "").toUpperCase() && pl.role.toLowerCase() === "mid") ||
+    (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === (m.team2Code || "").toUpperCase());
+  const pA = pAEntry ? playerSlug(pAEntry.name) : "";
+  const pB = pBEntry ? playerSlug(pBEntry.name) : "";
+  const t1Slug = m.team1Code && m.team1Code !== "TBD" ? teamSlug(m.team1Name, m.team1Code) : "";
+  const t2Slug = m.team2Code && m.team2Code !== "TBD" ? teamSlug(m.team2Name, m.team2Code) : "";
+  const pairQ = [t1Slug, t2Slug].filter(Boolean).join(",");
   const shown = isRevealed(`match:${m.matchId}`);
   const showScore = !settings.spoilerMode || shown;
   const toggleReveal = () => setRevealed(`match:${m.matchId}`, !shown);
@@ -548,7 +564,12 @@ const LiveMatchBlock: React.FC<{
                 type="button"
                 onClick={() => {
                   const yr = m.startTimeUtc?.slice(0, 4);
-                  navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) });
+                  navigateHub({
+                    kind: "league",
+                    slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
+                    ...(yr ? { year: yr } : {}),
+                    ...(pairQ ? { query: `q=${encodeURIComponent(pairQ)}` } : {}),
+                  });
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -708,6 +729,8 @@ const LiveMatchBlock: React.FC<{
                       query: new URLSearchParams({
                         team: teamSlug(m.team1Name, m.team1Code),
                         vs: teamSlug(m.team2Name, m.team2Code),
+                        ...(pA ? { player: pA } : {}),
+                        ...(pB ? { vsplayer: pB } : {}),
                         ...(lg ? { league: lg } : {}),
                         ...(yr ? { year: yr } : {}),
                       }).toString(),
@@ -727,6 +750,8 @@ const LiveMatchBlock: React.FC<{
                       query: new URLSearchParams({
                         team: teamSlug(m.team1Name, m.team1Code),
                         vs: teamSlug(m.team2Name, m.team2Code),
+                        ...(pA ? { player: pA } : {}),
+                        ...(pB ? { vsplayer: pB } : {}),
                         ...(lg ? { league: lg } : {}),
                         ...(yr ? { year: yr } : {}),
                       }).toString(),
@@ -772,7 +797,7 @@ const LiveMatchBlock: React.FC<{
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
                     const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
-                    const tq = `${teamSlug(m.team1Name, m.team1Code)},${teamSlug(m.team2Name, m.team2Code)}`;
+                    const tq = [teamSlug(m.team1Name, m.team1Code), teamSlug(m.team2Name, m.team2Code), pA, pB].filter(Boolean).join(",");
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
@@ -925,14 +950,26 @@ const NextMatchCard: React.FC<{
   show?: LiveShow;
   schedule: Match[];
   settings: AppSettings;
+  catalog?: CatalogData;
   onToggleFollow: (code: string) => void;
   onSelectTeam?: (teamCode: string, teamName?: string) => void;
   onOpenUrl: (url: string) => void;
   compact?: boolean;
-}> = ({ match: m, tag, countdown, delayed, lateMin, show, schedule, settings, onToggleFollow, onSelectTeam, onOpenUrl, compact }) => {
+}> = ({ match: m, tag, countdown, delayed, lateMin, show, schedule, settings, catalog, onToggleFollow, onSelectTeam, onOpenUrl, compact }) => {
   const logo = compact ? "w-10 h-10" : "w-14 h-14 sm:w-16 sm:h-16";
   const hubLogo1 = useTeamLogo(m.team1Name, m.team1Code);
   const hubLogo2 = useTeamLogo(m.team2Name, m.team2Code);
+  const pAEntry =
+    (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === (m.team1Code || "").toUpperCase() && pl.role.toLowerCase() === "mid") ||
+    (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === (m.team1Code || "").toUpperCase());
+  const pBEntry =
+    (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === (m.team2Code || "").toUpperCase() && pl.role.toLowerCase() === "mid") ||
+    (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === (m.team2Code || "").toUpperCase());
+  const pA = pAEntry ? playerSlug(pAEntry.name) : "";
+  const pB = pBEntry ? playerSlug(pBEntry.name) : "";
+  const t1Slug = m.team1Code && m.team1Code !== "TBD" ? teamSlug(m.team1Name, m.team1Code) : "";
+  const t2Slug = m.team2Code && m.team2Code !== "TBD" ? teamSlug(m.team2Name, m.team2Code) : "";
+  const pairQ = [t1Slug, t2Slug].filter(Boolean).join(",");
   const team = (code: string, name: string, image: string | undefined, side: "a" | "b") => {
     const followed = settings.followedTeams.includes(code);
     const open = () => onSelectTeam?.(code, name);
@@ -994,7 +1031,12 @@ const NextMatchCard: React.FC<{
             type="button"
             onClick={() => {
               const yr = m.startTimeUtc?.slice(0, 4);
-              navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) });
+              navigateHub({
+                kind: "league",
+                slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
+                ...(yr ? { year: yr } : {}),
+                ...(pairQ ? { query: `q=${encodeURIComponent(pairQ)}` } : {}),
+              });
             }}
             className="text-xs text-rw-sub hover:text-rw-accent hover:underline font-medium"
           >
@@ -1009,7 +1051,12 @@ const NextMatchCard: React.FC<{
             type="button"
             onClick={() => {
               const yr = m.startTimeUtc?.slice(0, 4);
-              navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) });
+              navigateHub({
+                kind: "league",
+                slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
+                ...(yr ? { year: yr } : {}),
+                ...(pairQ ? { query: `q=${encodeURIComponent(pairQ)}` } : {}),
+              });
             }}
             className="font-semibold text-rw-accent hover:underline"
           >
@@ -1157,6 +1204,8 @@ const NextMatchCard: React.FC<{
                       query: new URLSearchParams({
                         team: teamSlug(m.team1Name, m.team1Code),
                         vs: teamSlug(m.team2Name, m.team2Code),
+                        ...(pA ? { player: pA } : {}),
+                        ...(pB ? { vsplayer: pB } : {}),
                         ...(lg ? { league: lg } : {}),
                         ...(yr ? { year: yr } : {}),
                       }).toString(),
@@ -1176,6 +1225,8 @@ const NextMatchCard: React.FC<{
                       query: new URLSearchParams({
                         team: teamSlug(m.team1Name, m.team1Code),
                         vs: teamSlug(m.team2Name, m.team2Code),
+                        ...(pA ? { player: pA } : {}),
+                        ...(pB ? { vsplayer: pB } : {}),
                         ...(lg ? { league: lg } : {}),
                         ...(yr ? { year: yr } : {}),
                       }).toString(),
@@ -1221,7 +1272,7 @@ const NextMatchCard: React.FC<{
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
                     const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
-                    const tq = `${teamSlug(m.team1Name, m.team1Code)},${teamSlug(m.team2Name, m.team2Code)}`;
+                    const tq = [teamSlug(m.team1Name, m.team1Code), teamSlug(m.team2Name, m.team2Code), pA, pB].filter(Boolean).join(",");
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),

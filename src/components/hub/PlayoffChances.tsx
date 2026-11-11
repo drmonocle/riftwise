@@ -292,79 +292,99 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 </tr>
               </thead>
               <tbody>
-                {filteredRows.map((r) => (
-                  <tr key={r.u} className="border-t border-rw-border">
-                    <td className="px-1.5 sm:px-2 py-1 truncate" data-sort={r.name}>
-                      <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
-                        <HubLink
-                          to={{ kind: "team", slug: r.u, query: `p=e:${encodeURIComponent(e.u)}` }}
-                          className="shrink-0 hover:opacity-80"
-                          title={r.name}
-                        >
-                          <TeamLogo name={r.name} size={15} />
-                        </HubLink>
-                        <TeamLink name={r.name} u={r.u} query={`p=e:${encodeURIComponent(e.u)}`} className="truncate" />
-                        {r.unrated && <span className="text-rw-muted shrink-0" title={tl("No power rating yet: played at the table's median rating")}> *</span>}
-                      </span>
-                    </td>
-                    <td className="px-1.5 sm:px-2 py-1 text-right tabular-nums text-rw-sub whitespace-nowrap" data-sort={r.sw * 100 - r.sl}>
-                      <span className="inline-flex items-center justify-end gap-1.5">
-                        {r.sw + r.sl > 0 && (
-                          <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
-                            <span className="h-full bg-rw-teal/85" style={{ width: `${Math.round((r.sw / (r.sw + r.sl)) * 100)}%` }} />
-                            <span className="h-full bg-rw-red/75" style={{ width: `${100 - Math.round((r.sw / (r.sw + r.sl)) * 100)}%` }} />
-                          </span>
-                        )}
+                {filteredRows.map((r) => {
+                  const vsTeam = filteredRows.find((x) => x.u !== r.u)?.u || rows.find((x) => x.u !== r.u)?.u || "";
+                  const rPlayer = (e.players || []).find(
+                    (p) => (p.tu || (p.t ? resolveTeamAlias(p.t) || prettySlug(p.t) : "")) === r.u,
+                  );
+                  const rPSlug = rPlayer ? rPlayer.u || resolvePlayerSlug(rPlayer.n) || prettySlug(rPlayer.n) : "";
+                  const rTeamQ = new URLSearchParams({
+                    p: `e:${e.u}`,
+                    ...(vsTeam ? { q: vsTeam } : {}),
+                    ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                  }).toString();
+                  return (
+                    <tr key={r.u} className="border-t border-rw-border">
+                      <td className="px-1.5 sm:px-2 py-1 truncate" data-sort={r.name}>
+                        <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
+                          <HubLink
+                            to={{ kind: "team", slug: r.u, query: rTeamQ }}
+                            className="shrink-0 hover:opacity-80"
+                            title={r.name}
+                          >
+                            <TeamLogo name={r.name} size={15} />
+                          </HubLink>
+                          <TeamLink name={r.name} u={r.u} query={rTeamQ} className="truncate" />
+                          {r.unrated && <span className="text-rw-muted shrink-0" title={tl("No power rating yet: played at the table's median rating")}> *</span>}
+                        </span>
+                      </td>
+                      <td className="px-1.5 sm:px-2 py-1 text-right tabular-nums text-rw-sub whitespace-nowrap" data-sort={r.sw * 100 - r.sl}>
+                        <span className="inline-flex items-center justify-end gap-1.5">
+                          {r.sw + r.sl > 0 && (
+                            <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
+                              <span className="h-full bg-rw-teal/85" style={{ width: `${Math.round((r.sw / (r.sw + r.sl)) * 100)}%` }} />
+                              <span className="h-full bg-rw-red/75" style={{ width: `${100 - Math.round((r.sw / (r.sw + r.sl)) * 100)}%` }} />
+                            </span>
+                          )}
+                          <HubLink
+                            to={{
+                              kind: "finder",
+                              query: new URLSearchParams({
+                                event: e.u,
+                                team: r.u,
+                                ...(vsTeam ? { vs: vsTeam } : {}),
+                                ...(rPSlug ? { player: rPSlug } : {}),
+                                ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                                ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
+                                ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                              }).toString(),
+                            }}
+                            className="hover:text-rw-accent hover:underline"
+                            title={tl("Game finder")}
+                          >
+                            {r.sw}-{r.sl}
+                          </HubLink>
+                        </span>
+                      </td>
+                      <td className="px-2 py-1 text-right tabular-nums text-rw-muted max-sm:hidden" data-sort={r.left}>
                         <HubLink
                           to={{
-                            kind: "finder",
-                            query: new URLSearchParams({
-                              event: e.u,
-                              team: r.u,
-                              ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
-                              ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
-                            }).toString(),
+                            kind: "event",
+                            slug: e.u,
+                            tab: "matches",
+                            query: `q=${encodeURIComponent(filteredRows.length === 2 && vsTeam ? `${r.u},${vsTeam}` : r.u)}`,
                           }}
                           className="hover:text-rw-accent hover:underline"
-                          title={tl("Game finder")}
+                          title={tl("Matches")}
                         >
-                          {r.sw}-{r.sl}
+                          {r.left}
                         </HubLink>
-                      </span>
-                    </td>
-                    <td className="px-2 py-1 text-right tabular-nums text-rw-muted max-sm:hidden" data-sort={r.left}>
-                      <HubLink
-                        to={{ kind: "event", slug: e.u, tab: "matches", query: `q=${encodeURIComponent(r.u)}` }}
-                        className="hover:text-rw-accent hover:underline"
-                        title={tl("Matches")}
-                      >
-                        {r.left}
-                      </HubLink>
-                    </td>
-                    <td className="px-1 py-0.5 text-right" data-sort={r.first}>
-                      <HubLink
-                        to={{ kind: "team", slug: r.u, tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
-                        className="hover:underline"
-                        title={tl("Stats")}
-                      >
-                        <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-sub" style={chanceShade(r.first)}>
-                          {pctText(r.first)}
-                        </span>
-                      </HubLink>
-                    </td>
-                    <td className="px-1 py-0.5 text-right" data-sort={r.top[ci]}>
-                      <HubLink
-                        to={{ kind: "team", slug: r.u, tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
-                        className="hover:underline"
-                        title={tl("Stats")}
-                      >
-                        <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-text" style={chanceShade(r.top[ci])}>
-                          {pctText(r.top[ci])}
-                        </span>
-                      </HubLink>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-1 py-0.5 text-right" data-sort={r.first}>
+                        <HubLink
+                          to={{ kind: "team", slug: r.u, tab: "stats", query: rTeamQ }}
+                          className="hover:underline"
+                          title={tl("Stats")}
+                        >
+                          <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-sub" style={chanceShade(r.first)}>
+                            {pctText(r.first)}
+                          </span>
+                        </HubLink>
+                      </td>
+                      <td className="px-1 py-0.5 text-right" data-sort={r.top[ci]}>
+                        <HubLink
+                          to={{ kind: "team", slug: r.u, tab: "stats", query: rTeamQ }}
+                          className="hover:underline"
+                          title={tl("Stats")}
+                        >
+                          <span className="inline-block min-w-[3rem] rounded-sm px-1.5 py-0.5 text-center tabular-nums text-rw-text" style={chanceShade(r.top[ci])}>
+                            {pctText(r.top[ci])}
+                          </span>
+                        </HubLink>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </STable>
           </div>

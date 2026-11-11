@@ -13,10 +13,11 @@ import { tl, locale, clockOptions, tc } from "../../i18n";
 import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { findSeriesSlug } from "../../hub/seriesLookup";
-import { bare, normText, prettySlug, resolveLeagueSlug, resolveRegionFilter, resolveTeamAlias } from "../../hub/data";
+import { bare, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias } from "../../hub/data";
 
 const teamSlug = (name?: string, code?: string) =>
   (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
+const playerSlug = (name: string) => resolvePlayerSlug(name) || prettySlug(name);
 import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route";
 import { riotImg } from "../../riotImage";
@@ -233,6 +234,39 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     if (days === -1) return tl("Yesterday");
     return d.toLocaleDateString(locale(), { weekday: "long", month: "short", day: "numeric" });
   }
+  const schedTeams: string[] = [];
+  const schedCodes: string[] = [];
+  for (const m of filtered) {
+    if (m.team1Code && m.team1Code !== "TBD") {
+      const s = teamSlug(m.team1Name, m.team1Code);
+      if (s && !schedTeams.includes(s)) {
+        schedTeams.push(s);
+        schedCodes.push(m.team1Code.toUpperCase());
+      }
+    }
+    if (m.team2Code && m.team2Code !== "TBD") {
+      const s = teamSlug(m.team2Name, m.team2Code);
+      if (s && !schedTeams.includes(s)) {
+        schedTeams.push(s);
+        schedCodes.push(m.team2Code.toUpperCase());
+      }
+    }
+    if (schedTeams.length >= 2) break;
+  }
+  const schedPlayers = schedCodes
+    .map((code) => {
+      const p =
+        (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === code && pl.role.toLowerCase() === "mid") ||
+        (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === code);
+      return p ? playerSlug(p.name) : "";
+    })
+    .filter((v, idx, arr) => Boolean(v) && arr.indexOf(v) === idx);
+  const schedYr = filtered[0]?.startTimeUtc?.slice(0, 4);
+  const schedLg = league
+    ? resolveLeagueSlug(league)
+    : filtered[0]?.leagueSlug || filtered[0]?.leagueName
+      ? resolveLeagueSlug(filtered[0].leagueSlug || filtered[0].leagueName)
+      : "";
 
   return (
     <div className="p-4 space-y-4 page-5xl rw-capped overflow-y-auto h-full select-none">
@@ -274,42 +308,77 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         <div className="hidden sm:flex items-center gap-2 text-[11px]">
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "rankings", ...(league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
+            onClick={() => {
+              const q = new URLSearchParams({
+                ...(schedLg ? { league: schedLg } : {}),
+                ...(schedTeams.length ? { q: schedTeams.join(",") } : {}),
+              }).toString();
+              navigateHub({ kind: "rankings", ...(q ? { query: q } : {}) });
+            }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")} →
           </button>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              const q = new URLSearchParams({
+                ...(schedLg ? { scope: schedLg, league: schedLg } : {}),
+                ...(schedYr ? { key: `y${schedYr}`, year: schedYr } : {}),
+              }).toString();
               navigateHub({
                 kind: "tiers",
-                ...(league
-                  ? { query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}&league=${encodeURIComponent(resolveLeagueSlug(league))}` }
-                  : {}),
-              })
-            }
+                ...(q ? { query: q } : {}),
+              });
+            }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Pro tier list")} →
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "leaders", ...(league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
+            onClick={() => {
+              const q = new URLSearchParams({
+                ...(schedLg ? { league: schedLg } : {}),
+                ...(schedYr ? { year: schedYr } : {}),
+                ...(schedTeams.length || schedPlayers.length ? { q: [...schedTeams, ...schedPlayers].join(",") } : {}),
+              }).toString();
+              navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
+            }}
             className="hidden md:inline text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Player leaderboards")} →
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "finder", ...(league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
+            onClick={() => {
+              const q = new URLSearchParams({
+                ...(schedTeams[0] ? { team: schedTeams[0] } : {}),
+                ...(schedTeams[1] ? { vs: schedTeams[1] } : {}),
+                ...(schedPlayers[0] ? { player: schedPlayers[0] } : {}),
+                ...(schedPlayers[1] ? { vsplayer: schedPlayers[1] } : {}),
+                ...(schedLg ? { league: schedLg } : {}),
+                ...(schedYr ? { year: schedYr } : {}),
+              }).toString();
+              navigateHub({ kind: "finder", ...(q ? { query: q } : {}) });
+            }}
             className="hidden md:inline text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Game finder")} →
           </button>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "items", ...(league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
+            onClick={() => {
+              const q = new URLSearchParams({
+                ...(schedTeams[0] ? { team: schedTeams[0] } : {}),
+                ...(schedTeams[1] ? { vs: schedTeams[1] } : {}),
+                ...(schedPlayers[0] ? { player: schedPlayers[0] } : {}),
+                ...(schedPlayers[1] ? { vsplayer: schedPlayers[1] } : {}),
+                ...(schedLg ? { league: schedLg } : {}),
+                ...(schedYr ? { year: schedYr } : {}),
+              }).toString();
+              navigateHub({ kind: "items", ...(q ? { query: q } : {}) });
+            }}
             className="hidden md:inline text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Item history")} →
@@ -356,7 +425,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(league) })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "league",
+                        slug: resolveLeagueSlug(league),
+                        ...(schedYr ? { year: schedYr } : {}),
+                        ...(schedTeams.length ? { query: `q=${encodeURIComponent(schedTeams.join(","))}` } : {}),
+                      })
+                    }
                     className="px-2 py-1 rounded text-[11px] font-semibold text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Full history and stats")} →
@@ -366,7 +442,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     onClick={() =>
                       navigateHub({
                         kind: "champions",
-                        query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}&league=${encodeURIComponent(resolveLeagueSlug(league))}`,
+                        query: new URLSearchParams({
+                          scope: resolveLeagueSlug(league),
+                          league: resolveLeagueSlug(league),
+                          ...(schedYr ? { key: `y${schedYr}`, year: schedYr } : {}),
+                        }).toString(),
                       })
                     }
                     className="hidden sm:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
@@ -378,7 +458,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     onClick={() =>
                       navigateHub({
                         kind: "tiers",
-                        query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}&league=${encodeURIComponent(resolveLeagueSlug(league))}`,
+                        query: new URLSearchParams({
+                          scope: resolveLeagueSlug(league),
+                          league: resolveLeagueSlug(league),
+                          ...(schedYr ? { key: `y${schedYr}`, year: schedYr } : {}),
+                        }).toString(),
                       })
                     }
                     className="hidden md:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
@@ -387,35 +471,85 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "rankings", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "rankings",
+                        query: new URLSearchParams({
+                          league: resolveLeagueSlug(league),
+                          ...(schedTeams.length ? { q: schedTeams.join(",") } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="hidden md:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Power rankings")} →
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "leaders", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "leaders",
+                        query: new URLSearchParams({
+                          league: resolveLeagueSlug(league),
+                          ...(schedYr ? { year: schedYr } : {}),
+                          ...(schedTeams.length || schedPlayers.length ? { q: [...schedTeams, ...schedPlayers].join(",") } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="hidden lg:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Player leaderboards")} →
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "best", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "best",
+                        query: new URLSearchParams({
+                          league: resolveLeagueSlug(league),
+                          ...(schedYr ? { year: schedYr } : {}),
+                          ...(schedTeams.length ? { q: schedTeams.join(",") } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="hidden lg:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Best games")} →
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "finder", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "finder",
+                        query: new URLSearchParams({
+                          ...(schedTeams[0] ? { team: schedTeams[0] } : {}),
+                          ...(schedTeams[1] ? { vs: schedTeams[1] } : {}),
+                          ...(schedPlayers[0] ? { player: schedPlayers[0] } : {}),
+                          ...(schedPlayers[1] ? { vsplayer: schedPlayers[1] } : {}),
+                          league: resolveLeagueSlug(league),
+                          ...(schedYr ? { year: schedYr } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="hidden lg:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Game finder")} →
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "items", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "items",
+                        query: new URLSearchParams({
+                          ...(schedTeams[0] ? { team: schedTeams[0] } : {}),
+                          ...(schedTeams[1] ? { vs: schedTeams[1] } : {}),
+                          ...(schedPlayers[0] ? { player: schedPlayers[0] } : {}),
+                          ...(schedPlayers[1] ? { vsplayer: schedPlayers[1] } : {}),
+                          league: resolveLeagueSlug(league),
+                          ...(schedYr ? { year: schedYr } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="hidden xl:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Item history")} →
@@ -467,31 +601,43 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     (m) => (m.team1Code && m.team1Code !== "TBD") || (m.team2Code && m.team2Code !== "TBD"),
                   );
                   if (!singleMatch) return null;
-                  const sSlug =
-                    singleMatch.team1Code && singleMatch.team1Code !== "TBD"
-                      ? teamSlug(singleMatch.team1Name, singleMatch.team1Code)
-                      : teamSlug(singleMatch.team2Name, singleMatch.team2Code);
+                  const sIsT1 = Boolean(singleMatch.team1Code && singleMatch.team1Code !== "TBD");
+                  const sCode = (sIsT1 ? singleMatch.team1Code : singleMatch.team2Code).toUpperCase();
+                  const sSlug = sIsT1
+                    ? teamSlug(singleMatch.team1Name, singleMatch.team1Code)
+                    : teamSlug(singleMatch.team2Name, singleMatch.team2Code);
+                  const sVsSlug = schedTeams.find((u) => u !== sSlug) || "";
+                  const sPlayers = (catalog?.players || [])
+                    .filter((pl) => pl.teamCode.toUpperCase() === sCode)
+                    .slice(0, 2)
+                    .map((pl) => playerSlug(pl.name))
+                    .filter(Boolean);
                   const sYr = singleMatch.startTimeUtc?.slice(0, 4);
                   const sLg = resolveLeagueSlug(singleMatch.leagueSlug || singleMatch.leagueName || league || "");
                   return (
                     <div className="flex items-center gap-2 text-[11px]">
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "prep", a: sSlug, ...(sYr ? { period: `y${sYr}` } : {}) })}
+                        onClick={() => navigateHub({ kind: "prep", a: sSlug, ...(sVsSlug ? { b: sVsSlug } : {}), ...(sYr ? { period: `y${sYr}` } : {}) })}
                         className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                       >
                         {tl("Match prep")} →
                       </button>
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(sSlug)}${sYr ? `&p=y${encodeURIComponent(sYr)}` : ""}` })}
+                        onClick={() =>
+                          navigateHub({
+                            kind: "draft",
+                            query: `teams=${encodeURIComponent(sVsSlug ? `${sSlug},${sVsSlug}` : sSlug)}${sYr ? `&p=y${encodeURIComponent(sYr)}` : ""}`,
+                          })
+                        }
                         className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                       >
                         {tl("Draft board")} →
                       </button>
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "compare", mode: "team", a: sSlug, ...(sYr ? { period: `y${sYr}` } : {}) })}
+                        onClick={() => navigateHub({ kind: "compare", mode: "team", a: sSlug, ...(sVsSlug ? { b: sVsSlug } : {}), ...(sYr ? { period: `y${sYr}` } : {}) })}
                         className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                       >
                         {tl("Compare")} →
@@ -503,6 +649,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             kind: "finder",
                             query: new URLSearchParams({
                               team: sSlug,
+                              ...(sVsSlug ? { vs: sVsSlug } : {}),
+                              ...(sPlayers[0] ? { player: sPlayers[0] } : {}),
+                              ...(sPlayers[1] ? { vsplayer: sPlayers[1] } : {}),
                               ...(sLg ? { league: sLg } : {}),
                               ...(sYr ? { year: sYr } : {}),
                             }).toString(),
@@ -519,6 +668,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             kind: "items",
                             query: new URLSearchParams({
                               team: sSlug,
+                              ...(sVsSlug ? { vs: sVsSlug } : {}),
+                              ...(sPlayers[0] ? { player: sPlayers[0] } : {}),
+                              ...(sPlayers[1] ? { vsplayer: sPlayers[1] } : {}),
                               ...(sLg ? { league: sLg } : {}),
                               ...(sYr ? { year: sYr } : {}),
                             }).toString(),
@@ -535,7 +687,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             kind: "rankings",
                             query: new URLSearchParams({
                               ...(sLg ? { league: sLg } : {}),
-                              q: sSlug,
+                              q: sVsSlug ? `${sSlug},${sVsSlug}` : sSlug,
                             }).toString(),
                           })
                         }
@@ -566,7 +718,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             query: new URLSearchParams({
                               ...(sLg ? { league: sLg } : {}),
                               ...(sYr ? { year: sYr } : {}),
-                              q: sSlug,
+                              q: [sSlug, sVsSlug, ...sPlayers].filter(Boolean).join(","),
                             }).toString(),
                           })
                         }
@@ -579,6 +731,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 }
                 const a = teamSlug(topPair.team1Name, topPair.team1Code);
                 const b = teamSlug(topPair.team2Name, topPair.team2Code);
+                const pAPlayer =
+                  (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === topPair.team1Code.toUpperCase() && pl.role.toLowerCase() === "mid") ||
+                  (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === topPair.team1Code.toUpperCase());
+                const pBPlayer =
+                  (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === topPair.team2Code.toUpperCase() && pl.role.toLowerCase() === "mid") ||
+                  (catalog?.players || []).find((pl) => pl.teamCode.toUpperCase() === topPair.team2Code.toUpperCase());
+                const pA = pAPlayer ? playerSlug(pAPlayer.name) : "";
+                const pB = pBPlayer ? playerSlug(pBPlayer.name) : "";
                 const pYr = topPair.startTimeUtc?.slice(0, 4);
                 const pLg = resolveLeagueSlug(topPair.leagueSlug || topPair.leagueName || league || "");
                 return (
@@ -612,6 +772,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           query: new URLSearchParams({
                             team: a,
                             vs: b,
+                            ...(pA ? { player: pA } : {}),
+                            ...(pB ? { vsplayer: pB } : {}),
                             ...(pLg ? { league: pLg } : {}),
                             ...(pYr ? { year: pYr } : {}),
                           }).toString(),
@@ -629,6 +791,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           query: new URLSearchParams({
                             team: a,
                             vs: b,
+                            ...(pA ? { player: pA } : {}),
+                            ...(pB ? { vsplayer: pB } : {}),
                             ...(pLg ? { league: pLg } : {}),
                             ...(pYr ? { year: pYr } : {}),
                           }).toString(),
@@ -676,7 +840,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           query: new URLSearchParams({
                             ...(pLg ? { league: pLg } : {}),
                             ...(pYr ? { year: pYr } : {}),
-                            q: `${a},${b}`,
+                            q: [a, b, pA, pB].filter(Boolean).join(","),
                           }).toString(),
                         })
                       }

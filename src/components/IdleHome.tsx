@@ -275,6 +275,8 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           const w1 = shown && m.team1Score > m.team2Score;
           const w2 = shown && m.team2Score > m.team1Score;
           const mYr = m.startTimeUtc?.slice(0, 4);
+          const t1Slug = teamSlug(m.team1Name, m.team1Code);
+          const t2Slug = teamSlug(m.team2Name, m.team2Code);
           return (
             <li key={m.matchId} className="flex items-center gap-2 px-3 py-2 text-xs min-w-0">
               {!oneEvent && (
@@ -285,6 +287,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                       kind: "league",
                       slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
                       ...(mYr && /^\d{4}$/.test(mYr) ? { year: mYr } : {}),
+                      ...(t1Slug || t2Slug ? { query: `q=${encodeURIComponent([t1Slug, t2Slug].filter(Boolean).join(","))}` } : {}),
                     })
                   }
                   className="w-24 shrink-0 text-[11px] text-rw-muted hover:text-rw-accent hover:underline truncate text-left transition-colors"
@@ -295,13 +298,17 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               )}
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  const q = new URLSearchParams({
+                    ...(mYr && /^\d{4}$/.test(mYr) ? { p: `y${mYr}` } : {}),
+                    ...(t2Slug ? { q: t2Slug } : {}),
+                  }).toString();
                   navigateHub({
                     kind: "team",
-                    slug: teamSlug(m.team1Name, m.team1Code),
-                    ...(mYr && /^\d{4}$/.test(mYr) ? { query: `p=y${encodeURIComponent(mYr)}` } : {}),
-                  })
-                }
+                    slug: t1Slug,
+                    ...(q ? { query: q } : {}),
+                  });
+                }}
                 className={`flex-1 min-w-0 inline-flex items-center justify-end gap-2 text-right truncate hover:text-rw-accent hover:underline transition-colors ${w1 ? "font-bold text-rw-text" : "text-rw-sub"}`}
               >
                 <span className="truncate">{m.team1Name}</span>
@@ -345,13 +352,17 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               )}
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  const q = new URLSearchParams({
+                    ...(mYr && /^\d{4}$/.test(mYr) ? { p: `y${mYr}` } : {}),
+                    ...(t1Slug ? { q: t1Slug } : {}),
+                  }).toString();
                   navigateHub({
                     kind: "team",
-                    slug: teamSlug(m.team2Name, m.team2Code),
-                    ...(mYr && /^\d{4}$/.test(mYr) ? { query: `p=y${encodeURIComponent(mYr)}` } : {}),
-                  })
-                }
+                    slug: t2Slug,
+                    ...(q ? { query: q } : {}),
+                  });
+                }}
                 className={`flex-1 min-w-0 inline-flex items-center gap-2 text-left truncate hover:text-rw-accent hover:underline transition-colors ${w2 ? "font-bold text-rw-text" : "text-rw-sub"}`}
               >
                 <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={20} className="shrink-0" />
@@ -390,7 +401,13 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
   if (!top.length) return null;
   const topLg = top[0]?.[4] && (!top[1]?.[4] || top[1][4] === top[0][4]) ? resolveLeagueSlug(top[0][4]) : "";
   const open = (slug?: string) => {
-    navigateHub(slug ? { kind: "team", slug } : { kind: "rankings" });
+    if (slug) {
+      const rival = top.find((x) => x[0] !== slug)?.[0];
+      navigateHub({ kind: "team", slug, ...(rival ? { query: `q=${encodeURIComponent(rival)}` } : {}) });
+    } else {
+      const q = [top[0]?.[0], top[1]?.[0]].filter(Boolean).join(",");
+      navigateHub({ kind: "rankings", ...(q ? { query: `q=${encodeURIComponent(q)}` } : {}) });
+    }
     onSelectTab("stats");
   };
   return (
@@ -540,7 +557,11 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigateHub({ kind: "league", slug: resolveLeagueSlug(t[4] || t[3]) });
+                      navigateHub({
+                        kind: "league",
+                        slug: resolveLeagueSlug(t[4] || t[3]),
+                        query: `q=${encodeURIComponent(t[0])}`,
+                      });
                       onSelectTab("stats");
                     }}
                     className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"

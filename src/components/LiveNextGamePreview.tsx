@@ -491,12 +491,16 @@ export const LiveNextGamePreview: React.FC<{
           </div>
           <div className="grid gap-1.5 sm:grid-cols-2">
             {earlier.map((g) => {
-              const pQuery =
+              const pVal =
                 draftIntel?.period && draftIntel.period !== "all"
-                  ? `p=${encodeURIComponent(draftIntel.period)}`
+                  ? draftIntel.period
                   : match.startTimeUtc?.slice(0, 4)
-                    ? `p=y${encodeURIComponent(match.startTimeUtc.slice(0, 4))}`
-                    : undefined;
+                    ? `y${match.startTimeUtc.slice(0, 4)}`
+                    : "";
+              const tASlug = draftIntel?.slugA || teamSlug(match.team1Name, match.team1Code);
+              const tBSlug = draftIntel?.slugB || teamSlug(match.team2Name, match.team2Code);
+              const tAQ = new URLSearchParams({ ...(pVal ? { p: pVal } : {}), ...(tBSlug ? { q: tBSlug } : {}) }).toString();
+              const tBQ = new URLSearchParams({ ...(pVal ? { p: pVal } : {}), ...(tASlug ? { q: tASlug } : {}) }).toString();
               return (
               <div
                 key={g.number}
@@ -508,42 +512,60 @@ export const LiveNextGamePreview: React.FC<{
                 <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
                   <span className="inline-flex items-center gap-1">
                     <HubLink
-                      to={{ kind: "team", slug: draftIntel?.slugA || teamSlug(match.team1Name, match.team1Code), ...(pQuery ? { query: pQuery } : {}) }}
+                      to={{ kind: "team", slug: tASlug, ...(tAQ ? { query: tAQ } : {}) }}
                       className="inline-flex items-center gap-1 text-[10px] font-bold text-rw-side-a hover:underline"
                     >
                       <TeamLogo name={match.team1Name} code={match.team1Code} src={match.team1Image} size={14} className="shrink-0" />
                       <span>{match.team1Code}</span>
                     </HubLink>
-                    {g.team1.map((p) => (
-                      <HubLink
-                        key={p.c}
-                        to={{ kind: "champ", slug: resolveChampSlug(p.c), ...(pQuery ? { query: pQuery } : {}) }}
-                        title={`${champName(p.c)} (${p.player})`}
-                        className="opacity-75 grayscale-[35%] hover:opacity-100 hover:grayscale-0 transition-all"
-                      >
-                        <ChampIcon name={p.c} size={18} />
-                      </HubLink>
-                    ))}
+                    {g.team1.map((p) => {
+                      const rIdx = ROLE_ORDER.indexOf(p.role);
+                      const cQ = new URLSearchParams({
+                        ...(pVal ? { p: pVal } : {}),
+                        ...(tASlug ? { team: tASlug } : {}),
+                        ...(p.player ? { player: playerSlug(p.player) } : {}),
+                        ...(rIdx >= 0 ? { role: ROLE_LABELS[rIdx] } : {}),
+                      }).toString();
+                      return (
+                        <HubLink
+                          key={p.c}
+                          to={{ kind: "champ", slug: resolveChampSlug(p.c), ...(cQ ? { query: cQ } : {}) }}
+                          title={`${champName(p.c)} (${p.player})`}
+                          className="opacity-75 grayscale-[35%] hover:opacity-100 hover:grayscale-0 transition-all"
+                        >
+                          <ChampIcon name={p.c} size={18} />
+                        </HubLink>
+                      );
+                    })}
                   </span>
                   <span className="text-rw-border">·</span>
                   <span className="inline-flex items-center gap-1">
                     <HubLink
-                      to={{ kind: "team", slug: draftIntel?.slugB || teamSlug(match.team2Name, match.team2Code), ...(pQuery ? { query: pQuery } : {}) }}
+                      to={{ kind: "team", slug: tBSlug, ...(tBQ ? { query: tBQ } : {}) }}
                       className="inline-flex items-center gap-1 text-[10px] font-bold text-rw-side-b hover:underline"
                     >
                       <TeamLogo name={match.team2Name} code={match.team2Code} src={match.team2Image} size={14} className="shrink-0" />
                       <span>{match.team2Code}</span>
                     </HubLink>
-                    {g.team2.map((p) => (
-                      <HubLink
-                        key={p.c}
-                        to={{ kind: "champ", slug: resolveChampSlug(p.c), ...(pQuery ? { query: pQuery } : {}) }}
-                        title={`${champName(p.c)} (${p.player})`}
-                        className="opacity-75 grayscale-[35%] hover:opacity-100 hover:grayscale-0 transition-all"
-                      >
-                        <ChampIcon name={p.c} size={18} />
-                      </HubLink>
-                    ))}
+                    {g.team2.map((p) => {
+                      const rIdx = ROLE_ORDER.indexOf(p.role);
+                      const cQ = new URLSearchParams({
+                        ...(pVal ? { p: pVal } : {}),
+                        ...(tBSlug ? { team: tBSlug } : {}),
+                        ...(p.player ? { player: playerSlug(p.player) } : {}),
+                        ...(rIdx >= 0 ? { role: ROLE_LABELS[rIdx] } : {}),
+                      }).toString();
+                      return (
+                        <HubLink
+                          key={p.c}
+                          to={{ kind: "champ", slug: resolveChampSlug(p.c), ...(cQ ? { query: cQ } : {}) }}
+                          title={`${champName(p.c)} (${p.player})`}
+                          className="opacity-75 grayscale-[35%] hover:opacity-100 hover:grayscale-0 transition-all"
+                        >
+                          <ChampIcon name={p.c} size={18} />
+                        </HubLink>
+                      );
+                    })}
                   </span>
                 </div>
               </div>
@@ -564,8 +586,8 @@ export const LiveNextGamePreview: React.FC<{
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {[
-              { name: match.team1Name, code: match.team1Code, img: match.team1Image, slug: draftIntel.slugA, bans: draftIntel.bansA, tone: "text-rw-side-a" },
-              { name: match.team2Name, code: match.team2Code, img: match.team2Image, slug: draftIntel.slugB, bans: draftIntel.bansB, tone: "text-rw-side-b" },
+              { name: match.team1Name, code: match.team1Code, img: match.team1Image, slug: draftIntel.slugA, oppSlug: draftIntel.slugB, bans: draftIntel.bansA, tone: "text-rw-side-a" },
+              { name: match.team2Name, code: match.team2Code, img: match.team2Image, slug: draftIntel.slugB, oppSlug: draftIntel.slugA, bans: draftIntel.bansB, tone: "text-rw-side-b" },
             ].map((side) => (
               <div key={side.code} className="rounded border border-rw-border/70 bg-rw-surface/60 px-2.5 py-1.5 space-y-1">
                 <div className="text-[10px] font-bold flex items-center justify-between">
@@ -574,7 +596,10 @@ export const LiveNextGamePreview: React.FC<{
                       to={{
                         kind: "team",
                         slug: side.slug,
-                        ...(draftIntel.period !== "all" ? { query: `p=${encodeURIComponent(draftIntel.period)}` } : {}),
+                        query: new URLSearchParams({
+                          ...(draftIntel.period !== "all" ? { p: draftIntel.period } : {}),
+                          ...(side.oppSlug ? { q: side.oppSlug } : {}),
+                        }).toString() || undefined,
                       }}
                       className="inline-flex items-center gap-1.5 hover:underline"
                     >
@@ -592,7 +617,11 @@ export const LiveNextGamePreview: React.FC<{
                         kind: "team",
                         slug: side.slug,
                         tab: "champions",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(b.c))}${draftIntel.period !== "all" ? `&p=${encodeURIComponent(draftIntel.period)}` : ""}`,
+                        query: new URLSearchParams({
+                          champ: resolveChampSlug(b.c),
+                          ...(side.oppSlug ? { q: side.oppSlug } : {}),
+                          ...(draftIntel.period !== "all" ? { p: draftIntel.period } : {}),
+                        }).toString(),
                       }}
                       title={b.why}
                       className="inline-flex items-center gap-1 rounded border border-rw-border bg-rw-bg px-1.5 py-0.5 text-[10px] hover:border-rw-accent"
@@ -627,10 +656,14 @@ export const LiveNextGamePreview: React.FC<{
               if (!ra && !rb) return null;
               const renderPicks = (
                 row: typeof ra,
+                oppRow: typeof rb,
                 tSlug: string,
+                oppTSlug: string,
                 teamName: string,
                 alignRight: boolean,
-              ) => (
+              ) => {
+                const oppPSlug = oppRow?.player ? playerSlug(oppRow.player, oppRow.u) : "";
+                return (
                 <div className={`flex flex-wrap items-center gap-1 min-w-0 ${alignRight ? "justify-end" : ""}`}>
                   {row.player && (
                     <HubLink
@@ -638,7 +671,12 @@ export const LiveNextGamePreview: React.FC<{
                         kind: "player",
                         slug: playerSlug(row.player, row.u),
                         tab: "champions",
-                        ...(draftIntel.period !== "all" ? { query: `p=${encodeURIComponent(draftIntel.period)}` } : {}),
+                        query: new URLSearchParams({
+                          ...(draftIntel.period !== "all" ? { p: draftIntel.period } : {}),
+                          ...(tSlug ? { team: tSlug } : {}),
+                          role: rLabel,
+                          ...(oppPSlug ? { q: oppPSlug } : {}),
+                        }).toString() || undefined,
                       }}
                       className={`inline-flex items-center gap-1 font-semibold text-rw-text hover:text-rw-accent text-[11px] shrink-0 ${alignRight ? "order-last ml-1 flex-row-reverse" : "mr-1"}`}
                     >
@@ -648,14 +686,26 @@ export const LiveNextGamePreview: React.FC<{
                   )}
                   {row.open.map((pk) => {
                     const wrPct = pk.g > 0 ? Math.round((pk.w / pk.g) * 100) : 0;
-                    const pParam = !pk.pocket && draftIntel.period !== "all" ? `&p=${encodeURIComponent(draftIntel.period)}` : "";
+                    const pkQ = new URLSearchParams({
+                      champ: resolveChampSlug(pk.c),
+                      ...(!pk.pocket && draftIntel.period !== "all" ? { p: draftIntel.period } : {}),
+                      ...(row.player || row.u
+                        ? {
+                            ...(tSlug ? { team: tSlug } : {}),
+                            role: rLabel,
+                            ...(oppPSlug ? { q: oppPSlug } : {}),
+                          }
+                        : {
+                            ...(oppTSlug ? { q: oppTSlug } : {}),
+                          }),
+                    }).toString();
                     return (
                       <HubLink
                         key={pk.c}
                         to={
                           row.player || row.u
-                            ? { kind: "player", slug: playerSlug(row.player, row.u), tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(pk.c))}${pParam}` }
-                            : { kind: "team", slug: tSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(pk.c))}${pParam}` }
+                            ? { kind: "player", slug: playerSlug(row.player, row.u), tab: "champions", query: pkQ }
+                            : { kind: "team", slug: tSlug, tab: "champions", query: pkQ }
                         }
                         title={
                           pk.pocket
@@ -684,10 +734,11 @@ export const LiveNextGamePreview: React.FC<{
                     );
                   })}
                 </div>
-              );
+                );
+              };
               return (
                 <div key={rLabel} className="py-1.5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                  {renderPicks(ra, draftIntel.slugA, match.team1Name, false)}
+                  {renderPicks(ra, rb, draftIntel.slugA, draftIntel.slugB, match.team1Name, false)}
                   <span className="flex flex-col items-center justify-center w-12 shrink-0 leading-tight">
                     {ra?.player && rb?.player ? (
                       <HubLink
@@ -732,7 +783,7 @@ export const LiveNextGamePreview: React.FC<{
                       </HubLink>
                     )}
                   </span>
-                  {renderPicks(rb, draftIntel.slugB, match.team2Name, true)}
+                  {renderPicks(rb, ra, draftIntel.slugB, draftIntel.slugA, match.team2Name, true)}
                 </div>
               );
             })}

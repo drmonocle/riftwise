@@ -619,12 +619,16 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
         <tbody>
           {[left, right].map((x, i) => {
             const other = i === 0 ? right : left;
+            const xTeamQ = new URLSearchParams({
+              ...(year ? { p: `y${year}` } : {}),
+              q: teamSlug(other.name, other.code),
+            }).toString();
             return (
               <tr key={x.code} className="border-t border-rw-border/60">
                 <td className="px-2 py-1.5 text-left font-bold text-rw-text whitespace-nowrap" style={{ boxShadow: `inset 3px 0 0 ${x.color}` }} title={x.color === "#3fa7ff" ? tl("Blue side") : tl("Red side")}>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "team", slug: teamSlug(x.name, x.code), ...(year ? { query: `p=y${year}` } : {}) })}
+                    onClick={() => navigateHub({ kind: "team", slug: teamSlug(x.name, x.code), query: xTeamQ })}
                     className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline transition-colors"
                   >
                     <TeamLogo name={x.name} code={x.code} src={x.img} size={15} className="shrink-0" />
@@ -637,7 +641,7 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
                     <td key={c.key} className={`${cell} ${ahead ? "text-rw-teal font-bold" : "text-rw-sub"}`}>
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "team", slug: teamSlug(x.name, x.code), tab: "stats", ...(year ? { query: `p=y${year}` } : {}) })}
+                        onClick={() => navigateHub({ kind: "team", slug: teamSlug(x.name, x.code), tab: "stats", query: xTeamQ })}
                         className="hover:text-rw-accent hover:underline"
                         title={tl("Stats")}
                       >
@@ -741,7 +745,14 @@ const UpsetMeter: React.FC<{ leftCode: string; leftName?: string; rightCode: str
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(dogName, dog), ...(year ? { query: `p=y${year}` } : {}) })}
+          onClick={() => {
+            const favSlug = leftIsDog ? teamSlug(rightName, rightCode) : teamSlug(leftName, leftCode);
+            const q = new URLSearchParams({
+              ...(year ? { p: `y${year}` } : {}),
+              ...(favSlug ? { q: favSlug } : {}),
+            }).toString();
+            navigateHub({ kind: "team", slug: teamSlug(dogName, dog), ...(q ? { query: q } : {}) });
+          }}
           className="text-rw-muted hover:text-rw-accent hover:underline"
         >
           {tl("{team}: {before} before the game, {now} now", { team: dog, before: `${Math.round(pre * 100)}%`, now: `${Math.round(cur * 100)}%` })}
@@ -797,7 +808,13 @@ const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: stri
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(leftName, leftCode), ...(year ? { query: `p=y${year}` } : {}) })}
+          onClick={() => {
+            const q = new URLSearchParams({
+              ...(year ? { p: `y${year}` } : {}),
+              q: teamSlug(rightName, rightCode),
+            }).toString();
+            navigateHub({ kind: "team", slug: teamSlug(leftName, leftCode), query: q });
+          }}
           className="font-mono tabular-nums font-bold text-rw-side-a w-16 text-right whitespace-nowrap hover:underline"
         >
           {leftCode} {a}%
@@ -807,7 +824,13 @@ const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: stri
         </div>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(rightName, rightCode), ...(year ? { query: `p=y${year}` } : {}) })}
+          onClick={() => {
+            const q = new URLSearchParams({
+              ...(year ? { p: `y${year}` } : {}),
+              q: teamSlug(leftName, leftCode),
+            }).toString();
+            navigateHub({ kind: "team", slug: teamSlug(rightName, rightCode), query: q });
+          }}
           className="font-mono tabular-nums font-bold text-rw-side-b w-16 text-left whitespace-nowrap hover:underline"
         >
           {100 - a}% {rightCode}
@@ -941,9 +964,23 @@ const PlayerCells: React.FC<{
   const health = p.frame.maxHealth > 0 ? p.frame.currentHealth / p.frame.maxHealth : null;
   const pName = playerName(p.meta.summonerName);
   const oppPName = opp?.meta ? playerName(opp.meta.summonerName) : "";
+  const cSlug = champNameById(p.meta.championId) ? resolveChampSlug(champNameById(p.meta.championId)) : "";
   const oppChamp = opp?.meta?.championId ? champNameById(opp.meta.championId) : "";
   const tSlug = teamName || teamCode ? teamSlug(teamName, teamCode) : "";
   const oppTSlug = oppTeamName || oppTeamCode ? teamSlug(oppTeamName, oppTeamCode) : "";
+  const pLinkQ = new URLSearchParams({
+    ...(year ? { p: `y${year}` } : {}),
+    ...(tSlug ? { team: tSlug } : {}),
+    ...(roleLabel ? { role: roleLabel } : {}),
+    ...(oppPName ? { q: playerSlug(oppPName) } : {}),
+    ...(cSlug ? { champ: cSlug } : {}),
+  }).toString();
+  const cLinkQ = new URLSearchParams({
+    ...(year ? { p: `y${year}` } : {}),
+    ...(tSlug ? { team: tSlug } : {}),
+    ...(pName ? { player: playerSlug(pName) } : {}),
+    ...(roleLabel ? { role: roleLabel } : {}),
+  }).toString();
   return (
     <td className="py-1.5 align-top">
       <div className={`flex items-start gap-2 ${right ? "flex-row-reverse text-right" : ""}`}>
@@ -951,7 +988,7 @@ const PlayerCells: React.FC<{
           {icon ? (
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(p.meta!.championId)), ...(year ? { query: `p=y${year}` } : {}) })}
+              onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(p.meta!.championId)), ...(cLinkQ ? { query: cLinkQ } : {}) })}
               className="block rounded hover:ring-1 hover:ring-rw-accent transition-all"
               title={champName(champNameById(p.meta.championId))}
             >
@@ -969,7 +1006,7 @@ const PlayerCells: React.FC<{
           <div className={`flex items-center gap-1.5 ${right ? "flex-row-reverse" : ""}`}>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), ...(year ? { query: `p=y${year}` } : {}) })}
+              onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), ...(pLinkQ ? { query: pLinkQ } : {}) })}
               className={`inline-flex items-center gap-1 font-semibold text-rw-text hover:text-rw-accent hover:underline truncate transition-colors ${right ? "flex-row-reverse" : ""}`}
             >
               <PlayerPhoto name={pName} team={teamName} size={15} linkFallback={false} />
@@ -1002,7 +1039,7 @@ const PlayerCells: React.FC<{
           </div>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), tab: "stats", ...(year ? { query: `p=y${year}` } : {}) })}
+            onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), tab: "stats", ...(pLinkQ ? { query: pLinkQ } : {}) })}
             className="text-[10px] text-rw-sub hover:text-rw-accent hover:underline font-mono text-left"
             title={tl("Stats")}
           >
@@ -1469,7 +1506,11 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
           type="button"
           onClick={() => {
             const yr = match.startTimeUtc?.slice(0, 4);
-            navigateHub({ kind: "team", slug: teamSlug(left.name, left.code), ...(yr ? { query: `p=y${yr}` } : {}) });
+            const q = new URLSearchParams({
+              ...(yr ? { p: `y${yr}` } : {}),
+              q: teamSlug(right.name, right.code),
+            }).toString();
+            navigateHub({ kind: "team", slug: teamSlug(left.name, left.code), query: q });
           }}
           className="inline-flex items-center gap-1.5 font-bold text-rw-text hover:text-rw-accent hover:underline transition-colors text-left"
         >
@@ -1481,7 +1522,11 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
           type="button"
           onClick={() => {
             const yr = match.startTimeUtc?.slice(0, 4);
-            navigateHub({ kind: "team", slug: teamSlug(right.name, right.code), ...(yr ? { query: `p=y${yr}` } : {}) });
+            const q = new URLSearchParams({
+              ...(yr ? { p: `y${yr}` } : {}),
+              q: teamSlug(left.name, left.code),
+            }).toString();
+            navigateHub({ kind: "team", slug: teamSlug(right.name, right.code), query: q });
           }}
           className="inline-flex items-center justify-end gap-1.5 font-bold text-rw-text text-right hover:text-rw-accent hover:underline transition-colors"
         >
@@ -1491,16 +1536,33 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
         {l.map((p, i) => {
           const q = r[i];
           const yr = match.startTimeUtc?.slice(0, 4);
-          const cell = (x: LiveParticipantMeta | undefined, teamName: string, right: boolean) => {
+          const cell = (x: LiveParticipantMeta | undefined, oppX: LiveParticipantMeta | undefined, teamName: string, teamCode: string, rightSide: boolean) => {
             if (!x) return <span />;
             const icon = champIcon(x.championId);
             const pName = playerName(x.summonerName);
+            const oppPName = oppX ? playerName(oppX.summonerName) : "";
+            const tSlug = teamSlug(teamName, teamCode);
+            const rLab = ROLE_LABEL[x.role] || x.role;
+            const cSlug = champNameById(x.championId) ? resolveChampSlug(champNameById(x.championId)) : "";
+            const cQ = new URLSearchParams({
+              ...(yr ? { p: `y${yr}` } : {}),
+              ...(tSlug ? { team: tSlug } : {}),
+              ...(pName ? { player: playerSlug(pName) } : {}),
+              ...(rLab ? { role: rLab } : {}),
+            }).toString();
+            const pQ = new URLSearchParams({
+              ...(yr ? { p: `y${yr}` } : {}),
+              ...(tSlug ? { team: tSlug } : {}),
+              ...(rLab ? { role: rLab } : {}),
+              ...(oppPName ? { q: playerSlug(oppPName) } : {}),
+              ...(cSlug ? { champ: cSlug } : {}),
+            }).toString();
             return (
-              <span className={`flex items-center gap-1.5 min-w-0 ${right ? "flex-row-reverse text-right" : ""}`}>
+              <span className={`flex items-center gap-1.5 min-w-0 ${rightSide ? "flex-row-reverse text-right" : ""}`}>
                 {icon && (
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(x.championId)), ...(yr ? { query: `p=y${yr}` } : {}) })}
+                    onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(x.championId)), ...(cQ ? { query: cQ } : {}) })}
                     className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
                   >
                     <img src={icon} alt="" width={24} height={24} className="rounded" />
@@ -1509,15 +1571,15 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                 <span className="min-w-0">
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(x.championId)), ...(yr ? { query: `p=y${yr}` } : {}) })}
+                    onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(x.championId)), ...(cQ ? { query: cQ } : {}) })}
                     className="block truncate text-rw-text hover:text-rw-accent hover:underline"
                   >
                     {champName(champNameById(x.championId))}
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), ...(yr ? { query: `p=y${yr}` } : {}) })}
-                    className={`inline-flex items-center gap-1 truncate text-[10px] text-rw-muted hover:text-rw-accent hover:underline ${right ? "flex-row-reverse" : ""}`}
+                    onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), ...(pQ ? { query: pQ } : {}) })}
+                    className={`inline-flex items-center gap-1 truncate text-[10px] text-rw-muted hover:text-rw-accent hover:underline ${rightSide ? "flex-row-reverse" : ""}`}
                   >
                     <PlayerPhoto name={pName} team={teamName} size={13} linkFallback={false} />
                     <span className="truncate">{pName}</span>
@@ -1528,7 +1590,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
           };
           return (
             <React.Fragment key={i}>
-              {cell(p, left.name, false)}
+              {cell(p, q, left.name, left.code, false)}
               <span className="flex flex-col items-center justify-center w-12 shrink-0 leading-tight">
                 {p && q ? (
                   <button
@@ -1570,7 +1632,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                   </button>
                 )}
               </span>
-              {cell(q, right.name, true)}
+              {cell(q, p, right.name, right.code, true)}
             </React.Fragment>
           );
         })}

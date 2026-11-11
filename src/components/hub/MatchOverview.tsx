@@ -70,10 +70,12 @@ export const MatchOverview: React.FC<{ match: Match; a: string; b: string; onClo
               onClick={() => {
                 onClose();
                 const yr = match.startTimeUtc?.slice(0, 4);
+                const q = [a, b].filter(Boolean).join(",");
                 navigateHub({
                   kind: "league",
                   slug: resolveLeagueSlug(match.leagueSlug || match.leagueName),
                   ...(yr ? { year: yr } : {}),
+                  ...(q ? { query: `q=${encodeURIComponent(q)}` } : {}),
                 });
               }}
               className="hover:text-rw-accent hover:underline uppercase font-semibold"
@@ -159,14 +161,21 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
       stories: hidden ? [] : stories,
       period: match.leagueName,
     });
-  const team = (s: Side, right: boolean) => (
+  const team = (s: Side, right: boolean) => {
+    const oppSlug = right ? x.team.u : y.team.u;
+    const yr = match.startTimeUtc?.slice(0, 4);
+    const sTeamQ = new URLSearchParams({
+      ...(yr ? { p: `y${yr}` } : {}),
+      ...(oppSlug ? { q: oppSlug } : {}),
+      ...(cA ? { champ: cA } : {}),
+    }).toString();
+    return (
     <div className={`min-w-0 ${right ? "text-right" : ""}`}>
       <button
         type="button"
         onClick={() => {
           onClose();
-          const yr = match.startTimeUtc?.slice(0, 4);
-          navigateHub({ kind: "team", slug: s.team.u, ...(yr ? { query: `p=y${yr}` } : {}) });
+          navigateHub({ kind: "team", slug: s.team.u, ...(sTeamQ ? { query: sTeamQ } : {}) });
         }}
         className={`w-full text-sm font-extrabold flex items-center gap-1.5 min-w-0 hover:underline transition-colors ${right ? "flex-row-reverse text-rw-side-b" : "text-rw-side-a"}`}
       >
@@ -185,7 +194,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   ...(s.team.rating?.rank == null && s.team.rating?.league
                     ? { league: resolveLeagueSlug(s.team.rating.league) || s.team.rating.league }
                     : {}),
-                  q: s.team.u,
+                  q: oppSlug ? `${s.team.u},${oppSlug}` : s.team.u,
                 }).toString(),
               });
             }}
@@ -198,8 +207,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
             type="button"
             onClick={() => {
               onClose();
-              const yr = match.startTimeUtc?.slice(0, 4);
-              navigateHub({ kind: "team", slug: s.team.u, tab: "matches", ...(yr ? { query: `p=y${yr}` } : {}) });
+              navigateHub({ kind: "team", slug: s.team.u, tab: "matches", ...(sTeamQ ? { query: sTeamQ } : {}) });
             }}
             className="hover:text-rw-accent hover:underline"
           >
@@ -238,6 +246,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
       )}
     </div>
   );
+  };
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
