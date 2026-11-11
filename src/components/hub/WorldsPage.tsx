@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { eventName, eventTitle, stageName, tk, tl } from "../../i18n";
-import { bare, loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, normText, prettySlug } from "../../hub/data";
+import { bare, loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, normText, prettySlug, resolveTeamAlias } from "../../hub/data";
 import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import {
@@ -689,13 +689,20 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
         const t = byU.get(u);
         const opp = next.get(u);
         const oppT = opp ? byU.get(opp) : undefined;
-        const hay = normText(`${u} ${t?.n || ""} ${t?.c || ""} ${opp || ""} ${oppT?.n || ""} ${oppT?.c || ""}`);
-        return terms.some((q) => hay.includes(q) || (bare(q).length >= 2 && bare(hay).includes(bare(q))));
+        const [w, l] = rec[u] || [0, 0];
+        const uCanon = resolveTeamAlias(u) || (t?.n ? resolveTeamAlias(t.n) : "");
+        const oppCanon = opp ? resolveTeamAlias(opp) || (oppT?.n ? resolveTeamAlias(oppT.n) : "") : "";
+        const hay = normText(`${u} ${t?.n || ""} ${t?.c || ""} ${w}-${l} ${opp || ""} ${oppT?.n || ""} ${oppT?.c || ""}`);
+        return terms.some((q) => {
+          if (hay.includes(q) || (bare(q).length >= 2 && bare(hay).includes(bare(q)))) return true;
+          const qCanon = resolveTeamAlias(q);
+          return Boolean(qCanon && (qCanon === uCanon || (oppCanon && qCanon === oppCanon)));
+        });
       })
     : allRows;
   return (
     <div className="overflow-x-auto max-w-full space-y-1.5">
-      {allRows.length > 8 && (
+      {(allRows.length > 8 || Boolean(search.trim())) && (
         <div className="flex flex-wrap items-center justify-between gap-2 px-1" data-nocapture="1">
           <input
             type="search"

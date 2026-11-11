@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, roleName, regionName } from "../../i18n";
-import { bare, loadAliases, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { navigateHub, hubShareUrl, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
 import { SortTable, type Column } from "./SortTable";
@@ -99,8 +99,8 @@ const REGION_ALIASES: Record<string, string[]> = {
 const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows, query }) => {
   const { q, set } = useFilters("teams", query);
   const aliases = useLoad(loadAliases, []);
-  const rawRegion = q.get("region") || "";
-  const words = q.get("q") || "";
+  const rawRegion = q.get("region") || q.get("league") || q.get("scope") || "";
+  const words = q.get("q") || q.get("team") || q.get("teams") || "";
   const since = q.get("since") || (words.trim() ? "all" : THIS_YEAR);
   const shown = Number(q.get("n")) || STEP;
   const regions = useMemo(() => {
@@ -126,12 +126,13 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       if (since !== "all" && (t[3] || "") < since) return false;
       if (!terms.length) return true;
       const u = (t[1] || prettySlug(t[0])).toLowerCase();
-      const hay = normText(`${t[0]} | ${t[1] || ""} | ${t[4]} | ${t[5]}`);
+      const rowCanon = resolveTeamAlias(u) || resolveTeamAlias(t[0]);
+      const hay = normText(`${t[0]} | ${t[1] || ""} | ${t[3] || ""} | ${t[4]} | ${t[5]} | ${t[6] || ""} | ${t[6] ? regionName(t[6], t[6]) : ""}`);
       const hayBare = bare(hay);
       return terms.some((term) => {
         if (hay.includes(term) || (term.length >= 2 && hayBare.includes(bare(term)))) return true;
-        const canonTeam = aliases.data?.team[term] || prettySlug(term);
-        return Boolean(canonTeam && canonTeam === u);
+        const canonTeam = aliases.data?.team[term] || resolveTeamAlias(term) || prettySlug(term);
+        return Boolean(canonTeam && (canonTeam === u || (rowCanon && canonTeam === rowCanon)));
       });
     });
   }, [rows, region, since, words, aliases.data]);
@@ -512,7 +513,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
   const aliases = useLoad(loadAliases, []);
   const rawRole = q.get("role") || "";
   const role = ROLE_ALIASES[rawRole.toLowerCase()] || rawRole;
-  const words = q.get("q") || "";
+  const words = q.get("q") || q.get("player") || q.get("team") || "";
   const since = q.get("since") || (words.trim() ? "all" : THIS_YEAR);
   const shown = Number(q.get("n")) || STEP;
   const years = useMemo(() => yearChoices(rows.map((p) => p[4])), [rows]);
@@ -526,14 +527,16 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       if (since !== "all" && (p[4] || "") < since) return false;
       if (!terms.length) return true;
       const u = p[1] || prettySlug(p[0]);
-      const pTeamSlug = p[2] ? aliases.data?.team[p[2].toLowerCase()] || prettySlug(p[2]) : "";
-      const hay = normText(`${p[0]} | ${u} | ${p[2]} | ${p[6]}`);
+      const pRole = ROLE_OF[p[5]] || "";
+      const pTeamSlug = p[2] ? aliases.data?.team[p[2].toLowerCase()] || resolveTeamAlias(p[2]) || prettySlug(p[2]) : "";
+      const hay = normText(`${p[0]} | ${u} | ${p[2]} | ${p[4] || ""} | ${pRole} | ${pRole ? roleName(pRole) : ""} | ${p[6]}`);
       const hayBare = bare(hay);
       return terms.some(
         (term) =>
           hay.includes(term) ||
           resolvePlayerSlug(term) === u ||
-          (pTeamSlug && (aliases.data?.team[term] || prettySlug(term)) === pTeamSlug) ||
+          (pRole && ROLE_ALIASES[term] === pRole) ||
+          (pTeamSlug && (aliases.data?.team[term] || resolveTeamAlias(term) || prettySlug(term)) === pTeamSlug) ||
           (term.length >= 2 && hayBare.includes(bare(term))),
       );
     });

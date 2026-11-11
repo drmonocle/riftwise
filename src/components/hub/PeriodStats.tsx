@@ -7,7 +7,7 @@ import { tl, roleName, fmtDec, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
-import { loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug } from "../../hub/data";
+import { bare, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug } from "../../hub/data";
 import type { PlayerGameRow, TeamGameRow } from "../../hub/types";
 import {
   PeriodKey,
@@ -689,7 +689,13 @@ export const defaultPeriod = (opts: PeriodOption[], preferAll = false, query?: s
   const search = query ?? (typeof window !== "undefined" ? window.location.search : "");
   if (search) {
     const params = new URLSearchParams(search);
-    const p = params.get("p") || (params.get("y") && /^\d{4}$/.test(params.get("y")!) ? `y${params.get("y")}` : null);
+    const rawY = params.get("y") || params.get("year");
+    const rawEv = params.get("event");
+    const rawPatch = params.get("patch");
+    const p =
+      params.get("p") ||
+      params.get("period") ||
+      (rawY && /^\d{4}$/.test(rawY) ? `y${rawY}` : rawEv ? (rawEv.startsWith("e:") ? rawEv : `e:${rawEv}`) : rawPatch ? (rawPatch.startsWith("p:") ? rawPatch : `p:${rawPatch}`) : null);
     if (p && (opts.some((o) => o.key === p) || /^(all|last\d+|y\d{4}|p:.+|e:.+)$/.test(p))) return p;
   }
   if (preferAll) return "all";
@@ -751,11 +757,38 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
   const options = useMemo(() => withRequestedPeriod(baseOptions, period, refs), [baseOptions, period, refs]);
   const [only, setOnly] = useState<GameOnly>("");
+  const [champSearch, setChampSearch] = useState(() => {
+    const q = new URLSearchParams(query ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return q.get("champ") || q.get("q") || "";
+  });
+  useEffect(() => {
+    if (!query) return;
+    const q = new URLSearchParams(query);
+    const c = q.get("champ") || q.get("q");
+    if (c != null) setChampSearch(c);
+  }, [query]);
   const sel = useMemo(
     () => inPeriod(rows, period, playerRowRef).filter((r) => (only === "w" ? r[6] === 1 : only === "l" ? r[6] === 0 : true)),
     [rows, period, only],
   );
   const agg = useMemo(() => playerAgg(sel), [sel]);
+  const filteredChamps = useMemo(() => {
+    const terms = champSearch
+      .trim()
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s.trim()))
+      .filter(Boolean);
+    if (!terms.length) return agg.champs;
+    return agg.champs.filter((c) => {
+      const hay = normText(`${c.c} ${champName(c.c)} ${prettySlug(c.c)}`);
+      return terms.some(
+        (t) =>
+          hay.includes(t) ||
+          (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+          matchesChampSearch(c.c, t),
+      );
+    });
+  }, [agg.champs, champSearch]);
   // the period's average RiftWise rating (src/hub/playerRating.ts), and its best game
   const ratingFile = useRatingFile();
   const rated = useMemo(() => {
@@ -1179,22 +1212,36 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
             )}
           </div>
           {agg.champs.length > 0 && (
-            <div className="flex items-center justify-between gap-2">
-              <Sub>{tl("Champions")}</Sub>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Sub>{tl("Champions")}</Sub>
+                {(agg.champs.length >= 10 || Boolean(champSearch.trim())) && (
+                  <input
+                    type="search"
+                    value={champSearch}
+                    onChange={(e) => setChampSearch(e.target.value)}
+                    placeholder={tl("Search champions…")}
+                    aria-label={tl("Search champions…")}
+                    className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
+                  />
+                )}
+              </div>
               <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
-                <HubLink
-                  to={{
-                    kind: "counters",
-                    query: `champ=${prettySlug(agg.champs[0].c)}${agg.champs[1] ? `&vs=${encodeURIComponent(agg.champs[1].c)}` : ""}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
-                  }}
-                  className="text-rw-accent hover:underline font-semibold"
-                >
-                  {tl("Counters")} →
-                </HubLink>
+                {filteredChamps[0] && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: `champ=${prettySlug(filteredChamps[0].c)}${filteredChamps[1] ? `&vs=${encodeURIComponent(filteredChamps[1].c)}` : ""}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}`,
+                    }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                )}
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(slug)}${agg.champs[0] ? `&champ=${encodeURIComponent(prettySlug(agg.champs[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
+                    query: `player=${encodeURIComponent(slug)}${filteredChamps[0] ? `&champ=${encodeURIComponent(prettySlug(filteredChamps[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1203,7 +1250,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `player=${encodeURIComponent(slug)}${agg.champs.length === 1 ? `&champ=${encodeURIComponent(agg.champs[0].c)}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+                    query: `player=${encodeURIComponent(slug)}${filteredChamps.length === 1 ? `&champ=${encodeURIComponent(filteredChamps[0].c)}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -1212,11 +1259,11 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(agg.roles[0] || agg.champs[0] || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:")
+                    ...(agg.roles[0] || filteredChamps[0] || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:")
                       ? {
                           query: new URLSearchParams({
                             ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
-                            ...(agg.champs[0] ? { q: agg.champs[0].c } : {}),
+                            ...(filteredChamps[0] ? { q: filteredChamps[0].c } : {}),
                             ...(/^y\d{4}$/.test(period)
                               ? { key: period }
                               : period.startsWith("p:")
@@ -1239,7 +1286,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                       stat: "kda",
                       ...(who?.name ? { q: who.name } : {}),
                       ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
-                      ...(agg.champs[0] ? { champ: agg.champs[0].c } : {}),
+                      ...(filteredChamps[0] ? { champ: filteredChamps[0].c } : {}),
                       ...(/^y\d{4}$/.test(period) ? { year: period.slice(1) } : period.startsWith("e:") ? { event: period.slice(2) } : {}),
                     }).toString(),
                   }}
@@ -1272,7 +1319,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                           teams: prettySlug(who.club),
                           ...(period !== "all" ? { p: period } : {}),
                           ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
-                          ...(agg.champs[0] ? { champ: agg.champs[0].c } : {}),
+                          ...(filteredChamps[0] ? { champ: filteredChamps[0].c } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -1295,7 +1342,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                   sub={periodText}
                   name={`${slug}-champions-${period}`}
                   rows={() =>
-                    agg.champs.slice(0, 10).map((c, idx) => ({
+                    filteredChamps.slice(0, 10).map((c, idx) => ({
                       rank: idx + 1,
                       champ: c.c,
                       team: who?.club || undefined,
@@ -1310,7 +1357,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
             </div>
           )}
           <SortTable
-            rows={agg.champs}
+            rows={filteredChamps}
             columns={cols}
             initial={{ key: "g", desc: true }}
             rowKey={(c) => c.c}
