@@ -324,7 +324,11 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                   kind: "items",
                   query: new URLSearchParams({
                     player: pSlug(rows[0].n, rows[0].u),
+                    ...(rows[1] && pSlug(rows[1].n, rows[1].u) !== pSlug(rows[0].n, rows[0].u)
+                      ? { vsplayer: pSlug(rows[1].n, rows[1].u) }
+                      : {}),
                     ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
+                    ...(rows[1]?.t && rows[1].t !== rows[0].t ? { vs: tSlug(rows[1].t, rows[1].tu) } : {}),
                     ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
                     ...(rows[0].c?.[0] ? { champ: resolveChampSlug(rows[0].c[0]) } : {}),
                     ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
@@ -416,9 +420,11 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             to={{
               kind: "finder",
               query: `event=${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}${
-                (search.trim() && rows.length >= 1) || rows.length === 1
+                rows.length >= 1
                   ? `&player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}${
-                      search.trim() && rows[1] && pSlug(rows[1].n, rows[1].u) !== pSlug(rows[0].n, rows[0].u)
+                      rows[0].t ? `&team=${encodeURIComponent(tSlug(rows[0].t, rows[0].tu))}` : ""
+                    }${
+                      rows[1] && pSlug(rows[1].n, rows[1].u) !== pSlug(rows[0].n, rows[0].u)
                         ? `&vsplayer=${encodeURIComponent(pSlug(rows[1].n, rows[1].u))}`
                         : ""
                     }`
@@ -543,8 +549,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 kind: "items",
                 query: new URLSearchParams({
                   player: pSlug(rows[0].n, rows[0].u),
+                  ...(pSlug(rows[1].n, rows[1].u) !== pSlug(rows[0].n, rows[0].u)
+                    ? { vsplayer: pSlug(rows[1].n, rows[1].u) }
+                    : {}),
                   event: e.u,
                   ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
+                  ...(rows[1].t && rows[1].t !== rows[0].t ? { vs: tSlug(rows[1].t, rows[1].tu) } : {}),
                   ...(rows[0].c?.[0] ? { champ: resolveChampSlug(rows[0].c[0]) } : {}),
                   ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
                 }).toString(),
@@ -937,11 +947,13 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
             to={{
               kind: "finder",
               query: `event=${encodeURIComponent(e.u)}${
-                rows.length === 1
-                  ? `&team=${encodeURIComponent(tSlug(rows[0].t, rows[0].u))}`
-                  : pair
-                    ? `&team=${encodeURIComponent(pair[0])}&vs=${encodeURIComponent(pair[1])}`
-                    : ""
+                rows.length >= 1
+                  ? `&team=${encodeURIComponent(tSlug(rows[0].t, rows[0].u))}${
+                      rows[1] && tSlug(rows[1].t, rows[1].u) !== tSlug(rows[0].t, rows[0].u)
+                        ? `&vs=${encodeURIComponent(tSlug(rows[1].t, rows[1].u))}`
+                        : ""
+                    }`
+                  : ""
               }`,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

@@ -488,7 +488,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}${topChampA ? `&champ=${encodeURIComponent(resolveChampSlug(topChampA))}` : ""}${
+                    query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${
                       period && period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period?.startsWith("e:")
@@ -539,7 +539,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
                     kind: "leaders",
                     query: new URLSearchParams({
                       q: `${a.u},${b.u}`,
-                      ...(topChampA ? { champ: resolveChampSlug(topChampA) } : {}),
+                      ...(topChampA || topChampB ? { champ: resolveChampSlug((topChampA || topChampB)!) } : {}),
                       ...(sharedLeague ? { league: sharedLeague } : {}),
                       ...(period && period.startsWith("y") && period.length === 5
                         ? { year: period.slice(1) }
@@ -561,14 +561,14 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
     >
       <div className="flex items-center justify-between gap-2 text-xs font-bold">
         <span className="flex items-center gap-1.5 min-w-0 text-rw-side-a">
-          <HubLink to={{ kind: "team", slug: a.u }} className="shrink-0">
+          <HubLink to={{ kind: "team", slug: a.u, ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="shrink-0">
             <TeamLogo name={a.name} size={18} />
           </HubLink>
-          <TeamLink name={a.name} u={a.u} className="truncate hover:underline" />
+          <TeamLink name={a.name} u={a.u} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} className="truncate hover:underline" />
         </span>
         <span className="flex items-center justify-end gap-1.5 min-w-0 text-rw-side-b text-right">
-          <TeamLink name={b.name} u={b.u} className="truncate hover:underline" />
-          <HubLink to={{ kind: "team", slug: b.u }} className="shrink-0">
+          <TeamLink name={b.name} u={b.u} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} className="truncate hover:underline" />
+          <HubLink to={{ kind: "team", slug: b.u, ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="shrink-0">
             <TeamLogo name={b.name} size={18} />
           </HubLink>
         </span>
@@ -592,7 +592,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
       <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-rw-sub">
         {[a, b].map((t) => (
           <p key={t.u}>
-            <TeamLink name={t.name} u={t.u} className="text-rw-text font-semibold hover:text-rw-accent hover:underline" />{" "}
+            <TeamLink name={t.name} u={t.u} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} className="text-rw-text font-semibold hover:text-rw-accent hover:underline" />{" "}
             <HubLink
               to={{
                 kind: "rankings",
@@ -614,7 +614,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
                 : tl("#{lrank} in {league} · rating {r}", { lrank: t.rating!.lrank, league: t.rating!.league || "–", r: Math.round(liveRating(ratings.data!, t.u, t.rating!.r)) })}
             </HubLink>{" "}
             (
-            <HubLink to={{ kind: "team", slug: t.u, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "team", slug: t.u, tab: "matches", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="hover:text-rw-accent hover:underline">
               <Change v={t.rating!.chg30} /> {tl("in 30 days")}
             </HubLink>
             )
@@ -793,119 +793,127 @@ const KeyStats: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRow[
       },
       "form",
     ],
-    [
-      tl("Last 10 series"),
-      tl("Series won and lost, the last ten"),
-      (x) => {
-        const v = wl(last10(x));
-        return v !== "–" ? (
-          <HubLink to={{ kind: "team", slug: x.team.u, tab: "matches" }} className="hover:text-rw-accent hover:underline">
-            {v}
-          </HubLink>
-        ) : (
-          v
-        );
-      },
-      "form",
-    ],
-  ];
-  const cell = (side: Side, X: ReturnType<typeof teamAgg>, other: Side, c: (typeof cols)[number]) =>
-    (c[3] === "period" && hidden) || (c[3] === "form" && formHidden) ? "?" : c[2](side, X, other);
-  return (
-    <div className="overflow-x-auto bg-rw-panel border border-rw-border rounded-lg px-1 py-1">
-      <table className="w-full text-xs min-w-[34rem]">
-        <thead>
-          <tr className="text-[10px] text-rw-muted">
-            <th className="px-2 py-1 text-left font-normal" />
-            {cols.map((c) => (
-              <th key={c[0]} className="px-2 py-1 text-right font-normal whitespace-nowrap" title={c[1]}>
-                {c[0]}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {[
-            [a, A, b],
-            [b, B, a],
-          ].map(([side, X, other]) => (
-            <tr key={(side as Side).team.u} className="border-t border-rw-border">
-              <td className="px-2 py-1 font-semibold text-rw-text whitespace-nowrap">
-                <span className="inline-flex items-center gap-1.5">
-                  <HubLink to={{ kind: "team", slug: (side as Side).team.u }} className="shrink-0">
-                    <TeamLogo name={(side as Side).team.name} size={16} />
-                  </HubLink>
-                  <TeamLink name={(side as Side).team.name} u={(side as Side).team.u} />
-                </span>
-              </td>
-              {cols.map((c) => (
-                <td key={c[0]} className="px-2 py-1 text-right font-mono tabular-nums text-rw-text whitespace-nowrap">
-                  {cell(side as Side, X as ReturnType<typeof teamAgg>, other as Side, c)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-const ROLE_SHORT: Record<string, string> = { Top: "TOP", Jungle: "JGL", Mid: "MID", Bot: "BOT", Support: "SUP" };
-
-/** 5-role starting lineup quick-compare bar at the top of Match Prep: 1 click to open 1v1 Player Compare for any lane. */
-const RoleQuickCompare: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b, period }) => {
-  const pairs = ROLES.map((r, i) => ({ role: r, pa: a.players[i]?.p, pb: b.players[i]?.p }));
-  if (pairs.filter((x) => x.pa && x.pb).length < 3) return null;
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs">
-      {pairs.map(({ role, pa, pb }) => (
-        <div
-          key={role}
-          className="rounded-lg border border-rw-border bg-rw-surface px-2.5 py-1.5 flex items-center justify-between gap-2 min-w-0"
-        >
-          <span className="flex items-center gap-1.5 min-w-0 flex-1">
-            {pa ? (
-              <>
-                <PlayerPhoto name={pa.name} team={a.team.name} slug={pa.u} img={pa.img} size={22} />
-                <HubLink to={{ kind: "player", slug: pa.u }} className="font-semibold text-rw-side-a truncate hover:underline">
-                  {pa.name}
-                </HubLink>
-              </>
-            ) : (
-              <span className="text-rw-muted">–</span>
-            )}
-          </span>
-          {pa && pb ? (
+      [
+        tl("Last 10 series"),
+        tl("Series won and lost, the last ten"),
+        (x) => {
+          const v = wl(last10(x));
+          return v !== "–" ? (
             <HubLink
-              to={{ kind: "compare", mode: "player", a: pa.u, b: pb.u, period }}
-              title={tl("Compare {a} and {b}", { a: pa.name, b: pb.name })}
-              className="px-1.5 py-0.5 rounded bg-rw-accent/15 border border-rw-accent/30 text-[9px] font-bold uppercase tracking-wider text-rw-accent hover:bg-rw-accent/25 shrink-0"
+              to={{ kind: "team", slug: x.team.u, tab: "matches", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+              className="hover:text-rw-accent hover:underline"
             >
-              {ROLE_SHORT[role] || roleName(role)}
+              {v}
             </HubLink>
           ) : (
-            <span className="text-[9px] font-bold uppercase tracking-wider text-rw-muted shrink-0">
-              {ROLE_SHORT[role] || roleName(role)}
+            v
+          );
+        },
+        "form",
+      ],
+    ];
+    const cell = (side: Side, X: ReturnType<typeof teamAgg>, other: Side, c: (typeof cols)[number]) =>
+      (c[3] === "period" && hidden) || (c[3] === "form" && formHidden) ? "?" : c[2](side, X, other);
+    return (
+      <div className="overflow-x-auto bg-rw-panel border border-rw-border rounded-lg px-1 py-1">
+        <table className="w-full text-xs min-w-[34rem]">
+          <thead>
+            <tr className="text-[10px] text-rw-muted">
+              <th className="px-2 py-1 text-left font-normal" />
+              {cols.map((c) => (
+                <th key={c[0]} className="px-2 py-1 text-right font-normal whitespace-nowrap" title={c[1]}>
+                  {c[0]}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              [a, A, b],
+              [b, B, a],
+            ].map(([side, X, other]) => (
+              <tr key={(side as Side).team.u} className="border-t border-rw-border">
+                <td className="px-2 py-1 font-semibold text-rw-text whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1.5">
+                    <HubLink to={{ kind: "team", slug: (side as Side).team.u, ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="shrink-0">
+                      <TeamLogo name={(side as Side).team.name} size={16} />
+                    </HubLink>
+                    <TeamLink name={(side as Side).team.name} u={(side as Side).team.u} query={period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
+                  </span>
+                </td>
+                {cols.map((c) => (
+                  <td key={c[0]} className="px-2 py-1 text-right font-mono tabular-nums text-rw-text whitespace-nowrap">
+                    {cell(side as Side, X as ReturnType<typeof teamAgg>, other as Side, c)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const ROLE_SHORT: Record<string, string> = { Top: "TOP", Jungle: "JGL", Mid: "MID", Bot: "BOT", Support: "SUP" };
+
+  /** 5-role starting lineup quick-compare bar at the top of Match Prep: 1 click to open 1v1 Player Compare for any lane. */
+  const RoleQuickCompare: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b, period }) => {
+    const pairs = ROLES.map((r, i) => ({ role: r, pa: a.players[i]?.p, pb: b.players[i]?.p }));
+    if (pairs.filter((x) => x.pa && x.pb).length < 3) return null;
+    const pQuery = period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined;
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs">
+        {pairs.map(({ role, pa, pb }) => (
+          <div
+            key={role}
+            className="rounded-lg border border-rw-border bg-rw-surface px-2.5 py-1.5 flex items-center justify-between gap-2 min-w-0"
+          >
+            <span className="flex items-center gap-1.5 min-w-0 flex-1">
+              {pa ? (
+                <>
+                  <HubLink to={{ kind: "player", slug: pa.u, ...(pQuery ? { query: pQuery } : {}) }} className="shrink-0">
+                    <PlayerPhoto name={pa.name} team={a.team.name} slug={pa.u} img={pa.img} size={22} />
+                  </HubLink>
+                  <HubLink to={{ kind: "player", slug: pa.u, ...(pQuery ? { query: pQuery } : {}) }} className="font-semibold text-rw-side-a truncate hover:underline">
+                    {pa.name}
+                  </HubLink>
+                </>
+              ) : (
+                <span className="text-rw-muted">–</span>
+              )}
             </span>
-          )}
-          <span className="flex items-center justify-end gap-1.5 min-w-0 flex-1">
-            {pb ? (
-              <>
-                <HubLink to={{ kind: "player", slug: pb.u }} className="font-semibold text-rw-side-b truncate text-right hover:underline">
-                  {pb.name}
-                </HubLink>
-                <PlayerPhoto name={pb.name} team={b.team.name} slug={pb.u} img={pb.img} size={22} />
-              </>
+            {pa && pb ? (
+              <HubLink
+                to={{ kind: "compare", mode: "player", a: pa.u, b: pb.u, period }}
+                title={tl("Compare {a} and {b}", { a: pa.name, b: pb.name })}
+                className="px-1.5 py-0.5 rounded bg-rw-accent/15 border border-rw-accent/30 text-[9px] font-bold uppercase tracking-wider text-rw-accent hover:bg-rw-accent/25 shrink-0"
+              >
+                {ROLE_SHORT[role] || roleName(role)}
+              </HubLink>
             ) : (
-              <span className="text-rw-muted">–</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-rw-muted shrink-0">
+                {ROLE_SHORT[role] || roleName(role)}
+              </span>
             )}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
+            <span className="flex items-center justify-end gap-1.5 min-w-0 flex-1">
+              {pb ? (
+                <>
+                  <HubLink to={{ kind: "player", slug: pb.u, ...(pQuery ? { query: pQuery } : {}) }} className="font-semibold text-rw-side-b truncate text-right hover:underline">
+                    {pb.name}
+                  </HubLink>
+                  <HubLink to={{ kind: "player", slug: pb.u, ...(pQuery ? { query: pQuery } : {}) }} className="shrink-0">
+                    <PlayerPhoto name={pb.name} team={b.team.name} slug={pb.u} img={pb.img} size={22} />
+                  </HubLink>
+                </>
+              ) : (
+                <span className="text-rw-muted">–</span>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
 /**
  * Calculated: numbers worked out from the period's games, each with its formula and how many games it rests on.
@@ -1569,7 +1577,7 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
             to={{
               kind: "finder",
               query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                a.team.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(a.team.champs[0].c))}` : ""
+                a.team.champs[0]?.c || b.team.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!))}` : ""
               }${
                 period.startsWith("y") && period.length === 5
                   ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -2044,7 +2052,7 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
               to={{
                 kind: "finder",
                 query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                  topChampA ? `&champ=${encodeURIComponent(resolveChampSlug(topChampA))}` : ""
+                  topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""
                 }${
                   period && period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -2219,14 +2227,14 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
               // the ten squares stay together: one line beside the name in a side column, their own line on a phone
               <div key={s.team.u} className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
                 <span className="w-28 flex items-center gap-1.5 min-w-0 font-semibold text-rw-text" title={s.team.name}>
-                  <HubLink to={{ kind: "team", slug: s.team.u }} className="shrink-0">
+                  <HubLink to={{ kind: "team", slug: s.team.u, ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="shrink-0">
                     <TeamLogo name={s.team.name} size={15} />
                   </HubLink>
-                  <TeamLink name={s.team.name} u={s.team.u} className="truncate hover:text-rw-accent hover:underline" />
+                  <TeamLink name={s.team.name} u={s.team.u} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} className="truncate hover:text-rw-accent hover:underline" />
                 </span>
                 <span className="inline-flex items-center gap-1 w-20 tabular-nums shrink-0">
                   <HubLink
-                    to={{ kind: "team", slug: s.team.u, tab: "matches" }}
+                    to={{ kind: "team", slug: s.team.u, tab: "matches", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {w}-{rows.length - w}
@@ -2329,9 +2337,11 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
     ) : (
       <div className={`min-w-0 space-y-1 ${right ? "text-right" : ""}`}>
         <div className={`text-[11px] flex flex-wrap items-center gap-1.5 ${right ? "justify-end" : ""} ${x.deep === minDeep ? "text-rw-red font-bold" : "text-rw-sub"}`}>
-          <PlayerPhoto name={x.name} team={teamName} slug={x.slug ?? undefined} img={x.img} size={16} />
+          <HubLink to={{ kind: "player", slug: x.slug, ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="shrink-0">
+            <PlayerPhoto name={x.name} team={teamName} slug={x.slug ?? undefined} img={x.img} size={16} />
+          </HubLink>
           <span>
-            <PlayerLink name={x.name} u={x.slug} /> ·{" "}
+            <PlayerLink name={x.name} u={x.slug} query={period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} /> ·{" "}
             {x.slug ? (
               <HubLink
                 to={{
@@ -2475,7 +2485,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
             to={{
               kind: "finder",
               query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                a.team.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(a.team.champs[0].c))}` : ""
+                a.team.champs[0]?.c || b.team.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!))}` : ""
               }${
                 period.startsWith("y") && period.length === 5
                   ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -2677,7 +2687,10 @@ const Lanes: React.FC<{
     const name = (pl: Side["players"][number], side: Side, onSwap: ((roleIdx: number, slug: string) => void) | undefined, right: boolean) =>
       pl ? (
         <span className={`flex items-center gap-1.5 min-w-0 ${right ? "" : "flex-row-reverse"}`}>
-          <HubLink to={{ kind: "player", slug: pl.p.u }} className={`text-sm font-bold text-rw-text hover:underline truncate ${right ? "" : "text-right"}`}>
+          <HubLink
+            to={{ kind: "player", slug: pl.p.u, ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+            className={`text-sm font-bold text-rw-text hover:underline truncate ${right ? "" : "text-right"}`}
+          >
             {pl.p.name}
           </HubLink>
           <PhotosLink q={pl.p.name} iconOnly className="text-rw-muted hover:text-rw-accent shrink-0" />
@@ -2733,7 +2746,7 @@ const Lanes: React.FC<{
               <HubLink
                 to={{
                   kind: "items",
-                  query: `player=${encodeURIComponent(pa.p.u)}&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&role=${encodeURIComponent(r)}${sa?.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(sa.champs[0].c))}` : ""}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+                  query: `player=${encodeURIComponent(pa.p.u)}${pb.p.u !== pa.p.u ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : ""}&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&role=${encodeURIComponent(r)}${sa?.champs[0]?.c || sb?.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug((sa?.champs[0]?.c || sb?.champs[0]?.c)!))}` : ""}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
               >
@@ -2761,7 +2774,7 @@ const Lanes: React.FC<{
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `player=${encodeURIComponent(pa.p.u)}${h2h && h2h.g > 0 ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : `&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}`}&role=${encodeURIComponent(r)}${sa?.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(sa.champs[0].c))}` : ""}${
+                  query: `player=${encodeURIComponent(pa.p.u)}${h2h && h2h.g > 0 ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : `&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}`}&role=${encodeURIComponent(r)}${sa?.champs[0]?.c || sb?.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug((sa?.champs[0]?.c || sb?.champs[0]?.c)!))}` : ""}${
                     period.startsWith("y") && period.length === 5
                       ? `&year=${encodeURIComponent(period.slice(1))}`
                       : period.startsWith("e:")
@@ -2841,14 +2854,14 @@ const Lanes: React.FC<{
         }
         left={
           pa ? (
-            <HubLink to={{ kind: "player", slug: pa.p.u }} className="shrink-0">
+            <HubLink to={{ kind: "player", slug: pa.p.u, ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="shrink-0">
               <PlayerPhoto name={pa.p.name} team={a.team.name} slug={pa.p.u} img={pa.p.img} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" />
             </HubLink>
           ) : null
         }
         right={
           pb ? (
-            <HubLink to={{ kind: "player", slug: pb.p.u }} className="shrink-0">
+            <HubLink to={{ kind: "player", slug: pb.p.u, ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="shrink-0">
               <PlayerPhoto name={pb.p.name} team={b.team.name} slug={pb.p.u} img={pb.p.img} sizeClass="w-16 h-16 @min-[44rem]:w-24 @min-[44rem]:h-24 @min-[60rem]:w-32 @min-[60rem]:h-32" />
             </HubLink>
           ) : null
@@ -3095,7 +3108,7 @@ const Lanes: React.FC<{
             to={{
               kind: "finder",
               query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${
-                a.team.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(a.team.champs[0].c))}` : ""
+                a.team.champs[0]?.c || b.team.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug((a.team.champs[0]?.c || b.team.champs[0]?.c)!))}` : ""
               }${
                 period.startsWith("y") && period.length === 5
                   ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -3358,7 +3371,14 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
           className="inline-flex items-center gap-1 rounded border border-rw-border bg-rw-bg px-1.5 py-0.5 text-[11px]"
           title={x.why}
         >
-          <HubLink to={{ kind: "champ", slug: resolveChampSlug(x.c) }} className="inline-flex items-center gap-1 hover:text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "champ",
+              slug: resolveChampSlug(x.c),
+              ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="inline-flex items-center gap-1 hover:text-rw-accent hover:underline"
+          >
             <ChampIcon name={x.c} size={18} />
             <span className="font-medium text-rw-text">{champName(x.c)}</span>
           </HubLink>
@@ -3603,10 +3623,10 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
       <div className="grid gap-3 md:grid-cols-2 text-xs">
         <div className="space-y-2 min-w-0">
           <div className="font-bold text-rw-side-a flex items-center gap-1.5 min-w-0">
-            <HubLink to={{ kind: "team", slug: a.team.u }} className="shrink-0">
+            <HubLink to={{ kind: "team", slug: a.team.u, ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="shrink-0">
               <TeamLogo name={a.team.name} size={16} />
             </HubLink>
-            <TeamLink name={a.team.name} u={a.team.u} className="truncate hover:underline" />
+            <TeamLink name={a.team.name} u={a.team.u} query={period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} className="truncate hover:underline" />
           </div>
           <div className="space-y-1">
             <div className="text-[10px] font-semibold text-rw-muted">
@@ -3623,10 +3643,10 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
         </div>
         <div className="space-y-2 min-w-0">
           <div className="font-bold text-rw-side-b flex items-center gap-1.5 min-w-0">
-            <HubLink to={{ kind: "team", slug: b.team.u }} className="shrink-0">
+            <HubLink to={{ kind: "team", slug: b.team.u, ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }} className="shrink-0">
               <TeamLogo name={b.team.name} size={16} />
             </HubLink>
-            <TeamLink name={b.team.name} u={b.team.u} className="truncate hover:underline" />
+            <TeamLink name={b.team.name} u={b.team.u} query={period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} className="truncate hover:underline" />
           </div>
           <div className="space-y-1">
             <div className="text-[10px] font-semibold text-rw-muted">
