@@ -273,14 +273,18 @@ export const RosterMoves: React.FC = () => {
       <ul className="text-xs @min-[64rem]:columns-2 gap-x-10">
         {list.slice(0, shown).map((m) => {
           const myr = m.d && /^\d{4}/.test(m.d) ? m.d.slice(0, 4) : "";
+          const pQ = myr ? `p=y${encodeURIComponent(myr)}` : undefined;
+          const pSlug = resolvePlayerSlug(m.u || m.n) || m.u;
+          const fromSlug = resolveTeamAlias(m.from.u || m.from.n) || m.from.u;
+          const toSlug = resolveTeamAlias(m.to.u || m.to.n) || m.to.u;
           return (
           <li key={`${m.u}-${m.d}`} className="py-1.5 border-b border-rw-border break-inside-avoid flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
             <HubLink
               to={{
                 kind: "finder",
                 query: new URLSearchParams({
-                  player: m.u,
-                  team: m.to.u,
+                  player: pSlug,
+                  team: toSlug,
                   ...(m.r ? { role: normalizeRole(m.r) || m.r } : {}),
                   ...(myr ? { year: myr } : {}),
                   ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
@@ -292,11 +296,11 @@ export const RosterMoves: React.FC = () => {
               {fmtDate(m.d, false)}
             </HubLink>
             <span className="inline-flex items-center gap-1.5 min-w-0">
-              <PlayerPhoto name={m.n} team={m.to.n} slug={m.u} size={18} />
-              <PlayerLink name={m.n} u={m.u} className="font-semibold text-rw-text hover:text-rw-accent" />
+              <PlayerPhoto name={m.n} team={m.to.n} slug={pSlug} size={18} />
+              <PlayerLink name={m.n} u={pSlug} query={pQ} className="font-semibold text-rw-text hover:text-rw-accent" />
               {m.r && (
                 <HubLink
-                  to={{ kind: "player", slug: m.u, tab: "stats", ...(myr ? { query: `p=y${encodeURIComponent(myr)}` } : {}) }}
+                  to={{ kind: "player", slug: pSlug, tab: "stats", ...(pQ ? { query: pQ } : {}) }}
                   className="text-rw-muted hover:text-rw-accent hover:underline"
                 >
                   · {roleName(m.r)}
@@ -305,23 +309,23 @@ export const RosterMoves: React.FC = () => {
             </span>
             <span className="flex items-center gap-1.5 min-w-0 text-rw-sub">
               <span className="inline-flex items-center gap-1 min-w-0">
-                <HubLink to={{ kind: "team", slug: m.from.u, ...(myr ? { query: `p=y${encodeURIComponent(myr)}` } : {}) }} className="shrink-0">
+                <HubLink to={{ kind: "team", slug: fromSlug, ...(pQ ? { query: pQ } : {}) }} className="shrink-0">
                   <TeamLogo name={m.from.n} sizeClass="w-3.5 h-3.5" />
                 </HubLink>
-                <TeamLink name={m.from.n} u={m.from.u} className="hover:text-rw-accent truncate" />
+                <TeamLink name={m.from.n} u={fromSlug} query={pQ} className="hover:text-rw-accent truncate" />
               </span>
               <HubLink
-                to={{ kind: "compare", mode: "team", a: m.from.u, b: m.to.u, ...(myr ? { period: `y${myr}` } : {}) }}
+                to={{ kind: "compare", mode: "team", a: fromSlug, b: toSlug, ...(myr ? { period: `y${myr}` } : {}) }}
                 className="text-rw-accent hover:opacity-80 shrink-0"
                 title={tl("Compare")}
               >
                 <ArrowRight className="w-3 h-3" />
               </HubLink>
               <span className="inline-flex items-center gap-1 min-w-0">
-                <HubLink to={{ kind: "team", slug: m.to.u, ...(myr ? { query: `p=y${encodeURIComponent(myr)}` } : {}) }} className="shrink-0">
+                <HubLink to={{ kind: "team", slug: toSlug, ...(pQ ? { query: pQ } : {}) }} className="shrink-0">
                   <TeamLogo name={m.to.n} sizeClass="w-3.5 h-3.5" />
                 </HubLink>
-                <TeamLink name={m.to.n} u={m.to.u} className="text-rw-text hover:text-rw-accent truncate" />
+                <TeamLink name={m.to.n} u={toSlug} query={pQ} className="text-rw-text hover:text-rw-accent truncate" />
               </span>
             </span>
             {m.lu && name.get(m.lu) && (
@@ -331,7 +335,7 @@ export const RosterMoves: React.FC = () => {
             )}
             <span className="ml-auto hidden sm:inline-flex items-center gap-1.5 text-[10px]">
               <HubLink
-                to={{ kind: "prep", a: m.to.u, b: m.from.u, ...(myr ? { period: `y${myr}` } : {}) }}
+                to={{ kind: "prep", a: toSlug, b: fromSlug, ...(myr ? { period: `y${myr}` } : {}) }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tl("Match prep")}
@@ -339,7 +343,7 @@ export const RosterMoves: React.FC = () => {
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(m.to.u)},${encodeURIComponent(m.from.u)}${myr ? `&p=y${encodeURIComponent(myr)}` : ""}`,
+                  query: `teams=${encodeURIComponent(toSlug)},${encodeURIComponent(fromSlug)}${pQ ? `&${pQ}` : ""}`,
                 }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
@@ -349,8 +353,8 @@ export const RosterMoves: React.FC = () => {
                 to={{
                   kind: "items",
                   query: new URLSearchParams({
-                    player: m.u,
-                    team: m.to.u,
+                    player: pSlug,
+                    team: toSlug,
                     ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
                     ...(myr ? { year: myr } : {}),
                     ...(m.r ? { role: normalizeRole(m.r) || m.r } : {}),
@@ -367,7 +371,7 @@ export const RosterMoves: React.FC = () => {
                     ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
                     ...(myr ? { year: myr } : {}),
                     ...(m.r ? { role: normalizeRole(m.r) || m.r } : {}),
-                    q: m.u,
+                    q: pSlug,
                   }).toString(),
                 }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"

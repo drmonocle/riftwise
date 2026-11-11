@@ -136,7 +136,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
   const bracket = (ev.stages || []).filter((s) => s.kind === "bracket");
   const lists = (ev.stages || []).filter((s) => s.kind === "list");
   const listDone = lists.every((s) => s.series.every((r) => !hide(r)));
-  const lgSlug = ev.lu ? resolveLeagueSlug(ev.lu) || ev.lu : which.event === "Worlds" ? "worlds" : which.event === "MSI" ? "msi" : "first-stand";
+  const lgSlug = resolveLeagueSlug(ev.lu || which.event);
   const topSlugs = (() => {
     if (ev.standings?.[0]?.rows?.length) {
       return ev.standings[0].rows
@@ -304,7 +304,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
       )}
       {/* a wide window: the bracket and the standings side by side */}
       <div className={`grid gap-3 items-start ${bracket.length > 0 && ev.standings?.length ? "3xl:grid-cols-2" : ""}`}>
-      {bracket.length > 0 && <Bracket stages={bracket} hide={hide} note={note} />}
+      {bracket.length > 0 && <Bracket stages={bracket} hide={hide} note={note} eventSlug={ev.u} leagueSlug={lgSlug} />}
       {ev.standings && ev.standings.length > 0 && (
         <div className={`grid gap-3 ${ev.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
           {ev.standings.map((t, i) => (
@@ -313,6 +313,9 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
               name={t.name === "Standings" ? tl("Standings") : tl("Group {name}", { name: t.name.replace(/^Group /, "") })}
               rows={t.rows}
               hideAll={!showAll && !airing.streamDone && !listDone}
+              eventSlug={ev.u}
+              leagueSlug={lgSlug}
+              year={which.year}
             />
           ))}
         </div>
@@ -323,7 +326,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           <div className="text-[10px] font-semibold text-rw-muted">{stageLabel(st.name)}</div>
           <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4">
             {st.series.map((r, i) => (
-              <SeriesBox key={i} r={r} hideResult={hide(r)} note={note(r)} />
+              <SeriesBox key={i} r={r} hideResult={hide(r)} note={note(r)} eventSlug={ev.u} leagueSlug={lgSlug} />
             ))}
           </div>
         </div>

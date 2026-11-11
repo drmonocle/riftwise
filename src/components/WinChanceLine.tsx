@@ -24,7 +24,7 @@ export const WinChanceLine: React.FC<{ match: Match }> = ({ match }) => {
     <button
       type="button"
       onClick={() => {
-        const lg = r?.a?.world == null && r?.b?.world == null && match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+        const lg = r?.a?.world == null && r?.b?.world == null && (match.leagueSlug || match.leagueName) ? resolveLeagueSlug(match.leagueSlug || match.leagueName) : "";
         const q = new URLSearchParams({
           ...(lg ? { league: lg } : {}),
           q: `${teamSlug(match.team1Name, match.team1Code)},${teamSlug(match.team2Name, match.team2Code)}`,
@@ -80,7 +80,7 @@ export const TeamRatingSub: React.FC<{ match: Match; side: "a" | "b"; align?: "l
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              const lg = s.world == null && match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const lg = s.world == null && (match.leagueSlug || match.leagueName) ? resolveLeagueSlug(match.leagueSlug || match.leagueName) : "";
               const tSlug = side === "a" ? teamSlug(match.team1Name, match.team1Code) : teamSlug(match.team2Name, match.team2Code);
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),

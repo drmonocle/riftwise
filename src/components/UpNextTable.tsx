@@ -55,7 +55,8 @@ export const UpNextTable: React.FC<{
         <button
           type="button"
           onClick={() => {
-            const yr = matches[0]?.startTimeUtc?.slice(0, 4);
+            const rawYr = matches[0]?.startTimeUtc?.slice(0, 4);
+            const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
             return matches[0]
               ? navigateHub({
                   kind: "prep",
@@ -74,7 +75,8 @@ export const UpNextTable: React.FC<{
             <button
               type="button"
               onClick={() => {
-                const yr = matches[0].startTimeUtc?.slice(0, 4);
+                const rawYr = matches[0].startTimeUtc?.slice(0, 4);
+                const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
                 navigateHub({
                   kind: "draft",
                   query: `teams=${encodeURIComponent(teamSlug(matches[0].team1Name, matches[0].team1Code))},${encodeURIComponent(teamSlug(matches[0].team2Name, matches[0].team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
@@ -87,7 +89,8 @@ export const UpNextTable: React.FC<{
             <button
               type="button"
               onClick={() => {
-                const yr = matches[0].startTimeUtc?.slice(0, 4);
+                const rawYr = matches[0].startTimeUtc?.slice(0, 4);
+                const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
                 navigateHub({
                   kind: "compare",
                   mode: "team",
@@ -105,7 +108,7 @@ export const UpNextTable: React.FC<{
         <button
           type="button"
           onClick={() => {
-            const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
+            const lg = matches[0] ? resolveLeagueSlug(matches[0].leagueSlug || matches[0].leagueName) : "";
             const q = new URLSearchParams({
               ...(lg ? { league: lg } : {}),
               ...(matches[0]
@@ -123,8 +126,9 @@ export const UpNextTable: React.FC<{
         <button
           type="button"
           onClick={() => {
-            const yr = matches[0]?.startTimeUtc?.slice(0, 4);
-            const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
+            const rawYr = matches[0]?.startTimeUtc?.slice(0, 4);
+            const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+            const lg = matches[0] ? resolveLeagueSlug(matches[0].leagueSlug || matches[0].leagueName) : "";
             const q = new URLSearchParams({
               ...(lg ? { scope: lg, league: lg } : {}),
               ...(yr ? { key: `y${yr}` } : {}),
@@ -138,8 +142,9 @@ export const UpNextTable: React.FC<{
         <button
           type="button"
           onClick={() => {
-            const yr = matches[0]?.startTimeUtc?.slice(0, 4);
-            const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
+            const rawYr = matches[0]?.startTimeUtc?.slice(0, 4);
+            const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+            const lg = matches[0] ? resolveLeagueSlug(matches[0].leagueSlug || matches[0].leagueName) : "";
             const q = new URLSearchParams({
               ...(lg ? { league: lg } : {}),
               ...(yr ? { year: yr } : {}),
@@ -158,8 +163,9 @@ export const UpNextTable: React.FC<{
         <button
           type="button"
           onClick={() => {
-            const yr = matches[0]?.startTimeUtc?.slice(0, 4);
-            const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
+            const rawYr = matches[0]?.startTimeUtc?.slice(0, 4);
+            const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+            const lg = matches[0] ? resolveLeagueSlug(matches[0].leagueSlug || matches[0].leagueName) : "";
             const q = matches[0]
               ? new URLSearchParams({
                   team: teamSlug(matches[0].team1Name, matches[0].team1Code),
@@ -246,8 +252,9 @@ const UpNextRow: React.FC<{
           onSelectTeam(code, name);
           return;
         }
-        const yr = m.startTimeUtc?.slice(0, 4);
-        navigateHub({ kind: "team", slug: teamSlug(name, code), ...(yr ? { query: `p=y${yr}` } : {}) });
+        const rawYr = m.startTimeUtc?.slice(0, 4);
+        const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+        navigateHub({ kind: "team", slug: teamSlug(name, code), ...(yr ? { query: `p=y${encodeURIComponent(yr)}` } : {}) });
       }}
       className="w-5 h-5 shrink-0 inline-flex items-center justify-center rounded hover:ring-1 hover:ring-rw-accent transition-all"
       title={tl("View {team} roster", { team: name })}
@@ -260,7 +267,11 @@ const UpNextRow: React.FC<{
       <span className="flex flex-col min-w-0 @max-[900px]:flex-1">
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) })}
+          onClick={() => {
+            const rawYr = m.startTimeUtc?.slice(0, 4);
+            const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+            navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) });
+          }}
           className="font-bold text-rw-accent hover:underline text-[11px] truncate text-left"
           title={m.leagueName}
         >
@@ -269,7 +280,8 @@ const UpNextRow: React.FC<{
         <button
           type="button"
           onClick={() => {
-            const yr = m.startTimeUtc?.slice(0, 4);
+            const rawYr = m.startTimeUtc?.slice(0, 4);
+            const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
             navigateHub({
               kind: "prep",
               a: teamSlug(m.team1Name, m.team1Code),
@@ -289,7 +301,8 @@ const UpNextRow: React.FC<{
         <button
           type="button"
           onClick={() => {
-            const yr = m.startTimeUtc?.slice(0, 4);
+            const rawYr = m.startTimeUtc?.slice(0, 4);
+            const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
             navigateHub({
               kind: "compare",
               mode: "team",
@@ -313,7 +326,8 @@ const UpNextRow: React.FC<{
             <button
               type="button"
               onClick={() => {
-                const yr = m.startTimeUtc?.slice(0, 4);
+                const rawYr = m.startTimeUtc?.slice(0, 4);
+                const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
                 navigateHub({
                   kind: "compare",
                   mode: "team",
@@ -350,7 +364,8 @@ const UpNextRow: React.FC<{
       <button
         type="button"
         onClick={() => {
-          const yr = m.startTimeUtc?.slice(0, 4);
+          const rawYr = m.startTimeUtc?.slice(0, 4);
+          const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
           navigateHub({
             kind: "prep",
             a: teamSlug(m.team1Name, m.team1Code),
@@ -382,7 +397,8 @@ const ChanceCell: React.FC<{ m: Match }> = ({ m }) => {
     <button
       type="button"
       onClick={() => {
-        const yr = m.startTimeUtc?.slice(0, 4);
+        const rawYr = m.startTimeUtc?.slice(0, 4);
+        const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
         navigateHub({
           kind: "prep",
           a: teamSlug(m.team1Name, m.team1Code),
@@ -425,8 +441,9 @@ const FormCell: React.FC<{ m: Match; schedule: Match[]; hidden: boolean }> = ({ 
     <button
       type="button"
       onClick={() => {
-        const yr = m.startTimeUtc?.slice(0, 4);
-        navigateHub({ kind: "team", slug: teamSlug(name, code), tab: "matches", ...(yr ? { query: `p=y${yr}` } : {}) });
+        const rawYr = m.startTimeUtc?.slice(0, 4);
+        const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+        navigateHub({ kind: "team", slug: teamSlug(name, code), tab: "matches", ...(yr ? { query: `p=y${encodeURIComponent(yr)}` } : {}) });
       }}
       className="flex gap-px hover:opacity-80"
       title={`${code}: ${f.join(" ")}`}

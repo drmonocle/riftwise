@@ -850,8 +850,8 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                           to={{
                             kind: "tiers",
                             query: new URLSearchParams({
-                              ...(e.lu ? { league: e.lu } : {}),
-                              ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                              ...(e.lu ? { scope: e.lu, league: e.lu } : {}),
+                              ...(e.start || e.end ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) } : {}),
                               event: e.u,
                             }).toString() || undefined,
                           }}
@@ -892,10 +892,10 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                     <tr key={t.t} className="border-t border-rw-border">
                       <td className={`${td} max-w-[12rem]`} data-sort={t.t}>
                         <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
-                          <HubLink to={{ kind: "team", slug: tSlug(t.t, t.u) }} title={t.t} className="shrink-0">
+                          <HubLink to={{ kind: "team", slug: tSlug(t.t, t.u), query: `p=e:${encodeURIComponent(e.u)}` }} title={t.t} className="shrink-0">
                             <TeamLogo name={t.t} size={16} />
                           </HubLink>
-                          <TeamLink name={t.t} u={t.u} className="truncate" />
+                          <TeamLink name={t.t} u={t.u} query={`p=e:${encodeURIComponent(e.u)}`} className="truncate" />
                         </span>
                       </td>
                       <td className={`${td} text-rw-sub`} data-sort={t.sg ? t.sw / t.sg : 0}>
@@ -949,19 +949,22 @@ const pSlug = (name: string, u?: string | null) => u || resolvePlayerSlug(name) 
 /** One series as two team lines with scores; links to its match page. */
 const seriesKey = (r: SeriesRow) => `series:${r.g || r.a + r.b + r.date}`;
 
-export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: React.ReactNode; compact?: boolean }> = ({ r, hideResult, note, compact }) => {
+export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: React.ReactNode; compact?: boolean; eventSlug?: string; leagueSlug?: string | null }> = ({ r, hideResult, note, compact, eventSlug, leagueSlug }) => {
   const [hiddenBySpoiler, reveal] = useHidden(seriesKey(r), r.date);
   const hidden = hideResult || hiddenBySpoiler;
   const played = r.sa != null && r.sb != null;
   const au = r.a ? tSlug(r.a, r.au) : "";
   const bu = r.b ? tSlug(r.b, r.bu) : "";
+  const sYr = /^\d{4}$/.test((r.date || "").slice(0, 4)) ? (r.date || "").slice(0, 4) : "";
+  const sPeriod = eventSlug ? `e:${eventSlug}` : sYr ? `y${sYr}` : undefined;
+  const sPeriodQ = sPeriod ? `p=${encodeURIComponent(sPeriod)}` : undefined;
   const line = (name: string, u: string | null, score: number | null, won: boolean) => (
     <div className="flex items-center justify-between gap-2 min-w-0">
       <span className={`inline-flex items-center gap-1.5 truncate min-w-0 ${!hidden && won ? "text-rw-text font-bold" : "text-rw-sub"}`}>
-        <HubLink to={{ kind: "team", slug: tSlug(name, u) }} title={name} className="shrink-0">
+        <HubLink to={{ kind: "team", slug: tSlug(name, u), ...(sPeriodQ ? { query: sPeriodQ } : {}) }} title={name} className="shrink-0">
           <TeamLogo name={name} size={14} />
         </HubLink>
-        <TeamLink name={name} u={u} className={`truncate ${!hidden && won ? "text-rw-text font-bold hover:underline" : "text-rw-sub hover:text-rw-text hover:underline"}`} />
+        <TeamLink name={name} u={u} query={sPeriodQ} className={`truncate ${!hidden && won ? "text-rw-text font-bold hover:underline" : "text-rw-sub hover:text-rw-text hover:underline"}`} />
       </span>
       <span className={`tabular-nums font-bold shrink-0 ${!hidden && won ? "text-rw-teal" : "text-rw-muted"}`}>
         {played ? (
@@ -1003,7 +1006,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
                   kind: "prep",
                   a: au,
                   b: bu,
-                  period: /^\d{4}$/.test((r.date || "").slice(0, 4)) ? `y${(r.date || "").slice(0, 4)}` : undefined,
+                  period: sPeriod,
                 }}
                 className="hidden sm:inline hover:text-rw-accent hover:underline"
                 title={tl("Match prep")}
@@ -1016,7 +1019,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
                   mode: "team",
                   a: au,
                   b: bu,
-                  period: /^\d{4}$/.test((r.date || "").slice(0, 4)) ? `y${(r.date || "").slice(0, 4)}` : undefined,
+                  period: sPeriod,
                 }}
                 className="hover:text-rw-accent hover:underline"
                 title={tl("Compare")}
@@ -1026,7 +1029,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(au)},${encodeURIComponent(bu)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
+                  query: `teams=${encodeURIComponent(au)},${encodeURIComponent(bu)}${sPeriodQ ? `&${sPeriodQ}` : ""}`,
                 }}
                 className="hidden sm:inline hover:text-rw-accent hover:underline"
                 title={tl("Draft board")}
@@ -1036,7 +1039,13 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(au)}&vs=${encodeURIComponent(bu)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
+                  query: new URLSearchParams({
+                    team: au,
+                    vs: bu,
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                    ...(leagueSlug ? { league: leagueSlug } : {}),
+                    ...(sYr ? { year: sYr } : {}),
+                  }).toString(),
                 }}
                 className="hidden sm:inline hover:text-rw-accent hover:underline"
                 title={tl("Game finder")}
@@ -1064,7 +1073,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               {tl("Details")}
             </HubLink>
           ) : !played && au && bu ? (
-            <HubLink to={{ kind: "prep", a: au, b: bu }} className="text-rw-accent hover:underline">
+            <HubLink to={{ kind: "prep", a: au, b: bu, period: sPeriod }} className="text-rw-accent hover:underline">
               {tl("Match prep")}
             </HubLink>
           ) : null}
@@ -1182,7 +1191,7 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
         key: `${st.name}-${i}`,
         teams: [r.a, r.b],
         winner: shown ? (r.w === 1 ? r.a : r.w === 2 ? r.b : null) : null,
-        node: <SeriesBox r={r} hideResult={hide?.(r)} note={note?.(r)} compact />,
+        node: <SeriesBox r={r} hideResult={hide?.(r)} note={note?.(r)} compact eventSlug={eventSlug} leagueSlug={leagueSlug} />,
       };
     }),
   }));
@@ -1262,8 +1271,8 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
                   kind: "tiers",
                   query:
                     new URLSearchParams({
-                      ...(leagueSlug ? { league: leagueSlug } : {}),
-                      ...(/^\d{4}$/.test((finalS?.date || "").slice(0, 4)) ? { year: (finalS?.date || "").slice(0, 4) } : {}),
+                      ...(leagueSlug ? { scope: leagueSlug, league: leagueSlug } : {}),
+                      ...(/^\d{4}$/.test((finalS?.date || "").slice(0, 4)) ? { key: `y${(finalS?.date || "").slice(0, 4)}`, year: (finalS?.date || "").slice(0, 4) } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                     }).toString() || undefined,
                 }}
@@ -1449,8 +1458,8 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
                   kind: "tiers",
                   query:
                     new URLSearchParams({
-                      ...(leagueSlug ? { league: leagueSlug } : {}),
-                      ...(/^\d{4}$/.test((shown[0].date || "").slice(0, 4)) ? { year: (shown[0].date || "").slice(0, 4) } : {}),
+                      ...(leagueSlug ? { scope: leagueSlug, league: leagueSlug } : {}),
+                      ...(/^\d{4}$/.test((shown[0].date || "").slice(0, 4)) ? { key: `y${(shown[0].date || "").slice(0, 4)}`, year: (shown[0].date || "").slice(0, 4) } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                     }).toString() || undefined,
                 }}
@@ -1536,7 +1545,7 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
       )}
       <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((r, k) => (
-          <SeriesBox key={k} r={r} />
+          <SeriesBox key={k} r={r} eventSlug={eventSlug} leagueSlug={leagueSlug} />
         ))}
       </div>
     </Section>
@@ -1634,8 +1643,8 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
               to={{
                 kind: "tiers",
                 query: new URLSearchParams({
-                  ...(leagueSlug ? { league: leagueSlug } : {}),
-                  ...(yr ? { year: yr } : {}),
+                  ...(leagueSlug ? { scope: leagueSlug, league: leagueSlug } : {}),
+                  ...(yr ? { key: `y${yr}`, year: yr } : {}),
                   ...(eventSlug ? { event: eventSlug } : {}),
                 }).toString() || undefined,
               }}
@@ -1705,10 +1714,23 @@ export const Standings: React.FC<{ name: string; rows: StandingRow[]; end?: stri
               </td>
               <td className={`${td} max-w-[11rem]`} data-sort={r.t}>
                 <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
-                  <HubLink to={{ kind: "team", slug: tSlug(r.t, r.u) }} title={r.t} className="shrink-0">
+                  <HubLink
+                    to={{
+                      kind: "team",
+                      slug: tSlug(r.t, r.u),
+                      ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : yr ? { query: `p=y${encodeURIComponent(yr)}` } : {}),
+                    }}
+                    title={r.t}
+                    className="shrink-0"
+                  >
                     <TeamLogo name={r.t} size={16} />
                   </HubLink>
-                  <TeamLink name={r.t} u={r.u} className="truncate" />
+                  <TeamLink
+                    name={r.t}
+                    u={r.u}
+                    query={eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : yr ? `p=y${encodeURIComponent(yr)}` : undefined}
+                    className="truncate"
+                  />
                 </span>
               </td>
               <td className={`${td} text-rw-sub tabular-nums`} data-sort={hide ? 0 : (r.sw ?? 0) + (r.sl ?? 0) > 0 ? (r.sw ?? 0) / ((r.sw ?? 0) + (r.sl ?? 0)) : 0}>
@@ -1845,8 +1867,8 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
             to={{
               kind: "tiers",
               query: new URLSearchParams({
-                ...(e.lu ? { league: e.lu } : {}),
-                ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                ...(e.lu ? { scope: e.lu, league: e.lu } : {}),
+                ...(e.start || e.end ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
               }).toString() || undefined,
             }}
@@ -1932,15 +1954,15 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
               />
               <span className="relative inline-flex items-center gap-1.5 truncate min-w-0">
                 <span className={`w-4 shrink-0 tabular-nums ${i === 0 ? "text-rw-accent font-bold" : "text-rw-muted"}`}>{i + 1}.</span>
-                <HubLink to={{ kind: "player", slug: pSlug(r.n, r.u) }} title={r.n} className="shrink-0">
+                <HubLink to={{ kind: "player", slug: pSlug(r.n, r.u), query: `p=e:${encodeURIComponent(e.u)}` }} title={r.n} className="shrink-0">
                   <PlayerPhoto name={r.n} team={r.t} slug={r.u ?? undefined} size={20} />
                 </HubLink>
-                <PlayerLink name={r.n} u={r.u} />
+                <PlayerLink name={r.n} u={r.u} query={`p=e:${encodeURIComponent(e.u)}`} />
                 <span className="text-rw-muted shrink-0">·</span>
-                <HubLink to={{ kind: "team", slug: tSlug(r.t, e.teams?.find((tm) => tm.t === r.t)?.u) }} title={r.t} className="shrink-0">
+                <HubLink to={{ kind: "team", slug: tSlug(r.t, e.teams?.find((tm) => tm.t === r.t)?.u), query: `p=e:${encodeURIComponent(e.u)}` }} title={r.t} className="shrink-0">
                   <TeamLogo name={r.t} size={14} />
                 </HubLink>
-                <TeamLink name={r.t} u={e.teams?.find((tm) => tm.t === r.t)?.u} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
+                <TeamLink name={r.t} u={e.teams?.find((tm) => tm.t === r.t)?.u} query={`p=e:${encodeURIComponent(e.u)}`} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
               </span>
               <span className="relative shrink-0 text-rw-sub tabular-nums">
                 <HubLink
@@ -2087,8 +2109,8 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
             to={{
               kind: "tiers",
               query: new URLSearchParams({
-                ...(e.lu ? { league: e.lu } : {}),
-                ...(year ? { year } : {}),
+                ...(e.lu ? { scope: e.lu, league: e.lu } : {}),
+                ...(year ? { key: `y${year}`, year } : {}),
                 event: e.u,
                 ...(rows[0]?.c ? { q: [resolveChampSlug(rows[0].c), rows[1]?.c ? resolveChampSlug(rows[1].c) : ""].filter(Boolean).join(",") } : {}),
               }).toString() || undefined,
@@ -2197,7 +2219,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
             return (
               <tr key={c.c} className="border-t border-rw-border">
                 <td className={`${td} max-w-[9rem]`} data-sort={c.c}>
-                  <ChampLink name={c.c} size={18} />
+                  <ChampLink name={c.c} size={18} query={`p=e:${encodeURIComponent(e.u)}`} />
                 </td>
                 <td className={`${td} text-rw-sub`} data-sort={games ? (c.p + c.b) / games : 0}>
                   {games ? (

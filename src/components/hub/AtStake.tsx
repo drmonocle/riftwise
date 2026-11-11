@@ -192,7 +192,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 const m0 = blocks[0].m;
                 const a = teamSlug(data.index, m0.team1Name, m0.team1Code);
                 const b = teamSlug(data.index, m0.team2Name, m0.team2Code);
-                const p = m0.startTimeUtc ? `y${m0.startTimeUtc.slice(0, 4)}` : undefined;
+                const rawYr = m0.startTimeUtc?.slice(0, 4);
+                const p = rawYr && /^\d{4}$/.test(rawYr) ? `y${rawYr}` : undefined;
                 return (
                   <>
                     <HubLink to={{ kind: "prep", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
@@ -218,7 +219,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   kind: "rankings",
                   query:
                     new URLSearchParams({
-                      ...(blocks[0]?.m.leagueSlug ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug) } : {}),
+                      ...(blocks[0]?.m && (blocks[0].m.leagueSlug || blocks[0].m.leagueName) ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName) } : {}),
                       ...(blocks[0]?.m
                         ? {
                             q: `${teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code)},${teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code)}`,
@@ -235,8 +236,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   kind: "leaders",
                   query:
                     new URLSearchParams({
-                      ...(blocks[0]?.m.leagueSlug ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug) } : {}),
-                      ...(blocks[0]?.m.startTimeUtc ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
+                      ...(blocks[0]?.m && (blocks[0].m.leagueSlug || blocks[0].m.leagueName) ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName) } : {}),
+                      ...(blocks[0]?.m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4)) ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
                       ...(blocks[0]?.m
                         ? {
                             q: `${teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code)},${teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code)}`,
@@ -253,13 +254,13 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   kind: "tiers",
                   query:
                     new URLSearchParams({
-                      ...(blocks[0]?.m.leagueSlug
+                      ...(blocks[0]?.m && (blocks[0].m.leagueSlug || blocks[0].m.leagueName)
                         ? {
-                            scope: resolveLeagueSlug(blocks[0].m.leagueSlug),
-                            league: resolveLeagueSlug(blocks[0].m.leagueSlug),
+                            scope: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName),
+                            league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName),
                           }
                         : {}),
-                      ...(blocks[0]?.m.startTimeUtc ? { key: `y${blocks[0].m.startTimeUtc.slice(0, 4)}` } : {}),
+                      ...(blocks[0]?.m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4)) ? { key: `y${blocks[0].m.startTimeUtc.slice(0, 4)}` } : {}),
                     }).toString() || undefined,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -274,8 +275,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                         query: new URLSearchParams({
                           team: teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code),
                           vs: teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code),
-                          ...(blocks[0].m.leagueSlug ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug) } : {}),
-                          ...(blocks[0].m.startTimeUtc ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
+                          ...(blocks[0].m.leagueSlug || blocks[0].m.leagueName ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName) } : {}),
+                          ...(blocks[0].m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4)) ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
                         }).toString(),
                       }
                     : {}),
@@ -290,9 +291,10 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
             const m0 = blocks[0].m;
             const a = teamSlug(data.index, m0.team1Name, m0.team1Code);
             const b = teamSlug(data.index, m0.team2Name, m0.team2Code);
-            const yr = m0.startTimeUtc ? m0.startTimeUtc.slice(0, 4) : undefined;
+            const rawYr = m0.startTimeUtc?.slice(0, 4);
+            const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : undefined;
             const p = yr ? `y${yr}` : undefined;
-            const lg = m0.leagueSlug ? resolveLeagueSlug(m0.leagueSlug) : undefined;
+            const lg = m0.leagueSlug || m0.leagueName ? resolveLeagueSlug(m0.leagueSlug || m0.leagueName) : undefined;
             return (
               <span className="flex items-center gap-2" data-nocapture="1">
                 <HubLink to={{ kind: "prep", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
@@ -408,7 +410,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     mode: "team",
                     a: t1Slug,
                     b: t2Slug,
-                    period: m.startTimeUtc ? `y${m.startTimeUtc.slice(0, 4)}` : undefined,
+                    period: mYr && /^\d{4}$/.test(mYr) ? `y${mYr}` : undefined,
                   }}
                   className="text-rw-muted hover:text-rw-accent hover:underline font-normal"
                   title={tl("Compare")}
@@ -444,7 +446,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     kind: "prep",
                     a: t1Slug,
                     b: t2Slug,
-                    period: m.startTimeUtc ? `y${m.startTimeUtc.slice(0, 4)}` : undefined,
+                    period: mYr && /^\d{4}$/.test(mYr) ? `y${mYr}` : undefined,
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >
@@ -458,7 +460,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(t1Slug)},${encodeURIComponent(t2Slug)}${m.startTimeUtc ? `&p=y${encodeURIComponent(m.startTimeUtc.slice(0, 4))}` : ""}`,
+                    query: `teams=${encodeURIComponent(t1Slug)},${encodeURIComponent(t2Slug)}${mPeriodQ ? `&${mPeriodQ}` : ""}`,
                   }}
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >
@@ -470,7 +472,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     mode: "team",
                     a: t1Slug,
                     b: t2Slug,
-                    period: m.startTimeUtc ? `y${m.startTimeUtc.slice(0, 4)}` : undefined,
+                    period: mYr && /^\d{4}$/.test(mYr) ? `y${mYr}` : undefined,
                   }}
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >
@@ -482,8 +484,8 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     query: new URLSearchParams({
                       team: t1Slug,
                       vs: t2Slug,
-                      ...(m.leagueSlug ? { league: resolveLeagueSlug(m.leagueSlug) } : {}),
-                      ...(m.startTimeUtc ? { year: m.startTimeUtc.slice(0, 4) } : {}),
+                      ...(m.leagueSlug || m.leagueName ? { league: resolveLeagueSlug(m.leagueSlug || m.leagueName) } : {}),
+                      ...(mYr && /^\d{4}$/.test(mYr) ? { year: mYr } : {}),
                     }).toString(),
                   }}
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"

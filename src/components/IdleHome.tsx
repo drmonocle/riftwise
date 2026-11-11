@@ -71,7 +71,8 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               <button
                 type="button"
                 onClick={() => {
-                  const yr = done[0].startTimeUtc?.slice(0, 4);
+                  const rawYr = done[0].startTimeUtc?.slice(0, 4);
+                  const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
                   navigateHub({
                     kind: "prep",
                     a: teamSlug(done[0].team1Name, done[0].team1Code),
@@ -86,7 +87,8 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               <button
                 type="button"
                 onClick={() => {
-                  const yr = done[0].startTimeUtc?.slice(0, 4);
+                  const rawYr = done[0].startTimeUtc?.slice(0, 4);
+                  const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
                   navigateHub({
                     kind: "draft",
                     query: `teams=${encodeURIComponent(teamSlug(done[0].team1Name, done[0].team1Code))},${encodeURIComponent(teamSlug(done[0].team2Name, done[0].team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
@@ -99,7 +101,8 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               <button
                 type="button"
                 onClick={() => {
-                  const yr = done[0].startTimeUtc?.slice(0, 4);
+                  const rawYr = done[0].startTimeUtc?.slice(0, 4);
+                  const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
                   navigateHub({
                     kind: "compare",
                     mode: "team",
@@ -117,7 +120,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           <button
             type="button"
             onClick={() => {
-              const lg = done[0]?.leagueSlug ? resolveLeagueSlug(done[0].leagueSlug) : "";
+              const lg = done[0] ? resolveLeagueSlug(done[0].leagueSlug || done[0].leagueName) : "";
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(done[0]
@@ -135,8 +138,9 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           <button
             type="button"
             onClick={() => {
-              const yr = done[0]?.startTimeUtc?.slice(0, 4);
-              const lg = done[0]?.leagueSlug ? resolveLeagueSlug(done[0].leagueSlug) : "";
+              const rawYr = done[0]?.startTimeUtc?.slice(0, 4);
+              const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+              const lg = done[0] ? resolveLeagueSlug(done[0].leagueSlug || done[0].leagueName) : "";
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
@@ -155,8 +159,9 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           <button
             type="button"
             onClick={() => {
-              const yr = done[0]?.startTimeUtc?.slice(0, 4);
-              const lg = done[0]?.leagueSlug ? resolveLeagueSlug(done[0].leagueSlug) : "";
+              const rawYr = done[0]?.startTimeUtc?.slice(0, 4);
+              const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+              const lg = done[0] ? resolveLeagueSlug(done[0].leagueSlug || done[0].leagueName) : "";
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
@@ -170,8 +175,9 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           <button
             type="button"
             onClick={() => {
-              const yr = done[0]?.startTimeUtc?.slice(0, 4);
-              const lg = done[0]?.leagueSlug ? resolveLeagueSlug(done[0].leagueSlug) : "";
+              const rawYr = done[0]?.startTimeUtc?.slice(0, 4);
+              const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+              const lg = done[0] ? resolveLeagueSlug(done[0].leagueSlug || done[0].leagueName) : "";
               const q = new URLSearchParams({
                 ...(done[0]
                   ? {
@@ -191,8 +197,9 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           <button
             type="button"
             onClick={() => {
-              const yr = done[0]?.startTimeUtc?.slice(0, 4);
-              const lg = done[0]?.leagueSlug ? resolveLeagueSlug(done[0].leagueSlug) : "";
+              const rawYr = done[0]?.startTimeUtc?.slice(0, 4);
+              const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+              const lg = done[0] ? resolveLeagueSlug(done[0].leagueSlug || done[0].leagueName) : "";
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
@@ -211,8 +218,9 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
           <button
             type="button"
             onClick={() => {
-              const yr = done[0]?.startTimeUtc?.slice(0, 4);
-              const lg = done[0]?.leagueSlug ? resolveLeagueSlug(done[0].leagueSlug) : "";
+              const rawYr = done[0]?.startTimeUtc?.slice(0, 4);
+              const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+              const lg = done[0] ? resolveLeagueSlug(done[0].leagueSlug || done[0].leagueName) : "";
               const q = new URLSearchParams({
                 ...(lg ? { scope: lg, league: lg } : {}),
                 ...(yr ? { key: `y${yr}` } : {}),
@@ -497,7 +505,7 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigateHub({ kind: "league", slug: t[4] || resolveLeagueSlug(t[3]) });
+                      navigateHub({ kind: "league", slug: resolveLeagueSlug(t[4] || t[3]) });
                       onSelectTab("stats");
                     }}
                     className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline"
@@ -565,7 +573,7 @@ export const IdleHome: React.FC<{
   settings: AppSettings;
   onSelectTab: (tab: "schedule" | "stats") => void;
 }> = ({ schedule, settings, onSelectTab }) => {
-  const worlds = useMemo(() => schedule.some((m) => m.leagueSlug === "worlds"), [schedule]);
+  const worlds = useMemo(() => schedule.some((m) => resolveLeagueSlug(m.leagueSlug || m.leagueName) === "world-championship" || m.leagueSlug === "worlds"), [schedule]);
   return (
     <div className="space-y-6">
       <LatestResults schedule={schedule} settings={settings} onSelectTab={onSelectTab} />
