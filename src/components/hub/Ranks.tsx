@@ -769,6 +769,7 @@ export const PlayerRanks: React.FC<{
                 ...(year ? { p: `y${year}` } : {}),
                 ...(me.t ? { team: me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) } : {}),
                 ...(me.r ? { role: me.r } : {}),
+                ...(games?.[games.length - 1]?.[2] ? { champ: resolveChampSlug(games[games.length - 1][2]) } : me.c?.[0] ? { champ: resolveChampSlug(me.c[0]) } : {}),
               }).toString(),
             }}
           />
@@ -1080,7 +1081,18 @@ export const TeamRanks: React.FC<{
           rows={rows}
           hide={prefs.hide}
           rankTo={() => ({ kind: "league", slug: lu, year, query: `q=${encodeURIComponent(slug)}` })}
-          lastTo={{ kind: "team", slug, tab: "matches", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
+          lastTo={{
+            kind: "team",
+            slug,
+            tab: "matches",
+            query:
+              new URLSearchParams({
+                ...(year ? { p: `y${year}` } : {}),
+                ...(games?.[games.length - 1]?.[4]
+                  ? { q: resolveTeamAlias(games[games.length - 1][5] || games[games.length - 1][4]) || prettySlug(games[games.length - 1][4]) }
+                  : {}),
+              }).toString() || undefined,
+          }}
         />
         <p className="text-[10px] text-rw-muted">
           <HubLink to={{ kind: "league", slug: lu, year, query: `q=${encodeURIComponent(slug)}` }} className="hover:text-rw-accent hover:underline">

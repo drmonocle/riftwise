@@ -488,28 +488,33 @@ const ColoredOpponentGraph: React.FC<{
             })()}
             {active.champs && active.champs.length > 0 && (
               <span className="inline-flex items-center gap-0.5">
-                {active.champs.slice(0, 3).map((c) => (
-                  <HubLink
-                    key={c.c}
-                    to={{
-                      kind: "champ",
-                      slug: resolveChampSlug(c.c),
-                      ...((subjectPlayerSlug || subjectTeamSlug || subjectRole || (period && period !== "all"))
-                        ? {
-                            query: new URLSearchParams({
-                              ...(subjectPlayerSlug ? { player: subjectPlayerSlug } : {}),
-                              ...(subjectTeamSlug ? { team: subjectTeamSlug } : {}),
-                              ...(subjectRole ? { role: subjectRole } : {}),
-                              ...(period && period !== "all" ? { p: period } : {}),
-                            }).toString(),
-                          }
-                        : {}),
-                    }}
-                    title={`${champName(c.c)} (${c.w}–${c.g - c.w})`}
-                  >
-                    <ChampIcon name={c.c} size={15} />
-                  </HubLink>
-                ))}
+                {active.champs.slice(0, 3).map((c) => {
+                  const cSlug = resolveChampSlug(c.c);
+                  const otherC = active.champs?.find((x) => resolveChampSlug(x.c) !== cSlug);
+                  return (
+                    <HubLink
+                      key={c.c}
+                      to={{
+                        kind: "champ",
+                        slug: cSlug,
+                        ...((subjectPlayerSlug || subjectTeamSlug || subjectRole || otherC || (period && period !== "all"))
+                          ? {
+                              query: new URLSearchParams({
+                                ...(subjectPlayerSlug ? { player: subjectPlayerSlug } : {}),
+                                ...(subjectTeamSlug ? { team: subjectTeamSlug } : {}),
+                                ...(subjectRole ? { role: subjectRole } : {}),
+                                ...(otherC ? { vschamp: resolveChampSlug(otherC.c) } : {}),
+                                ...(period && period !== "all" ? { p: period } : {}),
+                              }).toString(),
+                            }
+                          : {}),
+                      }}
+                      title={`${champName(c.c)} (${c.w}–${c.g - c.w})`}
+                    >
+                      <ChampIcon name={c.c} size={15} />
+                    </HubLink>
+                  );
+                })}
               </span>
             )}
             <HubLink
@@ -1623,7 +1628,11 @@ export const PlayerOpponents: React.FC<{
                           player: slug,
                           ...(g[7] ? { team: resolveOppSlug(g[7]) } : {}),
                           ...(g[10] ? { role: g[10] } : {}),
-                          ...(g[0]?.slice(0, 4) ? { p: `y${g[0].slice(0, 4)}` } : {}),
+                          ...(g[11]
+                            ? { p: `e:${resolveEventSlug(g[11])}` }
+                            : g[0]?.slice(0, 4)
+                              ? { p: `y${g[0].slice(0, 4)}` }
+                              : {}),
                         }).toString(),
                       }}
                       title={champName(g[2])}
@@ -2782,26 +2791,34 @@ export const TeamPeriodOpponents: React.FC<{
                       {g[6] === "b" ? tl("Blue") : tl("Red")}
                     </HubLink>
                     <span className="inline-flex items-center gap-0.5 shrink-0">
-                      {(g[20] || []).slice(0, 5).map((ch) => (
-                        <HubLink
-                          key={ch}
-                          to={{
-                            kind: "champ",
-                            slug: resolveChampSlug(ch),
-                            query: new URLSearchParams({
-                              team: teamSlug,
-                              ...(pVal
-                                ? { p: pVal }
-                                : g[0]?.slice(0, 4)
-                                  ? { p: `y${g[0].slice(0, 4)}` }
-                                  : {}),
-                            }).toString(),
-                          }}
-                          title={champName(ch)}
-                        >
-                          <ChampIcon name={ch} size={15} />
-                        </HubLink>
-                      ))}
+                      {(g[20] || []).slice(0, 5).map((ch) => {
+                        const chSlug = resolveChampSlug(ch);
+                        const otherCh = (g[20] || []).find((x) => x && resolveChampSlug(x) !== chSlug);
+                        return (
+                          <HubLink
+                            key={ch}
+                            to={{
+                              kind: "champ",
+                              slug: chSlug,
+                              query: new URLSearchParams({
+                                team: teamSlug,
+                                ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
+                                ...(otherCh ? { vschamp: resolveChampSlug(otherCh) } : {}),
+                                ...(pVal
+                                  ? { p: pVal }
+                                  : g[2]
+                                    ? { p: `e:${resolveEventSlug(g[2])}` }
+                                    : g[0]?.slice(0, 4)
+                                      ? { p: `y${g[0].slice(0, 4)}` }
+                                      : {}),
+                              }).toString(),
+                            }}
+                            title={champName(ch)}
+                          >
+                            <ChampIcon name={ch} size={15} />
+                          </HubLink>
+                        );
+                      })}
                     </span>
                     {g[9] != null && g[10] != null &&
                       (g[1] ? (
