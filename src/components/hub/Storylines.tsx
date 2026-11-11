@@ -391,6 +391,7 @@ export const OwnStorylines: React.FC<{
                       query: new URLSearchParams({
                         team: who.slug,
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
+                        ...(noteChamps[1] ? { vschamp: resolveChampSlug(noteChamps[1]) } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                       }).toString(),
@@ -407,6 +408,7 @@ export const OwnStorylines: React.FC<{
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
+                        ...(noteChamps[1] ? { vschamp: resolveChampSlug(noteChamps[1]) } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -506,6 +508,7 @@ export const OwnStorylines: React.FC<{
                         player: who.slug,
                         ...(who.team ? { team: resolveTeamAlias(who.team) || prettySlug(who.team) } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
+                        ...(noteChamps[1] ? { vschamp: resolveChampSlug(noteChamps[1]) } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                       }).toString(),
@@ -523,6 +526,7 @@ export const OwnStorylines: React.FC<{
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
+                        ...(noteChamps[1] ? { vschamp: resolveChampSlug(noteChamps[1]) } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -536,7 +540,7 @@ export const OwnStorylines: React.FC<{
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
-                        q: who.slug,
+                        q: [who.slug, who.team ? resolveTeamAlias(who.team) || prettySlug(who.team) : ""].filter(Boolean).join(","),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -665,12 +669,9 @@ export const HomeStorylines: React.FC = () => {
                       ...(topTeams[0] || topPlayers[0] || topChamps[0]
                         ? {
                             query: new URLSearchParams({
-                              ...(topTeams[0]
-                                ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) }
-                                : topPlayers[0]
-                                  ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) }
-                                  : {}),
-                              ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                              ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                              ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                              ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]), ...(topChamps[1] ? { vschamp: resolveChampSlug(topChamps[1]) } : {}) } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -683,7 +684,7 @@ export const HomeStorylines: React.FC = () => {
                     to={{
                       kind: "records",
                       ...(topTeams[0] || topPlayers[0]
-                        ? { query: `q=${encodeURIComponent(topTeams[0] || topPlayers[0])}` }
+                        ? { query: `q=${encodeURIComponent([topTeams[0], topTeams[1], topPlayers[0], topPlayers[1]].filter(Boolean).join(","))}` }
                         : {}),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -696,7 +697,7 @@ export const HomeStorylines: React.FC = () => {
                       ...(topPlayers[0] || topTeams[0] || topChamps[0]
                         ? {
                             query: new URLSearchParams({
-                              ...(topPlayers[0] || topTeams[0] ? { q: [topPlayers[0], topTeams[0]].filter(Boolean).join(",") } : {}),
+                              ...(topPlayers[0] || topTeams[0] ? { q: [topPlayers[0], topPlayers[1], topTeams[0], topTeams[1]].filter(Boolean).join(",") } : {}),
                               ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
                             }).toString(),
                           }
@@ -729,8 +730,8 @@ export const HomeStorylines: React.FC = () => {
                   <HubLink
                     to={{
                       kind: "best",
-                      ...(topTeams[0]
-                        ? { query: `q=${encodeURIComponent([topTeams[0], topTeams[1]].filter(Boolean).join(","))}` }
+                      ...(topTeams[0] || topPlayers[0]
+                        ? { query: `q=${encodeURIComponent([topTeams[0], topTeams[1], topPlayers[0], topPlayers[1]].filter(Boolean).join(","))}` }
                         : {}),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -743,12 +744,9 @@ export const HomeStorylines: React.FC = () => {
                       ...(topTeams[0] || topPlayers[0] || topChamps[0]
                         ? {
                             query: new URLSearchParams({
-                              ...(topTeams[0]
-                                ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) }
-                                : topPlayers[0]
-                                  ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) }
-                                  : {}),
-                              ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                              ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                              ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                              ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]), ...(topChamps[1] ? { vschamp: resolveChampSlug(topChamps[1]) } : {}) } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -768,6 +766,7 @@ export const HomeStorylines: React.FC = () => {
               const rawFilteredEv = rows.find((r) => r.e)?.e;
               const filteredEv = rawFilteredEv ? resolveEventSlug(rawFilteredEv) : undefined;
               const teamSlugs = Array.from(new Set(rows.filter((r) => r.t === "team").map((r) => r.u || resolveTeamAlias(r.name) || prettySlug(r.name))));
+              const playerSlugs = Array.from(new Set(rows.filter((r) => r.t === "player").map((r) => r.u || resolvePlayerSlug(r.name) || prettySlug(r.name))));
               if (teamSlugs.length >= 1) {
                 const a = teamSlugs[0];
                 const b = teamSlugs[1];
@@ -830,9 +829,11 @@ export const HomeStorylines: React.FC = () => {
                         query: new URLSearchParams({
                           team: a,
                           ...(b ? { vs: b } : {}),
+                          ...(playerSlugs[0] ? { player: playerSlugs[0], ...(playerSlugs[1] ? { vsplayer: playerSlugs[1] } : {}) } : {}),
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
                           ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
+                          ...(filteredChamps[1] ? { vschamp: resolveChampSlug(filteredChamps[1]) } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -845,9 +846,11 @@ export const HomeStorylines: React.FC = () => {
                         query: new URLSearchParams({
                           team: a,
                           ...(b ? { vs: b } : {}),
+                          ...(playerSlugs[0] ? { player: playerSlugs[0], ...(playerSlugs[1] ? { vsplayer: playerSlugs[1] } : {}) } : {}),
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
                           ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
+                          ...(filteredChamps[1] ? { vschamp: resolveChampSlug(filteredChamps[1]) } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -886,7 +889,7 @@ export const HomeStorylines: React.FC = () => {
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
                           ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
-                          q: [a, b].filter(Boolean).join(","),
+                          q: [a, b, playerSlugs[0], playerSlugs[1]].filter(Boolean).join(","),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -896,7 +899,6 @@ export const HomeStorylines: React.FC = () => {
                   </>
                 );
               }
-              const playerSlugs = Array.from(new Set(rows.filter((r) => r.t === "player").map((r) => r.u || resolvePlayerSlug(r.name) || prettySlug(r.name))));
               if (playerSlugs.length >= 1) {
                 return (
                   <>
@@ -934,6 +936,7 @@ export const HomeStorylines: React.FC = () => {
                           player: playerSlugs[0],
                           ...(playerSlugs[1] ? { vsplayer: playerSlugs[1] } : {}),
                           ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
+                          ...(filteredChamps[1] ? { vschamp: resolveChampSlug(filteredChamps[1]) } : {}),
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
                         }).toString(),
@@ -951,6 +954,7 @@ export const HomeStorylines: React.FC = () => {
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
                           ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
+                          ...(filteredChamps[1] ? { vschamp: resolveChampSlug(filteredChamps[1]) } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"

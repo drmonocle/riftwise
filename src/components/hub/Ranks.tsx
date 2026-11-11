@@ -850,7 +850,7 @@ export const PlayerRanks: React.FC<{
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${topSeasonChampSlug ? `&champ=${encodeURIComponent(topSeasonChampSlug)}` : ""}${me?.r ? `&role=${encodeURIComponent(me.r)}` : ""}${meTeam ? `&team=${encodeURIComponent(meTeam)}` : ""}${peerTeam && peerTeam !== meTeam ? `&vs=${encodeURIComponent(peerTeam)}` : ""}${topPeer?.u ? `&vsplayer=${encodeURIComponent(topPeer.u)}` : ""}`,
+                        query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${topSeasonChampSlug ? `&champ=${encodeURIComponent(topSeasonChampSlug)}` : ""}${secSeasonChampSlug ? `&vschamp=${encodeURIComponent(secSeasonChampSlug)}` : ""}${me?.r ? `&role=${encodeURIComponent(me.r)}` : ""}${meTeam ? `&team=${encodeURIComponent(meTeam)}` : ""}${peerTeam && peerTeam !== meTeam ? `&vs=${encodeURIComponent(peerTeam)}` : ""}${topPeer?.u ? `&vsplayer=${encodeURIComponent(topPeer.u)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1076,6 +1076,14 @@ export const TeamRanks: React.FC<{
                 const topTeam = season?.teamStats
                   .filter((t) => t.u && t.u !== slug)
                   .sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g)[0];
+                const mePlayer = season?.players
+                  .filter((p) => p.tu === slug || (p.t ? resolveTeamAlias(p.t) === slug : false))
+                  .sort((a, b) => b.g - a.g)[0]?.u;
+                const peerPlayer = topTeam?.u
+                  ? season?.players
+                      .filter((p) => p.tu === topTeam.u || (p.t ? resolveTeamAlias(p.t) === topTeam.u : false))
+                      .sort((a, b) => b.g - a.g)[0]?.u
+                  : undefined;
                 const pickCounts = new Map<string, number>();
                 for (const g of games || []) {
                   for (const c of g[20] || []) {
@@ -1126,7 +1134,7 @@ export const TeamRanks: React.FC<{
                           league: lu,
                           year,
                           ...(topPick ? { champ: topPick } : {}),
-                          q: [slug, topTeam?.u].filter(Boolean).join(","),
+                          q: [slug, topTeam?.u, mePlayer, peerPlayer].filter(Boolean).join(","),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1178,8 +1186,11 @@ export const TeamRanks: React.FC<{
                             kind: "items",
                             query: new URLSearchParams({
                               champ: topPick,
+                              ...(secPick ? { vschamp: secPick } : {}),
                               team: slug,
                               ...(topTeam?.u ? { vs: topTeam.u } : {}),
+                              ...(mePlayer ? { player: mePlayer } : {}),
+                              ...(peerPlayer ? { vsplayer: peerPlayer } : {}),
                               ...(year ? { year } : {}),
                             }).toString(),
                           }}
@@ -1192,7 +1203,7 @@ export const TeamRanks: React.FC<{
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(slug)}${topTeam?.u ? `&vs=${encodeURIComponent(topTeam.u)}` : ""}&year=${encodeURIComponent(year)}${lu ? `&league=${encodeURIComponent(lu)}` : ""}${topPick ? `&champ=${encodeURIComponent(topPick)}` : ""}${secPick ? `&vschamp=${encodeURIComponent(secPick)}` : ""}`,
+                        query: `team=${encodeURIComponent(slug)}${topTeam?.u ? `&vs=${encodeURIComponent(topTeam.u)}` : ""}${mePlayer ? `&player=${encodeURIComponent(mePlayer)}` : ""}${peerPlayer ? `&vsplayer=${encodeURIComponent(peerPlayer)}` : ""}&year=${encodeURIComponent(year)}${lu ? `&league=${encodeURIComponent(lu)}` : ""}${topPick ? `&champ=${encodeURIComponent(topPick)}` : ""}${secPick ? `&vschamp=${encodeURIComponent(secPick)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1204,7 +1215,7 @@ export const TeamRanks: React.FC<{
                         query: new URLSearchParams({
                           ...(lu ? { league: lu } : {}),
                           ...(year ? { year } : {}),
-                          q: [slug, topTeam?.u].filter(Boolean).join(","),
+                          q: [slug, topTeam?.u, mePlayer, peerPlayer].filter(Boolean).join(","),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
