@@ -757,6 +757,7 @@ export const PlayerRanks: React.FC<{
                   year,
                   role: me.r,
                   stat: r.key,
+                  ...(me.c?.[0] ? { champ: resolveChampSlug(me.c[0]) } : {}),
                   q: [slug, meTeamSlug].filter(Boolean).join(","),
                 }).toString(),
               };
@@ -770,6 +771,7 @@ export const PlayerRanks: React.FC<{
                 ...(me.t ? { team: me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) } : {}),
                 ...(me.r ? { role: me.r } : {}),
                 ...(games?.[games.length - 1]?.[2] ? { champ: resolveChampSlug(games[games.length - 1][2]) } : me.c?.[0] ? { champ: resolveChampSlug(me.c[0]) } : {}),
+                ...(games?.[games.length - 1]?.[8] ? { q: resolveTeamAlias(games[games.length - 1][8]) || prettySlug(games[games.length - 1][8]) } : {}),
               }).toString(),
             }}
           />
@@ -781,6 +783,7 @@ export const PlayerRanks: React.FC<{
                   league: lu,
                   year,
                   role: me.r,
+                  ...(me.c?.[0] ? { champ: resolveChampSlug(me.c[0]) } : {}),
                   q: [slug, me.t ? me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) : ""].filter(Boolean).join(","),
                 }).toString(),
               }}
@@ -1080,7 +1083,12 @@ export const TeamRanks: React.FC<{
         <Bars
           rows={rows}
           hide={prefs.hide}
-          rankTo={() => ({ kind: "league", slug: lu, year, query: `q=${encodeURIComponent(slug)}` })}
+          rankTo={() => ({
+            kind: "league",
+            slug: lu,
+            year,
+            query: `q=${encodeURIComponent([slug, games?.[games.length - 1]?.[4] ? resolveTeamAlias(games[games.length - 1][5] || games[games.length - 1][4]) || prettySlug(games[games.length - 1][4]) : ""].filter(Boolean).join(","))}`,
+          })}
           lastTo={{
             kind: "team",
             slug,
@@ -1088,6 +1096,7 @@ export const TeamRanks: React.FC<{
             query:
               new URLSearchParams({
                 ...(year ? { p: `y${year}` } : {}),
+                ...(games?.[games.length - 1]?.[20]?.[0] ? { champ: resolveChampSlug(games[games.length - 1][20][0]) } : {}),
                 ...(games?.[games.length - 1]?.[4]
                   ? { q: resolveTeamAlias(games[games.length - 1][5] || games[games.length - 1][4]) || prettySlug(games[games.length - 1][4]) }
                   : {}),
@@ -1095,7 +1104,15 @@ export const TeamRanks: React.FC<{
           }}
         />
         <p className="text-[10px] text-rw-muted">
-          <HubLink to={{ kind: "league", slug: lu, year, query: `q=${encodeURIComponent(slug)}` }} className="hover:text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "league",
+              slug: lu,
+              year,
+              query: `q=${encodeURIComponent([slug, games?.[games.length - 1]?.[4] ? resolveTeamAlias(games[games.length - 1][5] || games[games.length - 1][4]) || prettySlug(games[games.length - 1][4]) : ""].filter(Boolean).join(","))}`,
+            }}
+            className="hover:text-rw-accent hover:underline"
+          >
             {tl(
               "Compared with the {n} teams of {league} {year} (all splits and playoffs).",
               {

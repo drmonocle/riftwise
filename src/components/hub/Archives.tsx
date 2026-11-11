@@ -95,7 +95,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                     (
                     {teamSlug && /^\d{4}/.test(r[0]) ? (
                       <HubLink
-                        to={{ kind: "team", slug: teamSlug, tab: "stats", query: `p=y${r[0].slice(0, 4)}` }}
+                        to={{ kind: "team", slug: teamSlug, tab: "stats", query: `p=y${r[0].slice(0, 4)}${oppSlug ? `&q=${encodeURIComponent(oppSlug)}` : ""}` }}
                         className="hover:text-rw-accent hover:underline"
                       >
                         {tl("as {name}", { name: r[9] })}
@@ -1334,7 +1334,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                   to={{
                     kind: "champ",
                     slug: resolveChampSlug(r[2]),
-                    query: `player=${encodeURIComponent(slug)}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${rowQ ? `&${rowQ}` : ""}`,
+                    query: `player=${encodeURIComponent(slug)}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}${r[8] ? `&vs=${encodeURIComponent(tSlug(r[8]))}` : ""}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${rowQ ? `&${rowQ}` : ""}`,
                   }}
                   className="hover:opacity-80"
                   title={champName(r[2])}
@@ -1354,7 +1354,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                   )}{" "}
                   <span className="text-rw-sub inline-flex items-center gap-1 align-baseline">
                     {(() => {
-                      const tRowQ = [rowQ, `q=${encodeURIComponent(slug)}`].filter(Boolean).join("&");
+                      const tRowQ = [rowQ, r[2] ? `champ=${encodeURIComponent(resolveChampSlug(r[2]))}` : "", `q=${encodeURIComponent(slug)}`].filter(Boolean).join("&");
                       return (
                         <>
                           {r[7] && (
@@ -1399,7 +1399,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <EventLink
                       name={r[9]}
                       u={r[11]}
-                      query={`q=${encodeURIComponent([slug, r[7] ? tSlug(r[7]) : "", r[8] ? tSlug(r[8]) : ""].filter(Boolean).join(","))}`}
+                      query={`q=${encodeURIComponent([slug, r[7] ? tSlug(r[7]) : "", r[8] ? tSlug(r[8]) : ""].filter(Boolean).join(","))}${r[2] ? `&champ=${encodeURIComponent(resolveChampSlug(r[2]))}` : ""}`}
                       className="text-rw-muted hover:text-rw-accent hover:underline"
                     />
                   </span>

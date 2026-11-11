@@ -1087,6 +1087,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                           : sel.date && /^\d{4}/.test(sel.date)
                             ? { p: `y${sel.date.slice(0, 4)}` }
                             : {}),
+                        ...(sel.champ ? { champ: resolveChampSlug(sel.champ) } : {}),
                         q: p.u,
                       }).toString(),
                     }}
@@ -1103,6 +1104,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                         : sel.date && /^\d{4}/.test(sel.date)
                           ? { p: `y${sel.date.slice(0, 4)}` }
                           : {}),
+                      ...(sel.champ ? { champ: resolveChampSlug(sel.champ) } : {}),
                       q: p.u,
                     }).toString()}
                   />
@@ -1110,7 +1112,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   <EventLink
                     name={sel.event}
                     u={sel.row[11]}
-                    query={`q=${encodeURIComponent([p.u, sel.team ? teamSlug(sel.team) : "", teamSlug(sel.opp)].filter(Boolean).join(","))}`}
+                    query={`q=${encodeURIComponent([p.u, sel.team ? teamSlug(sel.team) : "", teamSlug(sel.opp)].filter(Boolean).join(","))}${sel.champ ? `&champ=${encodeURIComponent(resolveChampSlug(sel.champ))}` : ""}`}
                     className="text-rw-sub hover:text-rw-accent hover:underline truncate"
                   />
                 </span>
@@ -1804,6 +1806,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       const selYr = sel?.date && /^\d{4}/.test(sel.date) ? sel.date.slice(0, 4) : "";
                       const matchTabQ = new URLSearchParams({
                         ...(selEvSlug ? { p: `e:${selEvSlug}` } : selYr ? { p: `y${selYr}` } : {}),
+                        ...(t.champs[0]?.c ? { champ: resolveChampSlug(t.champs[0].c) } : {}),
                         ...(selOppSlug ? { q: selOppSlug } : {}),
                       }).toString();
                       return (
@@ -1961,6 +1964,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                           slug: oppSlug,
                           query: new URLSearchParams({
                             ...(selPeriod ? { p: selPeriod } : {}),
+                            ...(t.champs[0]?.c ? { champ: resolveChampSlug(t.champs[0].c) } : {}),
                             q: t.u,
                           }).toString(),
                         }}
@@ -1973,6 +1977,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                         u={oppSlug}
                         query={new URLSearchParams({
                           ...(selPeriod ? { p: selPeriod } : {}),
+                          ...(t.champs[0]?.c ? { champ: resolveChampSlug(t.champs[0].c) } : {}),
                           q: t.u,
                         }).toString()}
                       />
@@ -1980,7 +1985,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       <EventLink
                         name={sel.en}
                         u={sel.e}
-                        query={`q=${encodeURIComponent(`${t.u},${oppSlug}`)}`}
+                        query={`q=${encodeURIComponent(`${t.u},${oppSlug}`)}${t.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(t.champs[0].c))}` : ""}`}
                         className="text-rw-muted hover:text-rw-accent hover:underline truncate"
                       />
                     </span>
@@ -2203,6 +2208,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       : sel?.date && /^\d{4}/.test(sel.date)
                         ? { p: `y${sel.date.slice(0, 4)}` }
                         : {}),
+                    ...(t.champs[0]?.c ? { champ: resolveChampSlug(t.champs[0].c) } : {}),
                     ...(sel?.opp ? { q: teamSlug(sel.opp, t.opps.find((o) => o.n === sel.opp)?.u) } : {}),
                   }).toString() || undefined;
                 return (

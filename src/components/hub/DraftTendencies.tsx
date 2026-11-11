@@ -210,8 +210,10 @@ const List: React.FC<{
                 query={
                   [
                     teamName ? `team=${encodeURIComponent(teamName)}` : "",
+                    oppSlug ? `vs=${encodeURIComponent(oppSlug)}` : "",
                     rosterSlugs?.[0] ? `player=${encodeURIComponent(rosterSlugs[0])}` : "",
                     vsC && vsC !== cSlug ? `vschamp=${encodeURIComponent(vsC)}` : "",
+                    side ? `side=${side}` : "",
                     period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
                   ]
                     .filter(Boolean)
@@ -345,7 +347,11 @@ const Pairs: React.FC<{
                   query={
                     [
                       teamName ? `team=${encodeURIComponent(teamName)}` : "",
+                      oppSlug ? `vs=${encodeURIComponent(oppSlug)}` : "",
+                      rosterSlugs?.[0] ? `player=${encodeURIComponent(rosterSlugs[0])}` : "",
                       b !== a ? `vschamp=${encodeURIComponent(resolveChampSlug(b))}` : "",
+                      role ? `role=${encodeURIComponent(role)}` : "",
+                      side ? `side=${side}` : "",
                       period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
                     ]
                       .filter(Boolean)
@@ -359,7 +365,11 @@ const Pairs: React.FC<{
                   query={
                     [
                       teamName ? `team=${encodeURIComponent(teamName)}` : "",
+                      oppSlug ? `vs=${encodeURIComponent(oppSlug)}` : "",
+                      rosterSlugs?.[0] ? `player=${encodeURIComponent(rosterSlugs[0])}` : "",
                       a !== b ? `vschamp=${encodeURIComponent(resolveChampSlug(a))}` : "",
+                      role ? `role=${encodeURIComponent(role)}` : "",
+                      side ? `side=${side}` : "",
                       period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
                     ]
                       .filter(Boolean)
@@ -742,6 +752,7 @@ export const DraftTendencies: React.FC<{
                   query={
                     [
                       resolvedSlug ? `team=${encodeURIComponent(resolvedSlug)}` : "",
+                      oppSlug ? `vs=${encodeURIComponent(oppSlug)}` : "",
                       rosterSlugs?.[0] ? `player=${encodeURIComponent(rosterSlugs[0])}` : "",
                       vsFlex && vsFlex !== cSlug ? `vschamp=${encodeURIComponent(vsFlex)}` : "",
                       ROLES[roles[0]] ? `role=${encodeURIComponent(ROLES[roles[0]])}` : "",
