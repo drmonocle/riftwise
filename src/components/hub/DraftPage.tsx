@@ -489,6 +489,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                         const initChamps = rawInitChamp.split(",").map((s) => s.trim()).filter(Boolean);
                         const topChamp = initChamps[0] || side?.team.champs[0]?.c;
                         const vsChamp = initChamps[1] || side?.team.champs[1]?.c;
+                        const topPlayer = side?.players[0]?.p.u;
                         const lg = side?.team.rating?.league ? resolveLeagueSlug(side.team.rating.league) || side.team.rating.league : "";
                         return (
                           <>
@@ -530,7 +531,9 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                                 kind: "items",
                                 query: new URLSearchParams({
                                   team: slug,
+                                  ...(topPlayer ? { player: topPlayer } : {}),
                                   ...(topChamp ? { champ: resolveChampSlug(topChamp) } : {}),
+                                  ...(vsChamp && vsChamp !== topChamp ? { vschamp: resolveChampSlug(vsChamp) } : {}),
                                   ...(rawP.startsWith("y") && rawP.length === 5
                                     ? { year: rawP.slice(1) }
                                     : rawP.startsWith("p:")
@@ -549,7 +552,9 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                                 kind: "finder",
                                 query: new URLSearchParams({
                                   team: slug,
+                                  ...(topPlayer ? { player: topPlayer } : {}),
                                   ...(topChamp ? { champ: resolveChampSlug(topChamp) } : {}),
+                                  ...(vsChamp && vsChamp !== topChamp ? { vschamp: resolveChampSlug(vsChamp) } : {}),
                                   ...(rawP.startsWith("y") && rawP.length === 5
                                     ? { year: rawP.slice(1) }
                                     : rawP.startsWith("p:")
@@ -581,7 +586,13 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                                 ...(topChamp || lg || (rawP.startsWith("y") && rawP.length === 5) || rawP.startsWith("p:") || rawP.startsWith("e:")
                                   ? {
                                       query: new URLSearchParams({
-                                        ...(topChamp ? { q: resolveChampSlug(topChamp) } : {}),
+                                        ...(topChamp
+                                          ? {
+                                              q: [resolveChampSlug(topChamp), vsChamp && vsChamp !== topChamp ? resolveChampSlug(vsChamp) : ""]
+                                                .filter(Boolean)
+                                                .join(","),
+                                            }
+                                          : {}),
                                         ...(lg ? { scope: lg, league: lg } : {}),
                                         ...(rawP.startsWith("y") && rawP.length === 5
                                           ? { key: rawP, year: rawP.slice(1) }
@@ -602,7 +613,7 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                               to={{
                                 kind: "leaders",
                                 query: new URLSearchParams({
-                                  q: slug,
+                                  q: [slug, topPlayer || ""].filter(Boolean).join(","),
                                   ...(topChamp ? { champ: resolveChampSlug(topChamp) } : {}),
                                   ...(lg ? { league: lg } : {}),
                                   ...(rawP.startsWith("y") && rawP.length === 5
@@ -1153,19 +1164,29 @@ const Board: React.FC<{
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(blue.team.u)}&vs=${encodeURIComponent(red.team.u)}${
-                focus ? `&champ=${encodeURIComponent(resolveChampSlug(focus))}` : ""
-              }${
-                typeof role === "number" ? `&role=${encodeURIComponent(ROLES[role])}` : ""
-              }${
-                period.startsWith("y")
-                  ? `&year=${encodeURIComponent(period.slice(1))}`
-                  : period.startsWith("e:")
-                    ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                    : period.startsWith("p:")
-                      ? `&patch=${encodeURIComponent(period.slice(2))}`
-                      : ""
-              }`,
+              ...(() => {
+                const c0 = focus || picksOf("b")[0] || picksOf("r")[0] || shown[0];
+                const c1 = picksOf("b")[0] && picksOf("r")[0] && picksOf("b")[0] !== picksOf("r")[0] ? (c0 === picksOf("b")[0] ? picksOf("r")[0] : picksOf("b")[0]) : undefined;
+                const bWho = c0 ? champOf(c0, pools.b)?.u : undefined;
+                const rWho = c0 ? champOf(c0, pools.r)?.u : undefined;
+                const yr = period.startsWith("y") ? period.slice(1) : "";
+                const ev = period.startsWith("e:") ? resolveEventSlug(period.slice(2)) : "";
+                const pt = period.startsWith("p:") ? period.slice(2) : "";
+                return {
+                  query: new URLSearchParams({
+                    team: blue.team.u,
+                    vs: red.team.u,
+                    ...(bWho || rWho ? { player: (bWho || rWho)! } : {}),
+                    ...(bWho && rWho && bWho !== rWho ? { vsplayer: rWho } : {}),
+                    ...(c0 ? { champ: resolveChampSlug(c0) } : {}),
+                    ...(c1 ? { vschamp: resolveChampSlug(c1) } : {}),
+                    ...(typeof role === "number" ? { role: ROLES[role] } : {}),
+                    ...(pt ? { patch: pt } : {}),
+                    ...(yr ? { year: yr } : {}),
+                    ...(ev ? { event: ev } : {}),
+                  }).toString(),
+                };
+              })(),
             }}
             className="text-rw-accent hover:underline"
           >
@@ -1234,6 +1255,7 @@ const Board: React.FC<{
               kind: "items",
               ...(() => {
                 const c0 = focus || picksOf("b")[0] || picksOf("r")[0] || shown[0];
+                const c1 = picksOf("b")[0] && picksOf("r")[0] && picksOf("b")[0] !== picksOf("r")[0] ? (c0 === picksOf("b")[0] ? picksOf("r")[0] : picksOf("b")[0]) : undefined;
                 const bWho = c0 ? champOf(c0, pools.b)?.u : undefined;
                 const rWho = c0 ? champOf(c0, pools.r)?.u : undefined;
                 const yr = period.startsWith("y") && period.length === 5 ? period.slice(1) : "";
@@ -1246,6 +1268,7 @@ const Board: React.FC<{
                     ...(bWho || rWho ? { player: (bWho || rWho)! } : {}),
                     ...(bWho && rWho && bWho !== rWho ? { vsplayer: rWho } : {}),
                     ...(c0 ? { champ: resolveChampSlug(c0) } : {}),
+                    ...(c1 ? { vschamp: resolveChampSlug(c1) } : {}),
                     ...(typeof role === "number" ? { role: ROLES[role] } : {}),
                     ...(pt ? { patch: pt } : {}),
                     ...(yr ? { year: yr } : {}),
@@ -1277,8 +1300,10 @@ const Board: React.FC<{
               kind: "leaders",
               ...(() => {
                 const c0 = focus || picksOf("b")[0] || picksOf("r")[0];
+                const bWho = c0 ? champOf(c0, pools.b)?.u : undefined;
+                const rWho = c0 ? champOf(c0, pools.r)?.u : undefined;
                 const qStr = new URLSearchParams({
-                  q: `${blue.team.u},${red.team.u}`,
+                  q: [blue.team.u, red.team.u, bWho || "", rWho && rWho !== bWho ? rWho : ""].filter(Boolean).join(","),
                   ...(c0 ? { champ: resolveChampSlug(c0) } : {}),
                   ...(blue.team.rating?.league && blue.team.rating.league === red.team.rating?.league
                     ? { league: resolveLeagueSlug(blue.team.rating.league) || blue.team.rating.league }
@@ -2086,6 +2111,7 @@ const DraftMatchupPanel: React.FC<{
                   ...(activeLane?.bPlayer?.u && activeLane?.rPlayer?.u && activeLane.bPlayer.u !== activeLane.rPlayer.u ? { vsplayer: activeLane.rPlayer.u } : {}),
                   ...(activeLane?.rKey ? { role: activeLane.rKey } : {}),
                   ...(activeChamp ? { champ: resolveChampSlug(activeChamp) } : {}),
+                  ...(activeLane?.bChamp && activeLane?.rChamp && activeLane.bChamp !== activeLane.rChamp ? { vschamp: resolveChampSlug(activeLane.rChamp) } : {}),
                   ...(period.startsWith("p:")
                     ? { patch: period.slice(2) }
                     : period.startsWith("y") && period.length === 5
@@ -2148,10 +2174,14 @@ const DraftMatchupPanel: React.FC<{
               kind: "leaders",
               query:
                 new URLSearchParams({
-                  q:
-                    activeLane?.bPlayer?.u && activeLane?.rPlayer?.u
-                      ? `${activeLane.bPlayer.u},${activeLane.rPlayer.u}`
-                      : `${blue.team.u},${red.team.u}`,
+                  q: [
+                    blue.team.u,
+                    red.team.u,
+                    activeLane?.bPlayer?.u || "",
+                    activeLane?.rPlayer?.u && activeLane.rPlayer.u !== activeLane?.bPlayer?.u ? activeLane.rPlayer.u : "",
+                  ]
+                    .filter(Boolean)
+                    .join(","),
                   ...(blue.team.rating?.league && blue.team.rating.league === red.team.rating?.league
                     ? { league: resolveLeagueSlug(blue.team.rating.league) || blue.team.rating.league }
                     : {}),
@@ -2171,17 +2201,21 @@ const DraftMatchupPanel: React.FC<{
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(blue.team.u)}&vs=${encodeURIComponent(red.team.u)}${
-                bluePicks.length ? `&champ=${encodeURIComponent(bluePicks.slice(0, 3).map(resolveChampSlug).join(","))}` : ""
-              }${redPicks.length ? `&vschamp=${encodeURIComponent(redPicks.slice(0, 3).map(resolveChampSlug).join(","))}` : ""}${
-                period.startsWith("y")
-                  ? `&year=${encodeURIComponent(period.slice(1))}`
+              query: new URLSearchParams({
+                team: blue.team.u,
+                vs: red.team.u,
+                ...(activeLane?.bPlayer?.u || activeLane?.rPlayer?.u ? { player: (activeLane.bPlayer?.u || activeLane.rPlayer?.u)! } : {}),
+                ...(activeLane?.bPlayer?.u && activeLane?.rPlayer?.u && activeLane.bPlayer.u !== activeLane.rPlayer.u ? { vsplayer: activeLane.rPlayer.u } : {}),
+                ...(bluePicks.length ? { champ: bluePicks.slice(0, 3).map(resolveChampSlug).join(",") } : {}),
+                ...(redPicks.length ? { vschamp: redPicks.slice(0, 3).map(resolveChampSlug).join(",") } : {}),
+                ...(period.startsWith("y")
+                  ? { year: period.slice(1) }
                   : period.startsWith("e:")
-                    ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                    ? { event: resolveEventSlug(period.slice(2)) }
                     : period.startsWith("p:")
-                      ? `&patch=${encodeURIComponent(period.slice(2))}`
-                      : ""
-              }`,
+                      ? { patch: period.slice(2) }
+                      : {}),
+              }).toString(),
             }}
             className="text-rw-sub hover:text-rw-accent hover:underline"
           >
@@ -3682,7 +3716,10 @@ const Priorities: React.FC<{
               query: new URLSearchParams({
                 team: side.team.u,
                 ...(otherSide ? { vs: otherSide.team.u } : {}),
+                ...(side.players[0]?.p.u ? { player: side.players[0].p.u } : {}),
+                ...(otherSide?.players[0]?.p.u && otherSide.players[0].p.u !== side.players[0]?.p.u ? { vsplayer: otherSide.players[0].p.u } : {}),
                 ...(open[0] ? { champ: resolveChampSlug(open[0][0]) } : {}),
+                ...(open[1] && open[1][0] !== open[0][0] ? { vschamp: resolveChampSlug(open[1][0]) } : {}),
                 ...(open[0] && p.roles.get(open[0][0])?.size === 1 ? { role: ROLES[[...p.roles.get(open[0][0])!][0]] } : {}),
                 ...(period.startsWith("p:")
                   ? { patch: period.slice(2) }
@@ -3713,7 +3750,14 @@ const Priorities: React.FC<{
               kind: "leaders",
               query:
                 new URLSearchParams({
-                  q: otherSide ? `${side.team.u},${otherSide.team.u}` : side.team.u,
+                  q: [
+                    side.team.u,
+                    otherSide?.team.u || "",
+                    side.players[0]?.p.u || "",
+                    otherSide?.players[0]?.p.u && otherSide.players[0].p.u !== side.players[0]?.p.u ? otherSide.players[0].p.u : "",
+                  ]
+                    .filter(Boolean)
+                    .join(","),
                   ...(open[0] ? { champ: resolveChampSlug(open[0][0]) } : {}),
                   ...(open[0] && p.roles.get(open[0][0])?.size === 1 ? { role: ROLES[[...p.roles.get(open[0][0])!][0]] } : {}),
                   ...(side.team.rating?.league ? { league: resolveLeagueSlug(side.team.rating.league) || side.team.rating.league } : {}),

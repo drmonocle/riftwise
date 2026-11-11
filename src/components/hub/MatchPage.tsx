@@ -297,7 +297,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                       <HubLink
                         to={{
                           kind: "items",
-                          query: `${pBlue ? `player=${encodeURIComponent(pBlue)}&` : ""}${pRed && pRed !== pBlue ? `vsplayer=${encodeURIComponent(pRed)}&` : ""}team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${rBlue ? `&role=${encodeURIComponent(rBlue)}` : ""}${cBlue ? `&champ=${encodeURIComponent(resolveChampSlug(cBlue))}` : ""}${game?.patch ? `&patch=${encodeURIComponent(game.patch)}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
+                          query: `${pBlue ? `player=${encodeURIComponent(pBlue)}&` : ""}${pRed && pRed !== pBlue ? `vsplayer=${encodeURIComponent(pRed)}&` : ""}team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${rBlue ? `&role=${encodeURIComponent(rBlue)}` : ""}${cBlue ? `&champ=${encodeURIComponent(resolveChampSlug(cBlue))}` : ""}${cRed && cRed !== cBlue ? `&vschamp=${encodeURIComponent(resolveChampSlug(cRed))}` : ""}${game?.patch ? `&patch=${encodeURIComponent(game.patch)}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
                         }}
                         className={heroBtn()}
                       >
@@ -751,6 +751,10 @@ const SeriesGames: React.FC<{
                     kind: "items",
                     query: `${pA ? `player=${encodeURIComponent(pA)}&` : ""}${pB && pB !== pA ? `vsplayer=${encodeURIComponent(pB)}&` : ""}team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${
                       curGp?.aPicks[0] ? `&champ=${encodeURIComponent(resolveChampSlug(curGp.aPicks[0]))}` : ""
+                    }${
+                      curGp?.bPicks[0] && curGp.bPicks[0] !== curGp?.aPicks[0]
+                        ? `&vschamp=${encodeURIComponent(resolveChampSlug(curGp.bPicks[0]))}`
+                        : ""
                     }${game?.patch ? `&patch=${encodeURIComponent(game.patch)}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${
                       seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""
                     }`,
@@ -1113,7 +1117,13 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                         : ""
                     }team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${
                       blue[0]?.r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""
-                    }${blue[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}` : ""}${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}`,
+                    }${blue[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}` : ""}${
+                      red[0]?.c && red[0].c !== blue[0]?.c
+                        ? `&vschamp=${encodeURIComponent(resolveChampSlug(red[0].c))}`
+                        : red[1]?.c && red[1].c !== blue[0]?.c
+                          ? `&vschamp=${encodeURIComponent(resolveChampSlug(red[1].c))}`
+                          : ""
+                    }${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}`,
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                 >
@@ -1520,6 +1530,8 @@ const PlayerBars: React.FC<{
                     blue[0]?.r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""
                   }${
                     blue[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}` : ""
+                  }${
+                    red[0]?.c && red[0].c !== blue[0]?.c ? `&vschamp=${encodeURIComponent(resolveChampSlug(red[0].c))}` : ""
                   }${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
                     period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""
                   }`,
@@ -1825,7 +1837,9 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                         r0S && r0S !== b0S ? `vsplayer=${encodeURIComponent(r0S)}&` : ""
                       }team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}${
                         blue[0]?.r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""
-                      }${blue[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}` : ""}${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${
+                      }${blue[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}` : ""}${
+                        red[0]?.c && red[0].c !== blue[0]?.c ? `&vschamp=${encodeURIComponent(resolveChampSlug(red[0].c))}` : ""
+                      }${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""}${
                         eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""
                       }${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
                     }}
@@ -2004,6 +2018,8 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                       }team=${encodeURIComponent(blueU)}&vs=${encodeURIComponent(redU)}&role=${encodeURIComponent(
                         normalizeRole(lanes[0].r),
                       )}${lanes[0]?.b?.c ? `&champ=${encodeURIComponent(resolveChampSlug(lanes[0].b.c))}` : ""}${
+                        lanes[0]?.o?.c && lanes[0].o.c !== lanes[0]?.b?.c ? `&vschamp=${encodeURIComponent(resolveChampSlug(lanes[0].o.c))}` : ""
+                      }${
                         g.patch ? `&patch=${encodeURIComponent(g.patch)}` : ""
                       }${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
                         period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""
@@ -2451,7 +2467,13 @@ const Scoreboard: React.FC<{
                     : ""
                 }team=${encodeURIComponent(u)}${oppU ? `&vs=${encodeURIComponent(oppU)}` : ""}${
                   players[0]?.r ? `&role=${encodeURIComponent(normalizeRole(players[0].r))}` : ""
-                }${players[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(players[0].c))}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${
+                }${players[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(players[0].c))}` : ""}${
+                  oppPlayers?.[0]?.c && oppPlayers[0].c !== players[0]?.c
+                    ? `&vschamp=${encodeURIComponent(resolveChampSlug(oppPlayers[0].c))}`
+                    : players[1]?.c && players[1].c !== players[0]?.c
+                      ? `&vschamp=${encodeURIComponent(resolveChampSlug(players[1].c))}`
+                      : ""
+                }${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${
                   eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""
                 }${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
               }}
@@ -2732,6 +2754,7 @@ const PlayerRow: React.FC<{
                     ...(oppU ? { vs: oppU } : {}),
                     ...(p.r ? { role: normalizeRole(p.r) } : {}),
                     ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
+                    ...(oppP?.c && oppP.c !== p.c ? { vschamp: resolveChampSlug(oppP.c) } : {}),
                     ...(patch ? { patch } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
                     ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
@@ -2754,6 +2777,7 @@ const PlayerRow: React.FC<{
                     ...(oppU ? { vs: oppU } : {}),
                     ...(p.r ? { role: normalizeRole(p.r) } : {}),
                     ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
+                    ...(oppP?.c && oppP.c !== p.c ? { vschamp: resolveChampSlug(oppP.c) } : {}),
                     ...(patch ? { patch } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
                     ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),

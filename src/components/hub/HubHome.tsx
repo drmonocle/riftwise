@@ -1224,7 +1224,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                             query: new URLSearchParams({
                               ...(potmYr ? { year: potmYr } : {}),
                               ...(r0 && (!r1 || r1 === r0) ? { role: r0 } : {}),
-                              ...(p0 ? { q: `${p0}${p1 ? `,${p1}` : ""}` } : {}),
+                              ...(p0 || t0 ? { q: [t0, t1, p0, p1].filter(Boolean).join(",") } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -1304,6 +1304,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                         kind: "finder",
                         query: new URLSearchParams({
                           player: playerSlug(p.n, p.u),
+                          ...(p.t ? { team: teamSlug(p.t) } : {}),
                           ...(normalizeRole(p.r) ? { role: normalizeRole(p.r)! } : {}),
                           ...(from && /^\d{4}/.test(from) ? { year: from.slice(0, 4) } : {}),
                         }).toString(),
