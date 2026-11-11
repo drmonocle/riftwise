@@ -2,7 +2,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
-import { bare, loadAliases, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
+import { normalizeRole } from "../../hub/champAgg";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type {
@@ -780,12 +781,18 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
     if (!q) return rosters;
     const terms = q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean);
     return rosters.filter((t) => {
-      const hay = normText(`${t.t} ${t.u || ""} ${t.r || ""} ${t.r ? regionName(t.r, t.r) : ""} ${t.p.map(([n, u, r]) => `${n} ${u || ""} ${r || ""}`).join(" ")}`);
-      const tSlug = aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || prettySlug(t.t);
+      const hay = normText(
+        `${t.t} ${t.u || ""} ${t.r || ""} ${t.r ? regionName(t.r, t.r) : ""} ${t.p
+          .map(([n, u, r, flag]) => `${n} ${u || ""} ${r || ""} ${flag || ""} ${flag ? localCountry(flag) : ""}`)
+          .join(" ")}`,
+      );
+      const tSlug = resolveTeamAlias(aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || t.t) || prettySlug(t.t);
       return terms.some((term) => {
         if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
-        const canonTerm = aliases.data?.team[term] || prettySlug(term);
+        const canonTerm = resolveTeamAlias(aliases.data?.team[term] || term) || prettySlug(term);
         if (canonTerm && canonTerm === tSlug) return true;
+        const qRole = normalizeRole(term);
+        if (qRole && t.p.some(([, , r]) => normalizeRole(r) === qRole)) return true;
         return t.p.some(([n, u]) => resolvePlayerSlug(term) === (u || prettySlug(n)));
       });
     });

@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { tl, tc, roleName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadHubChamp, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveItemSlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, loadHubChamp, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveItemSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import { normalizeRole } from "../../hub/champAgg";
 import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
@@ -104,7 +104,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
   const qParams = useMemo(() => new URLSearchParams(query || ""), [query]);
   const qRole = normalizeRole(qParams.get("role"));
   const qVs = qParams.get("vs") || "";
-  const qFilter = qParams.get("player") || qParams.get("q") || "";
+  const qFilter = qParams.get("player") || qParams.get("team") || qParams.get("event") || qParams.get("q") || "";
   const qSpan = qParams.get("span") || "";
   const qItem = qParams.get("item") || "";
   const qKeystone = qParams.get("keystone") || "";
@@ -247,24 +247,29 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
     const pSlug = p.u || prettySlug(p.n);
     const pTeam = teamByPlayer.get(p.u || p.n) || "";
     const hay = `${normText(p.n)} ${normText(p.u || "")} ${normText(pTeam)}`;
-    const canonTeam = aliases.data?.team[t] || prettySlug(t);
+    const canonTeam = resolveTeamAlias(aliases.data?.team[t] || t) || prettySlug(t);
+    const pTeamSlug = pTeam ? resolveTeamAlias(pTeam) || prettySlug(pTeam) : "";
     return (
       hay.includes(t) ||
       (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
       (!!t && resolvePlayerSlug(t) === pSlug) ||
-      Boolean(pTeam && canonTeam === prettySlug(pTeam))
+      Boolean(pTeamSlug && canonTeam === pTeamSlug)
     );
   };
   const matchesChampRecentGame = (r: (typeof c.recent)[number], t: string) => {
     const pSlug = r.u || prettySlug(r.n);
-    const hay = normText(`${r.n} ${r.u || ""} ${r.team || ""} ${r.opp || ""} ${r.en || ""}`);
-    const canonTeam = aliases.data?.team[t] || prettySlug(t);
+    const hay = normText(`${r.n} ${r.u || ""} ${r.team || ""} ${r.opp || ""} ${r.en || ""} ${r.r || ""} ${r.date || ""}`);
+    const canonTeam = resolveTeamAlias(aliases.data?.team[t] || t) || prettySlug(t);
+    const rTeamSlug = r.team ? resolveTeamAlias(r.team) || prettySlug(r.team) : "";
+    const rOppSlug = r.opp ? resolveTeamAlias(r.opp) || prettySlug(r.opp) : "";
+    const qRole = normalizeRole(t);
     return (
       hay.includes(t) ||
       (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
       (!!t && resolvePlayerSlug(t) === pSlug) ||
-      Boolean(r.team && canonTeam === prettySlug(r.team)) ||
-      Boolean(r.opp && canonTeam === prettySlug(r.opp)) ||
+      Boolean(rTeamSlug && canonTeam === rTeamSlug) ||
+      Boolean(rOppSlug && canonTeam === rOppSlug) ||
+      Boolean(r.r && qRole && qRole === normalizeRole(r.r)) ||
       Boolean(r.en && matchesPeriodEvent(prettySlug(r.en), r.en, t)) ||
       Boolean((r.it || []).some((it) => matchesItemSearch(it, itemName(it), t))) ||
       Boolean(r.ks && (normText(runeName(r.ks)).includes(t) || normText(r.ks).includes(t))) ||
@@ -655,7 +660,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
           title={tl("Matchups")}
           right={
             <span className="flex flex-wrap items-center gap-2">
-              {muRows.length >= 10 && (
+              {(muRows.length >= 10 || Boolean(muSearch.trim())) && (
                 <input
                   type="search"
                   value={muSearch}
@@ -1003,7 +1008,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
           title={tl("Bot lane partners")}
           right={
             <span className="flex flex-wrap items-center gap-2">
-              {(c.duos || []).length > 10 && (
+              {((c.duos || []).length > 10 || Boolean(duoSearch.trim())) && (
                 <input
                   type="search"
                   value={duoSearch}
@@ -1164,7 +1169,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
         title={tl("Most games on {champion}", { champion: champName(c.name) })}
         right={
           <span className="flex flex-wrap items-center gap-2">
-            {(playersRecent ? recentPlayersList : c.players).length >= 10 && (
+            {((playersRecent ? recentPlayersList : c.players).length >= 10 || Boolean(playerSearch.trim())) && (
               <input
                 type="search"
                 value={playerSearch}
@@ -1411,7 +1416,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
             <RevealButton onReveal={revealRecent} small />
           ) : (
             <span className="flex flex-wrap items-center gap-2">
-              {c.recent.length >= 8 && (
+              {(c.recent.length >= 8 || Boolean(recentSearch.trim())) && (
                 <input
                   type="search"
                   value={recentSearch}

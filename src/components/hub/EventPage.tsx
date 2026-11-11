@@ -10,7 +10,7 @@ import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
 import { winRate } from "../../stats";
-import { bare, downloadEventCsv, downloadStagesCsv, loadAliases, loadHubEvent, matchesChampSearch, normText, prettySlug } from "../../hub/data";
+import { bare, downloadEventCsv, downloadStagesCsv, loadAliases, loadHubEvent, matchesChampSearch, normText, prettySlug, resolveTeamAlias } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
@@ -101,7 +101,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
     () => new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : "")),
     [routeQuery],
   );
-  const qParam = urlParams.get("q") || urlParams.get("champ") || urlParams.get("vs") || "";
+  const qParam = urlParams.get("q") || urlParams.get("team") || urlParams.get("player") || urlParams.get("champ") || urlParams.get("vs") || "";
   const roleParam = urlParams.get("role") || undefined;
   const [teamSearch, setTeamSearch] = useState(qParam);
   useEffect(() => {
@@ -722,10 +722,10 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
             const filteredTeams = tTerms.length
               ? e.teams.filter((t) => {
                   const hay = normText(`${t.t} ${t.u || ""}`);
-                  const tSlug = aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || prettySlug(t.t);
+                  const tSlug = resolveTeamAlias(aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || t.t) || prettySlug(t.t);
                   return tTerms.some((term) => {
                     if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
-                    const canonTeam = aliases.data?.team[term] || prettySlug(term);
+                    const canonTeam = resolveTeamAlias(aliases.data?.team[term] || term) || prettySlug(term);
                     return Boolean(canonTeam && canonTeam === tSlug);
                   });
                 })
@@ -1320,8 +1320,8 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
     const matchSide = (name: string, slug: string | null | undefined, term: string) => {
       const hay = normText(`${name} ${slug || ""}`);
       if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
-      const sideSlug = aliases.data?.team[(slug || name).toLowerCase()] || slug || prettySlug(name);
-      const canonTerm = aliases.data?.team[term] || prettySlug(term);
+      const sideSlug = resolveTeamAlias(aliases.data?.team[(slug || name).toLowerCase()] || slug || name) || prettySlug(name);
+      const canonTerm = resolveTeamAlias(aliases.data?.team[term] || term) || prettySlug(term);
       return Boolean(canonTerm && canonTerm === sideSlug);
     };
     if (isVsMatchup && terms.length >= 2) {
@@ -1332,7 +1332,7 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
           (matchSide(r.a, r.au, tb) && matchSide(r.b, r.bu, ta)),
       );
     }
-    return base.filter((r) => terms.some((t) => matchSide(r.a, r.au, t) || matchSide(r.b, r.bu, t)));
+    return base.filter((r) => terms.some((t) => matchSide(r.a, r.au, t) || matchSide(r.b, r.bu, t) || (r.date && normText(r.date).includes(t))));
   }, [byRating, rated, terms, isVsMatchup, stages, st.series, aliases.data]);
   return (
     <Section
@@ -2001,7 +2001,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
       title={tl("Champions")}
       right={
         <span className="flex flex-wrap items-center gap-2">
-          {allChamps.length >= 10 && (
+          {(allChamps.length >= 10 || Boolean(search.trim())) && (
             <input
               type="search"
               value={search}

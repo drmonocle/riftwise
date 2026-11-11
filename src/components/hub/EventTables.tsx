@@ -1,7 +1,7 @@
 /** gol.gg-style stat tables for one tournament: every player and every team, sortable by any column. */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { bare, loadAliases, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, matchesChampSearch, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
@@ -88,14 +88,16 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
         (!regular || p.g >= minG || maxG < 3) &&
         (!terms.length ||
           terms.some((term) => {
-            const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""}`);
-            const pTeamSlug = p.t ? aliases.data?.team[(p.tu || p.t).toLowerCase()] || p.tu || prettySlug(p.t) : "";
-            const canonTerm = aliases.data?.team[term] || prettySlug(term);
+            const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""} ${p.r || ""}`);
+            const pTeamSlug = p.t ? resolveTeamAlias(aliases.data?.team[(p.tu || p.t).toLowerCase()] || p.tu || p.t) || prettySlug(p.t) : "";
+            const canonTerm = resolveTeamAlias(aliases.data?.team[term] || term) || prettySlug(term);
+            const termRole = ROLE_ALIASES[term] || "";
             return (
               hay.includes(term) ||
               (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
               resolvePlayerSlug(term) === (p.u || prettySlug(p.n)) ||
               Boolean(pTeamSlug && canonTerm && canonTerm === pTeamSlug) ||
+              Boolean(termRole && p.r === termRole) ||
               (p.c || []).some((c) => matchesChampSearch(c, term))
             );
           })),
@@ -580,10 +582,10 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
       ? teams
       : teams.filter((t) => {
           const hay = normText(`${t.t} ${t.u || ""}`);
-          const tSlug = aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || prettySlug(t.t);
+          const tSlug = resolveTeamAlias(aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || t.t) || prettySlug(t.t);
           return terms.some((term) => {
             if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
-            const canonTerm = aliases.data?.team[term] || prettySlug(term);
+            const canonTerm = resolveTeamAlias(aliases.data?.team[term] || term) || prettySlug(term);
             return Boolean(canonTerm && canonTerm === tSlug);
           });
         });
@@ -898,7 +900,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
         </span>
       }
     >
-      {teams.length > 2 && (
+      {(teams.length > 2 || Boolean(search.trim())) && (
         <div className="flex flex-wrap items-center gap-2 text-xs" data-nocapture="1">
           <input
             type="search"
