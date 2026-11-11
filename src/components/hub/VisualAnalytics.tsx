@@ -363,7 +363,13 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                     agg.champs[0]
                       ? {
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(agg.champs[0].c))}${agg.champs[1] ? `&vs=${encodeURIComponent(resolveChampSlug(agg.champs[1].c))}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(agg.champs[0].c))}${agg.champs[1] ? `&vs=${encodeURIComponent(resolveChampSlug(agg.champs[1].c))}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${
+                            periodKey && /^y\d{4}$/.test(periodKey)
+                              ? `&patch=${encodeURIComponent(periodKey)}&year=${encodeURIComponent(periodKey.slice(1))}`
+                              : periodKey?.startsWith("e:")
+                                ? `&event=${encodeURIComponent(resolveEventSlug(periodKey.slice(2)))}`
+                                : ""
+                          }`,
                         }
                       : { kind: "counters", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }
                   }
@@ -652,7 +658,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(sel.champ))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(sel.champ))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${sel.row?.[11] ? `&event=${encodeURIComponent(resolveEventSlug(sel.row[11]))}` : ""}${sel.date && /^\d{4}/.test(sel.date) ? `&patch=y${encodeURIComponent(sel.date.slice(0, 4))}&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1039,7 +1045,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(sel.champ))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                    query: `champ=${encodeURIComponent(resolveChampSlug(sel.champ))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${sel.row?.[11] ? `&event=${encodeURIComponent(resolveEventSlug(sel.row[11]))}` : ""}${sel.date && /^\d{4}/.test(sel.date) ? `&patch=y${encodeURIComponent(sel.date.slice(0, 4))}&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -2003,7 +2009,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             <HubLink
               to={{
                 kind: "counters",
-                query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}`,
+                query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}` : ""}`,
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
@@ -2346,7 +2352,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}`,
+                        query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}` : ""}`,
                       }}
                       className="text-rw-accent hover:underline font-semibold"
                     >

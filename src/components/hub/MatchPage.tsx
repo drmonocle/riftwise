@@ -832,6 +832,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 to={{
                   kind: "champions",
                   query: new URLSearchParams({
+                    key: `p${g.patch}`,
                     patch: g.patch,
                     ...(gameYear ? { year: gameYear } : {}),
                     ...(s.e ? { event: s.e } : {}),
@@ -960,7 +961,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}&vs=${encodeURIComponent(resolveChampSlug(red[0].c))}${blue[0].r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""}`,
+                      query: `champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}&vs=${encodeURIComponent(resolveChampSlug(red[0].c))}${blue[0].r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : gameYear ? `&patch=y${encodeURIComponent(gameYear)}&year=${encodeURIComponent(gameYear)}` : ""}`,
                     }}
                     className="text-[11px] font-semibold text-rw-accent hover:underline"
                   >

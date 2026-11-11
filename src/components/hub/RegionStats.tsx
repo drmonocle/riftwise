@@ -429,10 +429,8 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             <HubLink
               to={{
                 kind: "tournaments",
-                query: new URLSearchParams({
-                  league: intlLeague,
-                  ...(singleYear ? { year: singleYear } : {}),
-                }).toString(),
+                ...(singleYear ? { year: singleYear } : {}),
+                query: `league=${encodeURIComponent(intlLeague)}`,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
@@ -482,7 +480,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 query: new URLSearchParams({
                   scope: intlLeague,
                   league: intlLeague,
-                  ...(singleYear ? { key: `y${singleYear}` } : {}),
+                  ...(singleYear ? { key: `y${singleYear}`, year: singleYear } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -754,10 +752,8 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               <HubLink
                 to={{
                   kind: "tournaments",
-                  query: new URLSearchParams({
-                    league: intlLeague,
-                    ...(singleYear ? { year: singleYear } : {}),
-                  }).toString(),
+                  ...(singleYear ? { year: singleYear } : {}),
+                  query: `league=${encodeURIComponent(intlLeague)}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
@@ -816,7 +812,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     scope: intlLeague,
                     league: intlLeague,
-                    ...(singleYear ? { key: `y${singleYear}` } : {}),
+                    ...(singleYear ? { key: `y${singleYear}`, year: singleYear } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

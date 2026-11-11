@@ -210,7 +210,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}${singleYear ? `&key=y${singleYear}` : ""}` }}
+              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}${singleYear ? `&key=y${singleYear}&year=${singleYear}` : ""}` }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -421,7 +421,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}${singleYear ? `&key=y${singleYear}` : ""}` }}
+              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}${singleYear ? `&key=y${singleYear}&year=${singleYear}` : ""}` }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -574,7 +574,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink
               to={{
                 kind: "tiers",
-                query: `scope=${encodeURIComponent(intlLeague)}${!all && sorted[0] ? `&key=y${encodeURIComponent(yearOnly(sorted[0].year))}` : ""}`,
+                query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}${!all && sorted[0] ? `&key=y${encodeURIComponent(yearOnly(sorted[0].year))}&year=${encodeURIComponent(yearOnly(sorted[0].year))}` : ""}`,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
@@ -772,7 +772,11 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Power rankings")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tournaments", query: `league=${encodeURIComponent(intlLeague)}${singleYear ? `&year=${singleYear}` : ""}` }}
+              to={{
+                kind: "tournaments",
+                ...(singleYear ? { year: singleYear } : {}),
+                query: `league=${encodeURIComponent(intlLeague)}`,
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -821,7 +825,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}${singleYear ? `&key=y${singleYear}` : ""}` }}
+              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}${singleYear ? `&key=y${singleYear}&year=${singleYear}` : ""}` }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -954,7 +958,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}` }}
+              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}` }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -1207,7 +1211,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Game finder")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}` }}
+              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}` }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -1376,7 +1380,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}` }}
+              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}` }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -1457,14 +1461,14 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   {c0 && (
                     <>
                       <HubLink
-                        to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(c0))}${c1 ? `&vs=${encodeURIComponent(resolveChampSlug(c1))}` : ""}` }}
+                        to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(c0))}${c1 ? `&vs=${encodeURIComponent(resolveChampSlug(c1))}` : ""}${latestYr ? `&patch=y${encodeURIComponent(latestYr)}&year=${encodeURIComponent(latestYr)}` : ""}` }}
                         className="text-[11px] font-semibold text-rw-accent hover:underline"
                         data-nocapture="1"
                       >
                         {tl("Counters")} →
                       </HubLink>
                       <HubLink
-                        to={{ kind: "items", query: `champ=${encodeURIComponent(resolveChampSlug(c0))}${latestYr ? `&year=${encodeURIComponent(latestYr)}` : ""}` }}
+                        to={{ kind: "items", query: `champ=${encodeURIComponent(resolveChampSlug(c0))}&league=${encodeURIComponent(intlLeague)}${latestYr ? `&year=${encodeURIComponent(latestYr)}` : ""}` }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                         data-nocapture="1"
                       >
@@ -1476,8 +1480,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     to={{
                       kind: "champions",
                       query: new URLSearchParams({
+                        scope: intlLeague,
                         league: intlLeague,
-                        ...(latestYr ? { key: `y${latestYr}` } : {}),
+                        ...(latestYr ? { key: `y${latestYr}`, year: latestYr } : {}),
                         ...(c0 ? { q: resolveChampSlug(c0) } : {}),
                       }).toString(),
                     }}
@@ -1491,7 +1496,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       kind: "tiers",
                       query: new URLSearchParams({
                         scope: intlLeague,
-                        ...(latestYr ? { key: `y${latestYr}` } : {}),
+                        league: intlLeague,
+                        ...(latestYr ? { key: `y${latestYr}`, year: latestYr } : {}),
                         ...(c0 ? { q: resolveChampSlug(c0) } : {}),
                       }).toString(),
                     }}

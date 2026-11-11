@@ -1130,7 +1130,7 @@ export const PlayerOpponents: React.FC<{
                       ? {
                           query: `champ=${encodeURIComponent(resolveChampSlug(topChamp))}${
                             secondChamp && secondChamp !== topChamp ? `&vs=${encodeURIComponent(resolveChampSlug(secondChamp))}` : ""
-                          }`,
+                          }${ev ? `&event=${encodeURIComponent(ev)}` : ""}${yr ? `&patch=y${encodeURIComponent(yr)}&year=${encodeURIComponent(yr)}` : activeP.startsWith("p:") ? `&patch=${encodeURIComponent(activeP.slice(2))}` : ""}`,
                         }
                       : {}),
                   }}

@@ -129,7 +129,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
             to={{
               kind: "champions",
               query: new URLSearchParams({
+                scope: lgSlug,
                 league: lgSlug,
+                key: `y${year}`,
                 year,
                 ...(qRole ? { role: qRole } : {}),
                 ...(qChamp ? { q: qChamp } : {}),
@@ -146,6 +148,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 scope: lgSlug,
                 league: lgSlug,
                 key: `y${year}`,
+                year,
                 ...(qRole ? { role: qRole } : {}),
                 ...(qChamp ? { q: qChamp } : {}),
               }).toString(),
@@ -349,7 +352,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(pSlug(regular[0].n, regular[0].u))}&year=${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
+                        query: `player=${encodeURIComponent(pSlug(regular[0].n, regular[0].u))}&league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}${regular[0].c?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(regular[0].c[0]))}` : ""}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
@@ -401,7 +404,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     <HubLink
                       to={{
                         kind: "tiers",
-                        query: `scope=${encodeURIComponent(lgSlug)}&league=${encodeURIComponent(lgSlug)}&key=y${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
+                        query: `scope=${encodeURIComponent(lgSlug)}&league=${encodeURIComponent(lgSlug)}&key=y${encodeURIComponent(year)}&year=${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}`,
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
