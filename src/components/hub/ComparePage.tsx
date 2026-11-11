@@ -1690,7 +1690,15 @@ export const TeamRows: React.FC<{
                 });
               })()}
             </ul>
-            <DraftTendencies rows={s.rows} teamName={s.n} teamSlug={s.u} oppSlug={s.otherU} period={period} periodLabel={periodLabel} />
+            <DraftTendencies
+              rows={s.rows}
+              teamName={s.n}
+              teamSlug={s.u}
+              oppSlug={s.otherU}
+              rosterSlugs={[s.p0, s.p1].filter((x): x is string => Boolean(x))}
+              period={period}
+              periodLabel={periodLabel}
+            />
           </Section>
           );
         })}
@@ -1809,7 +1817,10 @@ const PlayerRows: React.FC<{
             label: career ? tl("Head to head (games)") : tl("Head to head this period (games)"),
             a: (
               <HubLink
-                to={{ kind: "player", slug: x.u, tab: "matches", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(x.u)}&vsplayer=${encodeURIComponent(y.u)}${A.roles[0] ? `&role=${encodeURIComponent(A.roles[0])}` : ""}${pPeriodFinderParam}`,
+                }}
                 className="hover:text-rw-accent hover:underline"
               >
                 {h2h.w}
@@ -1817,7 +1828,10 @@ const PlayerRows: React.FC<{
             ),
             b: (
               <HubLink
-                to={{ kind: "player", slug: y.u, tab: "matches", ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(y.u)}&vsplayer=${encodeURIComponent(x.u)}${B.roles[0] ? `&role=${encodeURIComponent(B.roles[0])}` : ""}${pPeriodFinderParam}`,
+                }}
                 className="hover:text-rw-accent hover:underline"
               >
                 {h2h.g - h2h.w}
@@ -2966,16 +2980,22 @@ const PlayerHeadToHead: React.FC<{
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <div className={`${card} py-2 space-y-1`}>
           <div className="text-[10px] text-rw-muted">
-            <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(sa)}&vsplayer=${encodeURIComponent(sb)}` }} className="hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "finder",
+                query: `player=${encodeURIComponent(sa)}&vsplayer=${encodeURIComponent(sb)}${shown[0]?.a[10] ? `&role=${encodeURIComponent(shown[0].a[10])}` : ""}${s.top[0] ? `&champ=${encodeURIComponent(resolveChampSlug(s.top[0].ca))}&vschamp=${encodeURIComponent(resolveChampSlug(s.top[0].cb))}` : ""}`,
+              }}
+              className="hover:text-rw-accent hover:underline"
+            >
               {tl("Games")}
             </HubLink>
           </div>
           <div className="font-bold text-rw-text tabular-nums">
-            <HubLink to={{ kind: "player", slug: sa, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "player", slug: sa, tab: "matches", query: `q=${encodeURIComponent(sb)}` }} className="hover:text-rw-accent hover:underline">
               {aName} {s.w}
             </HubLink>{" "}
             –{" "}
-            <HubLink to={{ kind: "player", slug: sb, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "player", slug: sb, tab: "matches", query: `q=${encodeURIComponent(sa)}` }} className="hover:text-rw-accent hover:underline">
               {s.l} {bName}
             </HubLink>
           </div>
@@ -2988,16 +3008,22 @@ const PlayerHeadToHead: React.FC<{
         </div>
         <div className={`${card} py-2 space-y-1`}>
           <div className="text-[10px] text-rw-muted">
-            <HubLink to={{ kind: "finder", query: `player=${encodeURIComponent(sa)}&vsplayer=${encodeURIComponent(sb)}` }} className="hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "finder",
+                query: `player=${encodeURIComponent(sa)}&vsplayer=${encodeURIComponent(sb)}${shown[0]?.a[10] ? `&role=${encodeURIComponent(shown[0].a[10])}` : ""}${s.top[0] ? `&champ=${encodeURIComponent(resolveChampSlug(s.top[0].ca))}&vschamp=${encodeURIComponent(resolveChampSlug(s.top[0].cb))}` : ""}`,
+              }}
+              className="hover:text-rw-accent hover:underline"
+            >
               {tl("Series")}
             </HubLink>
           </div>
           <div className="font-bold text-rw-text tabular-nums">
-            <HubLink to={{ kind: "player", slug: sa, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "player", slug: sa, tab: "matches", query: `q=${encodeURIComponent(sb)}` }} className="hover:text-rw-accent hover:underline">
               {s.sw}
             </HubLink>{" "}
             –{" "}
-            <HubLink to={{ kind: "player", slug: sb, tab: "matches" }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "player", slug: sb, tab: "matches", query: `q=${encodeURIComponent(sa)}` }} className="hover:text-rw-accent hover:underline">
               {s.sl}
             </HubLink>
           </div>

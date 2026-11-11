@@ -153,13 +153,25 @@ export function draftTendencies(rows: TeamGameRow[]) {
   };
 }
 
-const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boolean; teamName?: string; oppSlug?: string; period?: string; isBan?: boolean; side?: "b" | "r" }> = ({
+const List: React.FC<{
+  title: string;
+  hint?: string;
+  list: Count[];
+  showWr?: boolean;
+  teamName?: string;
+  oppSlug?: string;
+  rosterSlugs?: string[];
+  period?: string;
+  isBan?: boolean;
+  side?: "b" | "r";
+}> = ({
   title,
   hint,
   list,
   showWr,
   teamName,
   oppSlug,
+  rosterSlugs,
   period,
   isBan,
   side,
@@ -174,6 +186,7 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
         : period?.startsWith("p:")
           ? `&patch=${encodeURIComponent(period.slice(2))}`
           : "";
+  const playerParam = `${rosterSlugs?.[0] ? `player=${encodeURIComponent(rosterSlugs[0])}&` : ""}${rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? `vsplayer=${encodeURIComponent(rosterSlugs[1])}&` : ""}`;
   return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold text-rw-muted" title={hint}>
@@ -184,7 +197,7 @@ const List: React.FC<{ title: string; hint?: string; list: Count[]; showWr?: boo
       <ul className="text-xs space-y-1">
         {list.map(([c, n, w]) => {
           const good = n > 0 && w / n >= 0.5;
-          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${oppSlug ? `vs=${encodeURIComponent(oppSlug)}&` : ""}${isBan ? "ban" : "champ"}=${encodeURIComponent(resolveChampSlug(c))}${side ? `&side=${side}` : ""}${periodParam}`;
+          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${oppSlug ? `vs=${encodeURIComponent(oppSlug)}&` : ""}${playerParam}${isBan ? "ban" : "champ"}=${encodeURIComponent(resolveChampSlug(c))}${side ? `&side=${side}` : ""}${periodParam}`;
           return (
             <li key={c} className="flex items-center justify-between gap-2 min-w-0">
               <ChampLink name={c} size={16} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
@@ -274,7 +287,17 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][]; teamSlug?:
 /** [champion a, champion b, games, wins, their combined gold lead at 15 or null] */
 type Pair = [string, string, number, number, number | null];
 
-const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: string; oppSlug?: string; period?: string; side?: "b" | "r" }> = ({ title, hint, list, teamName, oppSlug, period, side }) => {
+const Pairs: React.FC<{
+  title: string;
+  hint?: string;
+  list: Pair[];
+  teamName?: string;
+  oppSlug?: string;
+  rosterSlugs?: string[];
+  role?: string;
+  period?: string;
+  side?: "b" | "r";
+}> = ({ title, hint, list, teamName, oppSlug, rosterSlugs, role, period, side }) => {
   if (!list.length) return null;
   const maxN = Math.max(1, ...list.map(([, , n]) => n));
   const periodParam =
@@ -285,6 +308,7 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: s
         : period?.startsWith("p:")
           ? `&patch=${encodeURIComponent(period.slice(2))}`
           : "";
+  const playerParam = `${rosterSlugs?.[0] ? `player=${encodeURIComponent(rosterSlugs[0])}&` : ""}${rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? `vsplayer=${encodeURIComponent(rosterSlugs[1])}&` : ""}`;
   return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold text-rw-muted mb-1" title={hint}>
@@ -293,7 +317,7 @@ const Pairs: React.FC<{ title: string; hint?: string; list: Pair[]; teamName?: s
       <ul className="text-xs space-y-1">
         {list.map(([a, b, n, w, gd]) => {
           const good = n > 0 && w / n >= 0.5;
-          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${oppSlug ? `vs=${encodeURIComponent(oppSlug)}&` : ""}champ=${encodeURIComponent(`${resolveChampSlug(a)},${resolveChampSlug(b)}`)}${side ? `&side=${side}` : ""}${periodParam}`;
+          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${oppSlug ? `vs=${encodeURIComponent(oppSlug)}&` : ""}${playerParam}champ=${encodeURIComponent(`${resolveChampSlug(a)},${resolveChampSlug(b)}`)}${role ? `&role=${encodeURIComponent(role)}` : ""}${side ? `&side=${side}` : ""}${periodParam}`;
           return (
             <li key={`${a}-${b}`} className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1 min-w-0 truncate" title={`${champName(a)} + ${champName(b)}`}>
@@ -375,7 +399,9 @@ export const DraftTendencies: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `team=${encodeURIComponent(resolvedSlug)}${oppSlug ? `&vs=${encodeURIComponent(oppSlug)}` : ""}${periodParam}`,
+                query: `team=${encodeURIComponent(resolvedSlug)}${oppSlug ? `&vs=${encodeURIComponent(oppSlug)}` : ""}${
+                  rosterSlugs?.[0] ? `&player=${encodeURIComponent(rosterSlugs[0])}` : ""
+                }${rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? `&vsplayer=${encodeURIComponent(rosterSlugs[1])}` : ""}${periodParam}`,
               }}
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
             >
@@ -593,10 +619,10 @@ export const DraftTendencies: React.FC<{
         )}
       </div>
       <div className="grid grid-cols-2 @3xl:grid-cols-4 gap-x-6 gap-y-3">
-        <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr teamName={resolvedSlug || teamName} oppSlug={oppSlug} period={period} side="b" />
-        <List title={tl("First picks (red)")} hint={tl("Their first two picks when on red side (R1-R2)")} list={d.r12} showWr teamName={resolvedSlug || teamName} oppSlug={oppSlug} period={period} side="r" />
-        <List title={tl("Bans, phase 1")} hint={tl("Their first three bans")} list={d.bans1} teamName={resolvedSlug || teamName} oppSlug={oppSlug} period={period} isBan />
-        <List title={tl("Bans, phase 2")} hint={tl("Their last two bans")} list={d.bans2} teamName={resolvedSlug || teamName} oppSlug={oppSlug} period={period} isBan />
+        <List title={tl("First pick (blue)")} hint={tl("Their first pick when on blue side (B1)")} list={d.b1} showWr teamName={resolvedSlug || teamName} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} side="b" />
+        <List title={tl("First picks (red)")} hint={tl("Their first two picks when on red side (R1-R2)")} list={d.r12} showWr teamName={resolvedSlug || teamName} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} side="r" />
+        <List title={tl("Bans, phase 1")} hint={tl("Their first three bans")} list={d.bans1} teamName={resolvedSlug || teamName} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} isBan />
+        <List title={tl("Bans, phase 2")} hint={tl("Their last two bans")} list={d.bans2} teamName={resolvedSlug || teamName} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} isBan />
       </div>
       <dl className="grid grid-cols-1 @md:grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         <RoleLine title={tl("First role locked in")} shares={d.firstRole} teamSlug={resolvedSlug} period={period} />
@@ -614,10 +640,12 @@ export const DraftTendencies: React.FC<{
             list={d.midJungle}
             teamName={resolvedSlug || teamName}
             oppSlug={oppSlug}
+            rosterSlugs={rosterSlugs}
+            role="Jungle,Mid"
             period={period}
           />
-          <Pairs title={tl("Bot lane pairs")} hint={tl("Games · win rate · combined gold lead at 15")} list={d.botDuos} teamName={resolvedSlug || teamName} oppSlug={oppSlug} period={period} />
-          <Pairs title={tl("Red openers (R1 + R2)")} list={d.r12pairs} teamName={resolvedSlug || teamName} oppSlug={oppSlug} period={period} side="r" />
+          <Pairs title={tl("Bot lane pairs")} hint={tl("Games · win rate · combined gold lead at 15")} list={d.botDuos} teamName={resolvedSlug || teamName} oppSlug={oppSlug} rosterSlugs={rosterSlugs} role="Bot,Support" period={period} />
+          <Pairs title={tl("Red openers (R1 + R2)")} list={d.r12pairs} teamName={resolvedSlug || teamName} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} side="r" />
         </div>
       )}
       <div className="text-xs flex flex-wrap items-baseline gap-x-2 gap-y-0.5" title={tl("Champions each role played in this period (in brackets: 2+ games). In Fearless, a Bo5 needs up to five per role.")}>
@@ -660,7 +688,7 @@ export const DraftTendencies: React.FC<{
                       kind: "team",
                       slug: resolvedSlug,
                       tab: "champions",
-                      query: `champ=${encodeURIComponent(resolveChampSlug(c))}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      query: `champ=${encodeURIComponent(resolveChampSlug(c))}${ROLES[roles[0]] ? `&role=${encodeURIComponent(ROLES[roles[0]])}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                     }}
                     className="text-rw-muted hover:text-rw-accent hover:underline"
                   >
