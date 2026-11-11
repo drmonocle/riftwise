@@ -10,7 +10,8 @@ import {
 } from "../../stats";
 import { tl, tk, tc, eventTitle, fmtDec } from "../../i18n";
 import { champName, useChampionNames } from "../../champions";
-import { bare, loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, loadHubMeta, loadHubRecords, loadHubTitles, loadRecordsYear, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { matchesPeriodEvent } from "../../hub/period";
 import type { HubRecords, HubRecordsYear, HubTitle } from "../../hub/types";
 import {
   CompareRoute,
@@ -159,14 +160,33 @@ const CareerRecords: React.FC<{
 /** file name of a records card: "records-fastest-wins" */
 const shareName = (title: string) => "records-" + title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-const PentakillRecords: React.FC<{ p: NonNullable<HubRecords["pentas"]>; matchText?: (s: string, champ?: string, playerSlug?: string) => boolean }> = ({
+const PentakillRecords: React.FC<{
+  p: NonNullable<HubRecords["pentas"]>;
+  matchText?: (
+    s: string,
+    champ?: string,
+    playerSlug?: string,
+    teamNames?: (string | null | undefined)[],
+    eventSlug?: string | null,
+    eventName?: string | null,
+  ) => boolean;
+}> = ({
   p,
   matchText,
 }) => {
   const [n, setN] = useState(8);
   const mostRows = matchText ? p.most.filter((x) => matchText(`${x.n} ${x.u || ""}`, undefined, x.u || prettySlug(x.n))) : p.most;
   const recentRows = matchText
-    ? p.recent.filter((x) => matchText(`${x.n} ${x.u || ""} ${x.c} ${champName(x.c)} ${x.a} ${x.b} ${x.t} ${x.e || ""}`, x.c, x.u || prettySlug(x.n)))
+    ? p.recent.filter((x) =>
+        matchText(
+          `${x.n} ${x.u || ""} ${x.c} ${champName(x.c)} ${x.a} ${x.b} ${x.t} ${x.e || ""}`,
+          x.c,
+          x.u || prettySlug(x.n),
+          [x.a, x.b],
+          x.e,
+          x.t,
+        ),
+      )
     : p.recent;
   const maxPenta = Math.max(1, p.most[0]?.v || 1);
   return (
@@ -780,21 +800,36 @@ export const RecordsPanel: React.FC = () => {
   // this year's file too, for "Closest to falling" on the all-time view
   const thisYear = String(new Date().getFullYear());
   const thisYearState = useLoad(() => loadRecordsYear(thisYear).catch(() => null), [thisYear]);
+  const aliases = useLoad(loadAliases, []);
   const terms = search
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((s) => normText(s.trim()))
     .filter(Boolean);
   const matchText = terms.length
-    ? (s: string, champ?: string, playerSlug?: string) => {
+    ? (
+        s: string,
+        champ?: string,
+        playerSlug?: string,
+        teamNames?: (string | null | undefined)[],
+        eventSlug?: string | null,
+        eventName?: string | null,
+      ) => {
         const hay = normText(s);
         const hayBare = bare(hay);
-        return terms.some(
-          (t) =>
-            hay.includes(t) ||
-            (t.length >= 2 && hayBare.includes(bare(t))) ||
-            (champ ? matchesChampSearch(champ, t) : false) ||
-            (playerSlug ? resolvePlayerSlug(t) === playerSlug : false),
-        );
+        const rowTeams = (teamNames || [])
+          .filter((tn): tn is string => Boolean(tn))
+          .map((tn) => aliases.data?.team[tn.toLowerCase()] || prettySlug(tn));
+        return terms.some((t) => {
+          if (hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t)))) return true;
+          if (champ && matchesChampSearch(champ, t)) return true;
+          if (playerSlug && resolvePlayerSlug(t) === playerSlug) return true;
+          if (rowTeams.length) {
+            const canonTeam = aliases.data?.team[t] || prettySlug(t);
+            if (canonTeam && rowTeams.includes(canonTeam)) return true;
+          }
+          if ((eventSlug || eventName) && matchesPeriodEvent(eventSlug || "", eventName || "", t)) return true;
+          return false;
+        });
       }
     : undefined;
   return (
@@ -836,7 +871,7 @@ export const RecordsPanel: React.FC = () => {
           fmt: (v: number) => string,
         ) => {
           const rows = matchText
-            ? rawRows.filter((g) => matchText(`${g.w} ${g.a} ${g.b} ${g.t} ${g.e || ""} ${title}`))
+            ? rawRows.filter((g) => matchText(`${g.w} ${g.a} ${g.b} ${g.t} ${g.e || ""} ${title}`, undefined, undefined, [g.w, g.a, g.b], g.e, g.t))
             : rawRows;
           if (!rows.length) return null;
           const minV = Math.min(...rows.map((g) => g.v || 1));
@@ -1029,7 +1064,16 @@ export const RecordsPanel: React.FC = () => {
           fmt: (v: number) => string = fmtNum,
         ) => {
           const rows = matchText
-            ? rawRows.filter((p) => matchText(`${p.pl} ${p.u || ""} ${p.c} ${champName(p.c)} ${p.opp} ${p.t} ${p.e || ""} ${title}`, p.c, p.u || prettySlug(p.pl)))
+            ? rawRows.filter((p) =>
+                matchText(
+                  `${p.pl} ${p.u || ""} ${p.c} ${champName(p.c)} ${p.opp} ${p.t} ${p.e || ""} ${title}`,
+                  p.c,
+                  p.u || prettySlug(p.pl),
+                  [p.opp],
+                  p.e,
+                  p.t,
+                ),
+              )
             : rawRows;
           if (!rows.length) return null;
           const maxV = Math.max(1, rawRows[0]?.v || 1);
@@ -1367,10 +1411,10 @@ export const RecordsPanel: React.FC = () => {
           );
         };
         const streakRows = matchText
-          ? r.team.streaks.filter((t) => matchText(`${t.team} ${t.u || ""}`))
+          ? r.team.streaks.filter((t) => matchText(`${t.team} ${t.u || ""}`, undefined, undefined, [t.u, t.team]))
           : r.team.streaks;
         const titleRecordRows = matchText
-          ? r.team.titles.filter((t) => matchText(`${t.team} ${t.u || ""}`))
+          ? r.team.titles.filter((t) => matchText(`${t.team} ${t.u || ""}`, undefined, undefined, [t.u, t.team]))
           : r.team.titles;
         return (
           <CaptureContext.Provider value={year === "all" ? tl("All-time pro records") : tl("{year} records", { year })}>
@@ -1802,6 +1846,7 @@ const TITLE_FILTERS = [
 export const TitlesPanel: React.FC = () => {
   usePageTitle(tl("Titles"));
   const state = useLoad<HubTitle[]>(loadHubTitles, []);
+  const aliases = useLoad(loadAliases, []);
   const route = useHubRoute();
   const q = new URLSearchParams(route.kind === "titles" && "query" in route ? route.query || "" : "");
   const kindParam = q.get("kind") as (typeof TITLE_FILTERS)[number]["key"] | null;
@@ -1868,7 +1913,16 @@ export const TitlesPanel: React.FC = () => {
               if (!terms.length) return true;
               const hay = normText(`${eventTitle(x.t)} ${x.t} ${x.w} ${x.as} ${x.l} ${x.u || ""}`);
               const hayBare = bare(hay);
-              return terms.some((t) => hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t))));
+              const rowTeams = [x.u, x.w, x.as, x.l]
+                .filter((tn): tn is string => Boolean(tn))
+                .map((tn) => aliases.data?.team[tn.toLowerCase()] || prettySlug(tn));
+              return terms.some((t) => {
+                if (hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t)))) return true;
+                const canonTeam = aliases.data?.team[t] || prettySlug(t);
+                if (canonTeam && rowTeams.includes(canonTeam)) return true;
+                if (matchesPeriodEvent(x.e || "", x.t || "", t)) return true;
+                return false;
+              });
             })
             .slice(0, 300);
           return (

@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
-import { bare, loadRatings, loadRatingsHistory, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadAliases, loadRatings, loadRatingsHistory, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
@@ -79,7 +79,20 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     navigateHub({ kind: "rankings", ...(qs ? { query: qs } : {}) }, { replace: true });
   };
   const [limit, setLimit] = useState(50);
-  const [asOf, setAsOf] = useState("");
+  const urlAsOf = q.get("asof") || q.get("date") || "";
+  const [asOf, setAsOfState] = useState(urlAsOf);
+  useEffect(() => {
+    setAsOfState(urlAsOf);
+  }, [urlAsOf]);
+  const setAsOf = (v: string) => {
+    setAsOfState(v);
+    const next = new URLSearchParams(q);
+    next.delete("date");
+    if (!v) next.delete("asof");
+    else next.set("asof", v);
+    const qs = next.toString();
+    navigateHub({ kind: "rankings", ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
   const urlQ = q.get("q") || q.get("team") || q.get("teams") || "";
   const [search, setSearch] = useState(urlQ);
   useEffect(() => {
@@ -95,6 +108,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     const qs = next.toString();
     navigateHub({ kind: "rankings", ...(qs ? { query: qs } : {}) }, { replace: true });
   };
+  const aliases = useLoad(loadAliases, []);
   const hist = useLoad(loadRatingsHistory, []);
   const histDates = useMemo(() => {
     if (!hist.data) return [];
@@ -181,14 +195,19 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       .filter(Boolean);
     const matchRow = (r: RatingRow, t: string) => {
       const hay = normText(`${r[0] || ""} ${r[1]} ${r[2] || ""} ${r[3] || ""} ${r[10] || ""}`);
-      return hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t)));
+      if (hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t)))) return true;
+      const canonTeam = aliases.data?.team[t] || prettySlug(t);
+      if (canonTeam && ((r[0] && r[0].toLowerCase() === canonTeam) || prettySlug(r[1]) === canonTeam)) return true;
+      const canonLeague = aliases.data?.league[t] || resolveLeagueSlug(t);
+      if (canonLeague && r[4] && r[4].toLowerCase() === canonLeague.toLowerCase()) return true;
+      return false;
     };
     const pool =
       !league && terms.some((t) => !rows.some(({ r }) => matchRow(r, t)) && d.teams.some((r) => matchRow(r, t)))
         ? rankList(d.teams)
         : rows;
     return pool.filter(({ r }) => terms.some((t) => matchRow(r, t)));
-  }, [rows, d.teams, league, search, asOf, hist.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rows, d.teams, league, search, asOf, hist.data, aliases.data]); // eslint-disable-line react-hooks/exhaustive-deps
   const pair =
     search.trim() && shownRows.length >= 2 && (shownRows[0].r[0] || shownRows[0].r[1]) && (shownRows[1].r[0] || shownRows[1].r[1])
       ? [shownRows[0].r[0] || prettySlug(shownRows[0].r[1]), shownRows[1].r[0] || prettySlug(shownRows[1].r[1])]

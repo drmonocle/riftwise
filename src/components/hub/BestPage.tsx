@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { PlayCircle } from "lucide-react";
 import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
 import { bare, loadAliases, loadBest, loadBestIndex, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { matchesPeriodEvent } from "../../hub/period";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, TeamLink, TeamLogo, th, useHidden, useLoad, usePageTitle } from "./ui";
@@ -107,10 +108,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
     if (tiers.size && !tiers.has(ratingTier(r[0]))) return false;
     if (vodOnly && (view === "games" ? !(r as BestGame)[15] : !seriesWithVod.has(r[1]))) return false;
     if (teamTerms.length) {
-      const [a, aSlug, b, bSlug, en] =
+      const [a, aSlug, b, bSlug, en, eSlug] =
         view === "series"
-          ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9], (r as BestSeries)[3]]
-          : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10], (r as BestGame)[4]];
+          ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9], (r as BestSeries)[3], (r as BestSeries)[4]]
+          : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10], (r as BestGame)[4], (r as BestGame)[5]];
       const matchesTerm = (term: { norm: string; aliasSlug?: string }) => {
         const bTerm = bare(term.norm);
         const matchName =
@@ -121,7 +122,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
         const matchSlug =
           (aSlug && (aSlug === term.aliasSlug || normText(aSlug).includes(term.norm) || (bTerm.length >= 2 && bare(aSlug).includes(bTerm)))) ||
           (bSlug && (bSlug === term.aliasSlug || normText(bSlug).includes(term.norm) || (bTerm.length >= 2 && bare(bSlug).includes(bTerm))));
-        return Boolean(matchName || matchSlug);
+        const matchEvent = matchesPeriodEvent(eSlug || "", en || "", term.norm);
+        return Boolean(matchName || matchSlug || matchEvent);
       };
       if (isVsQuery && teamTerms.length >= 2) {
         if (!teamTerms.every(matchesTerm)) return false;
