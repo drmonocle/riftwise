@@ -6,7 +6,7 @@
 import React, { useMemo, useState } from "react";
 import { tl } from "../../i18n";
 import { champName } from "../../champions";
-import { prettySlug, resolveChampSlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+import { prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import type { EventLines } from "../../hub/worldsFacts";
 import { cinderella, comebacks, editionYear, finals, finalsRecords, hosts, playerTitles, runs, swissRuns, upsets, yearLines, type FileRef, type Run } from "../../hub/intlInsights";
@@ -69,6 +69,57 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
   const titles = useMemo(() => (all ? playerTitles(refs).slice(0, 12) : []), [refs, all]);
   const ys = useMemo(() => (all ? yearLines(refs) : []), [refs, all]);
   const hs = useMemo(() => (all ? hosts(refs) : []), [refs, all]);
+  const topChamps = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of refs) {
+      for (const p of r.f.p || []) {
+        if (!p[5]) continue;
+        const c = resolveChampSlug(p[5]);
+        if (c) counts.set(c, (counts.get(c) || 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+      .map(([c]) => c);
+  }, [refs]);
+  const topPlayers = useMemo(() => {
+    if (titles.length >= 2) {
+      return titles
+        .slice(0, 2)
+        .map((p) => p.u || resolvePlayerSlug(p.name) || prettySlug(p.name))
+        .filter(Boolean);
+    }
+    const counts = new Map<string, number>();
+    for (const r of refs) {
+      for (const p of r.f.p || []) {
+        const u = p[3] || resolvePlayerSlug(p[2]) || prettySlug(p[2]);
+        if (u) counts.set(u, (counts.get(u) || 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+      .map(([u]) => u);
+  }, [refs, titles]);
+  const topTeams = useMemo(() => {
+    const out: string[] = [];
+    const push = (u?: string | null) => {
+      if (u && !out.includes(u)) out.push(u);
+    };
+    for (const r of fin?.mostReached || []) push(r.u);
+    for (const r of rn) push(r.u || teamSlug(r.team));
+    for (const g of up.games) {
+      push(teamSlug(g.winner));
+      push(teamSlug(g.loser));
+    }
+    return out.slice(0, 2);
+  }, [fin, rn, up.games]);
+  const cA = topChamps[0];
+  const cB = topChamps[1];
+  const cJoin = topChamps.join(",");
+  const pA = topPlayers[0];
+  const pB = topPlayers[1];
   // each region's record against other regions, year by year (the regions with the most such series)
   const trend = useMemo(() => {
     if (!all) return null;
@@ -92,6 +143,22 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Biggest upsets")}
         right={
           <span className="flex flex-wrap items-center gap-2">
+            {cA && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: cA,
+                    ...(cB ? { vs: cB } : {}),
+                    ...(singleYear ? { patch: `y${singleYear}`, year: singleYear } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             {up.games[0]?.winner && up.games[0]?.loser && (
               <>
                 <HubLink
@@ -109,7 +176,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(teamSlug(up.games[0].winner))},${encodeURIComponent(teamSlug(up.games[0].loser))}${singleYear ? `&p=y${singleYear}` : ""}`,
+                    query: `teams=${encodeURIComponent(teamSlug(up.games[0].winner))},${encodeURIComponent(teamSlug(up.games[0].loser))}${cJoin ? `&champ=${encodeURIComponent(cJoin)}` : ""}${singleYear ? `&p=y${singleYear}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -137,6 +204,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       ...(singleYear ? { year: singleYear } : {}),
                       team: teamSlug(up.games[0].winner),
                       vs: teamSlug(up.games[0].loser),
+                      ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                      ...(cA ? { champ: cA } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -189,6 +258,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   ...(singleYear ? { year: singleYear } : {}),
                   ...(up.games[0]?.winner ? { team: teamSlug(up.games[0].winner) } : {}),
                   ...(up.games[0]?.loser ? { vs: teamSlug(up.games[0].loser) } : {}),
+                  ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -218,9 +289,22 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
-                  ...(up.games[0]?.winner
+                  ...(cA ? { champ: cA } : {}),
+                  ...([
+                    up.games[0]?.winner ? teamSlug(up.games[0].winner) : undefined,
+                    up.games[0]?.loser ? teamSlug(up.games[0].loser) : undefined,
+                    pA,
+                    pB,
+                  ].some(Boolean)
                     ? {
-                        q: `${teamSlug(up.games[0].winner)}${up.games[0].loser ? `,${teamSlug(up.games[0].loser)}` : ""}`,
+                        q: [
+                          up.games[0]?.winner ? teamSlug(up.games[0].winner) : undefined,
+                          up.games[0]?.loser ? teamSlug(up.games[0].loser) : undefined,
+                          pA,
+                          pB,
+                        ]
+                          .filter(Boolean)
+                          .join(","),
                       }
                     : {}),
                 }).toString(),
@@ -231,7 +315,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}${singleYear ? `&key=y${singleYear}&year=${singleYear}` : ""}` }}
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  scope: intlLeague,
+                  league: intlLeague,
+                  ...(singleYear ? { key: `y${singleYear}`, year: singleYear } : {}),
+                  ...(cJoin ? { q: cJoin } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -324,6 +416,22 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Biggest comebacks")}
         right={
           <span className="flex flex-wrap items-center gap-2">
+            {cA && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: cA,
+                    ...(cB ? { vs: cB } : {}),
+                    ...(singleYear ? { patch: `y${singleYear}`, year: singleYear } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             {cb[0]?.winner && cb[0]?.loser && (
               <>
                 <HubLink
@@ -341,7 +449,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(teamSlug(cb[0].winner))},${encodeURIComponent(teamSlug(cb[0].loser))}${singleYear ? `&p=y${singleYear}` : ""}`,
+                    query: `teams=${encodeURIComponent(teamSlug(cb[0].winner))},${encodeURIComponent(teamSlug(cb[0].loser))}${cJoin ? `&champ=${encodeURIComponent(cJoin)}` : ""}${singleYear ? `&p=y${singleYear}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -369,6 +477,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       ...(singleYear ? { year: singleYear } : {}),
                       team: teamSlug(cb[0].winner),
                       vs: teamSlug(cb[0].loser),
+                      ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                      ...(cA ? { champ: cA } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -420,6 +530,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   ...(singleYear ? { year: singleYear } : {}),
                   ...(cb[0]?.winner ? { team: teamSlug(cb[0].winner) } : {}),
                   ...(cb[0]?.loser ? { vs: teamSlug(cb[0].loser) } : {}),
+                  ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -450,9 +562,22 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
-                  ...(cb[0]?.winner
+                  ...(cA ? { champ: cA } : {}),
+                  ...([
+                    cb[0]?.winner ? teamSlug(cb[0].winner) : undefined,
+                    cb[0]?.loser ? teamSlug(cb[0].loser) : undefined,
+                    pA,
+                    pB,
+                  ].some(Boolean)
                     ? {
-                        q: `${teamSlug(cb[0].winner)}${cb[0].loser ? `,${teamSlug(cb[0].loser)}` : ""}`,
+                        q: [
+                          cb[0]?.winner ? teamSlug(cb[0].winner) : undefined,
+                          cb[0]?.loser ? teamSlug(cb[0].loser) : undefined,
+                          pA,
+                          pB,
+                        ]
+                          .filter(Boolean)
+                          .join(","),
                       }
                     : {}),
                 }).toString(),
@@ -463,7 +588,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}${singleYear ? `&key=y${singleYear}&year=${singleYear}` : ""}` }}
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  scope: intlLeague,
+                  league: intlLeague,
+                  ...(singleYear ? { key: `y${singleYear}`, year: singleYear } : {}),
+                  ...(cJoin ? { q: cJoin } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -548,14 +681,30 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Swiss stage")}
         right={
           <span className="flex flex-wrap items-center gap-2">
-            {!all && sorted.length >= 1 && (
+            {cA && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: cA,
+                    ...(cB ? { vs: cB } : {}),
+                    ...(!all && sorted[0] ? { patch: `y${yearOnly(sorted[0].year)}`, year: yearOnly(sorted[0].year) } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
+            {sorted.length >= 1 && (
               <>
                 <HubLink
                   to={{
                     kind: "prep",
                     a: sorted[0].u || teamSlug(sorted[0].team),
                     ...(sorted[1] ? { b: sorted[1].u || teamSlug(sorted[1].team) } : {}),
-                    period: `y${yearOnly(sorted[0].year)}`,
+                    ...(!all ? { period: `y${yearOnly(sorted[0].year)}` } : {}),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -566,7 +715,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     kind: "draft",
                     query: `teams=${encodeURIComponent(sorted[0].u || teamSlug(sorted[0].team))}${
                       sorted[1] ? `,${encodeURIComponent(sorted[1].u || teamSlug(sorted[1].team))}` : ""
-                    }&p=y${encodeURIComponent(yearOnly(sorted[0].year))}`,
+                    }${cJoin ? `&champ=${encodeURIComponent(cJoin)}` : ""}${!all ? `&p=y${encodeURIComponent(yearOnly(sorted[0].year))}` : ""}`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -578,7 +727,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     mode: "team",
                     a: sorted[0].u || teamSlug(sorted[0].team),
                     ...(sorted[1] ? { b: sorted[1].u || teamSlug(sorted[1].team) } : {}),
-                    period: `y${yearOnly(sorted[0].year)}`,
+                    ...(!all ? { period: `y${yearOnly(sorted[0].year)}` } : {}),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -598,6 +747,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         ...(sorted[1] ? { vs: sorted[1].u || teamSlug(sorted[1].team) } : {}),
                       }
                     : {}),
+                  ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -617,6 +768,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                         ...(sorted[1] ? { vs: sorted[1].u || teamSlug(sorted[1].team) } : {}),
                       }
                     : {}),
+                  ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -629,7 +782,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 kind: "rankings",
                 query: new URLSearchParams({
                   league: intlLeague,
-                  ...(!all && sorted[0]
+                  ...(sorted[0]
                     ? {
                         q: `${sorted[0].u || teamSlug(sorted[0].team)}${sorted[1] ? `,${sorted[1].u || teamSlug(sorted[1].team)}` : ""}`,
                       }
@@ -644,7 +797,12 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink
               to={{
                 kind: "tiers",
-                query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}${!all && sorted[0] ? `&key=y${encodeURIComponent(yearOnly(sorted[0].year))}&year=${encodeURIComponent(yearOnly(sorted[0].year))}` : ""}`,
+                query: new URLSearchParams({
+                  scope: intlLeague,
+                  league: intlLeague,
+                  ...(!all && sorted[0] ? { key: `y${yearOnly(sorted[0].year)}`, year: yearOnly(sorted[0].year) } : {}),
+                  ...(cJoin ? { q: cJoin } : {}),
+                }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
@@ -657,9 +815,22 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(!all && sorted[0] ? { year: yearOnly(sorted[0].year) } : {}),
-                  ...(sorted[0]
+                  ...(cA ? { champ: cA } : {}),
+                  ...([
+                    sorted[0] ? sorted[0].u || teamSlug(sorted[0].team) : undefined,
+                    sorted[1] ? sorted[1].u || teamSlug(sorted[1].team) : undefined,
+                    pA,
+                    pB,
+                  ].some(Boolean)
                     ? {
-                        q: `${sorted[0].u || teamSlug(sorted[0].team)}${sorted[1] ? `,${sorted[1].u || teamSlug(sorted[1].team)}` : ""}`,
+                        q: [
+                          sorted[0] ? sorted[0].u || teamSlug(sorted[0].team) : undefined,
+                          sorted[1] ? sorted[1].u || teamSlug(sorted[1].team) : undefined,
+                          pA,
+                          pB,
+                        ]
+                          .filter(Boolean)
+                          .join(","),
                       }
                     : {}),
                 }).toString(),
@@ -800,6 +971,22 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Cinderella runs")}
         right={
           <span className="flex flex-wrap items-center gap-2">
+            {cA && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: cA,
+                    ...(cB ? { vs: cB } : {}),
+                    ...(singleYear ? { patch: `y${singleYear}`, year: singleYear } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             {u0 ? (
               <>
                 <HubLink
@@ -812,7 +999,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(u0)}${u1 ? `,${encodeURIComponent(u1)}` : ""}${singleYear ? `&p=y${singleYear}` : ""}`,
+                    query: `teams=${encodeURIComponent(u0)}${u1 ? `,${encodeURIComponent(u1)}` : ""}${cJoin ? `&champ=${encodeURIComponent(cJoin)}` : ""}${singleYear ? `&p=y${singleYear}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -834,6 +1021,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       ...(singleYear ? { year: singleYear } : {}),
                       team: u0,
                       ...(u1 ? { vs: u1 } : {}),
+                      ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                      ...(cA ? { champ: cA } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -874,6 +1063,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
                   ...(u0 ? { team: u0, ...(u1 ? { vs: u1 } : {}) } : {}),
+                  ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -901,7 +1092,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
-                  ...(u0 ? { q: `${u0}${u1 ? `,${u1}` : ""}` } : {}),
+                  ...(cA ? { champ: cA } : {}),
+                  ...([u0, u1, pA, pB].some(Boolean) ? { q: [u0, u1, pA, pB].filter(Boolean).join(",") } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -910,7 +1102,15 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}${singleYear ? `&key=y${singleYear}&year=${singleYear}` : ""}` }}
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  scope: intlLeague,
+                  league: intlLeague,
+                  ...(singleYear ? { key: `y${singleYear}`, year: singleYear } : {}),
+                  ...(cJoin ? { q: cJoin } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -959,6 +1159,21 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Finals")}
         right={
           <span className="flex flex-wrap items-center gap-2">
+            {cA && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: cA,
+                    ...(cB ? { vs: cB } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             {fin.mostReached.length >= 1 && (
               <>
                 <HubLink
@@ -970,7 +1185,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(fin.mostReached[0].u)}${fin.mostReached[1] ? `,${encodeURIComponent(fin.mostReached[1].u)}` : ""}`,
+                    query: `teams=${encodeURIComponent(fin.mostReached[0].u)}${fin.mostReached[1] ? `,${encodeURIComponent(fin.mostReached[1].u)}` : ""}${cJoin ? `&champ=${encodeURIComponent(cJoin)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -989,6 +1204,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       league: intlLeague,
                       team: fin.mostReached[0].u,
                       ...(fin.mostReached[1]?.u ? { vs: fin.mostReached[1].u } : {}),
+                      ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                      ...(cA ? { champ: cA } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1019,6 +1236,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   league: intlLeague,
                   ...(fin.mostReached[0]?.u ? { team: fin.mostReached[0].u } : {}),
                   ...(fin.mostReached[1]?.u ? { vs: fin.mostReached[1].u } : {}),
+                  ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1048,9 +1267,10 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 kind: "leaders",
                 query: new URLSearchParams({
                   league: intlLeague,
-                  ...(fin.mostReached[0]?.u
+                  ...(cA ? { champ: cA } : {}),
+                  ...([fin.mostReached[0]?.u, fin.mostReached[1]?.u, pA, pB].some(Boolean)
                     ? {
-                        q: `${fin.mostReached[0].u}${fin.mostReached[1]?.u ? `,${fin.mostReached[1].u}` : ""}`,
+                        q: [fin.mostReached[0]?.u, fin.mostReached[1]?.u, pA, pB].filter(Boolean).join(","),
                       }
                     : {}),
                 }).toString(),
@@ -1061,7 +1281,14 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}` }}
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  scope: intlLeague,
+                  league: intlLeague,
+                  ...(cJoin ? { q: cJoin } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -1242,6 +1469,21 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Players with the most titles")}
         right={
           <span className="flex flex-wrap items-center gap-2">
+            {cA && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: cA,
+                    ...(cB ? { vs: cB } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             {titles.length >= 1 && titles[0].u && (
               <>
                 <HubLink
@@ -1258,6 +1500,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       player: titles[0].u,
                       ...(titles[1]?.u && titles[1].u !== titles[0].u ? { vsplayer: titles[1].u } : {}),
                       ...(tTeams[0] ? { team: tTeams[0], ...(tTeams[1] ? { vs: tTeams[1] } : {}) } : {}),
+                      ...(cA ? { champ: cA } : {}),
                       league: intlLeague,
                     }).toString(),
                   }}
@@ -1281,7 +1524,10 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(tTeams.join(","))}`,
+                        query: new URLSearchParams({
+                          teams: tTeams.join(","),
+                          ...(cJoin ? { champ: cJoin } : {}),
+                        }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                       data-nocapture="1"
@@ -1297,7 +1543,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 kind: "leaders",
                 query: new URLSearchParams({
                   league: intlLeague,
-                  ...(tPlayers.length >= 1 ? { q: tPlayers.join(",") } : {}),
+                  ...(cA ? { champ: cA } : {}),
+                  ...([...tPlayers, ...tTeams].length >= 1 ? { q: [...tPlayers, ...tTeams].join(",") } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1322,6 +1569,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   ...(titles[0]?.u ? { player: titles[0].u } : {}),
                   ...(titles[1]?.u && titles[1].u !== titles[0]?.u ? { vsplayer: titles[1].u } : {}),
                   ...(tTeams[0] ? { team: tTeams[0], ...(tTeams[1] ? { vs: tTeams[1] } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
                   league: intlLeague,
                 }).toString(),
               }}
@@ -1331,7 +1579,14 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Game finder")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}` }}
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  scope: intlLeague,
+                  league: intlLeague,
+                  ...(cJoin ? { q: cJoin } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -1421,6 +1676,21 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         title={tl("Home region")}
         right={
           <span className="flex flex-wrap items-center gap-2">
+            {cA && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: cA,
+                    ...(cB ? { vs: cB } : {}),
+                  }).toString(),
+                }}
+                className="text-[11px] font-semibold text-rw-accent hover:underline"
+                data-nocapture="1"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             {u0 ? (
               <>
                 <HubLink
@@ -1431,7 +1701,13 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   {tl("Match prep")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(hostTeams.join(","))}` }}
+                  to={{
+                    kind: "draft",
+                    query: new URLSearchParams({
+                      teams: hostTeams.join(","),
+                      ...(cJoin ? { champ: cJoin } : {}),
+                    }).toString(),
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -1451,6 +1727,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       league: intlLeague,
                       team: u0,
                       ...(u1 ? { vs: u1 } : {}),
+                      ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                      ...(cA ? { champ: cA } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1479,6 +1757,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(u0 ? { team: u0, ...(u1 ? { vs: u1 } : {}) } : {}),
+                  ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1504,7 +1784,10 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 kind: "leaders",
                 query: new URLSearchParams({
                   league: intlLeague,
-                  ...(hostTeams.length >= 1 ? { q: hostTeams.join(",") } : {}),
+                  ...(cA ? { champ: cA } : {}),
+                  ...([...hostTeams, pA, pB].some(Boolean)
+                    ? { q: [...hostTeams, pA, pB].filter(Boolean).join(",") }
+                    : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1513,7 +1796,14 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {tl("Player leaderboards")} →
             </HubLink>
             <HubLink
-              to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}` }}
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  scope: intlLeague,
+                  league: intlLeague,
+                  ...(cJoin ? { q: cJoin } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -1588,22 +1878,50 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <span className="flex flex-wrap items-center gap-2">
             {ys[0] && (() => {
               const latestYr = yearOnly(ys[0].year);
-              const c0 = ys[0].top?.[0];
-              const c1 = ys[0].best?.[0] && ys[0].best[0] !== c0 ? ys[0].best[0] : ys[1]?.top?.[0] && ys[1].top[0] !== c0 ? ys[1].top[0] : undefined;
-              const yChamps = [c0, c1].filter((x): x is string => Boolean(x)).map(resolveChampSlug).join(",");
+              const c0 = ys[0].top?.[0] ? resolveChampSlug(ys[0].top[0]) : cA;
+              const c1Raw = ys[0].best?.[0] && ys[0].best[0] !== ys[0].top?.[0] ? ys[0].best[0] : ys[1]?.top?.[0] && ys[1].top[0] !== ys[0].top?.[0] ? ys[1].top[0] : undefined;
+              const c1 = (c1Raw ? resolveChampSlug(c1Raw) : undefined) || (cB && cB !== c0 ? cB : undefined);
+              const yChamps = [c0, c1].filter((x): x is string => Boolean(x)).join(",");
               return (
                 <>
+                  {topTeams[0] && (
+                    <>
+                      <HubLink
+                        to={{ kind: "prep", a: topTeams[0], ...(topTeams[1] ? { b: topTeams[1] } : {}) }}
+                        className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        data-nocapture="1"
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: topTeams[0], ...(topTeams[1] ? { b: topTeams[1] } : {}) }}
+                        className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        data-nocapture="1"
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  )}
                   {c0 && (
                     <>
                       <HubLink
-                        to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(c0))}${c1 ? `&vs=${encodeURIComponent(resolveChampSlug(c1))}` : ""}${latestYr ? `&patch=y${encodeURIComponent(latestYr)}&year=${encodeURIComponent(latestYr)}` : ""}` }}
+                        to={{ kind: "counters", query: `champ=${encodeURIComponent(c0)}${c1 ? `&vs=${encodeURIComponent(c1)}` : ""}${latestYr ? `&patch=y${encodeURIComponent(latestYr)}&year=${encodeURIComponent(latestYr)}` : ""}` }}
                         className="text-[11px] font-semibold text-rw-accent hover:underline"
                         data-nocapture="1"
                       >
                         {tl("Counters")} →
                       </HubLink>
                       <HubLink
-                        to={{ kind: "items", query: `champ=${encodeURIComponent(resolveChampSlug(c0))}&league=${encodeURIComponent(intlLeague)}${latestYr ? `&year=${encodeURIComponent(latestYr)}` : ""}` }}
+                        to={{
+                          kind: "items",
+                          query: new URLSearchParams({
+                            champ: c0,
+                            league: intlLeague,
+                            ...(latestYr ? { year: latestYr } : {}),
+                            ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                            ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                          }).toString(),
+                        }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                         data-nocapture="1"
                       >
@@ -1646,6 +1964,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       kind: "draft",
                       query:
                         new URLSearchParams({
+                          ...(topTeams.length ? { teams: topTeams.join(",") } : {}),
                           ...(latestYr ? { p: `y${latestYr}` } : {}),
                           ...(yChamps ? { champ: yChamps } : {}),
                         }).toString() || undefined,
@@ -1655,28 +1974,58 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   >
                     {tl("Draft board")} →
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: new URLSearchParams({
+                        league: intlLeague,
+                        ...(latestYr ? { year: latestYr } : {}),
+                        ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                        ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                        ...(c0 ? { champ: c0, ...(c1 ? { vschamp: c1 } : {}) } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    data-nocapture="1"
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
                 </>
               );
             })()}
-            <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
-              {tl("Records")} →
-            </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}${ys[0] ? `&year=${encodeURIComponent(yearOnly(ys[0].year))}` : ""}` }}
+              to={{
+                kind: "records",
+                ...(topTeams.length ? { query: `q=${encodeURIComponent(topTeams.join(","))}` } : {}),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
-              {tl("Game finder")} →
+              {tl("Records")} →
             </HubLink>
             <HubLink
-              to={{ kind: "rankings", query: `league=${encodeURIComponent(intlLeague)}` }}
+              to={{
+                kind: "rankings",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(topTeams.length ? { q: topTeams.join(",") } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
               {tl("Power rankings")} →
             </HubLink>
             <HubLink
-              to={{ kind: "leaders", query: `league=${encodeURIComponent(intlLeague)}${ys[0] ? `&year=${encodeURIComponent(yearOnly(ys[0].year))}` : ""}` }}
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(ys[0] ? { year: yearOnly(ys[0].year) } : {}),
+                  ...(cA ? { champ: cA } : {}),
+                  ...([...topTeams, ...topPlayers].length ? { q: [...topTeams, ...topPlayers].join(",") } : {}),
+                }).toString(),
+              }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
             >
@@ -1835,39 +2184,121 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           title={tl("Regions year by year")}
           right={
             <span className="flex flex-wrap items-center gap-2">
+              {cA && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: new URLSearchParams({
+                      champ: cA,
+                      ...(cB ? { vs: cB } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
+              {topTeams[0] && (
+                <>
+                  <HubLink
+                    to={{ kind: "prep", a: topTeams[0], ...(topTeams[1] ? { b: topTeams[1] } : {}) }}
+                    className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    data-nocapture="1"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: new URLSearchParams({
+                        teams: topTeams.join(","),
+                        ...(cJoin ? { champ: cJoin } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    data-nocapture="1"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "compare", mode: "team", a: topTeams[0], ...(topTeams[1] ? { b: topTeams[1] } : {}) }}
+                    className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    data-nocapture="1"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
               <HubLink to={{ kind: "leagues" }} className="text-[11px] font-semibold text-rw-accent hover:underline" data-nocapture="1">
                 {tl("Leagues")} →
               </HubLink>
               <HubLink
-                to={{ kind: "rankings", query: `league=${encodeURIComponent(intlLeague)}` }}
+                to={{
+                  kind: "rankings",
+                  query: new URLSearchParams({
+                    league: intlLeague,
+                    ...(topTeams.length ? { q: topTeams.join(",") } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
               >
                 {tl("Power rankings")} →
               </HubLink>
               <HubLink
-                to={{ kind: "items", query: `league=${encodeURIComponent(intlLeague)}` }}
+                to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    league: intlLeague,
+                    ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                    ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                    ...(cA ? { champ: cA } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
               >
                 {tl("Item history")} →
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}` }}
+                to={{
+                  kind: "finder",
+                  query: new URLSearchParams({
+                    league: intlLeague,
+                    ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                    ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
+                    ...(cA ? { champ: cA, ...(cB ? { vschamp: cB } : {}) } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
               >
                 {tl("Game finder")} →
               </HubLink>
               <HubLink
-                to={{ kind: "leaders", query: `league=${encodeURIComponent(intlLeague)}` }}
+                to={{
+                  kind: "leaders",
+                  query: new URLSearchParams({
+                    league: intlLeague,
+                    ...(cA ? { champ: cA } : {}),
+                    ...([...topTeams, ...topPlayers].length ? { q: [...topTeams, ...topPlayers].join(",") } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
               >
                 {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}` }}
+                to={{
+                  kind: "tiers",
+                  query: new URLSearchParams({
+                    scope: intlLeague,
+                    league: intlLeague,
+                    ...(cJoin ? { q: cJoin } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
               >

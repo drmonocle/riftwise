@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { eventName, eventTitle, stageName, tk, tl } from "../../i18n";
-import { bare, loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, normText, prettySlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import {
@@ -175,6 +175,35 @@ function liveResults(schedule: Match[] | undefined, leagueSlug: string, teams: W
   return out;
 }
 
+function evTopTeamsOf(ev?: HubEvent | null, fallback?: HubEvent | null): string[] {
+  const out: string[] = [];
+  const push = (t?: string, u?: string | null) => {
+    const slug = u || (t ? resolveTeamAlias(t) || prettySlug(t) : "");
+    if (slug && !out.includes(slug)) out.push(slug);
+  };
+  for (const r of ev?.results || fallback?.results || []) push(r.t, r.u);
+  for (const t of ev?.teams || fallback?.teams || []) push(t.t, t.u);
+  return out.slice(0, 2);
+}
+
+function evTopChampsOf(ev?: HubEvent | null, fallback?: HubEvent | null): string[] {
+  const out: string[] = [];
+  for (const c of [...(ev?.champs || []), ...(fallback?.champs || [])]) {
+    const slug = resolveChampSlug(c.c);
+    if (slug && !out.includes(slug)) out.push(slug);
+  }
+  return out.slice(0, 2);
+}
+
+function evTopPlayersOf(ev?: HubEvent | null, fallback?: HubEvent | null): string[] {
+  const out: string[] = [];
+  for (const p of [...(ev?.players || []), ...(fallback?.players || [])]) {
+    const slug = p.u || resolvePlayerSlug(p.n) || prettySlug(p.n);
+    if (slug && !out.includes(slug)) out.push(slug);
+  }
+  return out.slice(0, 2);
+}
+
 export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: Match[] }> = ({ kind = "worlds", year: asked, schedule }) => {
   const def = INTL[kind];
   const state = useLoad(() => loadIntl(kind, asked), [kind, asked]);
@@ -245,116 +274,274 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
         )}
         {d && (
           <span className="flex flex-wrap items-center gap-1.5 ml-auto">
-            {d.parent && (
-              <>
-                <HubLink to={{ kind: "event", slug: d.parent.u }} className={btn}>
-                  {tl("Bracket, standings and every series")}
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "leaders",
-                    query: `league=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
-                  }}
-                  className={btn}
-                >
-                  {tl("Leaderboards")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "champions",
-                    query: `league=${encodeURIComponent(def.league)}&scope=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
-                  }}
-                  className={btn}
-                >
-                  {tl("Champions")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "tiers",
-                    query: `league=${encodeURIComponent(def.league)}&scope=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&key=y${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
-                  }}
-                  className={btn}
-                >
-                  {tl("Pro tier list")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "draft",
-                    query: `p=e:${encodeURIComponent(d.parent.u)}`,
-                  }}
-                  className={btn}
-                >
-                  {tl("Draft board")} →
-                </HubLink>
-                <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(def.league)}` }} className={btn}>
-                  {tl("Power rankings")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "items",
-                    query: `league=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
-                  }}
-                  className={btn}
-                >
-                  {tl("Item history")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "finder",
-                    query: `league=${encodeURIComponent(def.league)}&year=${encodeURIComponent(d.year)}&event=${encodeURIComponent(d.parent.u)}`,
-                  }}
-                  className={btn}
-                >
-                  {tl("Game finder")} →
-                </HubLink>
-              </>
-            )}
-            {d.all && (
-              <>
-                <HubLink
-                  to={{ kind: "titles", query: kind === "worlds" ? "kind=Worlds" : "kind=International" }}
-                  className={btn}
-                >
-                  {tl("Titles")} →
-                </HubLink>
-                <HubLink to={{ kind: "records" }} className={btn}>
-                  {tl("Records")} →
-                </HubLink>
-                <HubLink
-                  to={{ kind: "champions", query: `league=${encodeURIComponent(def.league)}&scope=${encodeURIComponent(def.league)}` }}
-                  className={btn}
-                >
-                  {tl("Champions")} →
-                </HubLink>
-                <HubLink
-                  to={{ kind: "tiers", query: `league=${encodeURIComponent(def.league)}&scope=${encodeURIComponent(def.league)}` }}
-                  className={btn}
-                >
-                  {tl("Pro tier list")} →
-                </HubLink>
-                <HubLink to={{ kind: "rankings", query: `league=${encodeURIComponent(def.league)}` }} className={btn}>
-                  {tl("Power rankings")} →
-                </HubLink>
-                <HubLink
-                  to={{ kind: "items", query: `league=${encodeURIComponent(def.league)}` }}
-                  className={btn}
-                >
-                  {tl("Item history")} →
-                </HubLink>
-                <HubLink
-                  to={{ kind: "finder", query: `league=${encodeURIComponent(def.league)}` }}
-                  className={btn}
-                >
-                  {tl("Game finder")} →
-                </HubLink>
-                <HubLink
-                  to={{ kind: "leaders", query: `league=${encodeURIComponent(def.league)}` }}
-                  className={btn}
-                >
-                  {tl("Leaderboards")} →
-                </HubLink>
-              </>
-            )}
+            {d.parent && (() => {
+              const topT = evTopTeamsOf(d.parent, d.main);
+              const topC = evTopChampsOf(d.parent, d.main);
+              const topP = evTopPlayersOf(d.parent, d.main);
+              const cJoin = topC.join(",");
+              const tpJoin = [...topT, ...topP].join(",");
+              return (
+                <>
+                  <HubLink to={{ kind: "event", slug: d.parent.u }} className={btn}>
+                    {tl("Bracket, standings and every series")}
+                  </HubLink>
+                  {topT[0] && (
+                    <>
+                      <HubLink
+                        to={{ kind: "prep", a: topT[0], ...(topT[1] ? { b: topT[1] } : {}), period: `e:${d.parent.u}` }}
+                        className={btn}
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: topT[0], ...(topT[1] ? { b: topT[1] } : {}), period: `e:${d.parent.u}` }}
+                        className={btn}
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  )}
+                  {topC[0] && (
+                    <HubLink
+                      to={{
+                        kind: "counters",
+                        query: new URLSearchParams({
+                          champ: topC[0],
+                          ...(topC[1] ? { vs: topC[1] } : {}),
+                          event: d.parent.u,
+                          patch: `y${d.year}`,
+                          year: d.year,
+                        }).toString(),
+                      }}
+                      className={btn}
+                    >
+                      {tl("Counters")} →
+                    </HubLink>
+                  )}
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      query: new URLSearchParams({
+                        league: def.league,
+                        year: d.year,
+                        event: d.parent.u,
+                        ...(topC[0] ? { champ: topC[0] } : {}),
+                        ...(tpJoin ? { q: tpJoin } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Leaderboards")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "champions",
+                      query: new URLSearchParams({
+                        league: def.league,
+                        scope: def.league,
+                        year: d.year,
+                        key: `y${d.year}`,
+                        event: d.parent.u,
+                        ...(cJoin ? { q: cJoin } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Champions")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "tiers",
+                      query: new URLSearchParams({
+                        league: def.league,
+                        scope: def.league,
+                        year: d.year,
+                        key: `y${d.year}`,
+                        event: d.parent.u,
+                        ...(cJoin ? { q: cJoin } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query: new URLSearchParams({
+                        ...(topT.length ? { teams: topT.join(",") } : {}),
+                        ...(cJoin ? { champ: cJoin } : {}),
+                        p: `e:${d.parent.u}`,
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "rankings",
+                      query: new URLSearchParams({
+                        league: def.league,
+                        ...(topT.length ? { q: topT.join(",") } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        league: def.league,
+                        year: d.year,
+                        event: d.parent.u,
+                        ...(topT[0] ? { team: topT[0], ...(topT[1] ? { vs: topT[1] } : {}) } : {}),
+                        ...(topP[0] ? { player: topP[0], ...(topP[1] ? { vsplayer: topP[1] } : {}) } : {}),
+                        ...(topC[0] ? { champ: topC[0] } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: new URLSearchParams({
+                        league: def.league,
+                        year: d.year,
+                        event: d.parent.u,
+                        ...(topT[0] ? { team: topT[0], ...(topT[1] ? { vs: topT[1] } : {}) } : {}),
+                        ...(topP[0] ? { player: topP[0], ...(topP[1] ? { vsplayer: topP[1] } : {}) } : {}),
+                        ...(topC[0] ? { champ: topC[0], ...(topC[1] ? { vschamp: topC[1] } : {}) } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
+                </>
+              );
+            })()}
+            {d.all && (() => {
+              const allTeams = Array.from(
+                new Set(
+                  (d.league.titles || [])
+                    .map((t) => t.u || resolveTeamAlias(t.t) || prettySlug(t.t))
+                    .filter(Boolean),
+                ),
+              ).slice(0, 2);
+              const tJoin = allTeams.join(",");
+              return (
+                <>
+                  {allTeams[0] && (
+                    <>
+                      <HubLink
+                        to={{ kind: "prep", a: allTeams[0], ...(allTeams[1] ? { b: allTeams[1] } : {}) }}
+                        className={btn}
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "draft", query: `teams=${encodeURIComponent(tJoin)}` }}
+                        className={btn}
+                      >
+                        {tl("Draft board")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "compare", mode: "team", a: allTeams[0], ...(allTeams[1] ? { b: allTeams[1] } : {}) }}
+                        className={btn}
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  )}
+                  <HubLink
+                    to={{
+                      kind: "titles",
+                      query: new URLSearchParams({
+                        kind: kind === "worlds" ? "Worlds" : "International",
+                        ...(tJoin ? { q: tJoin } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Titles")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "records",
+                      ...(tJoin ? { query: `q=${encodeURIComponent(tJoin)}` } : {}),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Records")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "champions", query: `league=${encodeURIComponent(def.league)}&scope=${encodeURIComponent(def.league)}` }}
+                    className={btn}
+                  >
+                    {tl("Champions")} →
+                  </HubLink>
+                  <HubLink
+                    to={{ kind: "tiers", query: `league=${encodeURIComponent(def.league)}&scope=${encodeURIComponent(def.league)}` }}
+                    className={btn}
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "rankings",
+                      query: new URLSearchParams({
+                        league: def.league,
+                        ...(tJoin ? { q: tJoin } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Power rankings")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        league: def.league,
+                        ...(allTeams[0] ? { team: allTeams[0], ...(allTeams[1] ? { vs: allTeams[1] } : {}) } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Item history")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: new URLSearchParams({
+                        league: def.league,
+                        ...(allTeams[0] ? { team: allTeams[0], ...(allTeams[1] ? { vs: allTeams[1] } : {}) } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Game finder")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "leaders",
+                      query: new URLSearchParams({
+                        league: def.league,
+                        ...(tJoin ? { q: tJoin } : {}),
+                      }).toString(),
+                    }}
+                    className={btn}
+                  >
+                    {tl("Leaderboards")} →
+                  </HubLink>
+                </>
+              );
+            })()}
             <CopyIntlPost d={d} kind={kind} title={title} />
           </span>
         )}

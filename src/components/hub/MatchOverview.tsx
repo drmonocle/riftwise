@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import { ClipboardList, GitCompare, Swords, X } from "lucide-react";
 import type { Match } from "../../types";
 import { tl, tc, roleName } from "../../i18n";
-import { loadHubTeam, loadRatings, loadTeamSeries, prettySlug, resolveLeagueSlug, teamStarter } from "../../hub/data";
+import { loadHubTeam, loadRatings, loadTeamSeries, prettySlug, resolveChampSlug, resolveLeagueSlug, teamStarter } from "../../hub/data";
 import type { TeamSeriesRow } from "../../hub/types";
 import { pct } from "../../hub/winChance";
 import { navigateHub } from "../../hub/route";
@@ -131,6 +131,24 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
     [x.team, y.team],
   );
   const hasLanePairs = lanePairs.filter((lp) => lp.a && lp.b).length >= 3;
+  const topPair = lanePairs.find((lp) => lp.a?.u && lp.b?.u) || lanePairs.find((lp) => lp.a?.u || lp.b?.u);
+  const pA = topPair?.a?.u || lanePairs.find((lp) => lp.a?.u)?.a?.u;
+  const pB =
+    (topPair?.b?.u && topPair.b.u !== pA ? topPair.b.u : undefined) ||
+    lanePairs.map((lp) => lp.b?.u || lp.a?.u).find((u) => Boolean(u && u !== pA));
+  const topChamps = useMemo(() => {
+    const out: string[] = [];
+    const push = (raw?: string | null) => {
+      if (!raw) return;
+      const c = resolveChampSlug(raw);
+      if (c && !out.includes(c)) out.push(c);
+    };
+    for (const c of x.team.champs || []) push(c.c);
+    for (const c of y.team.champs || []) push(c.c);
+    return out.slice(0, 2);
+  }, [x.team.champs, y.team.champs]);
+  const cA = topChamps[0];
+  const cB = topChamps[1];
   const card = () =>
     prepOverviewCard({
       a: { name: x.team.name, rank: rankText(x.team), chg: x.team.rating?.chg30, form: hidden ? [] : lastSeries(x, 10).map((r) => r[3] > r[4]) },
@@ -253,6 +271,26 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
           <div className="flex items-center justify-between text-[10px] text-rw-muted uppercase tracking-wider font-semibold">
             <span>{tl("Lane by lane")}</span>
             <span className="flex items-center gap-2">
+              {cA && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const yr = match.startTimeUtc?.slice(0, 4);
+                    onClose();
+                    navigateHub({
+                      kind: "counters",
+                      query: new URLSearchParams({
+                        champ: cA,
+                        ...(cB ? { vs: cB } : {}),
+                        ...(yr ? { patch: `y${yr}`, year: yr } : {}),
+                      }).toString(),
+                    });
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -260,7 +298,11 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   onClose();
                   navigateHub({
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(x.team.u)},${encodeURIComponent(y.team.u)}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
+                    query: new URLSearchParams({
+                      teams: `${x.team.u},${y.team.u}`,
+                      ...(topChamps.length ? { champ: topChamps.join(",") } : {}),
+                      ...(yr ? { p: `y${yr}` } : {}),
+                    }).toString(),
                   });
                 }}
                 className="hover:text-rw-accent hover:underline"
@@ -286,7 +328,8 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   const q = new URLSearchParams({
                     ...(lg ? { league: lg } : {}),
                     ...(yr ? { year: yr } : {}),
-                    q: `${x.team.u},${y.team.u}`,
+                    ...(cA ? { champ: cA } : {}),
+                    q: [x.team.u, y.team.u, pA, pB].filter(Boolean).join(","),
                   }).toString();
                   onClose();
                   navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
@@ -303,6 +346,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   const q = new URLSearchParams({
                     ...(lg ? { scope: lg, league: lg } : {}),
                     ...(yr ? { key: `y${yr}`, year: yr } : {}),
+                    ...(topChamps.length ? { q: topChamps.join(",") } : {}),
                   }).toString();
                   onClose();
                   navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -322,6 +366,9 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                     query: new URLSearchParams({
                       team: x.team.u,
                       vs: y.team.u,
+                      ...(pA ? { player: pA } : {}),
+                      ...(pB ? { vsplayer: pB } : {}),
+                      ...(cA ? { champ: cA } : {}),
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
                     }).toString(),
@@ -342,6 +389,10 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                     query: new URLSearchParams({
                       team: x.team.u,
                       vs: y.team.u,
+                      ...(pA ? { player: pA } : {}),
+                      ...(pB ? { vsplayer: pB } : {}),
+                      ...(cA ? { champ: cA } : {}),
+                      ...(cB ? { vschamp: cB } : {}),
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
                     }).toString(),
@@ -418,7 +469,17 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                 type="button"
                 onClick={() => {
                   onClose();
-                  navigateHub({ kind: "finder", query: `team=${encodeURIComponent(x.team.u)}&vs=${encodeURIComponent(y.team.u)}` });
+                  navigateHub({
+                    kind: "finder",
+                    query: new URLSearchParams({
+                      team: x.team.u,
+                      vs: y.team.u,
+                      ...(pA ? { player: pA } : {}),
+                      ...(pB ? { vsplayer: pB } : {}),
+                      ...(cA ? { champ: cA } : {}),
+                      ...(cB ? { vschamp: cB } : {}),
+                    }).toString(),
+                  });
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline text-left"
               >
@@ -558,6 +619,26 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
             <ClipboardList className="w-3.5 h-3.5" />
             {tl("Full match prep")}
           </button>
+          {cA && (
+            <button
+              type="button"
+              onClick={() => {
+                const yr = match.startTimeUtc?.slice(0, 4);
+                onClose();
+                navigateHub({
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: cA,
+                    ...(cB ? { vs: cB } : {}),
+                    ...(yr ? { patch: `y${yr}`, year: yr } : {}),
+                  }).toString(),
+                });
+              }}
+              className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+            >
+              {tl("Counters")}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -565,7 +646,11 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               onClose();
               navigateHub({
                 kind: "draft",
-                query: `teams=${encodeURIComponent(x.team.u)},${encodeURIComponent(y.team.u)}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
+                query: new URLSearchParams({
+                  teams: `${x.team.u},${y.team.u}`,
+                  ...(topChamps.length ? { champ: topChamps.join(",") } : {}),
+                  ...(yr ? { p: `y${yr}` } : {}),
+                }).toString(),
               });
             }}
             className="flex items-center gap-1 px-2 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -596,6 +681,9 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                 query: new URLSearchParams({
                   team: x.team.u,
                   vs: y.team.u,
+                  ...(pA ? { player: pA } : {}),
+                  ...(pB ? { vsplayer: pB } : {}),
+                  ...(cA ? { champ: cA } : {}),
                   ...(lg ? { league: lg } : {}),
                   ...(yr ? { year: yr } : {}),
                 }).toString(),
@@ -616,6 +704,10 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                 query: new URLSearchParams({
                   team: x.team.u,
                   vs: y.team.u,
+                  ...(pA ? { player: pA } : {}),
+                  ...(pB ? { vsplayer: pB } : {}),
+                  ...(cA ? { champ: cA } : {}),
+                  ...(cB ? { vschamp: cB } : {}),
                   ...(lg ? { league: lg } : {}),
                   ...(yr ? { year: yr } : {}),
                 }).toString(),
@@ -650,6 +742,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               const q = new URLSearchParams({
                 ...(lg ? { scope: lg, league: lg } : {}),
                 ...(yr ? { key: `y${yr}`, year: yr } : {}),
+                ...(topChamps.length ? { q: topChamps.join(",") } : {}),
               }).toString();
               onClose();
               navigateHub({
@@ -669,7 +762,8 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
-                q: `${x.team.u},${y.team.u}`,
+                ...(cA ? { champ: cA } : {}),
+                q: [x.team.u, y.team.u, pA, pB].filter(Boolean).join(","),
               }).toString();
               onClose();
               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
