@@ -266,6 +266,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                         query: new URLSearchParams({
                           team: teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code),
                           vs: teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code),
+                          ...(blocks[0].m.leagueSlug ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug) } : {}),
                           ...(blocks[0].m.startTimeUtc ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
                         }).toString(),
                       }
@@ -299,7 +300,15 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   {tl("Compare")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
+                  to={{
+                    kind: "finder",
+                    query: new URLSearchParams({
+                      team: a,
+                      vs: b,
+                      ...(lg ? { league: lg } : {}),
+                      ...(yr ? { year: yr } : {}),
+                    }).toString(),
+                  }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Game finder")} →
@@ -456,7 +465,12 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(t1Slug)}&vs=${encodeURIComponent(t2Slug)}${m.startTimeUtc ? `&year=${encodeURIComponent(m.startTimeUtc.slice(0, 4))}` : ""}`,
+                    query: new URLSearchParams({
+                      team: t1Slug,
+                      vs: t2Slug,
+                      ...(m.leagueSlug ? { league: resolveLeagueSlug(m.leagueSlug) } : {}),
+                      ...(m.startTimeUtc ? { year: m.startTimeUtc.slice(0, 4) } : {}),
+                    }).toString(),
                   }}
                   className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
                 >

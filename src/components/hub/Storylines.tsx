@@ -358,7 +358,12 @@ export const OwnStorylines: React.FC<{
                       <HubLink
                         to={{
                           kind: "items",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(noteChamp))}${noteYr ? `&year=${encodeURIComponent(String(noteYr))}` : ""}`,
+                          query: new URLSearchParams({
+                            team: who.slug,
+                            champ: resolveChampSlug(noteChamp),
+                            ...(noteYr ? { year: String(noteYr) } : {}),
+                            ...(noteEv ? { event: noteEv } : {}),
+                          }).toString(),
                         }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -466,6 +471,7 @@ export const OwnStorylines: React.FC<{
                         player: who.slug,
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
+                        ...(noteEv ? { event: noteEv } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -798,6 +804,7 @@ export const HomeStorylines: React.FC = () => {
                           player: playerSlugs[0],
                           ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
+                          ...(filteredEv ? { event: filteredEv } : {}),
                         }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"

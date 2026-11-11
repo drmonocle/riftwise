@@ -80,7 +80,7 @@ export const RosterMoves: React.FC = () => {
           ))}
           {list.length > 0 && (() => {
             const yr0 = list[0]?.d && /^\d{4}/.test(list[0].d) ? list[0].d.slice(0, 4) : "";
-            const lg0 = terms.length > 0 && list[0]?.lu ? list[0].lu : "";
+            const lg0 = terms.length > 0 && list[0]?.lu ? resolveLeagueSlug(list[0].lu) : "";
             const role0 = terms.length > 0 && list[0]?.r ? normalizeRole(list[0].r) || list[0].r : "";
             const twoPlayers = terms.length > 0 && list.length >= 2 && list[0]?.u && list[1]?.u && list[0].u !== list[1].u;
             return (
@@ -347,12 +347,26 @@ export const RosterMoves: React.FC = () => {
                   query: new URLSearchParams({
                     player: m.u,
                     ...(myr ? { year: myr } : {}),
-                    ...(m.r ? { role: m.r } : {}),
+                    ...(m.r ? { role: normalizeRole(m.r) || m.r } : {}),
                   }).toString(),
                 }}
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tl("Item history")}
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "leaders",
+                  query: new URLSearchParams({
+                    ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
+                    ...(myr ? { year: myr } : {}),
+                    ...(m.r ? { role: normalizeRole(m.r) || m.r } : {}),
+                    q: m.u,
+                  }).toString(),
+                }}
+                className="text-rw-muted hover:text-rw-accent hover:underline"
+              >
+                {tl("Leaderboards")}
               </HubLink>
             </span>
           </li>
