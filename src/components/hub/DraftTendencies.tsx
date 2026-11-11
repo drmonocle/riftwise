@@ -409,7 +409,7 @@ export const DraftTendencies: React.FC<{
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(topOpeners[0]))}${topOpeners[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topOpeners[1]))}` : ""}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(topOpeners[0]))}${topOpeners[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topOpeners[1]))}` : ""}${d.firstRole[0] ? `&role=${encodeURIComponent(ROLES[d.firstRole[0][0]])}` : ""}`,
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                         data-nocapture="1"
@@ -419,7 +419,7 @@ export const DraftTendencies: React.FC<{
                       <HubLink
                         to={{
                           kind: "items",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(topOpeners[0]))}${period?.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(topOpeners[0]))}${resolvedSlug ? `&team=${encodeURIComponent(resolvedSlug)}` : ""}${period?.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : ""}`,
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                         data-nocapture="1"
@@ -466,6 +466,7 @@ export const DraftTendencies: React.FC<{
                     query: new URLSearchParams({
                       ...(resolvedSlug || teamName ? { q: resolvedSlug || teamName! } : {}),
                       ...((d.b1[0] || d.r12[0]) ? { champ: resolveChampSlug((d.b1[0] || d.r12[0])[0]) } : {}),
+                      ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
                       ...(period?.startsWith("y") && period.length === 5 ? { year: period.slice(1) } : {}),
                       ...(period?.startsWith("e:") ? { event: resolveEventSlug(period.slice(2)) } : {}),
                     }).toString(),

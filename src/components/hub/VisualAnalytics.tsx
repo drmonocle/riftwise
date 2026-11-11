@@ -284,7 +284,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `player=${encodeURIComponent(p.u)}${periodKey?.startsWith("y") ? `&year=${encodeURIComponent(periodKey.slice(1))}` : ""}`,
+                    query: `player=${encodeURIComponent(p.u)}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${agg.champs[0] ? `&champ=${encodeURIComponent(resolveChampSlug(agg.champs[0].c))}` : ""}${periodKey?.startsWith("y") ? `&year=${encodeURIComponent(periodKey.slice(1))}` : ""}`,
                   }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
@@ -363,7 +363,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                     agg.champs[0]
                       ? {
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(agg.champs[0].c))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(agg.champs[0].c))}${agg.champs[1] ? `&vs=${encodeURIComponent(resolveChampSlug(agg.champs[1].c))}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
                         }
                       : { kind: "counters", ...(p.role ? { query: `role=${encodeURIComponent(p.role)}` } : {}) }
                   }
@@ -404,7 +404,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                   {tags.map((x) => (
                     <HubLink
                       key={x.tag}
-                      to={{ kind: "player", slug: p.u, tab: "stats" }}
+                      to={{ kind: "player", slug: p.u, tab: "stats", ...(periodKey ? { query: `p=${encodeURIComponent(periodKey)}` } : {}) }}
                       title={x.why}
                       className={`px-2.5 py-1 rounded-full border text-[11px] hover:border-rw-accent/60 transition-colors ${
                         x.good === true
@@ -423,7 +423,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                 {metrics.map((m) => (
                   <HubLink
                     key={m.label}
-                    to={{ kind: "player", slug: p.u, tab: m.tab }}
+                    to={{ kind: "player", slug: p.u, tab: m.tab, ...(periodKey ? { query: `p=${encodeURIComponent(periodKey)}` } : {}) }}
                     className="rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2.5 py-2 flex flex-col justify-between gap-1.5 transition-colors"
                   >
                     <div>
@@ -1400,10 +1400,13 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                 const opp0 = t.recent[0]?.opp;
                 const oppSlug = opp0 ? teamSlug(opp0, t.opps.find((o) => o.n === opp0)?.u) : undefined;
                 const lg = t.rating?.league ? resolveLeagueSlug(t.rating.league) || t.rating.league : undefined;
+                const latestYr = t.recent[0]?.date && /^\d{4}/.test(t.recent[0].date) ? t.recent[0].date.slice(0, 4) : undefined;
+                const latestEv = t.recent[0]?.e ? resolveEventSlug(t.recent[0].e) : undefined;
+                const latestPeriod = latestEv ? `e:${latestEv}` : latestYr ? `y${latestYr}` : undefined;
                 return (
                   <>
                     <HubLink
-                      to={{ kind: "prep", a: t.u, ...(oppSlug ? { b: oppSlug } : {}) }}
+                      to={{ kind: "prep", a: t.u, ...(oppSlug ? { b: oppSlug } : {}), ...(latestPeriod ? { period: latestPeriod } : {}) }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Match prep")} →
@@ -1411,20 +1414,23 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(t.u)}${oppSlug ? `,${encodeURIComponent(oppSlug)}` : ""}`,
+                        query: `teams=${encodeURIComponent(t.u)}${oppSlug ? `,${encodeURIComponent(oppSlug)}` : ""}${latestPeriod ? `&p=${encodeURIComponent(latestPeriod)}` : ""}`,
                       }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Draft board")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "compare", mode: "team", a: t.u, ...(oppSlug ? { b: oppSlug } : {}) }}
+                      to={{ kind: "compare", mode: "team", a: t.u, ...(oppSlug ? { b: oppSlug } : {}), ...(latestPeriod ? { period: latestPeriod } : {}) }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Compare")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}` }}
+                      to={{
+                        kind: "finder",
+                        query: `team=${encodeURIComponent(t.u)}${oppSlug ? `&vs=${encodeURIComponent(oppSlug)}` : ""}${latestEv ? `&event=${encodeURIComponent(latestEv)}` : latestYr ? `&year=${encodeURIComponent(latestYr)}` : ""}`,
+                      }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Game finder")} →
@@ -1444,7 +1450,12 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     <HubLink
                       to={{
                         kind: "tiers",
-                        ...(lg ? { query: `scope=${encodeURIComponent(lg)}` } : {}),
+                        query:
+                          new URLSearchParams({
+                            ...(lg ? { scope: lg } : {}),
+                            ...(latestEv ? { event: latestEv } : {}),
+                            ...(latestYr ? { key: `y${latestYr}` } : {}),
+                          }).toString() || undefined,
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1455,6 +1466,8 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                         kind: "leaders",
                         query: new URLSearchParams({
                           ...(lg ? { league: lg } : {}),
+                          ...(latestEv ? { event: latestEv } : {}),
+                          ...(latestYr ? { year: latestYr } : {}),
                           q: `${t.u}${oppSlug ? `,${oppSlug}` : ""}`,
                         }).toString(),
                       }}

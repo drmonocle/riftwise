@@ -7,7 +7,7 @@ import { Eye } from "lucide-react";
 import { StreamEvent } from "../../types";
 import { tl, locale } from "../../i18n";
 import { normalizeTeamCode, streamEventTitle } from "../../helpers";
-import { loadEventsOfYear, loadHubEvent, prettySlug, resolveTeamAlias } from "../../hub/data";
+import { loadEventsOfYear, loadHubEvent, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
 import type { HubEvent, SeriesRow } from "../../hub/types";
 import { Bracket, SeriesBox, Standings } from "./EventPage";
 import { stageLabel } from "../../i18n";
@@ -136,6 +136,20 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
   const bracket = (ev.stages || []).filter((s) => s.kind === "bracket");
   const lists = (ev.stages || []).filter((s) => s.kind === "list");
   const listDone = lists.every((s) => s.series.every((r) => !hide(r)));
+  const lgSlug = ev.lu ? resolveLeagueSlug(ev.lu) || ev.lu : which.event === "Worlds" ? "worlds" : which.event === "MSI" ? "msi" : "first-stand";
+  const topSlugs = (() => {
+    if (ev.standings?.[0]?.rows?.length) {
+      return ev.standings[0].rows
+        .slice(0, 2)
+        .map((r) => resolveTeamAlias(r.t) || prettySlug(r.t))
+        .filter(Boolean);
+    }
+    const s0 = bracket[0]?.series?.[0] || lists[0]?.series?.[0];
+    if (s0) {
+      return [s0.a, s0.b].map((t) => resolveTeamAlias(t) || prettySlug(t)).filter(Boolean);
+    }
+    return [];
+  })();
 
   return (
     <section className="space-y-3">
@@ -148,13 +162,8 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           />
         </h3>
         <div className="flex flex-wrap items-center gap-2">
-          {ev.standings?.[0]?.rows?.length && (() => {
-            const topSlugs = ev.standings[0].rows
-              .slice(0, 2)
-              .map((r) => resolveTeamAlias(r.t) || prettySlug(r.t))
-              .filter(Boolean);
+          {topSlugs.length >= 1 && (() => {
             const [ta, tb] = topSlugs;
-            if (!ta) return null;
             return (
               <>
                 <HubLink
@@ -185,7 +194,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             );
           })()}
           <HubLink
-            to={{ kind: "finder", query: `event=${encodeURIComponent(ev.u)}` }}
+            to={{ kind: "finder", query: `event=${encodeURIComponent(ev.u)}${lgSlug ? `&league=${encodeURIComponent(lgSlug)}` : ""}${which.year ? `&year=${encodeURIComponent(which.year)}` : ""}` }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Game finder")} →
@@ -194,6 +203,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             to={{
               kind: "leaders",
               query: new URLSearchParams({
+                ...(lgSlug ? { league: lgSlug } : {}),
                 event: ev.u,
                 ...(which.year ? { year: which.year } : {}),
               }).toString(),
@@ -206,6 +216,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             to={{
               kind: "tiers",
               query: new URLSearchParams({
+                ...(lgSlug ? { scope: lgSlug, league: lgSlug } : {}),
                 event: ev.u,
                 ...(which.year ? { key: `y${which.year}` } : {}),
               }).toString(),
@@ -217,17 +228,10 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           <HubLink
             to={{
               kind: "rankings",
-              ...(ev.standings?.[0]?.rows?.length
-                ? {
-                    query: `q=${encodeURIComponent(
-                      ev.standings[0].rows
-                        .slice(0, 2)
-                        .map((r) => resolveTeamAlias(r.t) || prettySlug(r.t))
-                        .filter(Boolean)
-                        .join(","),
-                    )}`,
-                  }
-                : {}),
+              query: new URLSearchParams({
+                ...(lgSlug ? { league: lgSlug } : {}),
+                ...(topSlugs.length >= 1 ? { q: topSlugs.join(",") } : {}),
+              }).toString() || undefined,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           >
@@ -342,6 +346,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           to={{
             kind: "champions",
             query: new URLSearchParams({
+              ...(lgSlug ? { league: lgSlug } : {}),
               event: ev.u,
               ...(which.year ? { key: `y${which.year}` } : {}),
             }).toString(),
@@ -355,6 +360,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           to={{
             kind: "tiers",
             query: new URLSearchParams({
+              ...(lgSlug ? { scope: lgSlug, league: lgSlug } : {}),
               event: ev.u,
               ...(which.year ? { key: `y${which.year}` } : {}),
             }).toString(),
@@ -367,17 +373,10 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
         <HubLink
           to={{
             kind: "rankings",
-            ...(ev.standings?.[0]?.rows?.length
-              ? {
-                  query: `q=${encodeURIComponent(
-                    ev.standings[0].rows
-                      .slice(0, 2)
-                      .map((r) => resolveTeamAlias(r.t) || prettySlug(r.t))
-                      .filter(Boolean)
-                      .join(","),
-                  )}`,
-                }
-              : {}),
+            query: new URLSearchParams({
+              ...(lgSlug ? { league: lgSlug } : {}),
+              ...(topSlugs.length >= 1 ? { q: topSlugs.join(",") } : {}),
+            }).toString() || undefined,
           }}
           className="text-rw-accent hover:underline"
         >
@@ -388,6 +387,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           to={{
             kind: "leaders",
             query: new URLSearchParams({
+              ...(lgSlug ? { league: lgSlug } : {}),
               event: ev.u,
               ...(which.year ? { year: which.year } : {}),
             }).toString(),
@@ -401,7 +401,9 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           to={{
             kind: "best",
             query: new URLSearchParams({
+              ...(lgSlug ? { league: lgSlug } : {}),
               ...(which.year ? { year: which.year } : {}),
+              event: ev.u,
               q: ev.u,
             }).toString(),
           }}
@@ -410,7 +412,10 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           {tl("Best games")}
         </HubLink>
         {" · "}
-        <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(ev.u)}` }} className="text-rw-accent hover:underline">
+        <HubLink
+          to={{ kind: "finder", query: `event=${encodeURIComponent(ev.u)}${lgSlug ? `&league=${encodeURIComponent(lgSlug)}` : ""}${which.year ? `&year=${encodeURIComponent(which.year)}` : ""}` }}
+          className="text-rw-accent hover:underline"
+        >
           {tl("Game finder")}
         </HubLink>
         {" · "}

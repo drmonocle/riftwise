@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl } from "../../i18n";
-import { bare, loadRatings, normText, resolveTeamAlias } from "../../hub/data";
+import { bare, loadRatings, normText, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
 import { searchAlias } from "../../searchAliases";
 import { hubShareUrl } from "../../hub/route";
 import type { HubEvent } from "../../hub/types";
@@ -121,7 +121,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                   data-nocapture="1"
                   to={{
                     kind: "finder",
-                    query: `event=${encodeURIComponent(e.u)}${terms.length > 0 ? `&team=${encodeURIComponent(filteredRows[0].u)}${filteredRows[1] ? `&vs=${encodeURIComponent(filteredRows[1].u)}` : ""}` : ""}`,
+                    query: `event=${encodeURIComponent(e.u)}${(terms.length > 0 || filteredRows.length <= 2) ? `&team=${encodeURIComponent(filteredRows[0].u)}${filteredRows[1] ? `&vs=${encodeURIComponent(filteredRows[1].u)}` : ""}` : ""}`,
                   }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
@@ -133,7 +133,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                     kind: "rankings",
                     query:
                       new URLSearchParams({
-                        ...(e.lu ? { league: e.lu } : {}),
+                        ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
                         ...(filteredRows[0]
                           ? { q: `${filteredRows[0].u}${filteredRows[1] ? `,${filteredRows[1].u}` : ""}` }
                           : {}),
@@ -148,7 +148,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      ...(e.lu ? { league: e.lu } : {}),
+                      ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
                       ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                       event: e.u,
                       ...(filteredRows[0]
@@ -166,7 +166,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                     kind: "tiers",
                     query:
                       new URLSearchParams({
-                        ...(e.lu ? { league: e.lu } : {}),
+                        ...(e.lu ? { scope: resolveLeagueSlug(e.lu) || e.lu, league: resolveLeagueSlug(e.lu) || e.lu } : {}),
                         ...(e.u
                           ? { event: e.u, key: `e:${e.u}` }
                           : /^\d{4}$/.test((e.start || e.end || "").slice(0, 4))

@@ -1448,88 +1448,99 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
           title={tl("Year by year")}
           right={
             <span className="flex flex-wrap items-center gap-2">
-              {ys[0]?.top?.[0] && (() => {
-                const c0 = ys[0].top[0];
-                const c1 = ys[0].best?.[0] && ys[0].best[0] !== c0 ? ys[0].best[0] : ys[1]?.top?.[0] && ys[1].top[0] !== c0 ? ys[1].top[0] : undefined;
-                return (
-                  <>
-                    <HubLink
-                      to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(c0))}${c1 ? `&vs=${encodeURIComponent(resolveChampSlug(c1))}` : ""}` }}
-                      className="text-[11px] font-semibold text-rw-accent hover:underline"
-                      data-nocapture="1"
-                    >
-                      {tl("Counters")} →
-                    </HubLink>
-                    <HubLink
-                      to={{ kind: "items", query: `champ=${encodeURIComponent(resolveChampSlug(c0))}` }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                      data-nocapture="1"
-                    >
-                      {tl("Item history")} →
-                    </HubLink>
-                  </>
-                );
-              })()}
-              <HubLink
-                to={{
-                  kind: "champions",
-                  query: new URLSearchParams({
-                    league: intlLeague,
-                    ...(ys[0]?.top?.[0] ? { q: resolveChampSlug(ys[0].top[0]) } : {}),
-                  }).toString(),
-                }}
-                className="text-[11px] font-semibold text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Champions")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "tiers",
-                  query: new URLSearchParams({
-                    scope: intlLeague,
-                    ...(ys[0]?.top?.[0] ? { q: resolveChampSlug(ys[0].top[0]) } : {}),
-                  }).toString(),
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Pro tier list")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "draft",
-                  ...(ys[0]?.top?.[0] ? { query: `champ=${encodeURIComponent(resolveChampSlug(ys[0].top[0]))}` } : {}),
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Draft board")} →
-              </HubLink>
-              <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
-                {tl("Records")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}` }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Game finder")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "rankings", query: `league=${encodeURIComponent(intlLeague)}` }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Power rankings")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "leaders", query: `league=${encodeURIComponent(intlLeague)}` }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Player leaderboards")} →
-              </HubLink>
+            {ys[0] && (() => {
+              const latestYr = yearOnly(ys[0].year);
+              const c0 = ys[0].top?.[0];
+              const c1 = ys[0].best?.[0] && ys[0].best[0] !== c0 ? ys[0].best[0] : ys[1]?.top?.[0] && ys[1].top[0] !== c0 ? ys[1].top[0] : undefined;
+              return (
+                <>
+                  {c0 && (
+                    <>
+                      <HubLink
+                        to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(c0))}${c1 ? `&vs=${encodeURIComponent(resolveChampSlug(c1))}` : ""}` }}
+                        className="text-[11px] font-semibold text-rw-accent hover:underline"
+                        data-nocapture="1"
+                      >
+                        {tl("Counters")} →
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "items", query: `champ=${encodeURIComponent(resolveChampSlug(c0))}${latestYr ? `&year=${encodeURIComponent(latestYr)}` : ""}` }}
+                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        data-nocapture="1"
+                      >
+                        {tl("Item history")} →
+                      </HubLink>
+                    </>
+                  )}
+                  <HubLink
+                    to={{
+                      kind: "champions",
+                      query: new URLSearchParams({
+                        league: intlLeague,
+                        ...(latestYr ? { key: `y${latestYr}` } : {}),
+                        ...(c0 ? { q: resolveChampSlug(c0) } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] font-semibold text-rw-accent hover:underline"
+                    data-nocapture="1"
+                  >
+                    {tl("Champions")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "tiers",
+                      query: new URLSearchParams({
+                        scope: intlLeague,
+                        ...(latestYr ? { key: `y${latestYr}` } : {}),
+                        ...(c0 ? { q: resolveChampSlug(c0) } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    data-nocapture="1"
+                  >
+                    {tl("Pro tier list")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "draft",
+                      query:
+                        new URLSearchParams({
+                          ...(latestYr ? { p: `y${latestYr}` } : {}),
+                          ...(c0 ? { champ: resolveChampSlug(c0) } : {}),
+                        }).toString() || undefined,
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    data-nocapture="1"
+                  >
+                    {tl("Draft board")} →
+                  </HubLink>
+                </>
+              );
+            })()}
+            <HubLink to={{ kind: "records" }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+              {tl("Records")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}${ys[0] ? `&year=${encodeURIComponent(yearOnly(ys[0].year))}` : ""}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Game finder")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "rankings", query: `league=${encodeURIComponent(intlLeague)}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Power rankings")} →
+            </HubLink>
+            <HubLink
+              to={{ kind: "leaders", query: `league=${encodeURIComponent(intlLeague)}${ys[0] ? `&year=${encodeURIComponent(yearOnly(ys[0].year))}` : ""}` }}
+              className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+              data-nocapture="1"
+            >
+              {tl("Player leaderboards")} →
+            </HubLink>
               <CopyInsightPost
                 title={`${tl("Year by year")} · ${name}`}
                 rows={ys.slice(0, 6).map((y) => `${yearOnly(y.year)}: ${y.games}G · ${mmss(y.min)} · ${y.top ? champName(y.top[0]) : "–"}`)}
@@ -1635,7 +1646,10 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       </td>
                       <td className="px-2 py-1" data-sort={y.top ? y.top[1] : -1}>
                         {y.top ? (
-                          <HubLink to={{ kind: "champ", slug: resolveChampSlug(y.top[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
+                          <HubLink
+                            to={{ kind: "champ", slug: resolveChampSlug(y.top[0]), query: `p=y${encodeURIComponent(yearOnly(y.year))}` }}
+                            className="flex items-center gap-1 hover:text-rw-accent"
+                          >
                             <ChampIcon name={y.top[0]} size={16} />
                             {champName(y.top[0])} <span className="text-rw-muted">· {y.top[1]}</span>
                           </HubLink>
@@ -1645,7 +1659,10 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       </td>
                       <td className="px-2 py-1" data-sort={y.best && y.best[1] ? y.best[2] / y.best[1] : -1}>
                         {y.best ? (
-                          <HubLink to={{ kind: "champ", slug: resolveChampSlug(y.best[0]) }} className="flex items-center gap-1 hover:text-rw-accent">
+                          <HubLink
+                            to={{ kind: "champ", slug: resolveChampSlug(y.best[0]), query: `p=y${encodeURIComponent(yearOnly(y.year))}` }}
+                            className="flex items-center gap-1 hover:text-rw-accent"
+                          >
                             <ChampIcon name={y.best[0]} size={16} />
                             {champName(y.best[0])}{" "}
                             <span className="text-rw-muted">
@@ -1702,7 +1719,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 {tl("Player leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "tiers", query: `league=${encodeURIComponent(intlLeague)}` }}
+                to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
               >

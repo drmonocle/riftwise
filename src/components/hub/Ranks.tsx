@@ -752,7 +752,7 @@ export const PlayerRanks: React.FC<{
               kind: "leaders",
               query: new URLSearchParams({ league: lu, year, role: me.r, stat: r.key, q: slug }).toString(),
             })}
-            lastTo={{ kind: "player", slug, tab: "matches" }}
+            lastTo={{ kind: "player", slug, tab: "matches", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
           />
           <p className="text-[10px] text-rw-muted">
             <HubLink
@@ -792,15 +792,35 @@ export const PlayerRanks: React.FC<{
                 const topPeer = season?.players
                   .filter((p) => p.r === me?.r && p.u && p.u !== slug)
                   .sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g)[0];
-                return topPeer?.u ? (
-                  <HubLink
-                    to={{ kind: "compare", mode: "player", a: slug, b: topPeer.u, period: `y${year}` }}
-                    className="text-[11px] text-rw-accent hover:underline"
-                    title={tl("Compare {a} and {b}", { a: name || me?.n || slug, b: topPeer.n })}
-                  >
-                    {tl("Compare")} →
-                  </HubLink>
-                ) : null;
+                const meTeam = me?.t ? me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) : undefined;
+                const peerTeam = topPeer?.t ? topPeer.tu || resolveTeamAlias(topPeer.t) || prettySlug(topPeer.t) : undefined;
+                return (
+                  <>
+                    {meTeam && (
+                      <HubLink
+                        to={{
+                          kind: "prep",
+                          a: meTeam,
+                          ...(peerTeam && peerTeam !== meTeam ? { b: peerTeam } : {}),
+                          ...(year ? { period: `y${year}` } : {}),
+                        }}
+                        className="text-[11px] text-rw-accent hover:underline"
+                        title={tl("Match prep")}
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                    )}
+                    {topPeer?.u && (
+                      <HubLink
+                        to={{ kind: "compare", mode: "player", a: slug, b: topPeer.u, period: `y${year}` }}
+                        className="text-[11px] text-rw-accent hover:underline"
+                        title={tl("Compare {a} and {b}", { a: name || me?.n || slug, b: topPeer.n })}
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    )}
+                  </>
+                );
               })()}
               <HubLink
                 to={{
@@ -875,7 +895,7 @@ export const PlayerRanks: React.FC<{
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${games?.[0]?.[2] ? `&champ=${encodeURIComponent(resolveChampSlug(games[0][2]))}` : ""}`,
+                  query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${lu ? `&league=${encodeURIComponent(lu)}` : ""}${me?.r ? `&role=${encodeURIComponent(me.r)}` : ""}${games?.[0]?.[2] ? `&champ=${encodeURIComponent(resolveChampSlug(games[0][2]))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -900,7 +920,7 @@ export const PlayerRanks: React.FC<{
               <CopyRanksPost
                 title={`${name || me?.n || slug} · ${leagueLabel} ${year}${me?.r ? ` (${roleName(me.r)})` : ""}`}
                 rows={cardRows}
-                url={hubShareUrl({ kind: "player", slug, tab: "stats" })}
+                url={hubShareUrl({ kind: "player", slug, tab: "stats", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) })}
               />
               <SectionCard
                 section={tl("League ranks")}
@@ -999,7 +1019,7 @@ export const TeamRanks: React.FC<{
           rows={rows}
           hide={prefs.hide}
           rankTo={() => ({ kind: "league", slug: lu, year })}
-          lastTo={{ kind: "team", slug, tab: "matches" }}
+          lastTo={{ kind: "team", slug, tab: "matches", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
         />
         <p className="text-[10px] text-rw-muted">
           <HubLink to={{ kind: "league", slug: lu, year }} className="hover:text-rw-accent hover:underline">
@@ -1097,7 +1117,7 @@ export const TeamRanks: React.FC<{
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}` }}
+                to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${lu ? `&league=${encodeURIComponent(lu)}` : ""}` }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
@@ -1118,7 +1138,7 @@ export const TeamRanks: React.FC<{
               <CopyRanksPost
                 title={`${name || me?.t || slug} · ${leagueLabel} ${year}`}
                 rows={cardRows}
-                url={hubShareUrl({ kind: "team", slug, tab: "stats" })}
+                url={hubShareUrl({ kind: "team", slug, tab: "stats", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) })}
               />
               <SectionCard
                 section={tl("League ranks")}
