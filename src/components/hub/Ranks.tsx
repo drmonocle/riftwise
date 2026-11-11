@@ -797,6 +797,11 @@ export const PlayerRanks: React.FC<{
                 const topSeasonChamp = me?.c?.[0] || games?.[0]?.[2];
                 const secSeasonChamp =
                   me?.c?.[1] || (games?.[1]?.[2] && games[1][2] !== topSeasonChamp ? games[1][2] : undefined);
+                const seasonChamps = [topSeasonChamp, secSeasonChamp]
+                  .filter((c): c is string => Boolean(c))
+                  .map((c) => resolveChampSlug(c))
+                  .filter((v, idx, arr) => Boolean(v) && arr.indexOf(v) === idx)
+                  .join(",");
                 return (
                   <>
                     {meTeam && (
@@ -834,7 +839,7 @@ export const PlayerRanks: React.FC<{
                           year,
                           ...(me?.r ? { role: me.r } : {}),
                           ...(topSeasonChamp ? { champ: resolveChampSlug(topSeasonChamp) } : {}),
-                          q: slug,
+                          q: [slug, topPeer?.u].filter(Boolean).join(","),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -844,7 +849,7 @@ export const PlayerRanks: React.FC<{
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${topSeasonChamp ? `&champ=${encodeURIComponent(resolveChampSlug(topSeasonChamp))}` : ""}${meTeam ? `&team=${encodeURIComponent(meTeam)}` : ""}`,
+                        query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${topSeasonChamp ? `&champ=${encodeURIComponent(resolveChampSlug(topSeasonChamp))}` : ""}${me?.r ? `&role=${encodeURIComponent(me.r)}` : ""}${meTeam ? `&team=${encodeURIComponent(meTeam)}` : ""}${peerTeam && peerTeam !== meTeam ? `&vs=${encodeURIComponent(peerTeam)}` : ""}${topPeer?.u ? `&vsplayer=${encodeURIComponent(topPeer.u)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -858,7 +863,7 @@ export const PlayerRanks: React.FC<{
                             ...(meTeam ? { teams: `${meTeam}${peerTeam && peerTeam !== meTeam ? `,${peerTeam}` : ""}` } : {}),
                             ...(year ? { p: `y${year}` } : {}),
                             ...(me?.r ? { role: me.r } : {}),
-                            ...(topSeasonChamp ? { champ: resolveChampSlug(topSeasonChamp) } : {}),
+                            ...(seasonChamps ? { champ: seasonChamps } : {}),
                           }).toString(),
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -875,7 +880,7 @@ export const PlayerRanks: React.FC<{
                           key: `y${year}`,
                           year,
                           ...(me?.r ? { role: me.r } : {}),
-                          ...(topSeasonChamp ? { q: resolveChampSlug(topSeasonChamp) } : {}),
+                          ...(seasonChamps ? { q: seasonChamps } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -903,31 +908,31 @@ export const PlayerRanks: React.FC<{
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${lu ? `&league=${encodeURIComponent(lu)}` : ""}${me?.r ? `&role=${encodeURIComponent(me.r)}` : ""}${topSeasonChamp ? `&champ=${encodeURIComponent(resolveChampSlug(topSeasonChamp))}` : ""}`,
+                        query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${lu ? `&league=${encodeURIComponent(lu)}` : ""}${me?.r ? `&role=${encodeURIComponent(me.r)}` : ""}${topSeasonChamp ? `&champ=${encodeURIComponent(resolveChampSlug(topSeasonChamp))}` : ""}${meTeam ? `&team=${encodeURIComponent(meTeam)}` : ""}${peerTeam && peerTeam !== meTeam ? `&vs=${encodeURIComponent(peerTeam)}` : ""}${topPeer?.u ? `&vsplayer=${encodeURIComponent(topPeer.u)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Game finder")} →
                     </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "rankings",
+                        ...((lu || meTeam)
+                          ? {
+                              query: new URLSearchParams({
+                                ...(lu ? { league: lu } : {}),
+                                ...(meTeam ? { q: [meTeam, peerTeam && peerTeam !== meTeam ? peerTeam : ""].filter(Boolean).join(",") } : {}),
+                              }).toString(),
+                            }
+                          : {}),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Power rankings")} →
+                    </HubLink>
                   </>
                 );
               })()}
-              <HubLink
-                to={{
-                  kind: "rankings",
-                  ...((lu || me?.t)
-                    ? {
-                        query: new URLSearchParams({
-                          ...(lu ? { league: lu } : {}),
-                          ...(me?.t ? { q: me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) } : {}),
-                        }).toString(),
-                      }
-                    : {}),
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Power rankings")} →
-              </HubLink>
               <CopyRanksPost
                 title={`${name || me?.n || slug} · ${leagueLabel} ${year}${me?.r ? ` (${roleName(me.r)})` : ""}`}
                 rows={cardRows}
@@ -1072,6 +1077,11 @@ export const TeamRanks: React.FC<{
                   .sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g)[0];
                 const topPick = games?.[0]?.[20]?.[0];
                 const secPick = games?.[0]?.[20]?.[1];
+                const teamPickChamps = [topPick, secPick]
+                  .filter((c): c is string => Boolean(c))
+                  .map((c) => resolveChampSlug(c))
+                  .filter((v, idx, arr) => Boolean(v) && arr.indexOf(v) === idx)
+                  .join(",");
                 return (
                   <>
                     <HubLink
@@ -1094,7 +1104,7 @@ export const TeamRanks: React.FC<{
                         query: new URLSearchParams({
                           teams: `${slug}${topTeam?.u ? `,${topTeam.u}` : ""}`,
                           ...(year ? { p: `y${year}` } : {}),
-                          ...(topPick ? { champ: resolveChampSlug(topPick) } : {}),
+                          ...(teamPickChamps ? { champ: teamPickChamps } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1108,7 +1118,7 @@ export const TeamRanks: React.FC<{
                           league: lu,
                           year,
                           ...(topPick ? { champ: resolveChampSlug(topPick) } : {}),
-                          q: slug,
+                          q: [slug, topTeam?.u].filter(Boolean).join(","),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1133,7 +1143,7 @@ export const TeamRanks: React.FC<{
                         query: new URLSearchParams({
                           ...(lu ? { scope: lu, league: lu } : {}),
                           ...(year ? { key: `y${year}`, year } : {}),
-                          ...(topPick ? { q: resolveChampSlug(topPick) } : {}),
+                          ...(teamPickChamps ? { q: teamPickChamps } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1161,6 +1171,7 @@ export const TeamRanks: React.FC<{
                             query: new URLSearchParams({
                               champ: resolveChampSlug(topPick),
                               team: slug,
+                              ...(topTeam?.u ? { vs: topTeam.u } : {}),
                               ...(year ? { year } : {}),
                             }).toString(),
                           }}
@@ -1171,7 +1182,10 @@ export const TeamRanks: React.FC<{
                       </>
                     )}
                     <HubLink
-                      to={{ kind: "finder", query: `team=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${lu ? `&league=${encodeURIComponent(lu)}` : ""}` }}
+                      to={{
+                        kind: "finder",
+                        query: `team=${encodeURIComponent(slug)}${topTeam?.u ? `&vs=${encodeURIComponent(topTeam.u)}` : ""}&year=${encodeURIComponent(year)}${lu ? `&league=${encodeURIComponent(lu)}` : ""}${topPick ? `&champ=${encodeURIComponent(resolveChampSlug(topPick))}` : ""}`,
+                      }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Game finder")} →
@@ -1182,7 +1196,7 @@ export const TeamRanks: React.FC<{
                         query: new URLSearchParams({
                           ...(lu ? { league: lu } : {}),
                           ...(year ? { year } : {}),
-                          q: slug,
+                          q: [slug, topTeam?.u].filter(Boolean).join(","),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
