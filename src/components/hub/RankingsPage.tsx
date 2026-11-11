@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
-import { bare, loadAliases, loadRatings, loadRatingsHistory, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+import { bare, loadAliases, loadRatings, loadRatingsHistory, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
@@ -196,12 +196,18 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       .map((s) => s.trim())
       .filter(Boolean);
     const matchRow = (r: RatingRow, t: string) => {
+      const qAlias = searchAlias(t);
       const hay = normText(`${r[0] || ""} ${r[1]} ${r[2] || ""} ${r[3] || ""} ${r[10] || ""} ${r[11] || ""} ${countryName(r[11]) || ""}`);
-      if (hay.includes(t) || (bare(t).length >= 2 && bare(hay).includes(bare(t)))) return true;
-      const canonTeam = resolveTeamAlias(aliases.data?.team[t] || t) || prettySlug(t);
-      const rowTeam = resolveTeamAlias(r[0] || r[1]) || prettySlug(r[1]);
+      if (
+        hay.includes(t) ||
+        (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+        (qAlias && (hay.includes(normText(qAlias)) || (bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias)))))
+      )
+        return true;
+      const canonTeam = resolveTeamAlias(qAlias || t, aliases.data?.team) || resolveTeamAlias(t, aliases.data?.team) || prettySlug(qAlias || t);
+      const rowTeam = resolveTeamAlias(r[0] || r[1], aliases.data?.team) || prettySlug(r[1]);
       if (canonTeam && ((r[0] && r[0].toLowerCase() === canonTeam) || prettySlug(r[1]) === canonTeam || rowTeam === canonTeam)) return true;
-      const canonLeague = aliases.data?.league[t] || resolveLeagueSlug(t);
+      const canonLeague = aliases.data?.league[t] || (qAlias ? aliases.data?.league[qAlias.toLowerCase()] : undefined) || resolveLeagueSlug(qAlias || t);
       if (canonLeague && r[4] && r[4].toLowerCase() === canonLeague.toLowerCase()) return true;
       return false;
     };
@@ -213,7 +219,10 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   }, [rows, d.teams, league, search, asOf, hist.data, aliases.data]); // eslint-disable-line react-hooks/exhaustive-deps
   const pair =
     search.trim() && shownRows.length >= 2 && (shownRows[0].r[0] || shownRows[0].r[1]) && (shownRows[1].r[0] || shownRows[1].r[1])
-      ? [shownRows[0].r[0] || prettySlug(shownRows[0].r[1]), shownRows[1].r[0] || prettySlug(shownRows[1].r[1])]
+      ? [
+          shownRows[0].r[0] || resolveTeamAlias(shownRows[0].r[1], aliases.data?.team) || prettySlug(shownRows[0].r[1]),
+          shownRows[1].r[0] || resolveTeamAlias(shownRows[1].r[1], aliases.data?.team) || prettySlug(shownRows[1].r[1]),
+        ]
       : null;
   const columns: Column<Row>[] = [
     {
@@ -236,12 +245,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       value: (x) => x.r[1],
       render: (x) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "team", slug: x.r[0] || prettySlug(x.r[1]) }} title={x.r[1]} className="shrink-0">
+          <HubLink to={{ kind: "team", slug: x.r[0] || resolveTeamAlias(x.r[1], aliases.data?.team) || prettySlug(x.r[1]) }} title={x.r[1]} className="shrink-0">
             <TeamLogo name={x.r[1]} size={16} />
           </HubLink>
           <TeamLink
             name={x.r[1]}
-            u={x.r[0]}
+            u={x.r[0] || resolveTeamAlias(x.r[1], aliases.data?.team)}
             className="text-rw-text hover:text-rw-accent hover:underline font-semibold"
           />
         </span>
@@ -652,7 +661,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               </>
             )}
             {search.trim() && shownRows.length === 1 && (shownRows[0].r[0] || shownRows[0].r[1]) && (() => {
-              const s0 = shownRows[0].r[0] || prettySlug(shownRows[0].r[1]);
+              const s0 = shownRows[0].r[0] || resolveTeamAlias(shownRows[0].r[1], aliases.data?.team) || prettySlug(shownRows[0].r[1]);
               const topSlug = top && top[0] && top[0] !== s0 ? top[0] : undefined;
               return (
                 <>
@@ -719,8 +728,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
               );
             })()}
             {!pair && !search.trim() && shownRows.length >= 2 && (shownRows[0].r[0] || shownRows[0].r[1]) && (shownRows[1].r[0] || shownRows[1].r[1]) && (() => {
-              const s0 = shownRows[0].r[0] || prettySlug(shownRows[0].r[1]);
-              const s1 = shownRows[1].r[0] || prettySlug(shownRows[1].r[1]);
+              const s0 = shownRows[0].r[0] || resolveTeamAlias(shownRows[0].r[1], aliases.data?.team) || prettySlug(shownRows[0].r[1]);
+              const s1 = shownRows[1].r[0] || resolveTeamAlias(shownRows[1].r[1], aliases.data?.team) || prettySlug(shownRows[1].r[1]);
               return (
                 <>
                   <HubLink
@@ -916,8 +925,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   .map(([l]) => d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0])
                   .filter(Boolean);
                 if (topTwo.length < 1) return null;
-                const aSlug = topTwo[0][0] || prettySlug(topTwo[0][1]);
-                const bSlug = topTwo[1] ? topTwo[1][0] || prettySlug(topTwo[1][1]) : undefined;
+                const aSlug = topTwo[0][0] || resolveTeamAlias(topTwo[0][1], aliases.data?.team) || prettySlug(topTwo[0][1]);
+                const bSlug = topTwo[1] ? topTwo[1][0] || resolveTeamAlias(topTwo[1][1], aliases.data?.team) || prettySlug(topTwo[1][1]) : undefined;
                 return (
                   <>
                     <HubLink
@@ -1059,10 +1068,10 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                         <td className={`${td} text-rw-sub max-w-[9rem] truncate`} data-sort={best ? best[1] : ""}>
                           {best ? (
                             <span className="inline-flex items-center gap-1.5 min-w-0">
-                              <HubLink to={{ kind: "team", slug: best[0] || prettySlug(best[1]) }} title={best[1]} className="shrink-0">
+                              <HubLink to={{ kind: "team", slug: best[0] || resolveTeamAlias(best[1], aliases.data?.team) || prettySlug(best[1]) }} title={best[1]} className="shrink-0">
                                 <TeamLogo name={best[1]} size={15} />
                               </HubLink>
-                              <TeamLink name={best[1]} u={best[0]} />
+                              <TeamLink name={best[1]} u={best[0] || resolveTeamAlias(best[1], aliases.data?.team)} />
                             </span>
                           ) : (
                             "–"
