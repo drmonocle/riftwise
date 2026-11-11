@@ -251,7 +251,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
                 ...((lg || period)
                   ? {
                       query: new URLSearchParams({
-                        ...(lg ? { scope: lg } : {}),
+                        ...(lg ? { scope: lg, league: lg } : {}),
                         ...(period ? { key: period } : {}),
                       }).toString(),
                     }
@@ -278,7 +278,10 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className={`text-right text-base sm:text-lg font-bold truncate ${!hidden && m.team1Score > m.team2Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
-            <HubLink to={{ kind: "team", slug: t1Slug }} className="inline-flex items-center justify-end gap-2 hover:text-rw-accent max-w-full">
+            <HubLink
+              to={{ kind: "team", slug: t1Slug, ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+              className="inline-flex items-center justify-end gap-2 hover:text-rw-accent max-w-full"
+            >
               <span className="sm:hidden truncate">{m.team1Code}</span>
               <span className="hidden sm:inline truncate">{m.team1Name}</span>
               <TeamLogo name={m.team1Name} code={m.team1Code} src={m.team1Image} size={22} />
@@ -311,7 +314,10 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             )}
           </div>
           <div className={`text-base sm:text-lg font-bold truncate ${!hidden && m.team2Score > m.team1Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
-            <HubLink to={{ kind: "team", slug: t2Slug }} className="inline-flex items-center gap-2 hover:text-rw-accent max-w-full">
+            <HubLink
+              to={{ kind: "team", slug: t2Slug, ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+              className="inline-flex items-center gap-2 hover:text-rw-accent max-w-full"
+            >
               <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={22} />
               <span className="sm:hidden truncate">{m.team2Code}</span>
               <span className="hidden sm:inline truncate">{m.team2Name}</span>

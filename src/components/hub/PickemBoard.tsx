@@ -195,8 +195,9 @@ export const PickemBoard: React.FC<{
                     kind: "tiers",
                     query:
                       new URLSearchParams({
-                        ...(evLg ? { league: evLg } : {}),
-                        ...(event ? { event } : evYr ? { key: `y${evYr}` } : {}),
+                        ...(evLg ? { scope: evLg, league: evLg } : {}),
+                        ...(event ? { event } : {}),
+                        ...(evYr ? { key: `y${evYr}` } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

@@ -134,7 +134,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   ...((firstLg || firstYr)
                     ? {
                         query: new URLSearchParams({
-                          ...(firstLg ? { scope: firstLg } : {}),
+                          ...(firstLg ? { scope: firstLg, league: firstLg } : {}),
                           ...(firstYr ? { key: `y${firstYr}` } : {}),
                         }).toString(),
                       }
@@ -200,13 +200,27 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   ) : (
                     <span className="text-rw-sub">{tl("vs")}</span>
                   )}
-                  <HubLink to={{ kind: "team", slug: c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                  <HubLink
+                    to={{
+                      kind: "team",
+                      slug: c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name),
+                      ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                    }}
+                    className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
+                  >
                     <TeamLogo name={them.name} code={them.code} src={them.img} size={15} className="shrink-0" />
                   </HubLink>
-                  <TeamLink name={them.name} u={c.opp} className="truncate hover:text-rw-accent" />
+                  <TeamLink name={them.name} u={c.opp} query={period ? `p=${encodeURIComponent(period)}` : undefined} className="truncate hover:text-rw-accent" />
                   <span className="text-rw-muted truncate">
                     ·{" "}
-                    <HubLink to={{ kind: "league", slug: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName) }} className="hover:text-rw-accent hover:underline">
+                    <HubLink
+                      to={{
+                        kind: "league",
+                        slug: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName),
+                        ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
+                      }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
                       {c.m.leagueName}
                     </HubLink>
                     {c.m.blockName ? ` · ${c.m.blockName}` : ""}
@@ -304,7 +318,14 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
         <span className="min-w-0 truncate">
-          <HubLink to={{ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName) }} className="font-bold text-rw-accent hover:underline">
+          <HubLink
+            to={{
+              kind: "league",
+              slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
+              ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
+            }}
+            className="font-bold text-rw-accent hover:underline"
+          >
             {m.leagueName}
           </HubLink>
           {m.blockName && <span className="text-rw-sub"> · {m.blockName}</span>}
@@ -334,12 +355,15 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         {/* short names on a phone ("Movistar KOI" didn't fit beside its logo) */}
         <span className="flex items-center gap-2 min-w-0 justify-end flex-1">
           <span className="font-bold text-sm text-rw-text truncate max-sm:hidden">
-            <TeamLink name={t.name} u={t.u} />
+            <TeamLink name={t.name} u={t.u} query={period ? `p=${encodeURIComponent(period)}` : undefined} />
           </span>
           <span className="font-bold text-sm text-rw-text sm:hidden">
-            <TeamLink name={ours.code || t.name} u={t.u} />
+            <TeamLink name={ours.code || t.name} u={t.u} query={period ? `p=${encodeURIComponent(period)}` : undefined} />
           </span>
-          <HubLink to={{ kind: "team", slug: t.u }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+          <HubLink
+            to={{ kind: "team", slug: t.u, ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+            className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
+          >
             <TeamLogo name={t.name} code={ours.code} src={ours.img} size={32} className="shrink-0" />
           </HubLink>
         </span>
@@ -355,14 +379,21 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           <span className="text-rw-sub text-xs shrink-0">{tl("vs")}</span>
         )}
         <span className="flex items-center gap-2 min-w-0 flex-1">
-          <HubLink to={{ kind: "team", slug: c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+          <HubLink
+            to={{
+              kind: "team",
+              slug: c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name),
+              ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}),
+            }}
+            className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
+          >
             <TeamLogo name={them.name} code={them.code} src={them.img} size={32} className="shrink-0" />
           </HubLink>
           <span className="font-bold text-sm truncate min-w-0 max-sm:hidden">
-            <TeamLink name={them.name} u={c.opp} />
+            <TeamLink name={them.name} u={c.opp} query={period ? `p=${encodeURIComponent(period)}` : undefined} />
           </span>
           <span className="font-bold text-sm sm:hidden">
-            <TeamLink name={them.code || them.name} u={c.opp} />
+            <TeamLink name={them.code || them.name} u={c.opp} query={period ? `p=${encodeURIComponent(period)}` : undefined} />
           </span>
         </span>
       </div>
@@ -487,7 +518,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             ...((lg || period)
               ? {
                   query: new URLSearchParams({
-                    ...(lg ? { scope: lg } : {}),
+                    ...(lg ? { scope: lg, league: lg } : {}),
                     ...(period ? { key: period } : {}),
                   }).toString(),
                 }

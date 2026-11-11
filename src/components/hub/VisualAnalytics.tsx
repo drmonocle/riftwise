@@ -930,7 +930,15 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   {sel.won ? tc("short result", "W") : tc("short result", "L")}
                 </span>
                 <HubLink
-                  to={{ kind: "champ", slug: resolveChampSlug(sel.champ) }}
+                  to={{
+                    kind: "champ",
+                    slug: resolveChampSlug(sel.champ),
+                    ...(sel.row?.[11]
+                      ? { query: `p=e:${encodeURIComponent(resolveEventSlug(sel.row[11]))}` }
+                      : sel.date && /^\d{4}/.test(sel.date)
+                        ? { query: `p=y${encodeURIComponent(sel.date.slice(0, 4))}` }
+                        : {}),
+                  }}
                   className="inline-flex items-center gap-1.5 font-semibold text-rw-text hover:text-rw-accent hover:underline"
                 >
                   <ChampIcon name={sel.champ} size={18} />
@@ -988,10 +996,31 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     >
                       vs
                     </HubLink>
-                  <HubLink to={{ kind: "team", slug: teamSlug(sel.opp) }} className="shrink-0">
+                  <HubLink
+                    to={{
+                      kind: "team",
+                      slug: teamSlug(sel.opp),
+                      ...(sel.row?.[11]
+                        ? { query: `p=e:${encodeURIComponent(resolveEventSlug(sel.row[11]))}` }
+                        : sel.date && /^\d{4}/.test(sel.date)
+                          ? { query: `p=y${encodeURIComponent(sel.date.slice(0, 4))}` }
+                          : {}),
+                    }}
+                    className="shrink-0"
+                  >
                     <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
                   </HubLink>
-                  <TeamLink name={sel.opp} u={teamSlug(sel.opp)} />
+                  <TeamLink
+                    name={sel.opp}
+                    u={teamSlug(sel.opp)}
+                    query={
+                      sel.row?.[11]
+                        ? `p=e:${encodeURIComponent(resolveEventSlug(sel.row[11]))}`
+                        : sel.date && /^\d{4}/.test(sel.date)
+                          ? `p=y${encodeURIComponent(sel.date.slice(0, 4))}`
+                          : undefined
+                    }
+                  />
                   <span className="text-rw-muted">·</span>
                   <EventLink name={sel.event} u={sel.row[11]} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
                 </span>
@@ -1452,7 +1481,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                         kind: "tiers",
                         query:
                           new URLSearchParams({
-                            ...(lg ? { scope: lg } : {}),
+                            ...(lg ? { scope: lg, league: lg } : {}),
                             ...(latestEv ? { event: latestEv } : {}),
                             ...(latestYr ? { key: `y${latestYr}` } : {}),
                           }).toString() || undefined,
@@ -1660,10 +1689,13 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                       >
                         vs
                       </HubLink>
-                      <HubLink to={{ kind: "team", slug: oppSlug }} className="shrink-0">
+                      <HubLink
+                        to={{ kind: "team", slug: oppSlug, ...(selPeriod ? { query: `p=${encodeURIComponent(selPeriod)}` } : {}) }}
+                        className="shrink-0"
+                      >
                         <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
                       </HubLink>
-                      <TeamLink name={sel.opp} u={oppSlug} />
+                      <TeamLink name={sel.opp} u={oppSlug} query={selPeriod ? `p=${encodeURIComponent(selPeriod)}` : undefined} />
                       <span className="text-rw-muted">·</span>
                       <EventLink name={sel.en} u={sel.e} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                     </span>
@@ -1715,7 +1747,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                                 ...(lg || selEv || selYr
                                   ? {
                                       query: new URLSearchParams({
-                                        ...(lg ? { scope: lg } : {}),
+                                        ...(lg ? { scope: lg, league: lg } : {}),
                                         ...(selEv ? { event: selEv } : {}),
                                         ...(selYr ? { key: `y${selYr}` } : {}),
                                       }).toString(),

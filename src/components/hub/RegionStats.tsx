@@ -206,7 +206,7 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
           <HubLink to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Game finder")} →
           </HubLink>
-          <HubLink to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+          <HubLink to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}&league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Pro tier list")} →
           </HubLink>
           <HubLink to={{ kind: "best", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
@@ -481,6 +481,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 kind: "tiers",
                 query: new URLSearchParams({
                   scope: intlLeague,
+                  league: intlLeague,
                   ...(singleYear ? { key: `y${singleYear}` } : {}),
                 }).toString(),
               }}
@@ -814,6 +815,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   kind: "tiers",
                   query: new URLSearchParams({
                     scope: intlLeague,
+                    league: intlLeague,
                     ...(singleYear ? { key: `y${singleYear}` } : {}),
                   }).toString(),
                 }}

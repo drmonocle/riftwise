@@ -448,7 +448,7 @@ const ColoredOpponentGraph: React.FC<{
               >
                 <TeamLogo name={active.opp} size={16} />
               </HubLink>
-              <TeamLink name={active.opp} u={active.u} />
+              <TeamLink name={active.opp} u={active.u} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
             </span>
             <HubLink
               to={{
@@ -1273,7 +1273,11 @@ export const PlayerOpponents: React.FC<{
               >
                 <TeamLogo name={expanded.opp} size={18} />
               </HubLink>
-              <TeamLink name={expanded.opp} u={expanded.u} />
+              <TeamLink
+                name={expanded.opp}
+                u={expanded.u}
+                query={(period || scope) && (period || scope) !== "all" ? `p=${encodeURIComponent((period || scope)!)}` : undefined}
+              />
               <HubLink
                 to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(resolveOppSlug(expanded.opp, expanded.u))}${periodQuerySuffix(period || scope)}` }}
                 className="text-rw-muted font-normal tabular-nums hover:text-rw-accent hover:underline"
@@ -1505,7 +1509,12 @@ export const PlayerOpponents: React.FC<{
                       >
                         <TeamLogo name={o.opp} size={18} />
                       </HubLink>
-                      <TeamLink name={o.opp} u={o.u} className="text-rw-text hover:text-rw-accent hover:underline truncate" />
+                      <TeamLink
+                        name={o.opp}
+                        u={o.u}
+                        query={(period || scope) && (period || scope) !== "all" ? `p=${encodeURIComponent((period || scope)!)}` : undefined}
+                        className="text-rw-text hover:text-rw-accent hover:underline truncate"
+                      />
                     </span>
                   </td>
                   <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.g}>
@@ -1875,10 +1884,13 @@ export const TeamOpponentsChart: React.FC<{
                 >
                   <td className={`${td} max-w-[13rem] truncate`} data-sort={o.n}>
                     <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
-                      <HubLink to={{ kind: "team", slug: oppSlug }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                      <HubLink
+                        to={{ kind: "team", slug: oppSlug, ...(rowYr ? { query: `p=y${encodeURIComponent(rowYr)}` } : {}) }}
+                        className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
+                      >
                         <TeamLogo name={o.n} size={18} />
                       </HubLink>
-                      <TeamLink name={o.n} u={oppSlug} />
+                      <TeamLink name={o.n} u={oppSlug} query={rowYr ? `p=y${encodeURIComponent(rowYr)}` : undefined} />
                     </span>
                   </td>
                   <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.g}>
@@ -2221,7 +2233,7 @@ export const TeamPeriodOpponents: React.FC<{
               >
                 <TeamLogo name={expanded.opp} size={18} />
               </HubLink>
-              <TeamLink name={expanded.opp} u={expanded.u} />
+              <TeamLink name={expanded.opp} u={expanded.u} query={pVal ? `p=${encodeURIComponent(pVal)}` : undefined} />
               <HubLink
                 to={{ kind: "finder", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(resolveOppSlug(expanded.opp, expanded.u))}${pSuffix}` }}
                 className="text-rw-muted font-normal tabular-nums hover:text-rw-accent hover:underline"
@@ -2393,7 +2405,7 @@ export const TeamPeriodOpponents: React.FC<{
                       >
                         <TeamLogo name={o.opp} size={18} />
                       </HubLink>
-                      <TeamLink name={o.opp} u={o.u} />
+                      <TeamLink name={o.opp} u={o.u} query={pVal ? `p=${encodeURIComponent(pVal)}` : undefined} />
                     </span>
                   </td>
                   <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.g}>

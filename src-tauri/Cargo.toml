@@ -1,6 +1,6 @@
 [package]
 name = "riftwise-tauri"
-version = "1.4.78"
+version = "1.4.79"
 description = "RiftWise - LoL Esports companion"
 authors = ["drmonocle"]
 edition = "2021"

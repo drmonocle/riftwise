@@ -867,6 +867,7 @@ export const PlayerRanks: React.FC<{
                   kind: "tiers",
                   query: new URLSearchParams({
                     scope: lu,
+                    league: lu,
                     key: `y${year}`,
                     ...(me?.r ? { role: me.r } : {}),
                     ...(games?.[0]?.[2] ? { q: resolveChampSlug(games[0][2]) } : {}),
@@ -1108,7 +1109,7 @@ export const TeamRanks: React.FC<{
                 to={{
                   kind: "tiers",
                   query: new URLSearchParams({
-                    ...(lu ? { scope: lu } : {}),
+                    ...(lu ? { scope: lu, league: lu } : {}),
                     ...(year ? { key: `y${year}` } : {}),
                   }).toString(),
                 }}

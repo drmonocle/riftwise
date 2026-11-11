@@ -892,7 +892,14 @@ export const HomeStorylines: React.FC = () => {
         const entitySlug = r.t === "team" ? r.u || resolveTeamAlias(r.name) || prettySlug(r.name) : r.u || resolvePlayerSlug(r.name) || prettySlug(r.name);
         return {
           key: `${entitySlug}-${i}`,
-          who: { name: r.name, to: { kind: r.t, slug: entitySlug, ...(r.y ? { query: `p=y${encodeURIComponent(r.y)}` } : {}) } },
+          who: {
+            name: r.name,
+            to: {
+              kind: r.t,
+              slug: entitySlug,
+              ...(r.y ? { query: `p=y${encodeURIComponent(r.y)}` } : r.e ? { query: `p=e:${encodeURIComponent(resolveEventSlug(r.e))}` } : {}),
+            },
+          },
           text: noteText(r, { kind: r.t, slug: entitySlug }),
           plain: notePlainText(r),
           champ: r.c,
