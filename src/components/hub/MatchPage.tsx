@@ -339,10 +339,11 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                       <HubLink
                         to={{
                           kind: "tiers",
-                          ...(qChamps || game?.patch || seriesPeriod || s.e
+                          ...(qChamps || game?.patch || seriesPeriod || s.e || rBlue
                             ? {
                                 query: new URLSearchParams({
                                   ...(qChamps ? { q: qChamps } : {}),
+                                  ...(rBlue ? { role: rBlue } : {}),
                                   ...(game?.patch ? { key: `p${game.patch}`, patch: game.patch } : seriesPeriod ? { key: seriesPeriod } : {}),
                                   ...(seriesYear ? { year: seriesYear } : {}),
                                   ...(s.e ? { event: s.e } : {}),
@@ -1095,7 +1096,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...((blue[0]?.c || red[0]?.c) || g.patch || gamePeriod || s.e
+                    ...((blue[0]?.c || red[0]?.c) || g.patch || gamePeriod || s.e || blue[0]?.r
                       ? {
                           query: new URLSearchParams({
                             ...(blue[0]?.c || red[0]?.c
@@ -1108,6 +1109,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                                     .join(","),
                                 }
                               : {}),
+                            ...(blue[0]?.r ? { role: normalizeRole(blue[0].r) } : {}),
                             ...(g.patch ? { key: `p${g.patch}`, patch: g.patch } : gamePeriod ? { key: gamePeriod } : {}),
                             ...(gameYear ? { year: gameYear } : {}),
                             ...(s.e ? { event: s.e } : {}),
@@ -1616,10 +1618,11 @@ const PlayerBars: React.FC<{
                     const qChamps = [blue[0]?.c, red[0]?.c && red[0]?.c !== blue[0]?.c ? red[0].c : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",");
                     const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
                     const yr = period && /^y\d{4}$/.test(period) ? period.slice(1) : "";
-                    return qChamps || key || eventSlug
+                    return qChamps || key || eventSlug || blue[0]?.r
                       ? {
                           query: new URLSearchParams({
                             ...(qChamps ? { q: qChamps } : {}),
+                            ...(blue[0]?.r ? { role: normalizeRole(blue[0].r) } : {}),
                             ...(key ? { key } : {}),
                             ...(g.patch ? { patch: g.patch } : {}),
                             ...(yr ? { year: yr } : {}),
@@ -1919,10 +1922,11 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                         const qChamps = [blue[0]?.c, red[0]?.c && red[0]?.c !== blue[0]?.c ? red[0].c : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",");
                         const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
                         const yr = period && /^y\d{4}$/.test(period) ? period.slice(1) : "";
-                        return qChamps || key || eventSlug
+                        return qChamps || key || eventSlug || lanes[0]?.r
                           ? {
                               query: new URLSearchParams({
                                 ...(qChamps ? { q: qChamps } : {}),
+                                ...(lanes[0]?.r ? { role: normalizeRole(lanes[0].r) } : {}),
                                 ...(key ? { key } : {}),
                                 ...(g.patch ? { patch: g.patch } : {}),
                                 ...(yr ? { year: yr } : {}),
@@ -2114,10 +2118,11 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                         const qChamps = [lanes[0]?.b?.c, lanes[0]?.o?.c && lanes[0]?.o?.c !== lanes[0]?.b?.c ? lanes[0].o.c : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",");
                         const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
                         const yr = period && /^y\d{4}$/.test(period) ? period.slice(1) : "";
-                        return qChamps || key || eventSlug
+                        return qChamps || key || eventSlug || lanes[0]?.r
                           ? {
                               query: new URLSearchParams({
                                 ...(qChamps ? { q: qChamps } : {}),
+                                ...(lanes[0]?.r ? { role: normalizeRole(lanes[0].r) } : {}),
                                 ...(key ? { key } : {}),
                                 ...(g.patch ? { patch: g.patch } : {}),
                                 ...(yr ? { year: yr } : {}),
@@ -2617,10 +2622,11 @@ const Scoreboard: React.FC<{
                     .join(",");
                   const key = patch ? `p${patch}` : period && /^y\d{4}$/.test(period) ? period : "";
                   const yr = period && /^y\d{4}$/.test(period) ? period.slice(1) : "";
-                  return qChamps || key || eventSlug
+                  return qChamps || key || eventSlug || players[0]?.r
                     ? {
                         query: new URLSearchParams({
                           ...(qChamps ? { q: qChamps } : {}),
+                          ...(players[0]?.r ? { role: normalizeRole(players[0].r) } : {}),
                           ...(key ? { key } : {}),
                           ...(patch ? { patch } : {}),
                           ...(yr ? { year: yr } : {}),

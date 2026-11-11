@@ -733,7 +733,9 @@ const LeagueTable: React.FC<{
                 kind: "items",
                 query: new URLSearchParams({
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
+                  ...(shownRows[1] ? { vschamp: resolveChampSlug(shownRows[1].c) } : {}),
                   ...(roleQ || (shownRows[0] && shownRows[0].role >= 0) ? { role: roleQ || ROLES[shownRows[0].role] } : {}),
+                  league,
                   ...(year ? { year } : {}),
                   ...(patchQ ? { patch: patchQ } : {}),
                   ...(canonEventSlug ? { event: canonEventSlug } : {}),
@@ -767,7 +769,7 @@ const LeagueTable: React.FC<{
                   ...(side ? { side } : {}),
                   ...(roleQ ? { role: roleQ } : shownRows[0] && shownRows[0].role >= 0 ? { role: ROLES[shownRows[0].role] } : {}),
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
-                  ...(search.trim() && shownRows.length === 2 ? { vschamp: resolveChampSlug(shownRows[1].c) } : {}),
+                  ...(shownRows[1] ? { vschamp: resolveChampSlug(shownRows[1].c) } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -783,6 +785,7 @@ const LeagueTable: React.FC<{
                   ...(canonEventSlug ? { event: canonEventSlug } : {}),
                   ...(roleQ ? { role: roleQ } : shownRows[0] && shownRows[0].role >= 0 ? { role: ROLES[shownRows[0].role] } : {}),
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
+                  ...(search.trim() && shownRows.length ? { q: shownRows.slice(0, 2).map((r) => resolveChampSlug(r.c)).join(",") } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -1115,6 +1118,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 kind: "items",
                 query: new URLSearchParams({
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
+                  ...(shownRows[1] ? { vschamp: resolveChampSlug(shownRows[1].c) } : {}),
                   ...(roleQ || shownRows[0]?.role ? { role: roleQ || shownRows[0]!.role! } : {}),
                   ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
                   ...(key.startsWith("p") ? { patch: key.slice(1) } : {}),
@@ -1144,7 +1148,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                   ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                   ...(roleQ ? { role: roleQ } : shownRows[0]?.role ? { role: shownRows[0].role } : {}),
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
-                  ...(search.trim() && shownRows.length === 2 ? { vschamp: resolveChampSlug(shownRows[1].c) } : {}),
+                  ...(shownRows[1] ? { vschamp: resolveChampSlug(shownRows[1].c) } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -1158,6 +1162,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                   ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
                   ...(roleQ ? { role: roleQ } : shownRows[0]?.role ? { role: shownRows[0].role } : {}),
                   ...(shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
+                  ...(search.trim() && shownRows.length ? { q: shownRows.slice(0, 2).map((r) => resolveChampSlug(r.c)).join(",") } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -1303,6 +1308,7 @@ const MetaSpotlight: React.FC<{
                     query: new URLSearchParams({
                       champ: resolveChampSlug(item.c),
                       ...(itemRole ? { role: itemRole } : {}),
+                      ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
                       ...(patch ? { patch } : {}),
                       ...(canonEv ? { event: canonEv } : {}),

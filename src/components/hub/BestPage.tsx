@@ -40,7 +40,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
       canonAsked;
   const lgRow = index.data?.leagues.find((l) => l[0] === league);
   const years = (lgRow ? lgRow[4] : index.data?.years) || [];
-  const year = q.get("year") && years.includes(q.get("year")!) ? q.get("year")! : "";
+  const rawEvent = q.get("event") ? resolveEventSlug(q.get("event")!) : "";
+  const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(rawEvent)?.[1] || "";
+  const rawYear = q.get("year") || evYr;
+  const year = rawYear && years.includes(rawYear) ? rawYear : "";
   const file = useLoad(
     () => (asked && !index.data && !index.error ? Promise.resolve({ g: [], s: [] }) : loadBest(year || undefined, lgRow ? lgRow[0] : undefined)),
     [year, lgRow?.[0] || "", Boolean(index.data), Boolean(index.error), asked],
@@ -48,7 +51,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   // filters on the list itself (also synced to the address): tiers, games with a VOD, a team
   const urlTiers = q.get("tier") || "";
   const urlVod = q.get("vod") === "1";
-  const urlTeam = q.get("team") || q.get("q") || "";
+  const urlTeam =
+    q.get("team") && q.get("vs") && !/\s+vs\.?\s+|\s+v\s+/i.test(q.get("team")!)
+      ? `${q.get("team")} vs ${q.get("vs")}`
+      : q.get("team") || q.get("q") || q.get("vs") || rawEvent || "";
   const [tiers, setTiers] = useState<Set<string>>(() => new Set(urlTiers.split(",").filter(Boolean)));
   const [vodOnly, setVodOnly] = useState(urlVod);
   const [team, setTeam] = useState(urlTeam);
@@ -114,11 +120,12 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
     if (spoilerHidden && isFresh(dateOf(r))) return false;
     if (tiers.size && !tiers.has(ratingTier(r[0]))) return false;
     if (vodOnly && (view === "games" ? !(r as BestGame)[15] : !seriesWithVod.has(r[1]))) return false;
+    const [a, aSlug, b, bSlug, en, eSlug] =
+      view === "series"
+        ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9], (r as BestSeries)[3], (r as BestSeries)[4]]
+        : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10], (r as BestGame)[4], (r as BestGame)[5]];
+    if (rawEvent && !matchesPeriodEvent(eSlug || "", en || "", normText(rawEvent))) return false;
     if (teamTerms.length) {
-      const [a, aSlug, b, bSlug, en, eSlug] =
-        view === "series"
-          ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9], (r as BestSeries)[3], (r as BestSeries)[4]]
-          : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10], (r as BestGame)[4], (r as BestGame)[5]];
       const aCanon = aSlug || resolveTeamAlias(a, aliases.data?.team);
       const bCanon = bSlug || resolveTeamAlias(b, aliases.data?.team);
       const matchesTerm = (term: { norm: string; alias?: string | null; aliasSlug?: string }) => {
@@ -401,7 +408,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
             value={team}
             onChange={(e) => {
               setTeam(e.target.value);
-              setQ({ team: e.target.value || undefined });
+              setQ({ team: e.target.value || undefined, q: undefined, vs: undefined, event: undefined });
             }}
             placeholder={tl("Filter by team")}
             aria-label={tl("Filter by team")}
@@ -541,9 +548,9 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
               <tbody>
                 {shown.map((r, i) =>
                   view === "series" ? (
-                    <SeriesRow key={r[1]} r={r as BestSeries} rank={i + 1} />
+                    <SeriesRow key={r[1]} r={r as BestSeries} rank={i + 1} league={league || undefined} />
                   ) : (
-                    <GameRow key={`${r[1]}-${r[2]}`} r={r as BestGame} rank={i + 1} />
+                    <GameRow key={`${r[1]}-${r[2]}`} r={r as BestGame} rank={i + 1} league={league || undefined} />
                   ),
                 )}
               </tbody>
@@ -570,7 +577,7 @@ const Team: React.FC<{ name: string; u?: string | null; won: boolean }> = ({ nam
   </span>
 );
 
-const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
+const GameRow: React.FC<{ r: BestGame; rank: number; league?: string }> = ({ r, rank, league }) => {
   const [rating, slug, n, date, en, eslug, stage, a, aSlug, b, bSlug, w, min, ka, kb, vod] = r;
   const totalK = ka != null && kb != null ? ka + kb : 0;
   const pctKa = totalK > 0 && ka != null ? Math.round((ka / totalK) * 100) : 50;
@@ -666,7 +673,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
               <HubLink
                 to={{
                   kind: "items",
-                  query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : ""}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                  query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : ""}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}${league ? `&league=${encodeURIComponent(league)}` : ""}`,
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -675,7 +682,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                  query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}${league ? `&league=${encodeURIComponent(league)}` : ""}`,
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -702,7 +709,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
   );
 };
 
-const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
+const SeriesRow: React.FC<{ r: BestSeries; rank: number; league?: string }> = ({ r, rank, league }) => {
   const [rating, slug, date, en, eslug, stage, a, aSlug, b, bSlug, wa, wb, bestN, games, , perGame] = r;
   const totalS = wa + wb;
   const pctWa = totalS > 0 ? Math.round((wa / totalS) * 100) : 50;
@@ -786,7 +793,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : ""}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : ""}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}${league ? `&league=${encodeURIComponent(league)}` : ""}`,
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >
@@ -796,7 +803,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}${league ? `&league=${encodeURIComponent(league)}` : ""}`,
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >
@@ -835,7 +842,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : ""}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : ""}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}${league ? `&league=${encodeURIComponent(league)}` : ""}`,
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >
@@ -845,7 +852,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}${league ? `&league=${encodeURIComponent(league)}` : ""}`,
                   }}
                   className="hover:text-rw-accent hover:underline"
                 >
