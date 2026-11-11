@@ -243,9 +243,10 @@ const ColoredOpponentGraph: React.FC<{
   onSelectOpp: (opp: string | null) => void;
   subjectTeamSlug?: string;
   subjectPlayerSlug?: string;
+  vsPlayerSlug?: string;
   subjectRole?: string;
   period?: string;
-}> = ({ items, baseline, baselineLabel, selectedOpp, onSelectOpp, subjectTeamSlug, subjectPlayerSlug, subjectRole, period }) => {
+}> = ({ items, baseline, baselineLabel, selectedOpp, onSelectOpp, subjectTeamSlug, subjectPlayerSlug, vsPlayerSlug, subjectRole, period }) => {
   const gradId = useId().replace(/[^a-z0-9]/gi, "");
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
@@ -595,7 +596,7 @@ const ColoredOpponentGraph: React.FC<{
                   <HubLink
                     to={{
                       kind: "items",
-                      query: `${subjectPlayerSlug ? `player=${encodeURIComponent(subjectPlayerSlug)}&` : ""}team=${encodeURIComponent(subjectTeamSlug || resolveOppSlug(active.opp, active.u))}${
+                      query: `${subjectPlayerSlug ? `player=${encodeURIComponent(subjectPlayerSlug)}&` : ""}${vsPlayerSlug ? `vsplayer=${encodeURIComponent(vsPlayerSlug)}&` : ""}team=${encodeURIComponent(subjectTeamSlug || resolveOppSlug(active.opp, active.u))}${
                         subjectTeamSlug && subjectTeamSlug !== resolveOppSlug(active.opp, active.u)
                           ? `&vs=${encodeURIComponent(resolveOppSlug(active.opp, active.u))}`
                           : ""
@@ -608,7 +609,7 @@ const ColoredOpponentGraph: React.FC<{
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `${subjectPlayerSlug ? `player=${encodeURIComponent(subjectPlayerSlug)}&` : ""}team=${encodeURIComponent(subjectTeamSlug || resolveOppSlug(active.opp, active.u))}${
+                      query: `${subjectPlayerSlug ? `player=${encodeURIComponent(subjectPlayerSlug)}&` : ""}${vsPlayerSlug ? `vsplayer=${encodeURIComponent(vsPlayerSlug)}&` : ""}team=${encodeURIComponent(subjectTeamSlug || resolveOppSlug(active.opp, active.u))}${
                         subjectTeamSlug && subjectTeamSlug !== resolveOppSlug(active.opp, active.u)
                           ? `&vs=${encodeURIComponent(resolveOppSlug(active.opp, active.u))}`
                           : ""
@@ -660,7 +661,7 @@ const ColoredOpponentGraph: React.FC<{
                         ...(period?.startsWith("e:") ? { event: resolveEventSlug(period.slice(2)) } : {}),
                         ...(subjectRole ? { role: subjectRole } : {}),
                         ...(c0Slug ? { champ: c0Slug } : {}),
-                        q: [subjectPlayerSlug, subjectTeamSlug, resolveOppSlug(active.opp, active.u)].filter(Boolean).join(","),
+                        q: [subjectPlayerSlug, vsPlayerSlug, subjectTeamSlug, resolveOppSlug(active.opp, active.u)].filter(Boolean).join(","),
                       }).toString(),
                     }}
                     className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -2276,6 +2277,27 @@ export const TeamOpponentsChart: React.FC<{
                       >
                         {tl("Game finder")}
                       </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "tiers",
+                          ...(rowYr ? { query: `key=y${encodeURIComponent(rowYr)}&year=${encodeURIComponent(rowYr)}` } : {}),
+                        }}
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Pro tier list")}
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "leaders",
+                          query: new URLSearchParams({
+                            ...(rowYr ? { year: rowYr } : {}),
+                            q: `${teamSlug},${oppSlug}`,
+                          }).toString(),
+                        }}
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Player leaderboards")}
+                      </HubLink>
                     </span>
                   </td>
                 </tr>
@@ -2607,6 +2629,8 @@ export const TeamPeriodOpponents: React.FC<{
           selectedOpp={selectedOpp}
           onSelectOpp={setSelectedOpp}
           subjectTeamSlug={teamSlug}
+          subjectPlayerSlug={rosterSlugs?.[0]}
+          vsPlayerSlug={rosterSlugs?.[1]}
           period={pVal}
         />
       )}
@@ -2824,6 +2848,7 @@ export const TeamPeriodOpponents: React.FC<{
                                 team: teamSlug,
                                 vs: resolveOppSlug(expanded.opp, expanded.u),
                                 ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
+                                ...(rosterSlugs?.[1] ? { vsplayer: rosterSlugs[1] } : {}),
                                 ...(otherCh ? { vschamp: resolveChampSlug(otherCh) } : {}),
                                 ...(pVal
                                   ? { p: pVal }
@@ -2854,7 +2879,7 @@ export const TeamPeriodOpponents: React.FC<{
                     <EventLink
                       name={g[3]}
                       u={g[2]}
-                      query={`q=${encodeURIComponent([teamSlug, resolveOppSlug(expanded.opp, expanded.u), rosterSlugs?.[0]].filter(Boolean).join(","))}${g[20]?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(g[20][0]))}` : ""}`}
+                      query={`q=${encodeURIComponent([teamSlug, resolveOppSlug(expanded.opp, expanded.u), ...(rosterSlugs || [])].filter(Boolean).join(","))}${g[20]?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(g[20][0]))}` : ""}`}
                       className="text-rw-muted hover:text-rw-accent hover:underline truncate"
                     />
                   </span>

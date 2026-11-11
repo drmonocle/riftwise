@@ -730,6 +730,11 @@ export const PlayerRanks: React.FC<{
     const maxG = Math.max(...same.map((p) => p.g));
     const minG = Math.max(5, Math.ceil(maxG * 0.3));
     const peers = same.filter((p) => p.g >= minG || p.u === slug);
+    const topPeer = same
+      .filter((p) => p.u && p.u !== slug)
+      .sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g)[0];
+    const meTeamSlug = me.t ? me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) : "";
+    const peerTeamSlug = topPeer?.t ? topPeer.tu || resolveTeamAlias(topPeer.t) || prettySlug(topPeer.t) : "";
     const rows = PLAYER_METRICS.map((m0) => {
       const m = rated(m0, prefs.perMin);
       const r = place(m, me, peers);
@@ -748,30 +753,27 @@ export const PlayerRanks: React.FC<{
           <Bars
             rows={rows}
             hide={prefs.hide}
-            rankTo={(r) => {
-              const meTeamSlug = me.t ? me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) : "";
-              return {
-                kind: "leaders",
-                query: new URLSearchParams({
-                  league: lu,
-                  year,
-                  role: me.r,
-                  stat: r.key,
-                  ...(me.c?.[0] ? { champ: resolveChampSlug(me.c[0]) } : {}),
-                  q: [slug, meTeamSlug].filter(Boolean).join(","),
-                }).toString(),
-              };
-            }}
+            rankTo={(r) => ({
+              kind: "leaders",
+              query: new URLSearchParams({
+                league: lu,
+                year,
+                role: me.r,
+                stat: r.key,
+                ...(me.c?.[0] ? { champ: resolveChampSlug(me.c[0]) } : {}),
+                q: [slug, topPeer?.u, meTeamSlug, peerTeamSlug && peerTeamSlug !== meTeamSlug ? peerTeamSlug : ""].filter(Boolean).join(","),
+              }).toString(),
+            })}
             lastTo={{
               kind: "player",
               slug,
               tab: "matches",
               query: new URLSearchParams({
                 ...(year ? { p: `y${year}` } : {}),
-                ...(me.t ? { team: me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) } : {}),
+                ...(meTeamSlug ? { team: meTeamSlug } : {}),
                 ...(me.r ? { role: me.r } : {}),
                 ...(games?.[games.length - 1]?.[2] ? { champ: resolveChampSlug(games[games.length - 1][2]) } : me.c?.[0] ? { champ: resolveChampSlug(me.c[0]) } : {}),
-                ...(games?.[games.length - 1]?.[8] ? { q: resolveTeamAlias(games[games.length - 1][8]) || prettySlug(games[games.length - 1][8]) } : {}),
+                ...(games?.[games.length - 1]?.[8] ? { q: resolveTeamAlias(games[games.length - 1][8]) || prettySlug(games[games.length - 1][8]) } : peerTeamSlug ? { q: peerTeamSlug } : {}),
               }).toString(),
             }}
           />
@@ -784,7 +786,7 @@ export const PlayerRanks: React.FC<{
                   year,
                   role: me.r,
                   ...(me.c?.[0] ? { champ: resolveChampSlug(me.c[0]) } : {}),
-                  q: [slug, me.t ? me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) : ""].filter(Boolean).join(","),
+                  q: [slug, topPeer?.u, meTeamSlug, peerTeamSlug && peerTeamSlug !== meTeamSlug ? peerTeamSlug : ""].filter(Boolean).join(","),
                 }).toString(),
               }}
               className="hover:text-rw-accent hover:underline"
@@ -1072,6 +1074,29 @@ export const TeamRanks: React.FC<{
     const peers = season.teamStats.filter(
       (t) => t.g >= Math.max(3, Math.ceil(maxG * 0.3)) || t.u === slug,
     );
+    const topTeam = season.teamStats
+      .filter((t) => t.u && t.u !== slug)
+      .sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g)[0];
+    const lastOppSlug = games?.[games.length - 1]?.[4]
+      ? resolveTeamAlias(games[games.length - 1][5] || games[games.length - 1][4]) || prettySlug(games[games.length - 1][4])
+      : topTeam?.u || "";
+    const mePlayerSlug = season.players
+      .filter((p) => p.tu === slug || (p.t ? resolveTeamAlias(p.t) === slug : false))
+      .sort((a, b) => b.g - a.g)[0]?.u;
+    const peerPlayerSlug = (lastOppSlug || topTeam?.u)
+      ? season.players
+          .filter((p) => p.tu === (lastOppSlug || topTeam?.u) || (p.t ? resolveTeamAlias(p.t) === (lastOppSlug || topTeam?.u) : false))
+          .sort((a, b) => b.g - a.g)[0]?.u
+      : undefined;
+    const topSeasonChampSlug = games?.[games.length - 1]?.[20]?.[0]
+      ? resolveChampSlug(games[games.length - 1][20][0])
+      : games?.flatMap((g) => g[20] || []).find(Boolean)
+        ? resolveChampSlug(games!.flatMap((g) => g[20] || []).find(Boolean)!)
+        : undefined;
+    const leagueRankQ = new URLSearchParams({
+      ...(topSeasonChampSlug ? { champ: topSeasonChampSlug } : {}),
+      q: [slug, lastOppSlug, mePlayerSlug, peerPlayerSlug].filter(Boolean).join(","),
+    }).toString();
     const rows = TEAM_METRICS.map((m0) => {
       const m = rated(m0, prefs.perMin);
       const r = place(m, me, peers);
@@ -1087,7 +1112,7 @@ export const TeamRanks: React.FC<{
             kind: "league",
             slug: lu,
             year,
-            query: `q=${encodeURIComponent([slug, games?.[games.length - 1]?.[4] ? resolveTeamAlias(games[games.length - 1][5] || games[games.length - 1][4]) || prettySlug(games[games.length - 1][4]) : ""].filter(Boolean).join(","))}`,
+            query: leagueRankQ,
           })}
           lastTo={{
             kind: "team",
@@ -1096,10 +1121,8 @@ export const TeamRanks: React.FC<{
             query:
               new URLSearchParams({
                 ...(year ? { p: `y${year}` } : {}),
-                ...(games?.[games.length - 1]?.[20]?.[0] ? { champ: resolveChampSlug(games[games.length - 1][20][0]) } : {}),
-                ...(games?.[games.length - 1]?.[4]
-                  ? { q: resolveTeamAlias(games[games.length - 1][5] || games[games.length - 1][4]) || prettySlug(games[games.length - 1][4]) }
-                  : {}),
+                ...(topSeasonChampSlug ? { champ: topSeasonChampSlug } : {}),
+                ...(lastOppSlug ? { q: lastOppSlug } : {}),
               }).toString() || undefined,
           }}
         />
@@ -1109,7 +1132,7 @@ export const TeamRanks: React.FC<{
               kind: "league",
               slug: lu,
               year,
-              query: `q=${encodeURIComponent([slug, games?.[games.length - 1]?.[4] ? resolveTeamAlias(games[games.length - 1][5] || games[games.length - 1][4]) || prettySlug(games[games.length - 1][4]) : ""].filter(Boolean).join(","))}`,
+              query: leagueRankQ,
             }}
             className="hover:text-rw-accent hover:underline"
           >

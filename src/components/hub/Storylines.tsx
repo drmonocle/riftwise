@@ -79,18 +79,27 @@ export function notePlainText(nt: Note): string {
   return "";
 }
 
-export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string; team?: string; opp?: string; role?: string }): React.ReactNode {
+export function noteText(
+  nt: Note,
+  who?: { kind: "team" | "player"; slug: string; team?: string; opp?: string; role?: string; vsPlayer?: string; vsChamp?: string },
+): React.ReactNode {
   const plain = notePlainText(nt);
   const whoTeamSlug = who?.kind === "player" && who.team ? resolveTeamAlias(who.team) || prettySlug(who.team) : "";
   const whoOppSlug = who?.opp ? resolveTeamAlias(who.opp) || prettySlug(who.opp) : "";
   const whoTeamQ = whoTeamSlug ? `&team=${encodeURIComponent(whoTeamSlug)}` : "";
+  const whoOppQ = whoOppSlug ? `&vs=${encodeURIComponent(whoOppSlug)}` : "";
+  const whoVsPlayerQ = who?.vsPlayer ? `&vsplayer=${encodeURIComponent(who.vsPlayer)}` : "";
+  const whoVsChampQ = who?.vsChamp ? `&vschamp=${encodeURIComponent(resolveChampSlug(who.vsChamp))}` : "";
   const whoRoleQ = who?.kind === "player" && who.role ? `&role=${encodeURIComponent(who.role)}` : "";
   if ((nt.k === "champ" || nt.k === "crec" || nt.k === "cms") && nt.c) {
     const yr = nt.y ? `&year=${encodeURIComponent(nt.y)}` : "";
+    const cSlug = resolveChampSlug(nt.c);
+    const vsCSlug = who?.vsChamp && resolveChampSlug(who.vsChamp) !== cSlug ? resolveChampSlug(who.vsChamp) : "";
     const champPageQ = new URLSearchParams({
       ...(who?.kind === "player" ? { player: who.slug } : {}),
       ...(who?.kind === "team" ? { team: who.slug } : whoTeamSlug ? { team: whoTeamSlug } : {}),
       ...(whoOppSlug ? { vs: whoOppSlug } : {}),
+      ...(vsCSlug ? { vschamp: vsCSlug } : {}),
       ...(who?.role ? { role: who.role } : {}),
       ...(nt.y ? { p: `y${nt.y}` } : {}),
     }).toString();
@@ -98,7 +107,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
       <HubLink
         to={{
           kind: "finder",
-          query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}${whoRoleQ}&champ=${encodeURIComponent(resolveChampSlug(nt.c))}${yr}`,
+          query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}${whoOppQ}${whoVsPlayerQ}${whoRoleQ}&champ=${encodeURIComponent(cSlug)}${vsCSlug ? `&vschamp=${encodeURIComponent(vsCSlug)}` : ""}${yr}`,
         }}
         className="hover:text-rw-accent hover:underline"
       >
@@ -106,7 +115,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
       </HubLink>
     ) : (
       <HubLink
-        to={{ kind: "champ", slug: resolveChampSlug(nt.c), ...(champPageQ ? { query: champPageQ } : {}) }}
+        to={{ kind: "champ", slug: cSlug, ...(champPageQ ? { query: champPageQ } : {}) }}
         className="hover:text-rw-accent hover:underline"
       >
         {plain}
@@ -115,7 +124,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     return (
       <span className="inline-flex items-center gap-1 flex-wrap">
         <HubLink
-          to={{ kind: "champ", slug: resolveChampSlug(nt.c), ...(champPageQ ? { query: champPageQ } : {}) }}
+          to={{ kind: "champ", slug: cSlug, ...(champPageQ ? { query: champPageQ } : {}) }}
           title={champName(nt.c)}
         >
           <ChampIcon name={nt.c} size={16} />
@@ -128,7 +137,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     const yr = nt.y ? `&year=${encodeURIComponent(nt.y)}` : "";
     return (
       <HubLink
-        to={{ kind: "finder", query: `team=${encodeURIComponent(who.slug)}&side=${nt.side}${yr}` }}
+        to={{ kind: "finder", query: `team=${encodeURIComponent(who.slug)}${whoOppQ}${whoVsPlayerQ}${whoVsChampQ}&side=${nt.side}${yr}` }}
         className="hover:text-rw-accent hover:underline"
       >
         {plain}
@@ -139,7 +148,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     const yr = nt.y ? `&year=${encodeURIComponent(nt.y)}` : "";
     return (
       <HubLink
-        to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}&result=w${yr}` }}
+        to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}${whoOppQ}${whoVsPlayerQ}${whoRoleQ}&result=w${yr}` }}
         className="hover:text-rw-accent hover:underline"
       >
         {plain}
@@ -152,7 +161,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
       <span className="inline-flex items-center gap-1.5 flex-wrap">
         {who ? (
           <HubLink
-            to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}${nt.y ? `&year=${encodeURIComponent(nt.y)}` : ""}` }}
+            to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}${whoOppQ}${whoVsPlayerQ}${whoRoleQ}${nt.y ? `&year=${encodeURIComponent(nt.y)}` : ""}` }}
             className="hover:text-rw-accent hover:underline"
           >
             {plain}
@@ -177,6 +186,12 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
         : who?.team
           ? resolveTeamAlias(who.team) || prettySlug(who.team)
           : undefined;
+    const evQ = new URLSearchParams({
+      ...(evTeam ? { team: evTeam } : {}),
+      ...(whoOppSlug || who?.kind === "player"
+        ? { q: [who?.kind === "player" ? who.slug : "", evTeam, whoOppSlug].filter(Boolean).join(",") }
+        : {}),
+    }).toString();
     return (
       <HubLink
         to={
@@ -184,7 +199,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
             ? {
                 kind: "event",
                 slug: evSlug,
-                ...(evTeam ? { query: `team=${encodeURIComponent(evTeam)}` } : {}),
+                ...(evQ ? { query: evQ } : {}),
               }
             : { kind: "tournaments", query: `q=${encodeURIComponent(nt.e)}` }
         }
@@ -202,7 +217,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
           ...(nt.y || who
             ? {
                 query: new URLSearchParams({
-                  ...(who ? { q: who.slug } : {}),
+                  ...(who ? { q: [who.slug, whoTeamSlug, whoOppSlug, who.vsPlayer].filter(Boolean).join(",") } : {}),
                   ...(nt.y ? { year: String(nt.y) } : {}),
                 }).toString(),
               }
@@ -234,7 +249,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     if (nt.s === "games" || nt.s === "wins") {
       return (
         <HubLink
-          to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}${whoRoleQ}${nt.s === "wins" ? "&result=w" : ""}${nt.y ? `&year=${encodeURIComponent(nt.y)}` : ""}` }}
+          to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}${whoOppQ}${whoVsPlayerQ}${whoRoleQ}${nt.s === "wins" ? "&result=w" : ""}${nt.y ? `&year=${encodeURIComponent(nt.y)}` : ""}` }}
           className="hover:text-rw-accent hover:underline"
         >
           {plain}
@@ -382,10 +397,16 @@ export const OwnStorylines: React.FC<{
               const noteYr = notes.list.find((nt) => nt.y)?.y;
               const rawNoteEv = notes.list.find((nt) => nt.e)?.e;
               const noteEv = rawNoteEv ? resolveEventSlug(rawNoteEv) : undefined;
+              const whoOppSlug = who.opp ? resolveTeamAlias(who.opp) || prettySlug(who.opp) : "";
               return who.kind === "team" ? (
                 <>
                   <HubLink
-                    to={{ kind: "prep", a: who.slug, ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}) }}
+                    to={{
+                      kind: "prep",
+                      a: who.slug,
+                      ...(whoOppSlug && whoOppSlug !== who.slug ? { b: whoOppSlug } : {}),
+                      ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}),
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Match prep")} →
@@ -394,7 +415,7 @@ export const OwnStorylines: React.FC<{
                     to={{
                       kind: "draft",
                       query: new URLSearchParams({
-                        teams: who.slug,
+                        teams: [who.slug, whoOppSlug && whoOppSlug !== who.slug ? whoOppSlug : ""].filter(Boolean).join(","),
                         ...(noteYr ? { p: `y${noteYr}` } : noteEv ? { p: `e:${noteEv}` } : {}),
                         ...(noteChampStr ? { champ: noteChampStr } : {}),
                       }).toString(),
@@ -404,7 +425,13 @@ export const OwnStorylines: React.FC<{
                     {tl("Draft board")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "compare", mode: "team", a: who.slug, ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}) }}
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: who.slug,
+                      ...(whoOppSlug && whoOppSlug !== who.slug ? { b: whoOppSlug } : {}),
+                      ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}),
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Compare")} →
@@ -430,6 +457,7 @@ export const OwnStorylines: React.FC<{
                       kind: "items",
                       query: new URLSearchParams({
                         team: who.slug,
+                        ...(whoOppSlug && whoOppSlug !== who.slug ? { vs: whoOppSlug } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                         ...(noteChamps[1] ? { vschamp: resolveChampSlug(noteChamps[1]) } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
@@ -445,6 +473,7 @@ export const OwnStorylines: React.FC<{
                       kind: "finder",
                       query: new URLSearchParams({
                         team: who.slug,
+                        ...(whoOppSlug && whoOppSlug !== who.slug ? { vs: whoOppSlug } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
@@ -456,7 +485,10 @@ export const OwnStorylines: React.FC<{
                     {tl("Game finder")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "rankings", query: `q=${encodeURIComponent(who.slug)}` }}
+                    to={{
+                      kind: "rankings",
+                      query: `q=${encodeURIComponent([who.slug, whoOppSlug && whoOppSlug !== who.slug ? whoOppSlug : ""].filter(Boolean).join(","))}`,
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Power rankings")} →
@@ -485,7 +517,7 @@ export const OwnStorylines: React.FC<{
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
-                        q: who.slug,
+                        q: [who.slug, whoOppSlug && whoOppSlug !== who.slug ? whoOppSlug : ""].filter(Boolean).join(","),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -500,7 +532,12 @@ export const OwnStorylines: React.FC<{
                     return (
                       <>
                         <HubLink
-                          to={{ kind: "prep", a: whoTeamSlug, ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}) }}
+                          to={{
+                            kind: "prep",
+                            a: whoTeamSlug,
+                            ...(whoOppSlug && whoOppSlug !== whoTeamSlug ? { b: whoOppSlug } : {}),
+                            ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}),
+                          }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Match prep")} →
@@ -509,8 +546,9 @@ export const OwnStorylines: React.FC<{
                           to={{
                             kind: "draft",
                             query: new URLSearchParams({
-                              teams: whoTeamSlug,
+                              teams: [whoTeamSlug, whoOppSlug && whoOppSlug !== whoTeamSlug ? whoOppSlug : ""].filter(Boolean).join(","),
                               ...(noteYr ? { p: `y${noteYr}` } : noteEv ? { p: `e:${noteEv}` } : {}),
+                              ...(who.role ? { role: who.role } : {}),
                               ...(noteChampStr ? { champ: noteChampStr } : {}),
                             }).toString(),
                           }}
@@ -534,6 +572,7 @@ export const OwnStorylines: React.FC<{
                         query: new URLSearchParams({
                           champ: resolveChampSlug(noteChamp),
                           ...(noteChamps[1] ? { vs: resolveChampSlug(noteChamps[1]) } : {}),
+                          ...(who.role ? { role: who.role } : {}),
                           ...(noteYr ? { patch: `y${noteYr}`, year: String(noteYr) } : {}),
                           ...(noteEv ? { event: noteEv } : {}),
                         }).toString(),
@@ -549,6 +588,8 @@ export const OwnStorylines: React.FC<{
                       query: new URLSearchParams({
                         player: who.slug,
                         ...(who.team ? { team: resolveTeamAlias(who.team) || prettySlug(who.team) } : {}),
+                        ...(whoOppSlug ? { vs: whoOppSlug } : {}),
+                        ...(who.role ? { role: who.role } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                         ...(noteChamps[1] ? { vschamp: resolveChampSlug(noteChamps[1]) } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
@@ -565,6 +606,8 @@ export const OwnStorylines: React.FC<{
                       query: new URLSearchParams({
                         player: who.slug,
                         ...(who.team ? { team: resolveTeamAlias(who.team) || prettySlug(who.team) } : {}),
+                        ...(whoOppSlug ? { vs: whoOppSlug } : {}),
+                        ...(who.role ? { role: who.role } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
@@ -581,8 +624,9 @@ export const OwnStorylines: React.FC<{
                       query: new URLSearchParams({
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
+                        ...(who.role ? { role: who.role } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
-                        q: [who.slug, who.team ? resolveTeamAlias(who.team) || prettySlug(who.team) : ""].filter(Boolean).join(","),
+                        q: [who.slug, who.team ? resolveTeamAlias(who.team) || prettySlug(who.team) : "", whoOppSlug].filter(Boolean).join(","),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -592,7 +636,13 @@ export const OwnStorylines: React.FC<{
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(who.team ? { query: `q=${encodeURIComponent(resolveTeamAlias(who.team) || prettySlug(who.team))}` } : {}),
+                      ...((who.team || whoOppSlug)
+                        ? {
+                            query: `q=${encodeURIComponent(
+                              [who.team ? resolveTeamAlias(who.team) || prettySlug(who.team) : "", whoOppSlug].filter(Boolean).join(","),
+                            )}`,
+                          }
+                        : {}),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -601,11 +651,12 @@ export const OwnStorylines: React.FC<{
                   <HubLink
                     to={{
                       kind: "tiers",
-                      ...(noteYr || noteEv || noteChampStr
+                      ...(noteYr || noteEv || noteChampStr || who.role
                         ? {
                             query: new URLSearchParams({
                               ...(noteYr ? { key: `y${noteYr}`, year: String(noteYr) } : {}),
                               ...(noteEv ? { event: noteEv } : {}),
+                              ...(who.role ? { role: who.role } : {}),
                               ...(noteChampStr ? { q: noteChampStr } : {}),
                             }).toString(),
                           }
@@ -1106,9 +1157,16 @@ export const HomeStorylines: React.FC = () => {
       lines={rows.map((r, i) => {
         const entitySlug = r.t === "team" ? r.u || resolveTeamAlias(r.name) || prettySlug(r.name) : r.u || resolvePlayerSlug(r.name) || prettySlug(r.name);
         const cSlug = r.c ? resolveChampSlug(r.c) : "";
+        const rivalTeamRow = rows.find((x, j) => j !== i && x.t === "team" && (x.u || resolveTeamAlias(x.name) || prettySlug(x.name)) !== entitySlug);
+        const vsTeamSlug = rivalTeamRow ? rivalTeamRow.u || resolveTeamAlias(rivalTeamRow.name) || prettySlug(rivalTeamRow.name) : "";
+        const rivalPlayerRow = rows.find((x, j) => j !== i && x.t === "player" && (x.u || resolvePlayerSlug(x.name) || prettySlug(x.name)) !== entitySlug);
+        const vsPlayerSlug = rivalPlayerRow ? rivalPlayerRow.u || resolvePlayerSlug(rivalPlayerRow.name) || prettySlug(rivalPlayerRow.name) : "";
+        const rivalChampRow = rows.find((x, j) => j !== i && x.c && resolveChampSlug(x.c) !== cSlug);
+        const vsChampSlug = rivalChampRow?.c ? resolveChampSlug(rivalChampRow.c) : "";
         const whoQuery = new URLSearchParams({
           ...(r.y ? { p: `y${r.y}` } : r.e ? { p: `e:${resolveEventSlug(r.e)}` } : {}),
-          ...(cSlug ? { champ: cSlug, q: cSlug } : {}),
+          ...(cSlug ? { champ: cSlug } : {}),
+          ...(vsTeamSlug ? { q: vsTeamSlug } : cSlug ? { q: cSlug } : {}),
         }).toString();
         return {
           key: `${entitySlug}-${i}`,
@@ -1120,7 +1178,7 @@ export const HomeStorylines: React.FC = () => {
               ...(whoQuery ? { query: whoQuery } : {}),
             },
           },
-          text: noteText(r, { kind: r.t, slug: entitySlug }),
+          text: noteText(r, { kind: r.t, slug: entitySlug, opp: vsTeamSlug, vsPlayer: vsPlayerSlug, vsChamp: vsChampSlug }),
           plain: notePlainText(r),
           champ: r.c,
           asOf: r.asOf,

@@ -1558,13 +1558,14 @@ export const TeamPeriodStats: React.FC<{ slug: string; has2y?: boolean; who?: Te
   return <TeamPeriodView slug={slug} rows={rows} who={who} preferAll={preferAll} query={query} />;
 };
 
-const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "ban" | "banVs"; slug?: string; oppSlug?: string; rosterSlug?: string; period?: string }> = ({
+const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "ban" | "banVs"; slug?: string; oppSlug?: string; rosterSlug?: string; secRosterSlug?: string; period?: string }> = ({
   title,
   list,
   tone = "ban",
   slug,
   oppSlug,
   rosterSlug,
+  secRosterSlug,
   period,
 }) => {
   if (!list.length) return null;
@@ -1605,6 +1606,7 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "b
                   slug ? `team=${encodeURIComponent(slug)}` : "",
                   oppSlug ? `vs=${encodeURIComponent(oppSlug)}` : "",
                   rosterSlug ? `player=${encodeURIComponent(rosterSlug)}` : "",
+                  secRosterSlug ? `vsplayer=${encodeURIComponent(secRosterSlug)}` : "",
                   vsC && vsC !== cSlug ? `vschamp=${encodeURIComponent(vsC)}` : "",
                   period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
                 ]
@@ -1621,7 +1623,7 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "b
               </span>
               {slug ? (
                 <HubLink
-                  to={{ kind: "team", slug, tab: "champions", query: `champ=${encodeURIComponent(cSlug)}${oppSlug ? `&q=${encodeURIComponent(oppSlug)}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                  to={{ kind: "team", slug, tab: "champions", query: `champ=${encodeURIComponent(cSlug)}${oppSlug ? `&q=${encodeURIComponent(oppSlug)}` : ""}${rosterSlug ? `&player=${encodeURIComponent(rosterSlug)}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
                   className="text-rw-sub w-5 text-right hover:text-rw-accent hover:underline"
                 >
                   {n}
@@ -2038,7 +2040,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                               <ChampLink
                                 name={c}
                                 size={16}
-                                query={`team=${encodeURIComponent(slug)}${topTeamOppSlug ? `&vs=${encodeURIComponent(topTeamOppSlug)}` : ""}${topRosterSlugs[0] ? `&player=${encodeURIComponent(topRosterSlugs[0])}` : ""}${vsC && vsC !== cSlug ? `&vschamp=${encodeURIComponent(vsC)}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`}
+                                query={`team=${encodeURIComponent(slug)}${topTeamOppSlug ? `&vs=${encodeURIComponent(topTeamOppSlug)}` : ""}${topRosterSlugs[0] ? `&player=${encodeURIComponent(topRosterSlugs[0])}` : ""}${topRosterSlugs[1] ? `&vsplayer=${encodeURIComponent(topRosterSlugs[1])}` : ""}${vsC && vsC !== cSlug ? `&vschamp=${encodeURIComponent(vsC)}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`}
                               />
                               <span className="inline-flex items-center gap-1.5 text-rw-sub tabular-nums shrink-0">
                                 <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block">
@@ -2068,7 +2070,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                     </div>
                   );
                 })()}
-                <ChampCounts title={tl("Most banned by them")} list={t.bans} tone="ban" slug={slug} oppSlug={topTeamOppSlug} rosterSlug={topRosterSlugs[0]} period={period} />
+                <ChampCounts title={tl("Most banned by them")} list={t.bans} tone="ban" slug={slug} oppSlug={topTeamOppSlug} rosterSlug={topRosterSlugs[0]} secRosterSlug={topRosterSlugs[1]} period={period} />
                 <ChampCounts
                   title={tl("Most banned against them")}
                   list={t.bansVs}
@@ -2076,6 +2078,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                   slug={slug}
                   oppSlug={topTeamOppSlug}
                   rosterSlug={topRosterSlugs[0]}
+                  secRosterSlug={topRosterSlugs[1]}
                   period={period}
                 />
               </div>
