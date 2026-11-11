@@ -273,16 +273,99 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {settings.followedTeams.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const a = teamSlug(pickTeamByCode(catalog.teams || [], settings.followedTeams[0])?.name, settings.followedTeams[0]);
+                    const b = settings.followedTeams[1]
+                      ? teamSlug(pickTeamByCode(catalog.teams || [], settings.followedTeams[1])?.name, settings.followedTeams[1])
+                      : undefined;
+                    navigateHub({ kind: "prep", a, ...(b && b !== a ? { b } : {}) });
+                  }}
+                  className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Match prep")} →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const ts = settings.followedTeams
+                      .slice(0, 2)
+                      .map((c) => teamSlug(pickTeamByCode(catalog.teams || [], c)?.name, c))
+                      .filter(Boolean)
+                      .join(",");
+                    navigateHub({ kind: "draft", ...(ts ? { query: `teams=${encodeURIComponent(ts)}` } : {}) });
+                  }}
+                  className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Draft board")} →
+                </button>
+              </>
+            )}
+            {(settings.followedTeams.length > 0 || settings.followedPlayers.length > 0) && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (settings.followedTeams.length > 0) {
+                      const a = teamSlug(pickTeamByCode(catalog.teams || [], settings.followedTeams[0])?.name, settings.followedTeams[0]);
+                      const b = settings.followedTeams[1]
+                        ? teamSlug(pickTeamByCode(catalog.teams || [], settings.followedTeams[1])?.name, settings.followedTeams[1])
+                        : undefined;
+                      navigateHub({ kind: "compare", mode: "team", a, ...(b && b !== a ? { b } : {}) });
+                    } else {
+                      const a = playerSlug(settings.followedPlayers[0]);
+                      const b = settings.followedPlayers[1] ? playerSlug(settings.followedPlayers[1]) : undefined;
+                      navigateHub({ kind: "compare", mode: "player", a, ...(b && b !== a ? { b } : {}) });
+                    }
+                  }}
+                  className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Compare")} →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const lg = settings.followedLeagues.length === 1 ? resolveLeagueSlug(settings.followedLeagues[0]) : "";
+                    const q =
+                      settings.followedTeams.length > 0
+                        ? new URLSearchParams({
+                            team: teamSlug(pickTeamByCode(catalog.teams || [], settings.followedTeams[0])?.name, settings.followedTeams[0]),
+                            ...(settings.followedTeams.length === 2
+                              ? { vs: teamSlug(pickTeamByCode(catalog.teams || [], settings.followedTeams[1])?.name, settings.followedTeams[1]) }
+                              : {}),
+                            ...(lg ? { league: lg } : {}),
+                          }).toString()
+                        : new URLSearchParams({
+                            player: playerSlug(settings.followedPlayers[0]),
+                            ...(settings.followedPlayers.length === 2 ? { vsplayer: playerSlug(settings.followedPlayers[1]) } : {}),
+                            ...(lg ? { league: lg } : {}),
+                          }).toString();
+                    navigateHub({ kind: "finder", ...(q ? { query: q } : {}) });
+                  }}
+                  className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={() => {
+                const lg = settings.followedLeagues.length === 1 ? resolveLeagueSlug(settings.followedLeagues[0]) : "";
                 const tq = settings.followedTeams
                   .slice(0, 4)
                   .map((c) => teamSlug(pickTeamByCode(catalog.teams || [], c)?.name, c))
                   .filter(Boolean)
                   .join(",");
-                navigateHub({ kind: "rankings", ...(tq ? { query: `q=${encodeURIComponent(tq)}` } : {}) });
+                const q = new URLSearchParams({
+                  ...(lg ? { league: lg } : {}),
+                  ...(tq ? { q: tq } : {}),
+                }).toString();
+                navigateHub({ kind: "rankings", ...(q ? { query: q } : {}) });
               }}
               className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -291,6 +374,17 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             <button
               type="button"
               onClick={() => {
+                const lg = settings.followedLeagues.length === 1 ? resolveLeagueSlug(settings.followedLeagues[0]) : "";
+                navigateHub({ kind: "tiers", ...(lg ? { query: `scope=${encodeURIComponent(lg)}&league=${encodeURIComponent(lg)}` } : {}) });
+              }}
+              className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Pro tier list")} →
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const lg = settings.followedLeagues.length === 1 ? resolveLeagueSlug(settings.followedLeagues[0]) : "";
                 const lq = (
                   settings.followedPlayers.length > 0
                     ? settings.followedPlayers.slice(0, 4).map((n) => playerSlug(n))
@@ -298,7 +392,11 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 )
                   .filter(Boolean)
                   .join(",");
-                navigateHub({ kind: "leaders", ...(lq ? { query: `q=${encodeURIComponent(lq)}` } : {}) });
+                const q = new URLSearchParams({
+                  ...(lg ? { league: lg } : {}),
+                  ...(lq ? { q: lq } : {}),
+                }).toString();
+                navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
               }}
               className="hidden sm:inline text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -503,7 +601,15 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "finder",
+                        query: new URLSearchParams({
+                          team: a,
+                          ...(lg ? { league: lg } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
@@ -526,7 +632,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   {lg && (
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(lg)}` })}
+                      onClick={() => navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(lg)}&league=${encodeURIComponent(lg)}` })}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
@@ -582,7 +688,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "finder",
+                        query: new URLSearchParams({
+                          team: a,
+                          vs: b,
+                          ...(sameLg ? { league: sameLg } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
@@ -605,7 +720,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   {sameLg && (
                     <button
                       type="button"
-                      onClick={() => navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(sameLg)}` })}
+                      onClick={() => navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(sameLg)}&league=${encodeURIComponent(sameLg)}` })}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
@@ -728,7 +843,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(tSlug)}` })}
+                        onClick={() => {
+                          const lg = team.league ? resolveLeagueSlug(team.league) : "";
+                          navigateHub({
+                            kind: "finder",
+                            query: new URLSearchParams({
+                              team: tSlug,
+                              ...(lg ? { league: lg } : {}),
+                            }).toString(),
+                          });
+                        }}
                         className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
                       >
                         {tl("Game finder")}
@@ -811,14 +935,35 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                               </button>
                               <button
                                 type="button"
-                                onClick={() => navigateHub({ kind: "finder", query: `player=${encodeURIComponent(pSlug)}` })}
+                                onClick={() => {
+                                  const lg = team.league ? resolveLeagueSlug(team.league) : "";
+                                  navigateHub({
+                                    kind: "finder",
+                                    query: new URLSearchParams({
+                                      player: pSlug,
+                                      team: tSlug,
+                                      ...(pRole ? { role: pRole } : {}),
+                                      ...(lg ? { league: lg } : {}),
+                                    }).toString(),
+                                  });
+                                }}
                                 className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline hidden sm:inline"
                               >
                                 {tl("Game finder")}
                               </button>
                               <button
                                 type="button"
-                                onClick={() => navigateHub({ kind: "items", query: `player=${encodeURIComponent(pSlug)}` })}
+                                onClick={() => {
+                                  const lg = team.league ? resolveLeagueSlug(team.league) : "";
+                                  navigateHub({
+                                    kind: "items",
+                                    query: new URLSearchParams({
+                                      player: pSlug,
+                                      team: tSlug,
+                                      ...(lg ? { league: lg } : {}),
+                                    }).toString(),
+                                  });
+                                }}
                                 className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline hidden sm:inline"
                               >
                                 {tl("Item history")}
@@ -894,14 +1039,31 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "items", query: `player=${encodeURIComponent(a)}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "items",
+                        query: new URLSearchParams({
+                          player: a,
+                          ...(tA ? { team: tA } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Item history")} →
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "finder", query: `player=${encodeURIComponent(a)}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "finder",
+                        query: new URLSearchParams({
+                          player: a,
+                          ...(tA ? { team: tA } : {}),
+                          ...(r0 ? { role: r0 } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
@@ -972,14 +1134,31 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "items", query: `player=${encodeURIComponent(a)}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "items",
+                        query: new URLSearchParams({
+                          player: a,
+                          ...(tA ? { team: tA } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Item history")} →
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "finder", query: `player=${encodeURIComponent(a)}&vsplayer=${encodeURIComponent(b)}` })}
+                    onClick={() =>
+                      navigateHub({
+                        kind: "finder",
+                        query: new URLSearchParams({
+                          player: a,
+                          vsplayer: b,
+                          ...(sameRole ? { role: sameRole } : {}),
+                        }).toString(),
+                      })
+                    }
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
@@ -1098,7 +1277,15 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigateHub({ kind: "finder", query: `player=${encodeURIComponent(pSlug)}` });
+                        const rNorm = normalizeRole(player.role);
+                        navigateHub({
+                          kind: "finder",
+                          query: new URLSearchParams({
+                            player: pSlug,
+                            ...(tSlug ? { team: tSlug } : {}),
+                            ...(rNorm ? { role: rNorm } : {}),
+                          }).toString(),
+                        });
                       }}
                       className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
                     >
@@ -1108,7 +1295,13 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigateHub({ kind: "items", query: `player=${encodeURIComponent(pSlug)}` });
+                        navigateHub({
+                          kind: "items",
+                          query: new URLSearchParams({
+                            player: pSlug,
+                            ...(tSlug ? { team: tSlug } : {}),
+                          }).toString(),
+                        });
                       }}
                       className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
                     >
@@ -1223,7 +1416,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
+                            const lg = resolveLeagueSlug(region.leagues[0]);
+                            navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(lg)}&league=${encodeURIComponent(lg)}` });
                           }}
                           className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
                         >
@@ -1369,7 +1563,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(resolveLeagueSlug(league.slug))}` });
+                        const lg = resolveLeagueSlug(league.slug);
+                        navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(lg)}&league=${encodeURIComponent(lg)}` });
                       }}
                       className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
                     >

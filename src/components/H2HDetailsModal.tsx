@@ -328,9 +328,14 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                 c1={c1}
                 c2={c2}
                 onClick={() => {
+                  const sameLg = t1.league && t1.league === t2.league ? resolveLeagueSlug(t1.league) : "";
                   navigateHub({
                     kind: "finder",
-                    query: new URLSearchParams({ team: teamSlug(t1.name, c1), vs: teamSlug(t2.name, c2) }).toString(),
+                    query: new URLSearchParams({
+                      team: teamSlug(t1.name, c1),
+                      vs: teamSlug(t2.name, c2),
+                      ...(sameLg ? { league: sameLg } : {}),
+                    }).toString(),
                   });
                   onClose();
                 }}
@@ -460,6 +465,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
             t1={{ code: team1Code, name: t1.name, league: t1.league }}
             t2={{ code: team2Code, name: t2.name, league: t2.league }}
             year={meetings[0]?.date && /^\d{4}/.test(meetings[0].date) ? meetings[0].date.slice(0, 4) : undefined}
+            event={meetings[0]?.tournament ? resolveEventSlug(meetings[0].tournament) || undefined : undefined}
             onDone={onClose}
           />
         </div>
@@ -473,8 +479,9 @@ const PrepButton: React.FC<{
   t1: { code: string; name: string; league?: string };
   t2: { code: string; name: string; league?: string };
   year?: string;
+  event?: string;
   onDone: () => void;
-}> = ({ t1, t2, year, onDone }) => {
+}> = ({ t1, t2, year, event, onDone }) => {
   const [state, setState] = useState<"" | "busy" | "missing">("");
   if (state === "missing") return null;
   const lg = t1.league && t1.league === t2.league ? resolveLeagueSlug(t1.league) : undefined;
@@ -538,6 +545,7 @@ const PrepButton: React.FC<{
                   team: a,
                   vs: b,
                   ...(lg ? { league: lg } : {}),
+                  ...(event ? { event } : {}),
                   ...(year ? { year } : {}),
                 }).toString(),
               }),
@@ -577,7 +585,7 @@ const PrepButton: React.FC<{
                 ...((lg || year)
                   ? {
                       query: new URLSearchParams({
-                        ...(lg ? { scope: lg } : {}),
+                        ...(lg ? { scope: lg, league: lg } : {}),
                         ...(year ? { key: `y${year}` } : {}),
                       }).toString(),
                     }

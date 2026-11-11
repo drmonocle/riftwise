@@ -405,7 +405,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
                   ? `y${yr}`
                   : "";
               const q = new URLSearchParams({
-                ...(lg ? { scope: lg } : {}),
+                ...(lg ? { scope: lg, league: lg } : {}),
                 ...(patchKey ? { key: patchKey } : {}),
               }).toString();
               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -485,17 +485,17 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
       </div>
 
       {/* Gold and objectives: both teams and the difference */}
-      <StatsTable left={left} right={right} minutes={elapsed != null ? elapsed / 60_000 : null} />
+      <StatsTable left={left} right={right} minutes={elapsed != null ? elapsed / 60_000 : null} year={match.startTimeUtc?.slice(0, 4)} />
       <div className="h-1.5 rounded overflow-hidden bg-rw-side-b/60" aria-hidden="true" title={tl("Share of the gold")}>
         <div className="h-full bg-rw-side-a/80" style={{ width: `${share * 100}%` }} />
       </div>
       {!finished && elapsed != null && elapsed > 60_000 && (
-        <ChanceNow leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} minute={elapsed / 60_000} lead={lead} />
+        <ChanceNow leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} minute={elapsed / 60_000} lead={lead} year={match.startTimeUtc?.slice(0, 4)} />
       )}
       {!finished && elapsed != null && elapsed > 3 * 60_000 && ratings?.game != null && (
-        <UpsetMeter leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} before={ratings.game} now={winChanceFromGold(elapsed / 60_000, lead)} />
+        <UpsetMeter leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} before={ratings.game} now={winChanceFromGold(elapsed / 60_000, lead)} league={match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : undefined} year={match.startTimeUtc?.slice(0, 4)} />
       )}
-      {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} />}
+      {history && history.length > 1 && <GoldGraph points={history} blueIsLeft={blueIsTeam1} leftCode={left.code} leftName={left.name} rightCode={right.code} rightName={right.name} year={match.startTimeUtc?.slice(0, 4)} />}
       {finished && history && <GameStory points={history} left={left.code} right={right.code} blueIsLeft={blueIsTeam1} />}
       {showNextPreview && (
         <Suspense fallback={null}>
@@ -515,7 +515,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
 
       {open && (
         <div className="space-y-3">
-          <Players left={left} right={right} details={state.details} />
+          <Players left={left} right={right} details={state.details} year={match.startTimeUtc?.slice(0, 4)} league={match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : undefined} />
           {!finished && <p className="text-[10px] text-rw-muted">{tl("From Riot's live stats feed, about a minute behind the broadcast.")}</p>}
         </div>
       )}
@@ -526,7 +526,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
 type SideInfo = { name: string; code: string; img?: string; t: LiveFrame["blueTeam"]; meta: LiveParticipantMeta[]; color: string };
 
 /** Both teams' gold, kills, towers, dragons (by type), barons, inhibitors and CS, and the left team's difference. */
-const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | null }> = ({ left, right, minutes }) => {
+const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | null; year?: string }> = ({ left, right, minutes, year }) => {
   const cs = (x: SideInfo) => x.t.participants.reduce((sum, p) => sum + (p.creepScore || 0), 0);
   const cols: { key: string; label: string; title: string; v: (x: SideInfo) => number; fmt?: (n: number) => string; extra?: (x: SideInfo) => React.ReactNode }[] = [
     { key: "gold", label: tl("Gold"), title: tl("Team gold"), v: (x) => x.t.totalGold, fmt: (n) => k(n) },
@@ -575,7 +575,7 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
                 <td className="px-2 py-1.5 text-left font-bold text-rw-text whitespace-nowrap" style={{ boxShadow: `inset 3px 0 0 ${x.color}` }} title={x.color === "#3fa7ff" ? tl("Blue side") : tl("Red side")}>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "team", slug: teamSlug(x.name, x.code) })}
+                    onClick={() => navigateHub({ kind: "team", slug: teamSlug(x.name, x.code), ...(year ? { query: `p=y${year}` } : {}) })}
                     className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline transition-colors"
                   >
                     <TeamLogo name={x.name} code={x.code} src={x.img} size={15} className="shrink-0" />
@@ -588,7 +588,7 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
                     <td key={c.key} className={`${cell} ${ahead ? "text-rw-teal font-bold" : "text-rw-sub"}`}>
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "team", slug: teamSlug(x.name, x.code), tab: "stats" })}
+                        onClick={() => navigateHub({ kind: "team", slug: teamSlug(x.name, x.code), tab: "stats", ...(year ? { query: `p=y${year}` } : {}) })}
                         className="hover:text-rw-accent hover:underline"
                         title={tl("Stats")}
                       >
@@ -611,6 +611,7 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
                     mode: "team",
                     a: teamSlug(left.name, left.code),
                     b: teamSlug(right.name, right.code),
+                    ...(year ? { period: `y${year}` } : {}),
                   })
                 }
                 className="hover:text-rw-accent hover:underline"
@@ -630,6 +631,7 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
                         mode: "team",
                         a: teamSlug(left.name, left.code),
                         b: teamSlug(right.name, right.code),
+                        ...(year ? { period: `y${year}` } : {}),
                       })
                     }
                     className="hover:text-rw-accent hover:underline"
@@ -651,13 +653,15 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
  * The upset meter: how far the game has swung from what the model expected. The underdog's chance before the game
  * (power rankings, hub/matchRatings.ts) against its chance now from the gold lead (winChanceFromGold).
  */
-const UpsetMeter: React.FC<{ leftCode: string; leftName?: string; rightCode: string; rightName?: string; before: number; now: number }> = ({
+const UpsetMeter: React.FC<{ leftCode: string; leftName?: string; rightCode: string; rightName?: string; before: number; now: number; league?: string; year?: string }> = ({
   leftCode,
   leftName,
   rightCode,
   rightName,
   before,
   now,
+  league,
+  year,
 }) => {
   if (Math.abs(before - 0.5) < 0.05) return null; // a coin flip has no underdog
   const leftIsDog = before < 0.5;
@@ -676,7 +680,10 @@ const UpsetMeter: React.FC<{ leftCode: string; leftName?: string; rightCode: str
           onClick={() =>
             navigateHub({
               kind: "rankings",
-              query: `q=${encodeURIComponent(`${teamSlug(leftName, leftCode)},${teamSlug(rightName, rightCode)}`)}`,
+              query: new URLSearchParams({
+                ...(league ? { league } : {}),
+                q: `${teamSlug(leftName, leftCode)},${teamSlug(rightName, rightCode)}`,
+              }).toString(),
             })
           }
           className={`${LABEL} hover:text-rw-accent hover:underline`}
@@ -685,7 +692,7 @@ const UpsetMeter: React.FC<{ leftCode: string; leftName?: string; rightCode: str
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(dogName, dog) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(dogName, dog), ...(year ? { query: `p=y${year}` } : {}) })}
           className="text-rw-muted hover:text-rw-accent hover:underline"
         >
           {tl("{team}: {before} before the game, {now} now", { team: dog, before: `${Math.round(pre * 100)}%`, now: `${Math.round(cur * 100)}%` })}
@@ -713,13 +720,14 @@ const GameStory: React.FC<{ points: TimelinePoint[]; left: string; right: string
 };
 
 /** "Win chance right now": the chance the gold lead at this minute has given in pro games (liveGame.ts). */
-const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: string; rightName?: string; minute: number; lead: number }> = ({
+const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: string; rightName?: string; minute: number; lead: number; year?: string }> = ({
   leftCode,
   leftName,
   rightCode,
   rightName,
   minute,
   lead,
+  year,
 }) => {
   const p = winChanceFromGold(minute, lead);
   const a = Math.round(p * 100);
@@ -740,7 +748,7 @@ const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: stri
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(leftName, leftCode) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(leftName, leftCode), ...(year ? { query: `p=y${year}` } : {}) })}
           className="font-mono tabular-nums font-bold text-rw-side-a w-16 text-right whitespace-nowrap hover:underline"
         >
           {leftCode} {a}%
@@ -750,7 +758,7 @@ const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: stri
         </div>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(rightName, rightCode) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(rightName, rightCode), ...(year ? { query: `p=y${year}` } : {}) })}
           className="font-mono tabular-nums font-bold text-rw-side-b w-16 text-left whitespace-nowrap hover:underline"
         >
           {100 - a}% {rightCode}
@@ -760,7 +768,7 @@ const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: stri
   );
 };
 
-const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsParticipant[] | null }> = ({ left, right, details }) => {
+const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsParticipant[] | null; year?: string; league?: string }> = ({ left, right, details, year, league }) => {
   const byRole = (side: SideInfo) =>
     ROLE_ORDER.map((role) => {
       const meta = side.meta.find((p) => p.role === role);
@@ -786,7 +794,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
             const lShare = lf && rf && lf.totalGold + rf.totalGold > 0 ? Math.round((lf.totalGold / (lf.totalGold + rf.totalGold)) * 100) : 50;
             return (
               <tr key={role} className="border-t border-rw-border/60">
-                <PlayerCells p={l[i]} teamName={left.name} align="left" />
+                <PlayerCells p={l[i]} teamName={left.name} align="left" year={year} league={league} />
                 <td className="px-1 text-center text-[9px] uppercase text-rw-muted min-w-14 whitespace-nowrap align-middle">
                   {l[i].meta && r[i].meta ? (
                     <button
@@ -797,6 +805,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                           mode: "player",
                           a: playerSlug(playerName(l[i].meta!.summonerName)),
                           b: playerSlug(playerName(r[i].meta!.summonerName)),
+                          ...(year ? { period: `y${year}` } : {}),
                         })
                       }
                       className="hover:text-rw-accent hover:underline"
@@ -821,6 +830,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                           mode: "player",
                           a: playerSlug(playerName(l[i].meta!.summonerName)),
                           b: playerSlug(playerName(r[i].meta!.summonerName)),
+                          ...(year ? { period: `y${year}` } : {}),
                         })
                       }
                       className={`block w-full font-mono text-[10px] font-semibold tabular-nums normal-case hover:underline ${gd > 150 ? "text-rw-teal" : gd < -150 ? "text-rw-red" : "text-rw-muted"}`}
@@ -850,7 +860,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                     </button>
                   )}
                 </td>
-                <PlayerCells p={r[i]} teamName={right.name} align="right" />
+                <PlayerCells p={r[i]} teamName={right.name} align="right" year={year} league={league} />
               </tr>
             );
           })}
@@ -862,7 +872,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
 
 type PlayerRow = { meta?: LiveParticipantMeta; frame?: LiveFrame["blueTeam"]["participants"][number]; det?: LiveDetailsParticipant };
 
-const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "right" }> = ({ p, teamName, align }) => {
+const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "right"; year?: string; league?: string }> = ({ p, teamName, align, year, league }) => {
   if (!p.meta || !p.frame) return <td className="py-1" />;
   const icon = champIcon(p.meta.championId);
   const items = (p.det?.items || []).filter((id) => id > 0).slice(0, 7);
@@ -876,7 +886,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
           {icon ? (
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(p.meta!.championId)) })}
+              onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(p.meta!.championId)), ...(year ? { query: `p=y${year}` } : {}) })}
               className="block rounded hover:ring-1 hover:ring-rw-accent transition-all"
               title={champName(champNameById(p.meta.championId))}
             >
@@ -894,7 +904,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
           <div className={`flex items-center gap-1.5 ${right ? "flex-row-reverse" : ""}`}>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName) })}
+              onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), ...(year ? { query: `p=y${year}` } : {}) })}
               className={`inline-flex items-center gap-1 font-semibold text-rw-text hover:text-rw-accent hover:underline truncate transition-colors ${right ? "flex-row-reverse" : ""}`}
             >
               <PlayerPhoto name={pName} team={teamName} size={15} linkFallback={false} />
@@ -908,6 +918,8 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
                   query: new URLSearchParams({
                     player: playerSlug(pName),
                     champ: resolveChampSlug(champNameById(p.meta!.championId)),
+                    ...(league ? { league } : {}),
+                    ...(year ? { year } : {}),
                   }).toString(),
                 })
               }
@@ -919,7 +931,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
           </div>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), tab: "stats" })}
+            onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), tab: "stats", ...(year ? { query: `p=y${year}` } : {}) })}
             className="text-[10px] text-rw-sub hover:text-rw-accent hover:underline font-mono text-left"
             title={tl("Stats")}
           >
@@ -960,6 +972,8 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
                           player: playerSlug(pName),
                           item: resolveItemSlug(iKey),
                           ...(champNameById(p.meta!.championId) ? { champ: resolveChampSlug(champNameById(p.meta!.championId)) } : {}),
+                          ...(league ? { league } : {}),
+                          ...(year ? { year } : {}),
                         }).toString(),
                       })
                     }
@@ -985,13 +999,14 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
  *  smooth line in the leading side's colour over a fill that fades toward the middle, clean gridlines (±1k, 2k, 5k...),
  *  the minutes along the bottom, the dragons and barons each side took on its own edge, and any minute's lead and
  *  kills under the pointer. */
-const GoldGraph: React.FC<{ points: TimelinePoint[]; blueIsLeft: boolean; leftCode: string; leftName?: string; rightCode: string; rightName?: string }> = ({
+const GoldGraph: React.FC<{ points: TimelinePoint[]; blueIsLeft: boolean; leftCode: string; leftName?: string; rightCode: string; rightName?: string; year?: string }> = ({
   points,
   blueIsLeft,
   leftCode,
   leftName,
   rightCode,
   rightName,
+  year,
 }) => {
   const [mode, setMode] = useState<"gold" | "chance">("gold");
   const [box, W] = useWidth<HTMLDivElement>();
@@ -1067,7 +1082,7 @@ const GoldGraph: React.FC<{ points: TimelinePoint[]; blueIsLeft: boolean; leftCo
         </span>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "compare", mode: "team", a: teamSlug(leftName, leftCode), b: teamSlug(rightName, rightCode) })}
+          onClick={() => navigateHub({ kind: "compare", mode: "team", a: teamSlug(leftName, leftCode), b: teamSlug(rightName, rightCode), ...(year ? { period: `y${year}` } : {}) })}
           className="font-mono text-rw-text hover:text-rw-accent hover:underline"
           title={mode === "chance" ? tl("From the gold lead only, as in pro games since 2023") : undefined}
         >
@@ -1308,7 +1323,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                   ? `y${yr}`
                   : "";
               const q = new URLSearchParams({
-                ...(lg ? { scope: lg } : {}),
+                ...(lg ? { scope: lg, league: lg } : {}),
                 ...(patchKey ? { key: patchKey } : {}),
               }).toString();
               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
@@ -1342,7 +1357,10 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
       <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-1 items-center">
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(left.name, left.code) })}
+          onClick={() => {
+            const yr = match.startTimeUtc?.slice(0, 4);
+            navigateHub({ kind: "team", slug: teamSlug(left.name, left.code), ...(yr ? { query: `p=y${yr}` } : {}) });
+          }}
           className="inline-flex items-center gap-1.5 font-bold text-rw-text hover:text-rw-accent hover:underline transition-colors text-left"
         >
           <TeamLogo name={left.name} code={left.code} src={left.img} size={15} className="shrink-0" />
@@ -1351,7 +1369,10 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
         <span />
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: teamSlug(right.name, right.code) })}
+          onClick={() => {
+            const yr = match.startTimeUtc?.slice(0, 4);
+            navigateHub({ kind: "team", slug: teamSlug(right.name, right.code), ...(yr ? { query: `p=y${yr}` } : {}) });
+          }}
           className="inline-flex items-center justify-end gap-1.5 font-bold text-rw-text text-right hover:text-rw-accent hover:underline transition-colors"
         >
           <span>{right.code}</span>
@@ -1359,6 +1380,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
         </button>
         {l.map((p, i) => {
           const q = r[i];
+          const yr = match.startTimeUtc?.slice(0, 4);
           const cell = (x: LiveParticipantMeta | undefined, teamName: string, right: boolean) => {
             if (!x) return <span />;
             const icon = champIcon(x.championId);
@@ -1368,7 +1390,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                 {icon && (
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(x.championId)) })}
+                    onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(x.championId)), ...(yr ? { query: `p=y${yr}` } : {}) })}
                     className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
                   >
                     <img src={icon} alt="" width={24} height={24} className="rounded" />
@@ -1377,14 +1399,14 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                 <span className="min-w-0">
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(x.championId)) })}
+                    onClick={() => navigateHub({ kind: "champ", slug: resolveChampSlug(champNameById(x.championId)), ...(yr ? { query: `p=y${yr}` } : {}) })}
                     className="block truncate text-rw-text hover:text-rw-accent hover:underline"
                   >
                     {champName(champNameById(x.championId))}
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName) })}
+                    onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), ...(yr ? { query: `p=y${yr}` } : {}) })}
                     className={`inline-flex items-center gap-1 truncate text-[10px] text-rw-muted hover:text-rw-accent hover:underline ${right ? "flex-row-reverse" : ""}`}
                   >
                     <PlayerPhoto name={pName} team={teamName} size={13} linkFallback={false} />
@@ -1407,6 +1429,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                         mode: "player",
                         a: playerSlug(playerName(p.summonerName)),
                         b: playerSlug(playerName(q.summonerName)),
+                        ...(yr ? { period: `y${yr}` } : {}),
                       })
                     }
                     className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline text-center"

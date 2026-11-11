@@ -646,6 +646,25 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                       type="button"
                       onClick={() =>
                         navigateHub({
+                          kind: "tiers",
+                          ...((lg || yr)
+                            ? {
+                                query: new URLSearchParams({
+                                  ...(lg ? { scope: lg, league: lg } : {}),
+                                  ...(yr ? { key: `y${yr}` } : {}),
+                                }).toString(),
+                              }
+                            : {}),
+                        })
+                      }
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Pro tier list")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateHub({
                           kind: "leaders",
                           query: new URLSearchParams({
                             ...(lg ? { league: lg } : {}),
@@ -657,6 +676,22 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Player leaderboards")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateHub({
+                          kind: "best",
+                          query: new URLSearchParams({
+                            ...(lg ? { league: lg } : {}),
+                            ...(yr ? { year: yr } : {}),
+                            q: `${aSlug},${bSlug}`,
+                          }).toString(),
+                        })
+                      }
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Best games")} →
                     </button>
                   </>
                 );

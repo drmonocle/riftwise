@@ -528,7 +528,14 @@ export const LiveNextGamePreview: React.FC<{
               <div key={side.code} className="rounded border border-rw-border/70 bg-rw-surface/60 px-2.5 py-1.5 space-y-1">
                 <div className="text-[10px] font-bold flex items-center justify-between">
                   <span className={`inline-flex items-center gap-1.5 ${side.tone}`}>
-                    <HubLink to={{ kind: "team", slug: side.slug }} className="inline-flex items-center gap-1.5 hover:underline">
+                    <HubLink
+                      to={{
+                        kind: "team",
+                        slug: side.slug,
+                        ...(draftIntel.period !== "all" ? { query: `p=${encodeURIComponent(draftIntel.period)}` } : {}),
+                      }}
+                      className="inline-flex items-center gap-1.5 hover:underline"
+                    >
                       <TeamLogo name={side.name} code={side.code} src={side.img} size={14} className="shrink-0" />
                       <span>{side.code}</span>
                     </HubLink>
@@ -539,7 +546,12 @@ export const LiveNextGamePreview: React.FC<{
                   {side.bans.map((b) => (
                     <HubLink
                       key={b.c}
-                      to={{ kind: "team", slug: side.slug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(b.c))}` }}
+                      to={{
+                        kind: "team",
+                        slug: side.slug,
+                        tab: "champions",
+                        query: `champ=${encodeURIComponent(resolveChampSlug(b.c))}${draftIntel.period !== "all" ? `&p=${encodeURIComponent(draftIntel.period)}` : ""}`,
+                      }}
                       title={b.why}
                       className="inline-flex items-center gap-1 rounded border border-rw-border bg-rw-bg px-1.5 py-0.5 text-[10px] hover:border-rw-accent"
                     >
@@ -580,7 +592,12 @@ export const LiveNextGamePreview: React.FC<{
                 <div className={`flex flex-wrap items-center gap-1 min-w-0 ${alignRight ? "justify-end" : ""}`}>
                   {row.player && (
                     <HubLink
-                      to={{ kind: "player", slug: playerSlug(row.player, row.u), tab: "champions" }}
+                      to={{
+                        kind: "player",
+                        slug: playerSlug(row.player, row.u),
+                        tab: "champions",
+                        ...(draftIntel.period !== "all" ? { query: `p=${encodeURIComponent(draftIntel.period)}` } : {}),
+                      }}
                       className={`inline-flex items-center gap-1 font-semibold text-rw-text hover:text-rw-accent text-[11px] shrink-0 ${alignRight ? "order-last ml-1 flex-row-reverse" : "mr-1"}`}
                     >
                       <PlayerPhoto name={row.player} team={teamName} slug={playerSlug(row.player, row.u)} size={16} linkFallback={false} />
@@ -589,13 +606,14 @@ export const LiveNextGamePreview: React.FC<{
                   )}
                   {row.open.map((pk) => {
                     const wrPct = pk.g > 0 ? Math.round((pk.w / pk.g) * 100) : 0;
+                    const pParam = !pk.pocket && draftIntel.period !== "all" ? `&p=${encodeURIComponent(draftIntel.period)}` : "";
                     return (
                       <HubLink
                         key={pk.c}
                         to={
                           row.player || row.u
-                            ? { kind: "player", slug: playerSlug(row.player, row.u), tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(pk.c))}` }
-                            : { kind: "team", slug: tSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(pk.c))}` }
+                            ? { kind: "player", slug: playerSlug(row.player, row.u), tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(pk.c))}${pParam}` }
+                            : { kind: "team", slug: tSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(pk.c))}${pParam}` }
                         }
                         title={
                           pk.pocket
@@ -636,6 +654,7 @@ export const LiveNextGamePreview: React.FC<{
                           mode: "player",
                           a: playerSlug(ra.player, ra.u),
                           b: playerSlug(rb.player, rb.u),
+                          ...(draftIntel.period !== "all" ? { period: draftIntel.period } : {}),
                         }}
                         className="text-[9px] uppercase font-mono text-rw-muted hover:text-rw-accent hover:underline text-center"
                         title={tl("Compare {a} and {b}", { a: ra.player, b: rb.player })}

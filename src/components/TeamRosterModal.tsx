@@ -54,7 +54,7 @@ const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> 
 };
 
 /** "Full history and stats": opens the team's page in the stats hub. */
-const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onDone: () => void }> = ({ name, code, league, onDone }) => {
+const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; year?: string; onDone: () => void }> = ({ name, code, league, year, onDone }) => {
   const [busy, setBusy] = useState(false);
   const [missing, setMissing] = useState(false);
   if (missing) return null;
@@ -76,7 +76,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute((slug) => navigateHub({ kind: "team", slug }))}
+        onClick={() => openRoute((slug) => navigateHub({ kind: "team", slug, ...(year ? { query: `p=y${year}` } : {}) }))}
         className="flex items-center gap-1 text-[11px] text-rw-accent hover:underline disabled:opacity-60"
       >
         <BarChart3 className="w-3 h-3" />
@@ -85,7 +85,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute((slug) => navigateHub({ kind: "compare", mode: "team", a: slug }))}
+        onClick={() => openRoute((slug) => navigateHub({ kind: "compare", mode: "team", a: slug, ...(year ? { period: `y${year}` } : {}) }))}
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         <GitCompare className="w-3 h-3" />
@@ -94,7 +94,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute((slug) => navigateHub({ kind: "prep", a: slug }))}
+        onClick={() => openRoute((slug) => navigateHub({ kind: "prep", a: slug, ...(year ? { period: `y${year}` } : {}) }))}
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Match prep")}
@@ -102,7 +102,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute((slug) => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(slug)}` }))}
+        onClick={() => openRoute((slug) => navigateHub({ kind: "draft", query: `teams=${encodeURIComponent(slug)}${year ? `&p=y${encodeURIComponent(year)}` : ""}` }))}
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Draft board")}
@@ -110,7 +110,18 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute((slug) => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(slug)}` }))}
+        onClick={() =>
+          openRoute((slug) =>
+            navigateHub({
+              kind: "finder",
+              query: new URLSearchParams({
+                team: slug,
+                ...(lg ? { league: lg } : {}),
+                ...(year ? { year } : {}),
+              }).toString(),
+            }),
+          )
+        }
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Game finder")}
@@ -136,7 +147,21 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
       <button
         type="button"
         disabled={busy}
-        onClick={() => openRoute(() => navigateHub({ kind: "tiers", ...(lg ? { query: `scope=${encodeURIComponent(lg)}` } : {}) }))}
+        onClick={() =>
+          openRoute(() =>
+            navigateHub({
+              kind: "tiers",
+              ...((lg || year)
+                ? {
+                    query: new URLSearchParams({
+                      ...(lg ? { scope: lg, league: lg } : {}),
+                      ...(year ? { key: `y${year}` } : {}),
+                    }).toString(),
+                  }
+                : {}),
+            }),
+          )
+        }
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Pro tier list")}
@@ -151,6 +176,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; onD
               query: new URLSearchParams({
                 q: slug,
                 ...(lg ? { league: lg } : {}),
+                ...(year ? { year } : {}),
               }).toString(),
             }),
           )
@@ -331,7 +357,13 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   </span>
                 )}
               </div>
-              <TeamStatsLink name={displayName} code={upperCode} league={catalogTeam?.league} onDone={onClose} />
+              <TeamStatsLink
+                name={displayName}
+                code={upperCode}
+                league={catalogTeam?.league}
+                year={(upcomingMatches[0]?.startTimeUtc || completedMatches[0]?.startTimeUtc)?.slice(0, 4)}
+                onDone={onClose}
+              />
             </div>
           </div>
 
@@ -369,11 +401,13 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   <button
                     type="button"
                     onClick={() => {
+                      const yr = (upcomingMatches[0]?.startTimeUtc || completedMatches[0]?.startTimeUtc)?.slice(0, 4);
                       navigateHub({
                         kind: "compare",
                         mode: "player",
                         a: playerSlug(players[0].name),
                         b: playerSlug(players[1].name),
+                        ...(yr ? { period: `y${yr}` } : {}),
                       });
                       onClose();
                     }}
@@ -387,7 +421,15 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        navigateHub({ kind: "items", query: `player=${encodeURIComponent(playerSlug(players[0].name))}` });
+                        const yr = (upcomingMatches[0]?.startTimeUtc || completedMatches[0]?.startTimeUtc)?.slice(0, 4);
+                        const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
+                        const q = new URLSearchParams({
+                          player: playerSlug(players[0].name),
+                          team: teamSlug(displayName, upperCode),
+                          ...(lg ? { league: lg } : {}),
+                          ...(yr ? { year: yr } : {}),
+                        }).toString();
+                        navigateHub({ kind: "items", query: q });
                         onClose();
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -397,7 +439,15 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        navigateHub({ kind: "finder", query: `player=${encodeURIComponent(playerSlug(players[0].name))}` });
+                        const yr = (upcomingMatches[0]?.startTimeUtc || completedMatches[0]?.startTimeUtc)?.slice(0, 4);
+                        const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
+                        const q = new URLSearchParams({
+                          player: playerSlug(players[0].name),
+                          team: teamSlug(displayName, upperCode),
+                          ...(lg ? { league: lg } : {}),
+                          ...(yr ? { year: yr } : {}),
+                        }).toString();
+                        navigateHub({ kind: "finder", query: q });
                         onClose();
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -407,6 +457,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
+                        const yr = (upcomingMatches[0]?.startTimeUtc || completedMatches[0]?.startTimeUtc)?.slice(0, 4);
                         const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
                         const q = new URLSearchParams({
                           q: players
@@ -414,6 +465,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             .map((p) => playerSlug(p.name))
                             .join(","),
                           ...(lg ? { league: lg } : {}),
+                          ...(yr ? { year: yr } : {}),
                         }).toString();
                         navigateHub({ kind: "leaders", query: q });
                         onClose();
@@ -426,9 +478,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       <button
                         type="button"
                         onClick={() => {
+                          const yr = (upcomingMatches[0]?.startTimeUtc || completedMatches[0]?.startTimeUtc)?.slice(0, 4);
+                          const lg = resolveLeagueSlug(catalogTeam.league);
+                          const q = new URLSearchParams({
+                            scope: lg,
+                            league: lg,
+                            ...(yr ? { key: `y${yr}` } : {}),
+                          }).toString();
                           navigateHub({
                             kind: "tiers",
-                            query: `scope=${encodeURIComponent(resolveLeagueSlug(catalogTeam.league))}`,
+                            query: q,
                           });
                           onClose();
                         }}
@@ -466,6 +525,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     const isPlayerFollowed = settings.followedPlayers.includes(p.name);
                     const rRole = normalizeRole(p.role) || p.role;
                     const colors = ROLE_COLORS[rRole] || ROLE_COLORS.Sub;
+                    const yr = (upcomingMatches[0]?.startTimeUtc || completedMatches[0]?.startTimeUtc)?.slice(0, 4);
+                    const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
 
                     return (
                       <div
@@ -476,7 +537,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              navigateHub({ kind: "player", slug: playerSlug(p.name) });
+                              navigateHub({ kind: "player", slug: playerSlug(p.name), ...(yr ? { query: `p=y${yr}` } : {}) });
                               onClose();
                             }}
                             className="shrink-0 rounded-full hover:ring-1 hover:ring-rw-accent transition-all"
@@ -489,7 +550,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  navigateHub({ kind: "player", slug: playerSlug(p.name) });
+                                  navigateHub({ kind: "player", slug: playerSlug(p.name), ...(yr ? { query: `p=y${yr}` } : {}) });
                                   onClose();
                                 }}
                                 className="font-bold text-sm text-rw-text hover:text-rw-accent hover:underline transition-colors truncate text-left"
@@ -500,7 +561,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  navigateHub({ kind: "player", slug: playerSlug(p.name), tab: "stats" });
+                                  navigateHub({ kind: "player", slug: playerSlug(p.name), tab: "stats", ...(yr ? { query: `p=y${yr}` } : {}) });
                                   onClose();
                                 }}
                                 className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider hover:opacity-80 ${colors.bg} ${colors.text} ${colors.border}`}
@@ -513,7 +574,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  navigateHub({ kind: "player", slug: playerSlug(p.name) });
+                                  navigateHub({ kind: "player", slug: playerSlug(p.name), ...(yr ? { query: `p=y${yr}` } : {}) });
                                   onClose();
                                 }}
                                 className="block text-xs text-rw-sub hover:text-rw-accent hover:underline truncate text-left"
@@ -528,7 +589,14 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              navigateHub({ kind: "finder", query: `player=${encodeURIComponent(playerSlug(p.name))}` });
+                              const q = new URLSearchParams({
+                                player: playerSlug(p.name),
+                                team: teamSlug(displayName, upperCode),
+                                ...(rRole && rRole !== "Sub" ? { role: rRole } : {}),
+                                ...(lg ? { league: lg } : {}),
+                                ...(yr ? { year: yr } : {}),
+                              }).toString();
+                              navigateHub({ kind: "finder", query: q });
                               onClose();
                             }}
                             className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-surface text-[10px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 transition-colors hidden md:inline-block"
@@ -539,7 +607,13 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              navigateHub({ kind: "items", query: `player=${encodeURIComponent(playerSlug(p.name))}` });
+                              const q = new URLSearchParams({
+                                player: playerSlug(p.name),
+                                team: teamSlug(displayName, upperCode),
+                                ...(lg ? { league: lg } : {}),
+                                ...(yr ? { year: yr } : {}),
+                              }).toString();
+                              navigateHub({ kind: "items", query: q });
                               onClose();
                             }}
                             className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-surface text-[10px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 transition-colors hidden sm:inline-block"
@@ -550,7 +624,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              navigateHub({ kind: "compare", mode: "player", a: playerSlug(p.name) });
+                              navigateHub({ kind: "compare", mode: "player", a: playerSlug(p.name), ...(yr ? { period: `y${yr}` } : {}) });
                               onClose();
                             }}
                             className="p-1.5 rounded hover:bg-rw-border text-rw-sub hover:text-rw-accent transition-colors"
