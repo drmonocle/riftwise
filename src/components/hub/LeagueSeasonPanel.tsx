@@ -21,11 +21,11 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
   const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
   const [search, setSearch] = useState(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return p.get("q") || p.get("team") || p.get("player") || p.get("role") || "";
+    return p.get("q") || p.get("team") || p.get("player") || p.get("role") || p.get("champ") || p.get("vs") || "";
   });
   useEffect(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    const next = p.get("q") || p.get("team") || p.get("player") || p.get("role") || "";
+    const next = p.get("q") || p.get("team") || p.get("player") || p.get("role") || p.get("champ") || p.get("vs") || "";
     if (next) setSearch(next);
   }, [routeQuery]);
   const s = state.data;
@@ -39,7 +39,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
   const allRegular = s.players.filter((p) => p.g >= minG);
   const regular = terms.length
     ? allRegular.filter((p) => {
-        const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""} ${p.r || ""}`);
+        const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""} ${p.r || ""} ${p.r ? roleName(p.r) : ""}`);
         const hayBare = bare(hay);
         const canonTeam = resolveTeamAlias(p.tu || p.t || "");
         return terms.some((term) => {

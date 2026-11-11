@@ -1315,6 +1315,11 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
     [search],
   );
   const shown = useMemo(() => {
+    const stageBySeries = new Map<SeriesRow, string>();
+    for (const s of stages) {
+      const label = `${s.name || ""} ${stageLabel(s.name) || ""}`;
+      for (const r of s.series) stageBySeries.set(r, label);
+    }
     const base = byRating ? rated : terms.length > 0 ? stages.flatMap((s) => s.series) : st.series;
     if (!terms.length) return base;
     const matchSide = (name: string, slug: string | null | undefined, term: string) => {
@@ -1332,7 +1337,16 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
           (matchSide(r.a, r.au, tb) && matchSide(r.b, r.bu, ta)),
       );
     }
-    return base.filter((r) => terms.some((t) => matchSide(r.a, r.au, t) || matchSide(r.b, r.bu, t) || (r.date && normText(r.date).includes(t))));
+    return base.filter((r) => {
+      const stHay = normText(stageBySeries.get(r) || "");
+      return terms.some(
+        (t) =>
+          matchSide(r.a, r.au, t) ||
+          matchSide(r.b, r.bu, t) ||
+          (r.date && normText(r.date).includes(t)) ||
+          (stHay && (stHay.includes(t) || (bare(t).length >= 2 && bare(stHay).includes(bare(t))))),
+      );
+    });
   }, [byRating, rated, terms, isVsMatchup, stages, st.series, aliases.data]);
   return (
     <Section

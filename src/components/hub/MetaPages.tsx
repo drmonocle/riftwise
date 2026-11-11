@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Crown, ClipboardCopy } from "lucide-react";
 import { tl, tn, regionName } from "../../i18n";
-import { loadLeague, loadLeagues, loadPatches, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+import { loadLeague, loadLeagues, loadPatches, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolveRegionFilter, resolveTeamAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { HubLeague, LeagueRow, LeagueStep, PatchMove, PatchRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
@@ -503,7 +503,7 @@ export const LeaguesPanel: React.FC<{ query?: string }> = ({ query }) => {
   const state = useLoad(loadLeagues, []);
   const qp = useMemo(() => new URLSearchParams(query || ""), [query]);
   const urlScope: LeagueScope = qp.get("scope") === "past" ? "past" : qp.get("scope") === "all" ? "all" : "current";
-  const urlQ = qp.get("q") || qp.get("region") || "";
+  const urlQ = qp.get("q") || qp.get("region") || qp.get("league") || "";
   const [scope, setScope] = useState<LeagueScope>(urlScope);
   const [q, setQ] = useState(urlQ);
   useEffect(() => {
@@ -566,9 +566,19 @@ const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string; 
     const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
     const match = (l: LeagueRow) => {
       if (!terms.length) return true;
-      const hay = normText(`${l.s || ""} ${l.l} ${l.u} ${l.r || ""} ${l.r ? regionName(l.r, l.r) : ""}`);
+      const histText = (l.h || []).map((st) => `${st.s || ""} ${st.l} ${st.u || ""}`).join(" ");
+      const hay = normText(`${l.s || ""} ${l.l} ${l.u} ${l.r || ""} ${l.r ? regionName(l.r, l.r) : ""} ${histText}`);
       const hayBare = bare(hay);
-      return terms.some((t) => hay.includes(t) || resolveLeagueSlug(t) === l.u || (t.length >= 2 && hayBare.includes(bare(t))));
+      const rowReg = l.r ? resolveRegionFilter(l.r) : null;
+      return terms.some((t) => {
+        const canonReg = resolveRegionFilter(t);
+        return (
+          hay.includes(t) ||
+          resolveLeagueSlug(t) === l.u ||
+          Boolean(rowReg && canonReg && canonReg === rowReg) ||
+          (t.length >= 2 && hayBare.includes(bare(t)))
+        );
+      });
     };
     const newest = rows.reduce((m, l) => (l.to && l.to > m ? l.to : m), "");
     const isCurrent = (l: LeagueRow) => !!l.to && l.to >= newest;
@@ -1155,12 +1165,23 @@ const LeagueEventsSection: React.FC<{
   const routeQuery = nowRoute.kind === "league" && nowRoute.slug === l.u ? nowRoute.query : undefined;
   const qParam = useMemo(() => {
     const qp = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return qp.get("q") || qp.get("vs") || "";
+    return qp.get("q") || qp.get("vs") || qp.get("team") || qp.get("event") || "";
   }, [routeQuery]);
   const [evSearch, setEvSearch] = useState(qParam);
   useEffect(() => {
     setEvSearch(qParam);
   }, [qParam]);
+  const updateEvSearch = (val: string) => {
+    setEvSearch(val);
+    const next = new URLSearchParams(routeQuery || "");
+    next.delete("vs");
+    next.delete("team");
+    next.delete("event");
+    if (val.trim()) next.set("q", val.trim());
+    else next.delete("q");
+    const qs = next.toString();
+    navigateHub({ kind: "league", slug: l.u, ...(season ? { year: season } : {}), ...(qs ? { query: qs } : {}) }, { replace: true });
+  };
   const shownEvents = useMemo(() => {
     const terms = evSearch
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -1316,7 +1337,7 @@ const LeagueEventsSection: React.FC<{
             {(events.length > 10 || Boolean(evSearch.trim())) && (
               <input
                 value={evSearch}
-                onChange={(e) => setEvSearch(e.target.value)}
+                onChange={(e) => updateEvSearch(e.target.value)}
                 placeholder={tl("Filter by name or team…")}
                 aria-label={tl("Filter by name or team…")}
                 className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted w-40"

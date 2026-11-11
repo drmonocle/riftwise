@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
-import { bare, loadAliases, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
+import { bare, loadAliases, normText, prettySlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias } from "../../hub/data";
 import { normalizeRole } from "../../hub/champAgg";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
@@ -787,10 +787,13 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
           .join(" ")}`,
       );
       const tSlug = resolveTeamAlias(aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || t.t) || prettySlug(t.t);
+      const rowReg = t.r ? resolveRegionFilter(t.r) : null;
       return terms.some((term) => {
         if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
         const canonTerm = resolveTeamAlias(aliases.data?.team[term] || term) || prettySlug(term);
         if (canonTerm && canonTerm === tSlug) return true;
+        const canonReg = resolveRegionFilter(term);
+        if (rowReg && canonReg && canonReg === rowReg) return true;
         const qRole = normalizeRole(term);
         if (qRole && t.p.some(([, , r]) => normalizeRole(r) === qRole)) return true;
         return t.p.some(([n, u]) => resolvePlayerSlug(term) === (u || prettySlug(n)));
