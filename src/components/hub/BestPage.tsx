@@ -175,8 +175,11 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                   view === "series"
                     ? (r0 as BestSeries)[9] || teamSlug((r0 as BestSeries)[8])
                     : (r0 as BestGame)[10] || teamSlug((r0 as BestGame)[9]);
+                const eslug = view === "series" ? (r0 as BestSeries)[4] : (r0 as BestGame)[5];
+                const canonEv = eslug ? resolveEventSlug(eslug) : "";
                 const dt = view === "series" ? (r0 as BestSeries)[2] : (r0 as BestGame)[3];
-                const p = dt && /^\d{4}/.test(dt) ? `y${dt.slice(0, 4)}` : undefined;
+                const r0Year = year || (dt && /^\d{4}/.test(dt) ? dt.slice(0, 4) : "");
+                const p = canonEv ? `e:${canonEv}` : r0Year ? `y${r0Year}` : undefined;
                 return (
                   <>
                     <HubLink
@@ -213,8 +216,9 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "champions",
                         query: new URLSearchParams({
-                          ...(league ? { league } : {}),
-                          ...(year ? { key: `y${year}`, year } : {}),
+                          ...(league ? { scope: league, league } : {}),
+                          ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : {}),
+                          ...(r0Year ? { key: `y${r0Year}`, year: r0Year } : {}),
                         }).toString(),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -226,7 +230,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "tiers",
                         query: new URLSearchParams({
                           ...(league ? { scope: league, league } : {}),
-                          ...(year ? { key: `y${year}`, year } : {}),
+                          ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : {}),
+                          ...(r0Year ? { key: `y${r0Year}`, year: r0Year } : {}),
                         }).toString(),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -238,7 +243,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "leaders",
                         query: new URLSearchParams({
                           ...(league ? { league } : {}),
-                          ...(year ? { year } : {}),
+                          ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : {}),
+                          ...(r0Year ? { year: r0Year } : {}),
                           ...(a && b ? { q: `${a},${b}` } : a ? { q: a } : {}),
                         }).toString(),
                       }}
@@ -248,11 +254,26 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                     </HubLink>
                     <HubLink
                       to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          ...(a ? { team: a } : {}),
+                          ...(b ? { vs: b } : {}),
+                          ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : {}),
+                          ...(r0Year ? { year: r0Year } : {}),
+                          ...(league ? { league } : {}),
+                        }).toString(),
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
                         kind: "finder",
                         query: new URLSearchParams({
                           team: a,
                           vs: b,
-                          ...(year ? { year } : {}),
+                          ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : r0Year ? { year: r0Year } : {}),
                           ...(league ? { league } : {}),
                         }).toString(),
                       }}
@@ -265,7 +286,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "records",
                         query: new URLSearchParams({
                           ...(year ? { year } : {}),
-                          ...(rawTeam ? { q: rawTeam } : {}),
+                          ...(rawTeam ? { q: rawTeam } : a ? { q: b ? `${a},${b}` : a } : {}),
                         }).toString() || undefined,
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -399,37 +420,55 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
           </label>
           {(isVsQuery || teamTerms.length >= 1) && shown.length > 0 && (() => {
             const first = shown[0];
-            const [aName, aSlug, bName, bSlug] =
+            const [aName, aSlug, bName, bSlug, fEslug, fDate] =
               view === "series"
-                ? [(first as BestSeries)[6], (first as BestSeries)[7], (first as BestSeries)[8], (first as BestSeries)[9]]
-                : [(first as BestGame)[7], (first as BestGame)[8], (first as BestGame)[9], (first as BestGame)[10]];
+                ? [(first as BestSeries)[6], (first as BestSeries)[7], (first as BestSeries)[8], (first as BestSeries)[9], (first as BestSeries)[4], (first as BestSeries)[2]]
+                : [(first as BestGame)[7], (first as BestGame)[8], (first as BestGame)[9], (first as BestGame)[10], (first as BestGame)[5], (first as BestGame)[3]];
             const sa = aSlug || teamSlug(aName);
             const sb = bSlug || teamSlug(bName);
             if (!sa || !sb || sa === sb) return null;
+            const fEv = fEslug ? resolveEventSlug(fEslug) : "";
+            const fYr = year || (fDate && /^\d{4}/.test(fDate) ? fDate.slice(0, 4) : "");
+            const fPeriod = fEv ? `e:${fEv}` : fYr ? `y${fYr}` : undefined;
             return (
-              <span className="inline-flex items-center gap-2 ml-auto">
+              <span className="inline-flex flex-wrap items-center gap-2 ml-auto">
                 <HubLink
-                  to={{ kind: "prep", a: sa, b: sb, period: year ? `y${year}` : undefined }}
+                  to={{ kind: "prep", a: sa, b: sb, period: fPeriod }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
                   {tl("Match prep")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(sa)},${encodeURIComponent(sb)}${year ? `&p=${encodeURIComponent(`y${year}`)}` : ""}` }}
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(sa)},${encodeURIComponent(sb)}${fPeriod ? `&p=${encodeURIComponent(fPeriod)}` : ""}` }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Draft board")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "compare", mode: "team", a: sa, b: sb, period: year ? `y${year}` : undefined }}
+                  to={{ kind: "compare", mode: "team", a: sa, b: sb, period: fPeriod }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Compare")} →
                 </HubLink>
                 <HubLink
                   to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      team: sa,
+                      vs: sb,
+                      ...(fEv ? { event: fEv } : {}),
+                      ...(fYr ? { year: fYr } : {}),
+                      ...(league ? { league } : {}),
+                    }).toString(),
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${year ? `&year=${encodeURIComponent(year)}` : ""}${league ? `&league=${encodeURIComponent(league)}` : ""}`,
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${fEv ? `&event=${encodeURIComponent(fEv)}` : fYr ? `&year=${encodeURIComponent(fYr)}` : ""}${league ? `&league=${encodeURIComponent(league)}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -452,7 +491,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                     kind: "tiers",
                     query: new URLSearchParams({
                       ...(league ? { scope: league, league } : {}),
-                      ...(year ? { key: `y${year}`, year } : {}),
+                      ...(fEv ? { event: fEv } : {}),
+                      ...(fYr ? { key: `y${fYr}`, year: fYr } : {}),
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -464,7 +504,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                     kind: "leaders",
                     query: new URLSearchParams({
                       ...(league ? { league } : {}),
-                      ...(year ? { year } : {}),
+                      ...(fEv ? { event: fEv } : {}),
+                      ...(fYr ? { year: fYr } : {}),
                       q: `${sa},${sb}`,
                     }).toString(),
                   }}
@@ -624,6 +665,15 @@ const GameRow: React.FC<{ r: BestGame; rank: number }> = ({ r, rank }) => {
               </HubLink>
               <HubLink
                 to={{
+                  kind: "items",
+                  query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : ""}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
+                {tl("Item history")}
+              </HubLink>
+              <HubLink
+                to={{
                   kind: "finder",
                   query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
                 }}
@@ -735,6 +785,16 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <span>·</span>
                 <HubLink
                   to={{
+                    kind: "items",
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : ""}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Item history")}
+                </HubLink>
+                <span>·</span>
+                <HubLink
+                  to={{
                     kind: "finder",
                     query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : /^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
                   }}
@@ -770,6 +830,16 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number }> = ({ r, rank }) => {
                 <span>·</span>
                 <HubLink to={{ kind: "compare", mode: "team", a: sa, b: sb, period }} className="hover:text-rw-accent hover:underline">
                   {tl("Compare")}
+                </HubLink>
+                <span>·</span>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: `team=${encodeURIComponent(sa)}&vs=${encodeURIComponent(sb)}${canonEslug ? `&event=${encodeURIComponent(canonEslug)}` : ""}${/^\d{4}$/.test(y) ? `&year=${encodeURIComponent(y)}` : ""}`,
+                  }}
+                  className="hover:text-rw-accent hover:underline"
+                >
+                  {tl("Item history")}
                 </HubLink>
                 <span>·</span>
                 <HubLink
