@@ -1534,6 +1534,24 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
   const st = x.stages || [];
   const b = st.filter((s) => s.kind === "bracket");
   const l = st.filter((s) => s.kind === "list");
+  const childTopChamps = Array.from(new Set((x.champs || []).map((c) => resolveChampSlug(c.c)).filter(Boolean))).slice(0, 2);
+  const childTopPlayers = Array.from(
+    new Set(
+      [
+        ...(x.leaders?.kda || []).map((r) => pSlug(r.n, r.u)),
+        ...(x.players || []).map((p) => pSlug(p.n, p.u)),
+      ].filter(Boolean),
+    ),
+  ).slice(0, 2);
+  const childTopTeams = Array.from(
+    new Set(
+      [
+        ...(x.results || []).map((r) => tSlug(r.t, r.u)),
+        ...(x.teams || []).map((t) => tSlug(t.t, t.u)),
+        ...(x.standings?.[0]?.rows || []).map((r) => tSlug(r.t, r.u)),
+      ].filter(Boolean),
+    ),
+  ).slice(0, 2);
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -1551,21 +1569,11 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
         <EventLink
           name={tl("Open {stage}", { stage: x.n })}
           u={x.u}
-          query={
-            x.results?.[0]
-              ? `q=${encodeURIComponent(
-                  x.results
-                    .slice(0, 2)
-                    .map((r) => tSlug(r.t, r.u))
-                    .filter(Boolean)
-                    .join(","),
-                )}`
-              : undefined
-          }
+          query={childTopTeams.length ? `q=${encodeURIComponent(childTopTeams.join(","))}` : undefined}
           className="ml-auto text-rw-accent hover:underline"
         />
       </div>
-      {b.length > 0 && <Bracket key={x.u} stages={b} eventSlug={x.u} leagueSlug={x.lu} year={(x.start || x.end || "").slice(0, 4)} />}
+      {b.length > 0 && <Bracket key={x.u} stages={b} eventSlug={x.u} leagueSlug={x.lu} year={(x.start || x.end || "").slice(0, 4)} topChamps={childTopChamps} topPlayers={childTopPlayers} />}
       {x.standings && x.standings.length > 0 && (
         <div className={`grid gap-3 ${x.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
           {x.standings.map((t, k) => (
@@ -1577,11 +1585,13 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
               eventSlug={x.u}
               leagueSlug={x.lu}
               year={(x.start || x.end || "").slice(0, 4)}
+              topChamps={childTopChamps}
+              topPlayers={childTopPlayers}
             />
           ))}
         </div>
       )}
-      {l.length > 0 && <StageLists key={x.u} stages={l} eventSlug={x.u} leagueSlug={x.lu} />}
+      {l.length > 0 && <StageLists key={x.u} stages={l} eventSlug={x.u} leagueSlug={x.lu} topChamps={childTopChamps} topPlayers={childTopPlayers} />}
     </div>
   );
 };
@@ -2627,13 +2637,17 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
           const pct = Math.max(4, Math.min(100, Math.round(((r.v || 0) / maxV) * 100)));
           const rPlayerSlug = pSlug(r.n, r.u);
           const rTeamSlug = r.t ? tSlug(r.t, e.teams?.find((tm) => tm.t === r.t)?.u) : "";
+          const vsLeaderSlug = rows.map((x) => pSlug(x.n, x.u)).find((s) => Boolean(s) && s !== rPlayerSlug) || "";
           const rPlayerQ = new URLSearchParams({
             p: `e:${e.u}`,
             ...(rTeamSlug ? { team: rTeamSlug } : {}),
+            ...(vsLeaderSlug ? { q: vsLeaderSlug } : {}),
+            ...(topChamps[0] ? { champ: topChamps[0] } : {}),
           }).toString();
           const rTeamQ = new URLSearchParams({
             p: `e:${e.u}`,
             ...(rPlayerSlug ? { q: rPlayerSlug } : {}),
+            ...(topChamps[0] ? { champ: topChamps[0] } : {}),
           }).toString();
           return (
             <li key={r.n + i} className="relative overflow-hidden rounded px-2 py-1 flex items-center justify-between gap-2 min-w-0">
@@ -2990,6 +3004,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
                       p: `e:${e.u}`,
                       ...(evPlayers[0] ? { player: evPlayers[0] } : {}),
                       ...(evTeams[0] ? { team: evTeams[0] } : {}),
+                      ...(evTeams[1] && evTeams[1] !== evTeams[0] ? { vs: evTeams[1] } : {}),
                       ...(c0 && cSlug !== c0 ? { vschamp: c0 } : c1 && cSlug !== c1 ? { vschamp: c1 } : {}),
                     }).toString()}
                   />

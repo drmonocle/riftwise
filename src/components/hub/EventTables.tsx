@@ -123,17 +123,25 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       ...(p.r ? { role: p.r } : {}),
       ...(champOverride ? { champ: resolveChampSlug(champOverride) } : p.c?.[0] ? { champ: resolveChampSlug(p.c[0]) } : {}),
     }).toString();
-  const pPageQuery = (p: EventPlayer, opts?: { champ?: string; includeDefaultChamp?: boolean }) =>
-    new URLSearchParams({
+  const pPageQuery = (p: EventPlayer, opts?: { champ?: string; includeDefaultChamp?: boolean }) => {
+    const ps = pSlug(p.n, p.u);
+    const rival =
+      rows.find((x) => x.r === p.r && pSlug(x.n, x.u) !== ps) ||
+      rows.find((x) => pSlug(x.n, x.u) !== ps) ||
+      players.find((x) => x.r === p.r && pSlug(x.n, x.u) !== ps);
+    const rivalSlug = rival ? pSlug(rival.n, rival.u) : "";
+    return new URLSearchParams({
       p: `e:${e.u}`,
       ...(p.r ? { role: p.r } : {}),
       ...(p.t ? { team: tSlug(p.t, p.tu) } : {}),
+      ...(rivalSlug ? { q: rivalSlug } : {}),
       ...(opts?.champ
         ? { champ: resolveChampSlug(opts.champ) }
-        : opts?.includeDefaultChamp && p.c?.[0]
+        : p.c?.[0]
           ? { champ: resolveChampSlug(p.c[0]) }
           : {}),
     }).toString();
+  };
   const pStatLink = (p: EventPlayer, node: React.ReactNode) =>
     node == null || node === "–" ? (
       "–"
@@ -172,6 +180,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
         const ptQ = new URLSearchParams({
           p: `e:${e.u}`,
           q: pSlug(p.n, p.u),
+          ...(p.c?.[0] ? { champ: resolveChampSlug(p.c[0]) } : {}),
         }).toString();
         return (
           <span className="inline-flex items-center gap-1.5 max-w-[9rem] truncate align-bottom">

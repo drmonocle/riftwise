@@ -2230,28 +2230,43 @@ export function prepLines(a: Side, b: Side, period?: PeriodKey): StoryLine[] {
     });
   }
   for (const s of [a, b]) {
-    for (const [i, nt] of (s.team.notes?.list || []).entries())
+    const opp = s === a ? b : a;
+    for (const [i, nt] of (s.team.notes?.list || []).entries()) {
+      const teamNoteQ = new URLSearchParams({
+        ...(period && period !== "all" ? { p: period } : {}),
+        ...(opp.team.u ? { q: opp.team.u } : {}),
+        ...(nt.c ? { champ: resolveChampSlug(nt.c) } : {}),
+      }).toString();
       lines.push({
         key: `${s.team.u}-${i}`,
-        who: { name: s.team.name, team: s.team.name, to: { kind: "team", slug: s.team.u, ...(pQuery ? { query: pQuery } : {}) } },
+        who: { name: s.team.name, team: s.team.name, to: { kind: "team", slug: s.team.u, ...(teamNoteQ ? { query: teamNoteQ } : {}) } },
         team: s.team.name,
-        text: noteText(nt, { kind: "team", slug: s.team.u }),
+        text: noteText(nt, { kind: "team", slug: s.team.u, opp: opp.team.u }),
         plain: notePlainText(nt),
         champ: nt.c,
         asOf: s.team.notes?.asOf,
       });
+    }
     for (const pl of s.players)
       if (pl?.p.notes)
-        for (const [i, nt] of pl.p.notes.list.entries())
+        for (const [i, nt] of pl.p.notes.list.entries()) {
+          const plNoteQ = new URLSearchParams({
+            ...(period && period !== "all" ? { p: period } : {}),
+            team: s.team.u,
+            ...(opp.team.u ? { q: opp.team.u } : {}),
+            ...(pl.p.role ? { role: pl.p.role } : {}),
+            ...(nt.c ? { champ: resolveChampSlug(nt.c) } : {}),
+          }).toString();
           lines.push({
             key: `${pl.p.u}-${i}`,
-            who: { name: pl.p.name, team: s.team.name, to: { kind: "player", slug: pl.p.u, ...(pQuery ? { query: pQuery } : {}) } },
+            who: { name: pl.p.name, team: s.team.name, to: { kind: "player", slug: pl.p.u, ...(plNoteQ ? { query: plNoteQ } : {}) } },
             team: s.team.name,
-            text: noteText(nt, { kind: "player", slug: pl.p.u, team: s.team.u }),
+            text: noteText(nt, { kind: "player", slug: pl.p.u, team: s.team.u, opp: opp.team.u, role: pl.p.role || undefined }),
             plain: notePlainText(nt),
             champ: nt.c,
             asOf: pl.p.notes.asOf,
           });
+        }
   }
   return lines;
 }
@@ -2660,7 +2675,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
                           : {
                               kind: "champ",
                               slug: resolveChampSlug(c),
-                              query: `team=${encodeURIComponent(teamSlug)}&role=${encodeURIComponent(role)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                              query: `team=${encodeURIComponent(teamSlug)}${oppTeamSlug ? `&vs=${encodeURIComponent(oppTeamSlug)}` : ""}&role=${encodeURIComponent(role)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                             }
                       }
                       className={`flex items-center gap-0.5 text-[10px] hover:text-rw-accent hover:underline ${toneCls}`}
@@ -3873,6 +3888,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
     <div className="flex flex-wrap gap-1.5">
       {items.map((x) => {
         const sideForChip = teamSlug === a.team.u ? a : b;
+        const oppTeamSlug = teamSlug === a.team.u ? b.team.u : a.team.u;
         const plSlug = (x.role != null ? sideForChip.players[x.role]?.p.u : undefined) || sideForChip.players.find(Boolean)?.p.u;
         const oppMatch =
           (x.role != null ? oppItems?.find((o) => o.role === x.role && o.c !== x.c) : undefined) ||
@@ -3887,7 +3903,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
               to={{
                 kind: "champ",
                 slug: resolveChampSlug(x.c),
-                query: `team=${encodeURIComponent(teamSlug)}${plSlug ? `&player=${encodeURIComponent(plSlug)}` : ""}${x.role != null ? `&role=${encodeURIComponent(ROLES[x.role])}` : ""}${oppMatch ? `&vschamp=${encodeURIComponent(resolveChampSlug(oppMatch.c))}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                query: `team=${encodeURIComponent(teamSlug)}${oppTeamSlug ? `&vs=${encodeURIComponent(oppTeamSlug)}` : ""}${plSlug ? `&player=${encodeURIComponent(plSlug)}` : ""}${x.role != null ? `&role=${encodeURIComponent(ROLES[x.role])}` : ""}${oppMatch ? `&vschamp=${encodeURIComponent(resolveChampSlug(oppMatch.c))}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
               }}
               className="inline-flex items-center gap-1 hover:text-rw-accent hover:underline"
             >
@@ -3920,7 +3936,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
                   kind: "team",
                   slug: teamSlug,
                   tab: "champions",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(x.c))}${x.role != null ? `&role=${encodeURIComponent(ROLES[x.role])}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(x.c))}${oppTeamSlug ? `&q=${encodeURIComponent(oppTeamSlug)}` : ""}${x.role != null ? `&role=${encodeURIComponent(ROLES[x.role])}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                 }}
                 className="text-[10px] text-rw-sub tabular-nums hover:text-rw-accent hover:underline"
               >

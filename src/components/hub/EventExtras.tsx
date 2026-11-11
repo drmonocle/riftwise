@@ -150,7 +150,6 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
   ).slice(0, 2);
   const yr = year && /^\d{4}$/.test(year) ? year : slug && /\d{4}/.test(slug) ? /\d{4}/.exec(slug)![0] : undefined;
   const normLg = leagueSlug ? resolveLeagueSlug(leagueSlug) : "";
-  const evQ = slug ? `p=e:${encodeURIComponent(slug)}` : undefined;
   const evBaseFinderQuery = slug
     ? `event=${encodeURIComponent(slug)}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`
     : "";
@@ -504,10 +503,24 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                     {tl("{n} CS/min", { n: o.farm.v })}
                   </span>
                 )}
-                <HubLink to={{ kind: "player", slug: pSlug(o.farm.n, o.farm.u), ...(evQ ? { query: evQ } : {}) }} className="shrink-0 hover:opacity-80" title={o.farm.n}>
-                  <PlayerPhoto name={o.farm.n} slug={o.farm.u ?? undefined} size={15} />
-                </HubLink>
-                <PlayerLink name={o.farm.n} u={o.farm.u} query={evQ} />
+                {(() => {
+                  const farmSlug = pSlug(o.farm.n, o.farm.u);
+                  const vsFarm = topPlayers.find((s) => Boolean(s) && s !== farmSlug) || "";
+                  const farmQ =
+                    new URLSearchParams({
+                      ...(slug ? { p: `e:${slug}` } : yr ? { p: `y${yr}` } : {}),
+                      ...(vsFarm ? { q: vsFarm } : {}),
+                      ...(pentaChamps[0] ? { champ: pentaChamps[0] } : {}),
+                    }).toString() || undefined;
+                  return (
+                    <>
+                      <HubLink to={{ kind: "player", slug: farmSlug, ...(farmQ ? { query: farmQ } : {}) }} className="shrink-0 hover:opacity-80" title={o.farm.n}>
+                        <PlayerPhoto name={o.farm.n} slug={o.farm.u ?? undefined} size={15} />
+                      </HubLink>
+                      <PlayerLink name={o.farm.n} u={o.farm.u} query={farmQ} />
+                    </>
+                  );
+                })()}
                 {o.farm.g ? (
                   <HubLink
                     to={{ kind: "match", slug: o.farm.g, game: o.farm.gn }}
