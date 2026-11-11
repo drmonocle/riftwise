@@ -411,9 +411,9 @@ export const WinWhen: React.FC<{ rows: TeamGameRow[]; teamName?: string; teamSlu
                 to={{
                   kind: "tiers",
                   ...(period && /^y\d{4}$/.test(period)
-                    ? { query: `key=${encodeURIComponent(period)}` }
+                    ? { query: `key=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` }
                     : period?.startsWith("p:")
-                      ? { query: `key=p${encodeURIComponent(period.slice(2))}` }
+                      ? { query: `key=p${encodeURIComponent(period.slice(2))}&patch=${encodeURIComponent(period.slice(2))}` }
                       : period?.startsWith("e:")
                         ? { query: `event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` }
                         : {}),
@@ -1079,9 +1079,9 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                           ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
                           ...(topFilteredChamp ? { q: resolveChampSlug(topFilteredChamp.c) } : {}),
                           ...(/^y\d{4}$/.test(period)
-                            ? { key: period }
+                            ? { key: period, year: period.slice(1) }
                             : period.startsWith("p:")
-                              ? { key: `p${period.slice(2)}` }
+                              ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
                               : period.startsWith("e:")
                                 ? { event: resolveEventSlug(period.slice(2)) }
                                 : {}),
@@ -1273,9 +1273,9 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
                             ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
                             ...(filteredChamps[0] ? { q: resolveChampSlug(filteredChamps[0].c) } : {}),
                             ...(/^y\d{4}$/.test(period)
-                              ? { key: period }
+                              ? { key: period, year: period.slice(1) }
                               : period.startsWith("p:")
-                                ? { key: `p${period.slice(2)}` }
+                                ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
                                 : period.startsWith("e:")
                                   ? { event: resolveEventSlug(period.slice(2)) }
                                   : {}),
@@ -1596,9 +1596,9 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                         query: new URLSearchParams({
                           ...(t.picks[0] ? { q: resolveChampSlug(t.picks[0][0]) } : {}),
                           ...(/^y\d{4}$/.test(period)
-                            ? { key: period }
+                            ? { key: period, year: period.slice(1) }
                             : period.startsWith("p:")
-                              ? { key: `p${period.slice(2)}` }
+                              ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
                               : period.startsWith("e:")
                                 ? { event: resolveEventSlug(period.slice(2)) }
                                 : {}),

@@ -245,7 +245,16 @@ const LeagueFilters: React.FC<{ league: string; years: string[]; q: URLSearchPar
 }) => {
   const ys = [...years].sort().reverse();
   const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(q.get("event") || "")?.[1] || "";
-  const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || (evYr && ys.includes(evYr) ? evYr : "") || ys[0] || "";
+  const rawPatch = q.get("patch") || (q.get("key")?.startsWith("p") ? q.get("key")!.slice(1) : "");
+  const patchMajor = rawPatch ? Number(rawPatch.split(".")[0]) : 0;
+  const patchYr = patchMajor >= 1 ? String(patchMajor >= 25 ? 2000 + patchMajor : 2010 + patchMajor) : "";
+  const year =
+    q.get("year") ||
+    (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") ||
+    (evYr && ys.includes(evYr) ? evYr : "") ||
+    (patchYr && ys.includes(patchYr) ? patchYr : "") ||
+    ys[0] ||
+    "";
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const events = file.data?.events || [];
   const rawEventSlug = q.get("event") || "";
@@ -346,7 +355,16 @@ const LeagueTable: React.FC<{
   }, [urlSearch]);
   const ys = [...years].sort().reverse();
   const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(q.get("event") || "")?.[1] || "";
-  const year = q.get("year") || (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") || (evYr && ys.includes(evYr) ? evYr : "") || ys[0] || "";
+  const rawPatch = q.get("patch") || (q.get("key")?.startsWith("p") ? q.get("key")!.slice(1) : "");
+  const patchMajor = rawPatch ? Number(rawPatch.split(".")[0]) : 0;
+  const patchYr = patchMajor >= 1 ? String(patchMajor >= 25 ? 2000 + patchMajor : 2010 + patchMajor) : "";
+  const year =
+    q.get("year") ||
+    (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") ||
+    (evYr && ys.includes(evYr) ? evYr : "") ||
+    (patchYr && ys.includes(patchYr) ? patchYr : "") ||
+    ys[0] ||
+    "";
   const file = useLoad(() => (year ? loadChampGames(league, year) : Promise.resolve(null)), [league, year]);
   const eventSlug = q.get("event") || "";
   const canonEventSlug = eventSlug ? resolveEventSlug(eventSlug) : "";
@@ -832,8 +850,18 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   useEffect(() => {
     setSearch(urlSearch);
   }, [urlSearch]);
-  const askedKey = q.get("key") || (q.get("patch") ? `p${q.get("patch")}` : q.get("year") ? `y${q.get("year")}` : "");
-  const key = askedKey && meta.champions.includes(askedKey) ? askedKey : meta.champions.find((k) => k.startsWith("p")) || meta.champions[0];
+  const rawKey = q.get("key") || "";
+  const rawPatch = q.get("patch") || (rawKey.startsWith("p") ? rawKey.slice(1) : "");
+  const patchMajor = rawPatch ? Number(rawPatch.split(".")[0]) : 0;
+  const patchYr = patchMajor >= 1 ? String(patchMajor >= 25 ? 2000 + patchMajor : 2010 + patchMajor) : "";
+  const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(q.get("event") || "")?.[1] || "";
+  const rawYear = q.get("year") || (rawKey.startsWith("y") ? rawKey.slice(1) : "") || evYr || patchYr;
+  const candidateKeys = [
+    rawKey,
+    rawPatch ? (rawPatch.startsWith("p") ? rawPatch : `p${rawPatch}`) : "",
+    rawYear ? (rawYear.startsWith("y") ? rawYear : `y${rawYear}`) : "",
+  ].filter(Boolean);
+  const key = candidateKeys.find((k) => meta.champions.includes(k)) || meta.champions.find((k) => k.startsWith("p")) || meta.champions[0];
   const state = useLoad<ChampionStats>(() => loadChampionStats(key), [key]);
   const block = state.data?.[scope] || state.data?.all;
   const roleQ = normalizeRole(q.get("role"));

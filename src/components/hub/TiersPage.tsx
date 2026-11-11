@@ -49,10 +49,18 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   const canonEvSlug = evSlug ? resolveEventSlug(evSlug) : "";
   const evPrefix = (canonEvSlug || evSlug).replace(/-20\d{2}.*$/, "");
   const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(canonEvSlug || evSlug)?.[1] || "";
-  const askedKey =
-    q.get("key") ||
-    (q.get("patch") ? `p${q.get("patch")}` : q.get("year") ? `y${q.get("year")}` : evYr ? `y${evYr}` : "");
-  const key = askedKey && meta.champions.includes(askedKey) ? askedKey : patchKeys[0] || meta.champions[0];
+  const rawKey = q.get("key") || "";
+  const rawPatch = q.get("patch") || (rawKey.startsWith("p") ? rawKey.slice(1) : "");
+  const patchMajor = rawPatch ? Number(rawPatch.split(".")[0]) : 0;
+  const patchYr = patchMajor >= 1 ? String(patchMajor >= 25 ? 2000 + patchMajor : 2010 + patchMajor) : "";
+  const rawYear = q.get("year") || (rawKey.startsWith("y") ? rawKey.slice(1) : "") || evYr || patchYr;
+  const candidateKeys = [
+    rawKey,
+    rawPatch ? (rawPatch.startsWith("p") ? rawPatch : `p${rawPatch}`) : "",
+    rawYear ? (rawYear.startsWith("y") ? rawYear : `y${rawYear}`) : "",
+    evYr ? `y${evYr}` : "",
+  ].filter(Boolean);
+  const key = candidateKeys.find((k) => meta.champions.includes(k)) || patchKeys[0] || meta.champions[0];
   const aliases = useLoad(loadAliases, []);
   const index = useLoad(loadChampIndex, []);
   const leagues = index.data || [];
