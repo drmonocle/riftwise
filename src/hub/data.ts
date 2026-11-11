@@ -80,6 +80,38 @@ const LEAGUE_SLUG_ALIASES: Record<string, string> = {
 };
 export const resolveLeagueSlug = (slug: string): string => LEAGUE_SLUG_ALIASES[slug.toLowerCase()] || slug;
 
+const REGION_FILTER_ALIASES: Record<string, string> = {
+  kr: "korea",
+  korea: "korea",
+  lck: "korea",
+  cn: "china",
+  china: "china",
+  lpl: "china",
+  eu: "emea",
+  europe: "emea",
+  emea: "emea",
+  lec: "emea",
+  na: "americas",
+  "north america": "americas",
+  americas: "americas",
+  lcs: "americas",
+  lta: "americas",
+  apac: "apac",
+  pcs: "apac",
+  "asia-pacific": "apac",
+  lcp: "apac",
+  vn: "vietnam",
+  vcs: "vietnam",
+  vietnam: "vietnam",
+  br: "brazil",
+  cblol: "brazil",
+  brazil: "brazil",
+  jp: "japan",
+  ljl: "japan",
+  japan: "japan",
+};
+export const resolveRegionFilter = (s: string): string | null => REGION_FILTER_ALIASES[(s || "").trim().toLowerCase()] || null;
+
 const TEAM_SLUG_ALIASES: Record<string, string> = {
   skt: "t1",
   sktt1: "t1",

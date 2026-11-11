@@ -7,7 +7,7 @@ import { champName } from "../../champions";
 import { HubRoute, currentHubRoute, hubPath, navigateHub } from "../../hub/route";
 import { rememberRecent } from "../../hub/recent";
 import { champIcon, itemIcon, itemName, runeIcon, runeName, spellIcon, spellName } from "../../hub/ddragon";
-import { prefetchHub, prettySlug, resolveChampSlug, resolveEventSlug, resolvePlayerSlug } from "../../hub/data";
+import { prefetchHub, prettySlug, resolveChampSlug, resolveEventSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { preloadPageCode } from "./pageCode";
 import { IS_WEB, SITE_URL } from "../../platform";
 import { CaptureFooter, ShareButtons } from "./ShareImage";
@@ -332,9 +332,9 @@ export const HubLink: React.FC<{
   </a>
 );
 
-/** Team name, linked to its page when it has one (falls back to prettySlug(name) when u is omitted). */
+/** Team name, linked to its page when it has one (falls back to resolveTeamAlias(name) when u is omitted). */
 export const TeamLink: React.FC<{ name: string; u?: string | null; className?: string }> = ({ name, u, className }) => {
-  const slug = u === undefined ? (name && name.toUpperCase() !== "TBD" ? prettySlug(name) : null) : u;
+  const slug = u === undefined ? (name && name.toUpperCase() !== "TBD" ? resolveTeamAlias(name) || prettySlug(name) : null) : u;
   return slug ? (
     <HubLink to={{ kind: "team", slug }} className={className}>
       {name}
