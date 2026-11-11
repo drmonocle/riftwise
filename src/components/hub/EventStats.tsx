@@ -171,32 +171,33 @@ export const FactGroups: React.FC<{
               </>
             )}
             {topChamps.length >= 1 && (
-              <>
-                <HubLink
-                  to={{
-                    kind: "counters",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0]))}${topChamps[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topChamps[1]))}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${evYr ? `&patch=y${evYr}&year=${evYr}` : ""}`,
-                  }}
-                  className="text-rw-accent hover:underline"
-                >
-                  {tl("Counters")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "items",
-                    query: new URLSearchParams({
-                      champ: resolveChampSlug(topChamps[0]),
-                      ...(normLg ? { league: normLg } : {}),
-                      ...(evYr ? { year: evYr } : {}),
-                      ...(eventSlug ? { event: eventSlug } : {}),
-                    }).toString(),
-                  }}
-                  className="text-rw-accent hover:underline"
-                >
-                  {tl("Item history")} →
-                </HubLink>
-              </>
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0]))}${topChamps[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topChamps[1]))}` : topTeams[0] ? `&vs=${encodeURIComponent(topTeams[0])}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${evYr ? `&patch=y${evYr}&year=${evYr}` : ""}`,
+                }}
+                className="text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
             )}
+            <HubLink
+              to={{
+                kind: "items",
+                query:
+                  new URLSearchParams({
+                    ...(terms.length > 0 && topPlayers[0] ? { player: topPlayers[0] } : {}),
+                    ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                    ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                    ...(normLg ? { league: normLg } : {}),
+                    ...(evYr ? { year: evYr } : {}),
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                  }).toString() || undefined,
+              }}
+              className="text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
+            </HubLink>
             <HubLink
               to={{
                 kind: "records",
@@ -436,7 +437,7 @@ export const FactCard: React.FC<{
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(f.rows[0].player)}${f.rows[0].champ ? `&champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
+                    query: `player=${encodeURIComponent(f.rows[0].player)}${f.rows[0].team ? `&team=${encodeURIComponent(f.rows[0].team)}` : ""}${f.rows[0].champ ? `&champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -479,6 +480,8 @@ export const FactCard: React.FC<{
                     kind: "finder",
                     query: new URLSearchParams({
                       player: f.rows[0].player,
+                      ...(f.rows[1]?.player && f.rows[1].player !== f.rows[0].player ? { vsplayer: f.rows[1].player } : {}),
+                      ...(f.rows[0].team ? { team: f.rows[0].team } : {}),
                       ...(f.rows[0].champ ? { champ: resolveChampSlug(f.rows[0].champ) } : {}),
                       ...(normLg ? { league: normLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
@@ -578,6 +581,22 @@ export const FactCard: React.FC<{
                   data-nocapture="1"
                 >
                   {tl("Power rankings")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      team: f.rows[0].team,
+                      ...(f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? { vs: f.rows[1].team } : {}),
+                      ...(normLg ? { league: normLg } : {}),
+                      ...(evYr ? { year: evYr } : {}),
+                      ...(eventSlug ? { event: eventSlug } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Item history")} →
                 </HubLink>
                 <HubLink
                   to={{
@@ -737,6 +756,21 @@ export const FactCard: React.FC<{
                   data-nocapture="1"
                 >
                   {tl("Draft board")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query:
+                      new URLSearchParams({
+                        ...(normLg ? { league: normLg } : {}),
+                        ...(evYr ? { year: evYr } : {}),
+                        ...(eventSlug ? { event: eventSlug } : {}),
+                      }).toString() || undefined,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Item history")} →
                 </HubLink>
                 <HubLink
                   to={{
