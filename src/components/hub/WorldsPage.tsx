@@ -282,7 +282,10 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
               const tpJoin = [...topT, ...topP].join(",");
               return (
                 <>
-                  <HubLink to={{ kind: "event", slug: d.parent.u }} className={btn}>
+                  <HubLink
+                    to={{ kind: "event", slug: d.parent.u, ...(topT.length ? { query: `q=${topT.map(encodeURIComponent).join(",")}` } : {}) }}
+                    className={btn}
+                  >
                     {tl("Bracket, standings and every series")}
                   </HubLink>
                   {topT[0] && (
@@ -1261,14 +1264,19 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
           })}
           <div className="space-y-2">
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Champion")}</h4>
-            {champ ? (
-              <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
-                <HubLink to={{ kind: "team", slug: champ.u, query: `p=e:${encodeURIComponent(main.u)}` }} className="shrink-0 hover:opacity-80" title={champ.n}>
-                  <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
-                </HubLink>
-                <TeamLink name={champ.n} u={champ.u} query={`p=e:${encodeURIComponent(main.u)}`} className="font-extrabold text-rw-text hover:text-rw-accent" />
-              </div>
-            ) : (
+            {champ ? (() => {
+              const lastMatch = res.matches[res.matches.length - 1];
+              const runnerUp = lastMatch ? (lastMatch.a === champ.u ? lastMatch.b : lastMatch.b === champ.u ? lastMatch.a : undefined) : undefined;
+              const champQ = `p=e:${encodeURIComponent(main.u)}${runnerUp && runnerUp !== champ.u ? `&q=${encodeURIComponent(runnerUp)}` : ""}`;
+              return (
+                <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
+                  <HubLink to={{ kind: "team", slug: champ.u, query: champQ }} className="shrink-0 hover:opacity-80" title={champ.n}>
+                    <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
+                  </HubLink>
+                  <TeamLink name={champ.n} u={champ.u} query={champQ} className="font-extrabold text-rw-text hover:text-rw-accent" />
+                </div>
+              );
+            })() : (
               <p className="text-[11px] text-rw-muted">{tl("To be decided")}</p>
             )}
           </div>
@@ -1581,11 +1589,13 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 p: baseP,
                 ...(champSlug && champSlug !== runSlug ? { q: champSlug } : {}),
               }).toString();
+              const evPairQ = [champSlug, runSlug && runSlug !== champSlug ? runSlug : ""].filter(Boolean).map(encodeURIComponent).join(",");
+              const evQuery = evPairQ ? `q=${evPairQ}` : undefined;
               return (
               <tr key={x.e || x.y} className={`border-t border-rw-border ${x.y === current ? "bg-rw-accent/10" : ""}`}>
                 <td className="px-2 py-1 tabular-nums" data-sort={x.y}>
                   {x.e ? (
-                    <HubLink to={{ kind: "event", slug: x.e }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "event", slug: x.e, ...(evQuery ? { query: evQuery } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
                       {x.y}
                     </HubLink>
                   ) : (
@@ -1604,7 +1614,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                   {x.l && (
                     <span className="sm:hidden block pl-[18px] text-[10px] text-rw-sub tabular-nums">
                       {x.e ? (
-                        <HubLink to={{ kind: "event", slug: x.e }} className="hover:text-rw-accent hover:underline">
+                        <HubLink to={{ kind: "event", slug: x.e, ...(evQuery ? { query: evQuery } : {}) }} className="hover:text-rw-accent hover:underline">
                           {x.score}
                         </HubLink>
                       ) : (
@@ -1631,7 +1641,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                   {(() => {
                     const m = /^(\d+)\s*[-–]\s*(\d+)$/.exec(x.score || "");
                     const scoreNode = x.e ? (
-                      <HubLink to={{ kind: "event", slug: x.e }} className="hover:text-rw-accent hover:underline">
+                      <HubLink to={{ kind: "event", slug: x.e, ...(evQuery ? { query: evQuery } : {}) }} className="hover:text-rw-accent hover:underline">
                         {x.score}
                       </HubLink>
                     ) : (
@@ -2317,7 +2327,7 @@ function msiBracketCard(res: ReturnType<typeof runBracket>, byU: Map<string, WTe
 const Records: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string, WTeam>; eventSlug?: string }> = ({ rec, byU, eventSlug }) => {
   const groups = ["3-0", "3-1", "3-2", "2-3", "1-3", "0-3"].map((k) => ({ k, us: Object.keys(rec).filter((u) => rec[u].join("-") === k) })).filter((g) => g.us.length);
   if (!groups.length) return null;
-  const evQ = eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : undefined;
+  const allUs = groups.flatMap((g) => g.us);
   return (
     <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6 pt-1">
       {groups.map((g) => (
@@ -2328,10 +2338,12 @@ const Records: React.FC<{ rec: Record<string, [number, number]>; byU: Map<string
           <div className="flex flex-wrap gap-1 mt-0.5 text-xs text-rw-sub">
             {g.us.map((u) => {
               const t = byU.get(u);
+              const rivalU = g.us.find((x) => x !== u) || allUs.find((x) => x !== u);
+              const tQ = [eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : "", rivalU ? `q=${encodeURIComponent(rivalU)}` : ""].filter(Boolean).join("&") || undefined;
               return (
                 <HubLink
                   key={u}
-                  to={{ kind: "team", slug: u, ...(evQ ? { query: evQ } : {}) }}
+                  to={{ kind: "team", slug: u, ...(tQ ? { query: tQ } : {}) }}
                   className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rw-surface border border-rw-border/60 hover:border-rw-accent/60 hover:text-rw-text transition-colors"
                 >
                   <TeamLogo name={t?.n || u} code={t?.c} src={t?.img} size={13} className="shrink-0" />
@@ -2373,7 +2385,11 @@ const Bracket: React.FC<{
     </div>
   );
   const champ = ko.champion ? byU.get(ko.champion) : null;
-  const evQ = eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : year ? `p=y${encodeURIComponent(year)}` : undefined;
+  const finalOpp = ko.final && champ ? (ko.final.a === champ.u ? ko.final.b : ko.final.b === champ.u ? ko.final.a : undefined) : undefined;
+  const evQ = [
+    eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : year ? `p=y${encodeURIComponent(year)}` : "",
+    finalOpp && finalOpp !== champ?.u ? `q=${encodeURIComponent(finalOpp)}` : "",
+  ].filter(Boolean).join("&") || undefined;
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-start">
       {col(tl("Quarterfinals"), ko.qf)}
@@ -2399,8 +2415,7 @@ const Bracket: React.FC<{
 const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[]; year?: string; eventSlug?: string }> = ({ odds, teams, year, eventSlug }) => {
   const rows = teams.slice().sort((a, b) => odds[b.u].win - odds[a.u].win || odds[b.u].adv - odds[a.u].adv);
   const cell = "px-2 py-1 text-right tabular-nums";
-  const qStr = eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : year ? `p=y${year}` : undefined;
-  const statsQuery = qStr ? { query: qStr } : {};
+  const baseP = eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : year ? `p=y${year}` : "";
   const barCell = (v: number, accent = false) => {
     const pct = Math.max(0, Math.min(100, Math.round(v * 100)));
     return (
@@ -2428,8 +2443,11 @@ const OddsTable: React.FC<{ odds: Record<string, TeamOdds>; teams: WTeam[]; year
           </tr>
         </thead>
         <tbody>
-          {rows.map((t) => {
+          {rows.map((t, idx) => {
             const o = odds[t.u];
+            const rivalU = rows[idx === 0 ? 1 : 0]?.u;
+            const qStr = [baseP, rivalU && rivalU !== t.u ? `q=${encodeURIComponent(rivalU)}` : ""].filter(Boolean).join("&") || undefined;
+            const statsQuery = qStr ? { query: qStr } : {};
             return (
               <tr key={t.u} className="border-t border-rw-border">
                 <td className="px-2 py-1" data-sort={t.n}>
@@ -2626,14 +2644,19 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
           })}
           <div className="space-y-2">
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-rw-sub">{tl("Champion")}</h4>
-            {champ ? (
-              <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
-                <HubLink to={{ kind: "team", slug: champ.u, query: `p=e:${encodeURIComponent(main.u)}` }} className="shrink-0 hover:opacity-80" title={champ.n}>
-                  <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
-                </HubLink>
-                <TeamLink name={champ.n} u={champ.u} query={`p=e:${encodeURIComponent(main.u)}`} className="font-extrabold text-rw-text hover:text-rw-accent" />
-              </div>
-            ) : (
+            {champ ? (() => {
+              const lastMatch = res.matches[res.matches.length - 1];
+              const runnerUp = lastMatch ? (lastMatch.a === champ.u ? lastMatch.b : lastMatch.b === champ.u ? lastMatch.a : undefined) : undefined;
+              const champQ = `p=e:${encodeURIComponent(main.u)}${runnerUp && runnerUp !== champ.u ? `&q=${encodeURIComponent(runnerUp)}` : ""}`;
+              return (
+                <div className="rounded-lg border border-rw-accent/60 bg-rw-accent/10 p-3 flex items-center gap-2">
+                  <HubLink to={{ kind: "team", slug: champ.u, query: champQ }} className="shrink-0 hover:opacity-80" title={champ.n}>
+                    <TeamLogo name={champ.n} code={champ.c} src={champ.img} size={32} />
+                  </HubLink>
+                  <TeamLink name={champ.n} u={champ.u} query={champQ} className="font-extrabold text-rw-text hover:text-rw-accent" />
+                </div>
+              );
+            })() : (
               <p className="text-[11px] text-rw-muted">{tl("Pick the final to crown one.")}</p>
             )}
           </div>
@@ -2750,17 +2773,21 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                 </tr>
               </thead>
               <tbody>
-                {teams
-                  .filter((t) => odds[t.u] && odds[t.u].some((x) => x > 0))
-                  .sort((a, b) => odds[b.u][br.reach.length] - odds[a.u][br.reach.length])
-                  .map((t) => (
+                {(() => {
+                  const sortedTeams = teams
+                    .filter((t) => odds[t.u] && odds[t.u].some((x) => x > 0))
+                    .sort((a, b) => odds[b.u][br.reach.length] - odds[a.u][br.reach.length]);
+                  return sortedTeams.map((t, idx) => {
+                    const rivalU = sortedTeams[idx === 0 ? 1 : 0]?.u;
+                    const tQuery = `p=e:${encodeURIComponent(main.u)}${rivalU && rivalU !== t.u ? `&q=${encodeURIComponent(rivalU)}` : ""}`;
+                    return (
                     <tr key={t.u} className="border-t border-rw-border">
                       <td className="px-2 py-1" data-sort={t.n}>
                         <span className="flex items-center gap-1.5 min-w-0">
-                          <HubLink to={{ kind: "team", slug: t.u, query: `p=e:${encodeURIComponent(main.u)}` }} className="shrink-0 hover:opacity-80" title={t.n}>
+                          <HubLink to={{ kind: "team", slug: t.u, query: tQuery }} className="shrink-0 hover:opacity-80" title={t.n}>
                             <TeamLogo name={t.n} code={t.c} src={t.img} size={16} className="shrink-0" />
                           </HubLink>
-                          <TeamLink name={t.n} u={t.u} query={`p=e:${encodeURIComponent(main.u)}`} className="truncate hover:text-rw-accent" />
+                          <TeamLink name={t.n} u={t.u} query={tQuery} className="truncate hover:text-rw-accent" />
                         </span>
                       </td>
                       {odds[t.u].map((x, k) => {
@@ -2768,7 +2795,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                         const isWin = k === br.reach.length;
                         return (
                           <td key={k} className={`px-2 py-1 text-right tabular-nums ${isWin ? "font-bold text-rw-accent" : ""}`} data-sort={x}>
-                            <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=e:${encodeURIComponent(main.u)}` }} className="inline-flex items-center justify-end gap-1.5 hover:underline" title={tl("Stats")}>
+                            <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: tQuery }} className="inline-flex items-center justify-end gap-1.5 hover:underline" title={tl("Stats")}>
                               {pct > 0 && (
                                 <span className="w-8 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
                                   <span className={`h-full rounded-full ${isWin ? "bg-rw-accent" : "bg-rw-teal/80"}`} style={{ width: `${Math.max(8, pct)}%` }} />
@@ -2780,7 +2807,9 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                         );
                       })}
                     </tr>
-                  ))}
+                    );
+                  });
+                })()}
               </tbody>
             </STable>
           </div>
