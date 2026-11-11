@@ -1742,7 +1742,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(t.u)}${sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
+                        query: `team=${encodeURIComponent(t.u)}${sel?.e ? `&event=${encodeURIComponent(resolveEventSlug(sel.e))}` : sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}`,
                       }}
                       className="text-rw-muted tabular-nums text-[11px] hover:text-rw-accent hover:underline"
                     >
@@ -2012,7 +2012,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                   <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-rw-muted">
                     <span>{tl("Blue / red side")}</span>
                     <HubLink
-                      to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=${blueWr >= redWr ? "b" : "r"}${sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}` }}
+                      to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=${blueWr >= redWr ? "b" : "r"}${sel?.e ? `&event=${encodeURIComponent(resolveEventSlug(sel.e))}` : sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}` }}
                       className="font-mono text-rw-sub normal-case hover:text-rw-accent hover:underline"
                     >
                       {blueWr >= redWr
@@ -2023,7 +2023,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
 
                   {/* Blue Side Bar */}
                   <HubLink
-                    to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=b${sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}` }}
+                    to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=b${sel?.e ? `&event=${encodeURIComponent(resolveEventSlug(sel.e))}` : sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}` }}
                     className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-3 py-2 space-y-1 transition-colors"
                   >
                     <div className="flex items-center justify-between text-xs">
@@ -2045,7 +2045,7 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
 
                   {/* Red Side Bar */}
                   <HubLink
-                    to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=r${sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}` }}
+                    to={{ kind: "finder", query: `team=${encodeURIComponent(t.u)}&side=r${sel?.e ? `&event=${encodeURIComponent(resolveEventSlug(sel.e))}` : sel?.date && /^\d{4}/.test(sel.date) ? `&year=${encodeURIComponent(sel.date.slice(0, 4))}` : ""}` }}
                     className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-3 py-2 space-y-1 transition-colors"
                   >
                     <div className="flex items-center justify-between text-xs">
@@ -2536,7 +2536,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `patch=${encodeURIComponent(sel.p)}&champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${topVsSlug ? `&vschamp=${encodeURIComponent(topVsSlug)}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}`,
+                        query: `patch=${encodeURIComponent(sel.p)}&champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${topVsSlug ? `&vschamp=${encodeURIComponent(topVsSlug)}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${/^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}`,
                       }}
                       className="hover:text-rw-accent hover:underline"
                     >
@@ -2544,14 +2544,14 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </HubLink>{" "}
                     ·{" "}
                     <HubLink
-                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}&ban=${encodeURIComponent(c.u || resolveChampSlug(c.name))}` }}
+                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}&ban=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${/^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}` }}
                       className="hover:text-rw-accent hover:underline"
                     >
                       {sel.b} {tl("Bans")}
                     </HubLink>{" "}
                     ·{" "}
                     <HubLink
-                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}` }}
+                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}${/^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}` }}
                       className="hover:text-rw-accent hover:underline"
                     >
                       {sel.g} {tl("Games")}
@@ -2686,7 +2686,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             {hasSides && (
               <div className="grid grid-cols-2 gap-2">
                 <HubLink
-                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}&side=b${sel?.p ? `&patch=${encodeURIComponent(sel.p)}` : ""}` }}
+                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}&side=b${sel?.p ? `&patch=${encodeURIComponent(sel.p)}${/^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}` : ""}` }}
                   className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2.5 py-2 space-y-1 transition-colors"
                 >
                   <div className="flex items-center justify-between text-xs">
@@ -2705,7 +2705,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                 </HubLink>
 
                 <HubLink
-                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}&side=r${sel?.p ? `&patch=${encodeURIComponent(sel.p)}` : ""}` }}
+                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}&side=r${sel?.p ? `&patch=${encodeURIComponent(sel.p)}${/^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}` : ""}` }}
                   className="block rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2.5 py-2 space-y-1 transition-colors"
                 >
                   <div className="flex items-center justify-between text-xs">

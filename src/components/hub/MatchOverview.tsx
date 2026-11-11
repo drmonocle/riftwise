@@ -469,6 +469,8 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
               <button
                 type="button"
                 onClick={() => {
+                  const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
+                  const yr = match.startTimeUtc?.slice(0, 4);
                   onClose();
                   navigateHub({
                     kind: "finder",
@@ -479,6 +481,8 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                       ...(pB ? { vsplayer: pB } : {}),
                       ...(cA ? { champ: cA } : {}),
                       ...(cB ? { vschamp: cB } : {}),
+                      ...(lg ? { league: lg } : {}),
+                      ...(yr ? { year: yr } : {}),
                     }).toString(),
                   });
                 }}
