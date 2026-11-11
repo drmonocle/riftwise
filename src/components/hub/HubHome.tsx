@@ -1537,56 +1537,12 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
               const lgs = new Set(rows.map((e) => (e.l ? resolveLeagueSlug(e.l) : "")).filter(Boolean));
               return lgs.size === 1 ? [...lgs][0] : undefined;
             })();
+            const singleEv = q.trim() && rows.length === 1 ? rows[0].u : undefined;
             const wTeams = Array.from(new Set(rows.filter((e) => e.w).map((e) => teamSlug(e.w!, undefined, e.wu)))).slice(0, 2);
             const r0w = rows[0]?.w ? teamSlug(rows[0].w, undefined, rows[0].wu) : "";
             const r1w = rows[1]?.w && rows[1].w !== rows[0]?.w ? teamSlug(rows[1].w, undefined, rows[1].wu) : "";
             return (
               <>
-                {q.trim() && rows.length === 1 && (
-                  <>
-                    <HubLink
-                      to={{
-                        kind: "leaders",
-                        query: new URLSearchParams({
-                          ...(singleLg ? { league: singleLg } : {}),
-                          ...(year ? { year } : {}),
-                          event: rows[0].u,
-                        }).toString(),
-                      }}
-                      className="text-[11px] text-rw-accent hover:underline"
-                    >
-                      {tl("Leaderboards")} →
-                    </HubLink>
-                    <HubLink
-                      to={{
-                        kind: "items",
-                        query: new URLSearchParams({
-                          ...(singleLg ? { league: singleLg } : {}),
-                          ...(year ? { year } : {}),
-                          event: rows[0].u,
-                          ...(r0w ? { team: r0w } : {}),
-                        }).toString(),
-                      }}
-                      className="text-[11px] text-rw-accent hover:underline"
-                    >
-                      {tl("Item history")} →
-                    </HubLink>
-                    <HubLink
-                      to={{
-                        kind: "finder",
-                        query: new URLSearchParams({
-                          ...(singleLg ? { league: singleLg } : {}),
-                          ...(year ? { year } : {}),
-                          event: rows[0].u,
-                          ...(r0w ? { team: r0w } : {}),
-                        }).toString(),
-                      }}
-                      className="text-[11px] text-rw-accent hover:underline"
-                    >
-                      {tl("Game finder")} →
-                    </HubLink>
-                  </>
-                )}
                 {r0w && r1w && r0w !== r1w && (
                   <>
                     <HubLink
@@ -1651,11 +1607,12 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                 <HubLink
                   to={{
                     kind: "leaders",
-                    ...(singleLg || year || wTeams.length
+                    ...(singleLg || singleEv || year || wTeams.length
                       ? {
                           query: new URLSearchParams({
                             ...(singleLg ? { league: singleLg } : {}),
                             ...(year ? { year } : {}),
+                            ...(singleEv ? { event: singleEv } : {}),
                             ...(wTeams.length ? { q: wTeams.join(",") } : {}),
                           }).toString(),
                         }
@@ -1672,6 +1629,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                         kind: "champions",
                         query: new URLSearchParams({
                           ...(singleLg ? { scope: singleLg, league: singleLg } : {}),
+                          ...(singleEv ? { event: singleEv } : {}),
                           year,
                           key: `y${year}`,
                         }).toString(),
@@ -1685,6 +1643,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                         kind: "tiers",
                         query: new URLSearchParams({
                           ...(singleLg ? { scope: singleLg, league: singleLg } : {}),
+                          ...(singleEv ? { event: singleEv } : {}),
                           key: `y${year}`,
                           year,
                         }).toString(),
@@ -1698,6 +1657,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                         kind: "items",
                         query: new URLSearchParams({
                           ...(singleLg ? { league: singleLg } : {}),
+                          ...(singleEv ? { event: singleEv } : {}),
                           ...(r0w ? { team: r0w, ...(r1w && r1w !== r0w ? { vs: r1w } : {}) } : {}),
                           year,
                         }).toString(),
@@ -1711,6 +1671,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                         kind: "finder",
                         query: new URLSearchParams({
                           ...(singleLg ? { league: singleLg } : {}),
+                          ...(singleEv ? { event: singleEv } : {}),
                           ...(r0w ? { team: r0w, ...(r1w && r1w !== r0w ? { vs: r1w } : {}) } : {}),
                           year,
                         }).toString(),
@@ -1723,6 +1684,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                       to={{
                         kind: "best",
                         query: new URLSearchParams({
+                          ...(singleEv ? { event: singleEv } : {}),
                           year,
                           ...(wTeams.length ? { q: wTeams.join(",") } : {}),
                         }).toString(),

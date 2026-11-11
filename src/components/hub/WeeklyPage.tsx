@@ -665,59 +665,84 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       </HubLink>
                     </>
                   )}
-                  <HubLink
-                    to={{
-                      kind: "items",
-                      query: new URLSearchParams({
-                        team: w.movers[0].u,
-                        ...(w.movers[1] ? { vs: w.movers[1].u } : {}),
-                        ...(wy ? { year: wy } : {}),
-                      }).toString(),
-                    }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Item history")} →
-                  </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "finder",
-                      query: new URLSearchParams({
-                        team: w.movers[0].u,
-                        ...(w.movers[1] ? { vs: w.movers[1].u } : {}),
-                        ...(wy ? { year: wy } : {}),
-                      }).toString(),
-                    }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Game finder")} →
-                  </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "rankings",
-                      query: `q=${encodeURIComponent(`${w.movers[0].u}${w.movers[1] ? `,${w.movers[1].u}` : ""}`)}`,
-                    }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Power rankings")} →
-                  </HubLink>
-                  <HubLink
-                    to={{ kind: "tiers", ...(wy ? { query: `key=y${encodeURIComponent(wy)}&year=${encodeURIComponent(wy)}` } : {}) }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Pro tier list")} →
-                  </HubLink>
-                  <HubLink
-                    to={{
-                      kind: "leaders",
-                      query: new URLSearchParams({
-                        ...(wy ? { year: wy } : {}),
-                        q: `${w.movers[0].u}${w.movers[1] ? `,${w.movers[1].u}` : ""}`,
-                      }).toString(),
-                    }}
-                    className="text-rw-sub hover:text-rw-accent hover:underline"
-                  >
-                    {tl("Player leaderboards")} →
-                  </HubLink>
+                  {(() => {
+                    const mvLg0 = w.movers[0]?.lg ? resolveLeagueSlug(w.movers[0].lg) : "";
+                    const mvLg1 = w.movers[1]?.lg ? resolveLeagueSlug(w.movers[1].lg) : "";
+                    const mvLg = mvLg0 && (!mvLg1 || mvLg1 === mvLg0) ? mvLg0 : "";
+                    return (
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "items",
+                            query: new URLSearchParams({
+                              ...(mvLg ? { league: mvLg } : {}),
+                              team: w.movers[0].u,
+                              ...(w.movers[1] ? { vs: w.movers[1].u } : {}),
+                              ...(wy ? { year: wy } : {}),
+                            }).toString(),
+                          }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Item history")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "finder",
+                            query: new URLSearchParams({
+                              ...(mvLg ? { league: mvLg } : {}),
+                              team: w.movers[0].u,
+                              ...(w.movers[1] ? { vs: w.movers[1].u } : {}),
+                              ...(wy ? { year: wy } : {}),
+                            }).toString(),
+                          }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Game finder")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "rankings",
+                            query: new URLSearchParams({
+                              ...(mvLg ? { league: mvLg } : {}),
+                              q: `${w.movers[0].u}${w.movers[1] ? `,${w.movers[1].u}` : ""}`,
+                            }).toString(),
+                          }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Power rankings")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "tiers",
+                            ...((mvLg || wy)
+                              ? {
+                                  query: new URLSearchParams({
+                                    ...(mvLg ? { scope: mvLg, league: mvLg } : {}),
+                                    ...(wy ? { key: `y${wy}`, year: wy } : {}),
+                                  }).toString(),
+                                }
+                              : {}),
+                          }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Pro tier list")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "leaders",
+                            query: new URLSearchParams({
+                              ...(mvLg ? { league: mvLg } : {}),
+                              ...(wy ? { year: wy } : {}),
+                              q: `${w.movers[0].u}${w.movers[1] ? `,${w.movers[1].u}` : ""}`,
+                            }).toString(),
+                          }}
+                          className="text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Player leaderboards")} →
+                        </HubLink>
+                      </>
+                    );
+                  })()}
                   <SectionCard
                     section={tl("Power rankings movers")}
                     name={range}
@@ -1100,6 +1125,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     to={{
                       kind: "best",
                       query: new URLSearchParams({
+                        ...(w.best[0].e ? { event: w.best[0].e } : {}),
                         ...(wy ? { year: wy } : {}),
                         q: `${teamSlug(w.best[0].a)},${teamSlug(w.best[0].b)}`,
                       }).toString(),
@@ -1783,6 +1809,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           to={{
                             kind: "best",
                             query: new URLSearchParams({
+                              ...(shownResults[0].e ? { event: shownResults[0].e } : {}),
                               ...(wy ? { year: wy } : {}),
                               q: `${shownResults[0].au},${shownResults[0].bu}`,
                             }).toString(),

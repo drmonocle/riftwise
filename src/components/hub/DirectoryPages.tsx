@@ -366,7 +366,9 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                   ...(list[1] && teamRowSlug(list[1]) !== teamRowSlug(list[0])
                     ? { vs: teamRowSlug(list[1]) }
                     : {}),
-                  ...(region ? { league: resolveLeagueSlug(region) || region } : {}),
+                  ...((region || (list[0]?.[6] && (!list[1]?.[6] || list[1][6] === list[0][6])))
+                    ? { league: resolveLeagueSlug(region || list[0][6]) || region || list[0][6] }
+                    : {}),
                   ...(since !== "all" ? { year: since } : {}),
                 }).toString(),
               }}
@@ -381,7 +383,9 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             kind: "rankings",
             query:
               new URLSearchParams({
-                ...(region ? { league: resolveLeagueSlug(region) || region } : {}),
+                ...((region || (list[0]?.[6] && (!list[1]?.[6] || list[1][6] === list[0][6])))
+                  ? { league: resolveLeagueSlug(region || list[0][6]) || region || list[0][6] }
+                  : {}),
                 ...(list[0]
                   ? {
                       q: `${teamRowSlug(list[0])}${
@@ -398,10 +402,15 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         <HubLink
           to={{
             kind: "tiers",
-            ...((since !== "all" || region)
+            ...((since !== "all" || region || (list[0]?.[6] && (!list[1]?.[6] || list[1][6] === list[0][6])))
               ? {
                   query: new URLSearchParams({
-                    ...(region ? { scope: resolveLeagueSlug(region) || region, league: resolveLeagueSlug(region) || region } : {}),
+                    ...((region || (list[0]?.[6] && (!list[1]?.[6] || list[1][6] === list[0][6])))
+                      ? {
+                          scope: resolveLeagueSlug(region || list[0][6]) || region || list[0][6],
+                          league: resolveLeagueSlug(region || list[0][6]) || region || list[0][6],
+                        }
+                      : {}),
                     ...(since !== "all" ? { key: `y${since}`, year: since } : {}),
                   }).toString(),
                 }
@@ -451,7 +460,9 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             kind: "leaders",
             query:
               new URLSearchParams({
-                ...(region ? { league: resolveLeagueSlug(region) || region } : {}),
+                ...((region || (list[0]?.[6] && (!list[1]?.[6] || list[1][6] === list[0][6])))
+                  ? { league: resolveLeagueSlug(region || list[0][6]) || region || list[0][6] }
+                  : {}),
                 ...(since !== "all" ? { year: since } : {}),
                 ...(list[0]
                   ? {
@@ -479,7 +490,9 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                         : {}),
                     }
                   : {}),
-                ...(region ? { league: resolveLeagueSlug(region) || region } : {}),
+                ...((region || (list[0]?.[6] && (!list[1]?.[6] || list[1][6] === list[0][6])))
+                  ? { league: resolveLeagueSlug(region || list[0][6]) || region || list[0][6] }
+                  : {}),
                 ...(since !== "all" ? { year: since } : {}),
               }).toString() || undefined,
           }}

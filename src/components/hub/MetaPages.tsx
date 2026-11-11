@@ -182,6 +182,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                               kind: "items",
                               query: new URLSearchParams({
                                 ...(topC ? { champ: resolveChampSlug(topC) } : {}),
+                                ...(secC ? { vschamp: resolveChampSlug(secC) } : {}),
                                 ...(topP ? { patch: topP.p } : {}),
                                 ...(topPYear ? { year: topPYear } : {}),
                               }).toString(),
@@ -196,6 +197,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                               query: new URLSearchParams({
                                 ...(topPYear ? { year: topPYear } : {}),
                                 ...(topC ? { champ: resolveChampSlug(topC) } : {}),
+                                ...(q.trim() && qChamps ? { q: qChamps } : {}),
                               }).toString(),
                             }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -222,7 +224,13 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "finder",
                         ...(topP
-                          ? { query: `patch=${encodeURIComponent(topP.p)}${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}` }
+                          ? {
+                              query: new URLSearchParams({
+                                patch: topP.p,
+                                ...(topC ? { champ: resolveChampSlug(topC) } : {}),
+                                ...(terms.length >= 2 && secC ? { vschamp: resolveChampSlug(secC) } : {}),
+                              }).toString(),
+                            }
                           : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -309,6 +317,9 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                             kind: "items",
                             query: new URLSearchParams({
                               ...(p.c[0] ? { champ: resolveChampSlug(p.c[0][0]) } : {}),
+                              ...(p.c[1] && resolveChampSlug(p.c[1][0]) !== (p.c[0] ? resolveChampSlug(p.c[0][0]) : "")
+                                ? { vschamp: resolveChampSlug(p.c[1][0]) }
+                                : {}),
                               patch: p.p,
                               ...(pYear ? { year: pYear } : {}),
                             }).toString(),
@@ -327,7 +338,16 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                           {tl("Draft board")}
                         </HubLink>
                         <HubLink
-                          to={{ kind: "finder", query: `patch=${encodeURIComponent(p.p)}${p.c[0]?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(p.c[0][0]))}` : ""}` }}
+                          to={{
+                            kind: "finder",
+                            query: new URLSearchParams({
+                              patch: p.p,
+                              ...(p.c[0]?.[0] ? { champ: resolveChampSlug(p.c[0][0]) } : {}),
+                              ...(terms.length >= 2 && p.c[1]?.[0] && resolveChampSlug(p.c[1][0]) !== resolveChampSlug(p.c[0]?.[0] || "")
+                                ? { vschamp: resolveChampSlug(p.c[1][0]) }
+                                : {}),
+                            }).toString(),
+                          }}
                           className="text-rw-accent hover:underline font-semibold"
                         >
                           {tl("Game finder")}
@@ -344,6 +364,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
                             query: new URLSearchParams({
                               ...(pYear ? { year: pYear } : {}),
                               ...(p.c[0]?.[0] ? { champ: resolveChampSlug(p.c[0][0]) } : {}),
+                              ...(q.trim() && pChamps ? { q: pChamps } : {}),
                             }).toString(),
                           }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
