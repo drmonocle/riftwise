@@ -546,8 +546,10 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                         ...(o.pentas[0]?.n
                           ? {
                               q: [
-                                o.pentas[0].n,
-                                o.pentas[1]?.n && o.pentas[1].n !== o.pentas[0].n ? o.pentas[1].n : "",
+                                pSlug(o.pentas[0].n, o.pentas[0].u),
+                                o.pentas[1]?.n && pSlug(o.pentas[1].n, o.pentas[1].u) !== pSlug(o.pentas[0].n, o.pentas[0].u)
+                                  ? pSlug(o.pentas[1].n, o.pentas[1].u)
+                                  : "",
                               ]
                                 .filter(Boolean)
                                 .join(","),
@@ -687,7 +689,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                       ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(yr ? { year: yr } : {}),
                       ...(slug ? { event: slug } : {}),
-                      ...(o.mvp[0] ? { q: [o.mvp[0].n, o.mvp[1]?.n].filter(Boolean).join(",") } : {}),
+                      ...(o.mvp[0] ? { q: [pSlug(o.mvp[0].n, o.mvp[0].u), o.mvp[1] ? pSlug(o.mvp[1].n, o.mvp[1].u) : ""].filter(Boolean).join(",") } : {}),
                     }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1027,11 +1029,11 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                     {role ? (
                       /coach/i.test(role) ? (
                         tl("Coach")
-                      ) : u ? (
+                      ) : (
                         <HubLink
                           to={{
                             kind: "player",
-                            slug: u,
+                            slug: pSlug(n, u),
                             tab: "stats",
                             ...(eventSlug ? { query: `p=e:${encodeURIComponent(eventSlug)}` } : {}),
                           }}
@@ -1040,8 +1042,6 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                         >
                           {roleName(role)}
                         </HubLink>
-                      ) : (
-                        roleName(role)
                       )
                     ) : (
                       ""

@@ -215,7 +215,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     kind: "leaders",
                     query: new URLSearchParams({
                       q: t.u,
-                      ...(t.rating?.league ? { league: t.rating.league } : {}),
+                      ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                       year: activeRoster.y,
                     }).toString(),
                   }}
@@ -228,7 +228,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     kind: "rankings",
                     query: new URLSearchParams({
                       q: t.u,
-                      ...(t.rating?.league ? { league: t.rating.league } : {}),
+                      ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -239,7 +239,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
-                      ...(t.rating?.league ? { league: t.rating.league } : {}),
+                      ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                       key: `y${activeRoster.y}`,
                     }).toString(),
                   }}
@@ -462,14 +462,14 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   kind: "rankings",
                   query: new URLSearchParams({
                     q: t.u,
-                    ...(t.rating?.league ? { league: t.rating.league } : {}),
+                    ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                   }).toString(),
                 }}
                 className={heroLink}
               >
                 {tl("Power rankings")}
               </HubLink>
-              <HubLink to={{ kind: "tiers", ...(t.rating?.league ? { query: `league=${encodeURIComponent(t.rating.league)}` } : {}) }} className={heroLink}>
+              <HubLink to={{ kind: "tiers", ...(t.rating?.league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(t.rating.league) || t.rating.league)}` } : {}) }} className={heroLink}>
                 {tl("Pro tier list")}
               </HubLink>
               <HubLink
@@ -477,7 +477,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   kind: "leaders",
                   query: new URLSearchParams({
                     q: t.u,
-                    ...(t.rating?.league ? { league: t.rating.league } : {}),
+                    ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                   }).toString(),
                 }}
                 className={heroLink}
@@ -519,7 +519,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                         kind: "rankings",
                         query: new URLSearchParams({
                           q: t.u,
-                          ...(t.rating.rank == null && t.rating.league ? { league: t.rating.league } : {}),
+                          ...(t.rating.rank == null && t.rating.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                         }).toString(),
                       } as HubRoute,
                       title: t.rh && t.rh.length > 1 ? tl("Rating over the last year") : undefined,
@@ -533,7 +533,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     worlds || msi || firstStand
                       ? [tl("{n} Worlds", { n: worlds }), tl("{n} MSI", { n: msi }), firstStand ? tl("{n} First Stand", { n: firstStand }) : ""].filter(Boolean).join(" · ")
                       : tl("finals won"),
-                  to: t.titles.length > 0 ? ({ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.name)}` } as HubRoute) : to("history"),
+                  to: t.titles.length > 0 ? ({ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.u)}` } as HubRoute) : to("history"),
                 },
                 t.earnings
                   ? { label: tl("Prize money"), value: fmtUsdShort(t.earnings), title: fmtUsd(t.earnings), sub: `${fmtUsd(t.earnings)} · ${tl("as listed in US dollars")}`, to: to("history") }
@@ -642,7 +642,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     kind: "rankings",
                     query: new URLSearchParams({
                       q: `${t.u}${t.recent[0]?.opp ? `,${t.opps.find((o) => o.n === t.recent[0].opp)?.u || resolveTeamAlias(t.recent[0].opp) || prettySlug(t.recent[0].opp)}` : ""}`,
-                      ...(t.rating?.league ? { league: t.rating.league } : {}),
+                      ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -655,7 +655,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     ...(t.rating?.league || (t.recent[0]?.date && /^\d{4}/.test(t.recent[0].date))
                       ? {
                           query: new URLSearchParams({
-                            ...(t.rating?.league ? { league: t.rating.league } : {}),
+                            ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                             ...(t.recent[0]?.date && /^\d{4}/.test(t.recent[0].date) ? { key: `y${t.recent[0].date.slice(0, 4)}` } : {}),
                           }).toString(),
                         }
@@ -670,7 +670,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     kind: "leaders",
                     query: new URLSearchParams({
                       q: `${t.u}${t.recent[0]?.opp ? `,${t.opps.find((o) => o.n === t.recent[0].opp)?.u || resolveTeamAlias(t.recent[0].opp) || prettySlug(t.recent[0].opp)}` : ""}`,
-                      ...(t.rating?.league ? { league: t.rating.league } : {}),
+                      ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                       ...(t.recent[0]?.date && /^\d{4}/.test(t.recent[0].date) ? { year: t.recent[0].date.slice(0, 4) } : {}),
                     }).toString(),
                   }}
@@ -794,7 +794,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       {tl("Compare")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.name)}` }}
+                      to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.u)}` }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Titles")} →
@@ -822,7 +822,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                         kind: "rankings",
                         query: new URLSearchParams({
                           q: `${t.u}${oppSlug ? `,${oppSlug}` : ""}`,
-                          ...(t.rating?.league ? { league: t.rating.league } : {}),
+                          ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -835,7 +835,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                         ...(t.rating?.league || latestYr
                           ? {
                               query: new URLSearchParams({
-                                ...(t.rating?.league ? { league: t.rating.league } : {}),
+                                ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                                 ...(latestYr ? { key: `y${latestYr}` } : {}),
                               }).toString(),
                             }
@@ -850,7 +850,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                         kind: "leaders",
                         query: new URLSearchParams({
                           q: t.u,
-                          ...(t.rating?.league ? { league: t.rating.league } : {}),
+                          ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                           ...(latestYr ? { year: latestYr } : {}),
                         }).toString(),
                       }}
@@ -981,7 +981,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       {tl("Draft board")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.name)}` }}
+                      to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.u)}` }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Titles")} →
@@ -997,7 +997,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                         kind: "rankings",
                         query: new URLSearchParams({
                           q: `${t.u}${oppSlug ? `,${oppSlug}` : ""}`,
-                          ...(t.rating?.league ? { league: t.rating.league } : {}),
+                          ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
@@ -1142,7 +1142,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       {tl("Compare")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.name)}` }}
+                      to={{ kind: "titles", query: `kind=All&q=${encodeURIComponent(t.u)}` }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Titles")} →
@@ -1161,7 +1161,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                         kind: "rankings",
                         query: new URLSearchParams({
                           q: `${t.u}${oppSlug ? `,${oppSlug}` : ""}`,
-                          ...(t.rating?.league ? { league: t.rating.league } : {}),
+                          ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
@@ -1437,7 +1437,7 @@ const TeamChampionsTab: React.FC<{
                       kind: "draft",
                       query: `teams=${encodeURIComponent(t.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}${
                         (search.trim() && shownChamps.length >= 1) || shownChamps.length === 1
-                          ? `&champ=${encodeURIComponent(shownChamps[0].c)}`
+                          ? `&champ=${encodeURIComponent(resolveChampSlug(shownChamps[0].c))}`
                           : ""
                       }`,
                     }}
@@ -1451,7 +1451,7 @@ const TeamChampionsTab: React.FC<{
                       ...(t.rating?.league || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:") || (search.trim() && shownChamps.length >= 1) || shownChamps.length === 1
                         ? {
                             query: new URLSearchParams({
-                              ...(t.rating?.league ? { league: t.rating.league } : {}),
+                              ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                               ...(/^y\d{4}$/.test(period)
                                 ? { key: period }
                                 : period.startsWith("p:")
@@ -1459,7 +1459,7 @@ const TeamChampionsTab: React.FC<{
                                   : period.startsWith("e:")
                                     ? { event: period.slice(2) }
                                     : {}),
-                              ...((search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? { q: shownChamps[0].c } : {}),
+                              ...((search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? { q: resolveChampSlug(shownChamps[0].c) } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -1471,7 +1471,7 @@ const TeamChampionsTab: React.FC<{
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `team=${encodeURIComponent(t.u)}${(search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? `&champ=${encodeURIComponent(shownChamps[0].c)}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+                      query: `team=${encodeURIComponent(t.u)}${(search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? `&champ=${encodeURIComponent(resolveChampSlug(shownChamps[0].c))}` : ""}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -1482,7 +1482,7 @@ const TeamChampionsTab: React.FC<{
                       kind: "rankings",
                       query: new URLSearchParams({
                         q: t.u,
-                        ...(t.rating?.league ? { league: t.rating.league } : {}),
+                        ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
@@ -1494,8 +1494,8 @@ const TeamChampionsTab: React.FC<{
                       kind: "leaders",
                       query: new URLSearchParams({
                         q: t.u,
-                        ...(t.rating?.league ? { league: t.rating.league } : {}),
-                        ...((search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? { champ: shownChamps[0].c } : {}),
+                        ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
+                        ...((search.trim() && shownChamps.length >= 1) || shownChamps.length === 1 ? { champ: resolveChampSlug(shownChamps[0].c) } : {}),
                         ...(/^y\d{4}$/.test(period)
                           ? { year: period.slice(1) }
                           : period.startsWith("e:")
@@ -1597,7 +1597,7 @@ const TeamChampionsTab: React.FC<{
                       kind: "draft",
                       query: `teams=${encodeURIComponent(t.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}${
                         (search.trim() && shownBans.length >= 1) || shownBans.length === 1
-                          ? `&champ=${encodeURIComponent(shownBans[0].c)}`
+                          ? `&champ=${encodeURIComponent(resolveChampSlug(shownBans[0].c))}`
                           : ""
                       }`,
                     }}
@@ -1620,7 +1620,7 @@ const TeamChampionsTab: React.FC<{
                       ...(t.rating?.league || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:") || (search.trim() && shownBans.length >= 1) || shownBans.length === 1
                         ? {
                             query: new URLSearchParams({
-                              ...(t.rating?.league ? { league: t.rating.league } : {}),
+                              ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                               ...(/^y\d{4}$/.test(period)
                                 ? { key: period }
                                 : period.startsWith("p:")
@@ -1628,7 +1628,7 @@ const TeamChampionsTab: React.FC<{
                                   : period.startsWith("e:")
                                     ? { event: period.slice(2) }
                                     : {}),
-                              ...((search.trim() && shownBans.length >= 1) || shownBans.length === 1 ? { q: shownBans[0].c } : {}),
+                              ...((search.trim() && shownBans.length >= 1) || shownBans.length === 1 ? { q: resolveChampSlug(shownBans[0].c) } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -1640,7 +1640,7 @@ const TeamChampionsTab: React.FC<{
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `team=${encodeURIComponent(t.u)}&ban=${encodeURIComponent(shownBans[0].c)}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+                      query: `team=${encodeURIComponent(t.u)}&ban=${encodeURIComponent(resolveChampSlug(shownBans[0].c))}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -1651,7 +1651,7 @@ const TeamChampionsTab: React.FC<{
                       kind: "rankings",
                       query: new URLSearchParams({
                         q: t.u,
-                        ...(t.rating?.league ? { league: t.rating.league } : {}),
+                        ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1663,8 +1663,8 @@ const TeamChampionsTab: React.FC<{
                       kind: "leaders",
                       query: new URLSearchParams({
                         q: t.u,
-                        ...(t.rating?.league ? { league: t.rating.league } : {}),
-                        ...((search.trim() && shownBans.length >= 1) || shownBans.length === 1 ? { champ: shownBans[0].c } : {}),
+                        ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
+                        ...((search.trim() && shownBans.length >= 1) || shownBans.length === 1 ? { champ: resolveChampSlug(shownBans[0].c) } : {}),
                         ...(/^y\d{4}$/.test(period)
                           ? { year: period.slice(1) }
                           : period.startsWith("e:")
@@ -1752,7 +1752,7 @@ const TeamChampionsTab: React.FC<{
                         kind: "draft",
                         query: `teams=${encodeURIComponent(t.u)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}${
                           (search.trim() && shownBansVs.length >= 1) || shownBansVs.length === 1
-                            ? `&champ=${encodeURIComponent(shownBansVs[0].c)}`
+                            ? `&champ=${encodeURIComponent(resolveChampSlug(shownBansVs[0].c))}`
                             : ""
                         }`,
                       }}
@@ -1775,7 +1775,7 @@ const TeamChampionsTab: React.FC<{
                         ...(t.rating?.league || /^y\d{4}$/.test(period) || period.startsWith("p:") || period.startsWith("e:") || (search.trim() && shownBansVs.length >= 1) || shownBansVs.length === 1
                           ? {
                               query: new URLSearchParams({
-                                ...(t.rating?.league ? { league: t.rating.league } : {}),
+                                ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                                 ...(/^y\d{4}$/.test(period)
                                   ? { key: period }
                                   : period.startsWith("p:")
@@ -1783,7 +1783,7 @@ const TeamChampionsTab: React.FC<{
                                     : period.startsWith("e:")
                                       ? { event: period.slice(2) }
                                       : {}),
-                                ...((search.trim() && shownBansVs.length >= 1) || shownBansVs.length === 1 ? { q: shownBansVs[0].c } : {}),
+                                ...((search.trim() && shownBansVs.length >= 1) || shownBansVs.length === 1 ? { q: resolveChampSlug(shownBansVs[0].c) } : {}),
                               }).toString(),
                             }
                           : {}),
@@ -1795,7 +1795,7 @@ const TeamChampionsTab: React.FC<{
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(t.u)}&ban=${encodeURIComponent(shownBansVs[0].c)}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+                        query: `team=${encodeURIComponent(t.u)}&ban=${encodeURIComponent(resolveChampSlug(shownBansVs[0].c))}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1806,7 +1806,7 @@ const TeamChampionsTab: React.FC<{
                         kind: "rankings",
                         query: new URLSearchParams({
                           q: t.u,
-                          ...(t.rating?.league ? { league: t.rating.league } : {}),
+                          ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1818,8 +1818,8 @@ const TeamChampionsTab: React.FC<{
                         kind: "leaders",
                         query: new URLSearchParams({
                           q: t.u,
-                          ...(t.rating?.league ? { league: t.rating.league } : {}),
-                          ...((search.trim() && shownBansVs.length >= 1) || shownBansVs.length === 1 ? { champ: shownBansVs[0].c } : {}),
+                          ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
+                          ...((search.trim() && shownBansVs.length >= 1) || shownBansVs.length === 1 ? { champ: resolveChampSlug(shownBansVs[0].c) } : {}),
                           ...(/^y\d{4}$/.test(period)
                             ? { year: period.slice(1) }
                             : period.startsWith("e:")
@@ -2187,7 +2187,7 @@ const TeamChampGames: React.FC<{
             {tl("Item history")} →
           </HubLink>
           <HubLink
-            to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+            to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
             className="text-[11px] text-rw-accent hover:underline"
           >
             {tl("Draft board")} →
@@ -2196,8 +2196,8 @@ const TeamChampGames: React.FC<{
             to={{
               kind: "tiers",
               query: new URLSearchParams({
-                q: canonical,
-                ...(t.rating?.league ? { league: t.rating.league } : {}),
+                q: resolveChampSlug(canonical),
+                ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                 ...(year !== "all"
                   ? { key: `y${year}` }
                   : /^y\d{4}$/.test(period)
@@ -2216,7 +2216,7 @@ const TeamChampGames: React.FC<{
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}${year !== "all" ? `&year=${encodeURIComponent(year)}` : /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+              query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}${year !== "all" ? `&year=${encodeURIComponent(year)}` : /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(period.slice(2))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
             }}
             className="text-[11px] text-rw-accent hover:underline"
           >
@@ -2227,7 +2227,7 @@ const TeamChampGames: React.FC<{
               kind: "rankings",
               query: new URLSearchParams({
                 q: t.u,
-                ...(t.rating?.league ? { league: t.rating.league } : {}),
+                ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-accent hover:underline"
@@ -2239,8 +2239,8 @@ const TeamChampGames: React.FC<{
               kind: "leaders",
               query: new URLSearchParams({
                 q: t.u,
-                champ: canonical,
-                ...(t.rating?.league ? { league: t.rating.league } : {}),
+                champ: resolveChampSlug(canonical),
+                ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                 ...(year !== "all"
                   ? { year }
                   : /^y\d{4}$/.test(period)
@@ -2304,7 +2304,7 @@ const TeamChampGames: React.FC<{
             label={tl("Picks")}
             value={totalG > 0 ? `${totalW}–${totalG - totalW} (${winRate(totalW, totalG)})` : tl("{n} games", { n: 0 })}
             sub={tn("{n} game", "{n} games", totalG)}
-            to={totalG > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}` } : undefined}
+            to={totalG > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}` } : undefined}
           />
           <Stat
             label={tl("Blue / red side")}
@@ -2314,7 +2314,7 @@ const TeamChampGames: React.FC<{
                 : "–"
             }
             sub={`${blueW}–${blueEntries.length - blueW} ${tl("Blue side")} · ${redW}–${redEntries.length - redW} ${tl("Red side")}`}
-            to={totalG > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}&side=b` } : undefined}
+            to={totalG > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}&side=b` } : undefined}
           />
           <Stat
             label={tl("Gold @15")}
@@ -2326,7 +2326,7 @@ const TeamChampGames: React.FC<{
             label={tl("Bans")}
             value={`${bansInfo.byTeam} / ${bansInfo.vsTeam}`}
             sub={tl("Banned it {n} times · banned against them {m} times", { n: bansInfo.byTeam, m: bansInfo.vsTeam })}
-            to={bansInfo.byTeam + bansInfo.vsTeam > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&ban=${encodeURIComponent(canonical)}` } : undefined}
+            to={bansInfo.byTeam + bansInfo.vsTeam > 0 ? { kind: "finder", query: `team=${encodeURIComponent(t.u)}&ban=${encodeURIComponent(resolveChampSlug(canonical))}` } : undefined}
           />
         </div>
 
@@ -2369,7 +2369,7 @@ const TeamChampGames: React.FC<{
                       <span className="flex items-center gap-1.5 min-w-0">
                         {pl.u ? (
                           <HubLink
-                            to={{ kind: "player", slug: pl.u, tab: "champions", query: `champ=${encodeURIComponent(canonical)}` }}
+                            to={{ kind: "player", slug: pl.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(canonical))}` }}
                             className="shrink-0 hover:opacity-80"
                             title={pl.n}
                           >
@@ -2380,7 +2380,7 @@ const TeamChampGames: React.FC<{
                         )}
                         {pl.u ? (
                           <HubLink
-                            to={{ kind: "player", slug: pl.u, tab: "champions", query: `champ=${encodeURIComponent(canonical)}` }}
+                            to={{ kind: "player", slug: pl.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(canonical))}` }}
                             className="font-semibold text-rw-text hover:text-rw-accent truncate"
                           >
                             {pl.n}
@@ -2404,7 +2404,7 @@ const TeamChampGames: React.FC<{
                             <>
                               {" · "}
                               <HubLink
-                                to={{ kind: "player", slug: pl.u, tab: "champions", query: `champ=${encodeURIComponent(canonical)}` }}
+                                to={{ kind: "player", slug: pl.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(canonical))}` }}
                                 className="hover:text-rw-accent hover:underline"
                               >
                                 {`KDA ${fmtDec((pl.k + pl.a) / Math.max(pl.d, 1), 2)}`}
@@ -2444,7 +2444,7 @@ const TeamChampGames: React.FC<{
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)},${encodeURIComponent(draftPartners[0][0])}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                            query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))},${encodeURIComponent(resolveChampSlug(draftPartners[0][0]))}${/^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : ""}`,
                           }}
                           className="text-rw-accent hover:underline"
                         >
@@ -2453,7 +2453,7 @@ const TeamChampGames: React.FC<{
                       </>
                     )}
                     <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}` }}
                       className="text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
@@ -2570,7 +2570,7 @@ const TeamChampGames: React.FC<{
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}${sideFilter !== "all" ? `&side=${sideFilter}` : ""}${playerFilter !== "all" ? `&player=${encodeURIComponent(playerFilter)}` : ""}`,
+                  query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}${sideFilter !== "all" ? `&side=${sideFilter}` : ""}${playerFilter !== "all" ? `&player=${encodeURIComponent(playerFilter)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -2661,7 +2661,7 @@ const TeamChampGames: React.FC<{
                               <HubLink
                                 to={{
                                   kind: "finder",
-                                  query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(canonical)}&role=${encodeURIComponent(roleStr)}`,
+                                  query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}&role=${encodeURIComponent(roleStr)}`,
                                 }}
                                 className="hover:text-rw-accent hover:underline"
                               >
@@ -2913,7 +2913,7 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
               to={{
                 kind: "rankings",
                 query: new URLSearchParams({
-                  ...(t.rating?.league ? { league: t.rating.league } : {}),
+                  ...(t.rating?.league ? { league: resolveLeagueSlug(t.rating.league) || t.rating.league } : {}),
                   q: t.u,
                 }).toString(),
               }}
@@ -3080,7 +3080,7 @@ const CopyTeamChampPost: React.FC<{
     for (const pl of players.slice(0, 4)) {
       lines.push(`• ${pl.n}${pl.r ? ` (${roleName(pl.r)})` : ""}: ${pl.w}–${pl.g - pl.w} (${winRate(pl.w, pl.g)})`);
     }
-    lines.push(hubShareUrl({ kind: "team", slug: team.u, tab: "champions", query: `champ=${encodeURIComponent(champ)}` }));
+    lines.push(hubShareUrl({ kind: "team", slug: team.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(champ))}` }));
     navigator.clipboard
       .writeText(lines.join("\n"))
       .then(() => {

@@ -304,14 +304,14 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
               {tl("Match prep")} →
             </HubLink>
           )}
-          {rows.length >= 1 && rows[0].u && (
+          {rows.length >= 1 && (
             <>
               <HubLink
                 to={{
                   kind: "compare",
                   mode: "player",
-                  a: rows[0].u,
-                  ...(rows[1]?.u ? { b: rows[1].u } : {}),
+                  a: pSlug(rows[0].n, rows[0].u),
+                  ...(rows[1] ? { b: pSlug(rows[1].n, rows[1].u) } : {}),
                   period: `e:${e.u}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -322,7 +322,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
               <HubLink
                 to={{
                   kind: "items",
-                  query: `player=${encodeURIComponent(rows[0].u)}${rows[0].c?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(rows[0].c[0]))}` : ""}${/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? `&year=${(e.start || e.end || "").slice(0, 4)}` : ""}`,
+                  query: `player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}${rows[0].c?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(rows[0].c[0]))}` : ""}${/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? `&year=${(e.start || e.end || "").slice(0, 4)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
@@ -486,10 +486,10 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
           aria-label={tl("Filter by name or team…")}
           className="bg-rw-bg border border-rw-border rounded px-2 py-1 text-[11px] text-rw-text w-40"
         />
-        {(rows.length === 2 || (search.trim() && rows.length >= 2)) && rows[0].u && rows[1].u && (
+        {(rows.length === 2 || (search.trim() && rows.length >= 2)) && (
           <>
             <HubLink
-              to={{ kind: "compare", mode: "player", a: rows[0].u, b: rows[1].u, period: `e:${e.u}` }}
+              to={{ kind: "compare", mode: "player", a: pSlug(rows[0].n, rows[0].u), b: pSlug(rows[1].n, rows[1].u), period: `e:${e.u}` }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Compare")} →
@@ -515,10 +515,10 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             )}
           </>
         )}
-        {search.trim() && rows.length === 1 && rows[0].u && (
+        {search.trim() && rows.length === 1 && (
           <>
             <HubLink
-              to={{ kind: "compare", mode: "player", a: rows[0].u, period: `e:${e.u}` }}
+              to={{ kind: "compare", mode: "player", a: pSlug(rows[0].n, rows[0].u), period: `e:${e.u}` }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Compare")} →
@@ -545,14 +545,14 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             <HubLink
               to={{
                 kind: "items",
-                query: `player=${encodeURIComponent(rows[0].u)}${rows[0].c?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(rows[0].c[0]))}` : ""}`,
+                query: `player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}${rows[0].c?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(rows[0].c[0]))}` : ""}`,
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Item history")} →
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(rows[0].u)}` }}
+              to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}` }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Game finder")} →

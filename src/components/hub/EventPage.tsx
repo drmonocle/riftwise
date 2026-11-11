@@ -953,6 +953,8 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
   const [hiddenBySpoiler, reveal] = useHidden(seriesKey(r), r.date);
   const hidden = hideResult || hiddenBySpoiler;
   const played = r.sa != null && r.sb != null;
+  const au = r.a ? tSlug(r.a, r.au) : "";
+  const bu = r.b ? tSlug(r.b, r.bu) : "";
   const line = (name: string, u: string | null, score: number | null, won: boolean) => (
     <div className="flex items-center justify-between gap-2 min-w-0">
       <span className={`inline-flex items-center gap-1.5 truncate min-w-0 ${!hidden && won ? "text-rw-text font-bold" : "text-rw-sub"}`}>
@@ -994,13 +996,13 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
         </span>
         <span className="flex items-center gap-1.5 shrink-0">
           {hiddenBySpoiler && !hideResult && played && <RevealButton onReveal={reveal} small />}
-          {r.au && r.bu && (
+          {au && bu && (
             <>
               <HubLink
                 to={{
                   kind: "prep",
-                  a: r.au,
-                  b: r.bu,
+                  a: au,
+                  b: bu,
                   period: /^\d{4}$/.test((r.date || "").slice(0, 4)) ? `y${(r.date || "").slice(0, 4)}` : undefined,
                 }}
                 className="hidden sm:inline hover:text-rw-accent hover:underline"
@@ -1012,8 +1014,8 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
                 to={{
                   kind: "compare",
                   mode: "team",
-                  a: r.au,
-                  b: r.bu,
+                  a: au,
+                  b: bu,
                   period: /^\d{4}$/.test((r.date || "").slice(0, 4)) ? `y${(r.date || "").slice(0, 4)}` : undefined,
                 }}
                 className="hover:text-rw-accent hover:underline"
@@ -1024,7 +1026,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(r.au)},${encodeURIComponent(r.bu)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
+                  query: `teams=${encodeURIComponent(au)},${encodeURIComponent(bu)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
                 }}
                 className="hidden sm:inline hover:text-rw-accent hover:underline"
                 title={tl("Draft board")}
@@ -1034,7 +1036,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(r.au)}&vs=${encodeURIComponent(r.bu)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
+                  query: `team=${encodeURIComponent(au)}&vs=${encodeURIComponent(bu)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
                 }}
                 className="hidden sm:inline hover:text-rw-accent hover:underline"
                 title={tl("Game finder")}
@@ -1061,8 +1063,8 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
             <HubLink to={{ kind: "match", slug: r.g }} className="text-rw-accent hover:underline">
               {tl("Details")}
             </HubLink>
-          ) : !played && r.au && r.bu ? (
-            <HubLink to={{ kind: "prep", a: r.au, b: r.bu }} className="text-rw-accent hover:underline">
+          ) : !played && au && bu ? (
+            <HubLink to={{ kind: "prep", a: au, b: bu }} className="text-rw-accent hover:underline">
               {tl("Match prep")}
             </HubLink>
           ) : null}
@@ -1185,9 +1187,11 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
     }),
   }));
   // four rounds or more need the whole page width (half of a two-column page made them scroll sideways)
-  const finalS = [...stages].reverse().flatMap((s) => s.series).find((r) => r.au || r.bu);
-  const fTeamA = finalS?.au || finalS?.bu;
-  const fTeamB = finalS?.au && finalS?.bu && finalS.bu !== finalS.au ? finalS.bu : undefined;
+  const finalS = [...stages].reverse().flatMap((s) => s.series).find((r) => r.au || r.bu || r.a || r.b);
+  const rawFA = finalS?.a ? tSlug(finalS.a, finalS.au) : "";
+  const rawFB = finalS?.b ? tSlug(finalS.b, finalS.bu) : "";
+  const fTeamA = rawFA || rawFB;
+  const fTeamB = rawFA && rawFB && rawFB !== rawFA ? rawFB : undefined;
   return (
     <div className={columns.length >= 4 ? "rw-span" : undefined}>
       <Section
@@ -1371,18 +1375,22 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
       );
     });
   }, [byRating, rated, terms, isVsMatchup, stages, st.series, aliases.data]);
+  const s0A = shown[0]?.a ? tSlug(shown[0].a, shown[0].au) : "";
+  const s0B = shown[0]?.b ? tSlug(shown[0].b, shown[0].bu) : "";
+  const s0First = s0A || s0B;
+  const s0Second = s0A && s0B && s0B !== s0A ? s0B : undefined;
   return (
     <Section
       title={tl("Matches")}
       right={
         <span className="flex flex-wrap items-center gap-1.5" data-nocapture="1">
-          {(shown[0]?.au || shown[0]?.bu) && (
+          {s0First && (
             <>
               <HubLink
                 to={{
                   kind: "prep",
-                  a: shown[0].au || shown[0].bu!,
-                  ...(shown[0].au && shown[0].bu ? { b: shown[0].bu } : {}),
+                  a: s0First,
+                  ...(s0Second ? { b: s0Second } : {}),
                   ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -1392,7 +1400,7 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(shown[0].au || shown[0].bu!)}${shown[0].au && shown[0].bu ? `,${encodeURIComponent(shown[0].bu)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                  query: `teams=${encodeURIComponent(s0First)}${s0Second ? `,${encodeURIComponent(s0Second)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1402,8 +1410,8 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
                 to={{
                   kind: "compare",
                   mode: "team",
-                  a: shown[0].au || shown[0].bu!,
-                  ...(shown[0].au && shown[0].bu ? { b: shown[0].bu } : {}),
+                  a: s0First,
+                  ...(s0Second ? { b: s0Second } : {}),
                   ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -1416,7 +1424,7 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
                   query:
                     new URLSearchParams({
                       ...(leagueSlug ? { league: leagueSlug } : {}),
-                      q: [shown[0].au || shown[0].bu, shown[0].au && shown[0].bu ? shown[0].bu : ""].filter(Boolean).join(","),
+                      q: [s0First, s0Second].filter(Boolean).join(","),
                     }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -1428,8 +1436,8 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
                   kind: "finder",
                   query: new URLSearchParams({
                     ...(eventSlug ? { event: eventSlug } : {}),
-                    team: shown[0].au || shown[0].bu!,
-                    ...(shown[0].au && shown[0].bu ? { vs: shown[0].bu } : {}),
+                    team: s0First,
+                    ...(s0Second ? { vs: s0Second } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -1458,7 +1466,7 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
                       ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(/^\d{4}$/.test((shown[0].date || "").slice(0, 4)) ? { year: (shown[0].date || "").slice(0, 4) } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
-                      q: [shown[0].a ? tSlug(shown[0].a, shown[0].au) : "", shown[0].b ? tSlug(shown[0].b, shown[0].bu) : ""].filter(Boolean).join(","),
+                      q: [s0First, s0Second].filter(Boolean).join(","),
                     }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"

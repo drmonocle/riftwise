@@ -86,9 +86,12 @@ const HubMatchPage: React.FC<{ slug: string; game?: number; onOpenUrl: (url: str
   return <Page state={state}>{(s) => <SeriesView key={slug} s={s} slug={slug} game={game} onOpenUrl={onOpenUrl} />}</Page>;
 };
 
+const sideSlug = (team: HubSeries["a"]) => team.u || resolveTeamAlias(team.n) || prettySlug(team.n);
+
 /** One team in a series' top card: its logo next to the score and its name, the winner's in the accent. Phones: the
  *  logo over the short name. */
 const SeriesSide: React.FC<{ team: HubSeries["a"]; won: boolean; align: "left" | "right" }> = ({ team, won, align }) => {
+  const u = sideSlug(team);
   const name = (
     <>
       <span className="sm:hidden">{team.c || team.n}</span>
@@ -97,8 +100,8 @@ const SeriesSide: React.FC<{ team: HubSeries["a"]; won: boolean; align: "left" |
   );
   const cls = `font-head text-[20px] sm:text-[28px] font-bold leading-tight break-words min-w-0 ${won ? "text-rw-teal" : "text-rw-text"}`;
   const logoImg = <TeamLogo name={team.n} code={team.c || undefined} sizeClass="w-11 h-11 sm:w-14 sm:h-14" className="drop-shadow-[0_6px_14px_rgba(0,0,0,0.5)]" />;
-  const logo = team.u ? (
-    <HubLink to={{ kind: "team", slug: team.u }} className="shrink-0 hover:opacity-85" title={team.n}>
+  const logo = u ? (
+    <HubLink to={{ kind: "team", slug: u }} className="shrink-0 hover:opacity-85" title={team.n}>
       {logoImg}
     </HubLink>
   ) : (
@@ -111,8 +114,8 @@ const SeriesSide: React.FC<{ team: HubSeries["a"]; won: boolean; align: "left" |
       }`}
     >
       {align === "left" && logo}
-      {team.u ? (
-        <HubLink to={{ kind: "team", slug: team.u }} className={`${cls} hover:underline`}>
+      {u ? (
+        <HubLink to={{ kind: "team", slug: u }} className={`${cls} hover:underline`}>
           {name}
         </HubLink>
       ) : (
@@ -146,6 +149,8 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
   const scoreB = hidden ? "?" : s.sb;
   const seriesYear = (s.date || "").slice(0, 4);
   const seriesPeriod = /^\d{4}$/.test(seriesYear) ? `y${seriesYear}` : undefined;
+  const slugA = sideSlug(s.a);
+  const slugB = sideSlug(s.b);
   return (
     <div className="space-y-3">
       {/* the series' top card: where and when, both teams and the score, then what to open next */}
@@ -172,8 +177,8 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
             ·{" "}
             <HubLink
               to={
-                s.a.u && s.b.u
-                  ? { kind: "finder", query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}` }
+                slugA && slugB
+                  ? { kind: "finder", query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}` }
                   : { kind: "finder", ...(seriesYear ? { query: `year=${encodeURIComponent(seriesYear)}` } : {}) }
               }
               className="hover:text-rw-accent hover:underline"
@@ -183,9 +188,9 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
           </span>
           <span>
             ·{" "}
-            {s.a.u && s.b.u ? (
+            {slugA && slugB ? (
               <HubLink
-                to={{ kind: "prep", a: s.a.u, b: s.b.u, period: seriesPeriod }}
+                to={{ kind: "prep", a: slugA, b: slugB, period: seriesPeriod }}
                 className="hover:text-rw-accent hover:underline"
                 title={tl("Match prep")}
               >
@@ -211,7 +216,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 query: new URLSearchParams({
                   view: "series",
                   ...(seriesYear ? { year: seriesYear } : {}),
-                  ...(s.a.u && s.b.u ? { q: `${s.a.u},${s.b.u}` } : {}),
+                  ...(slugA && slugB ? { q: `${slugA},${slugB}` } : {}),
                 }).toString(),
               }}
               className="ml-auto"
@@ -242,14 +247,14 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
             <RevealButton onReveal={reveal} />
           </div>
         )}
-        {((!hidden && s.games.some((g) => g.w)) || (s.a.u && s.b.u)) && (
+        {((!hidden && s.games.some((g) => g.w)) || (slugA && slugB)) && (
           <div className="relative mt-4 sm:mt-5 flex flex-wrap items-center justify-center gap-2">
-            {s.a.u && s.b.u && (
+            {slugA && slugB && (
               <>
-                <HubLink to={{ kind: "prep", a: s.a.u, b: s.b.u, period: seriesPeriod }} className={heroBtn(true)}>
+                <HubLink to={{ kind: "prep", a: slugA, b: slugB, period: seriesPeriod }} className={heroBtn(true)}>
                   {tl("Match prep")}
                 </HubLink>
-                <HubLink to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u, period: seriesPeriod }} className={heroBtn()}>
+                <HubLink to={{ kind: "compare", mode: "team", a: slugA, b: slugB, period: seriesPeriod }} className={heroBtn()}>
                   {tl("Compare")}
                 </HubLink>
                 <HubLink
@@ -264,7 +269,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
+                    query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
                   }}
                   className={heroBtn()}
                 >
@@ -273,7 +278,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                 <HubLink
                   to={{
                     kind: "rankings",
-                    query: `q=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}`,
+                    query: `q=${encodeURIComponent(slugA)},${encodeURIComponent(slugB)}`,
                   }}
                   className={heroBtn()}
                 >
@@ -283,7 +288,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      q: `${s.a.u},${s.b.u}`,
+                      q: `${slugA},${slugB}`,
                       ...(s.e ? { event: s.e } : {}),
                       ...(seriesYear ? { year: seriesYear } : {}),
                     }).toString(),
@@ -462,6 +467,8 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
   if (aKills + bKills === 0 && !mvp) return null;
   const codeA = s.a.c || s.a.n;
   const codeB = s.b.c || s.b.n;
+  const slugA = sideSlug(s.a);
+  const slugB = sideSlug(s.b);
   const macros = [
     aKills + bKills > 0 ? { label: tl("Kills"), a: aKills, b: bKills, fmt: (v: number) => String(v) } : null,
     aGold + bGold > 0 ? { label: tl("Gold"), a: aGold, b: bGold, fmt: (v: number) => fmtGold(v) } : null,
@@ -504,7 +511,7 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
                   key={c}
                   to={
                     mvp.u
-                      ? { kind: "player", slug: mvp.u, tab: "champions", query: `champ=${encodeURIComponent(c)}` }
+                      ? { kind: "player", slug: mvp.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}` }
                       : { kind: "champ", slug: resolveChampSlug(c) }
                   }
                   className="hover:opacity-80"
@@ -527,9 +534,9 @@ const SeriesSummaryStrip: React.FC<{ s: HubSeries }> = ({ s }) => {
               <span className="font-bold text-rw-side-a">
                 <TeamLink name={codeA} u={s.a.u} className="hover:underline" /> {m.fmt(m.a)}
               </span>
-              {s.a.u && s.b.u ? (
+              {slugA && slugB ? (
                 <HubLink
-                  to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u, period: /^\d{4}$/.test((s.date || "").slice(0, 4)) ? `y${(s.date || "").slice(0, 4)}` : undefined }}
+                  to={{ kind: "compare", mode: "team", a: slugA, b: slugB, period: /^\d{4}$/.test((s.date || "").slice(0, 4)) ? `y${(s.date || "").slice(0, 4)}` : undefined }}
                   className="font-sans text-[9px] font-bold uppercase tracking-wider text-rw-muted hover:text-rw-accent hover:underline"
                   title={tl("Compare")}
                 >
@@ -569,6 +576,8 @@ const SeriesGames: React.FC<{
   onOpenUrl: (url: string) => void;
 }> = ({ s, tabs, gi, pick, hidden, game, reveal, onOpenUrl }) => {
   const seriesYear = s.date && /^\d{4}/.test(s.date) ? s.date.slice(0, 4) : undefined;
+  const slugA = sideSlug(s.a);
+  const slugB = sideSlug(s.b);
   const gamePicks = !hidden && tabs > 1
     ? s.games.map((g, i) => {
         const aBlue = g.blue === "a";
@@ -640,10 +649,10 @@ const SeriesGames: React.FC<{
               </span>
             </button>
           ))}
-          {s.a.u && s.b.u && (
+          {slugA && slugB && (
             <span className="ml-auto flex items-center gap-2">
               <HubLink
-                to={{ kind: "prep", a: s.a.u, b: s.b.u, ...(seriesYear ? { period: `y${seriesYear}` } : {}) }}
+                to={{ kind: "prep", a: slugA, b: slugB, ...(seriesYear ? { period: `y${seriesYear}` } : {}) }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Match prep")} →
@@ -651,14 +660,14 @@ const SeriesGames: React.FC<{
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}${seriesYear ? `&p=y${encodeURIComponent(seriesYear)}` : ""}`,
+                  query: `teams=${encodeURIComponent(slugA)},${encodeURIComponent(slugB)}${seriesYear ? `&p=y${encodeURIComponent(seriesYear)}` : ""}`,
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Draft board")} →
               </HubLink>
               <HubLink
-                to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u, ...(seriesYear ? { period: `y${seriesYear}` } : {}) }}
+                to={{ kind: "compare", mode: "team", a: slugA, b: slugB, ...(seriesYear ? { period: `y${seriesYear}` } : {}) }}
                 className="text-rw-accent hover:underline font-semibold"
               >
                 {tl("Compare")} →
@@ -666,7 +675,7 @@ const SeriesGames: React.FC<{
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
+                  query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${seriesYear ? `&year=${encodeURIComponent(seriesYear)}` : ""}`,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -675,7 +684,7 @@ const SeriesGames: React.FC<{
               <HubLink
                 to={{
                   kind: "rankings",
-                  query: `q=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}`,
+                  query: `q=${encodeURIComponent(slugA)},${encodeURIComponent(slugB)}`,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -685,7 +694,7 @@ const SeriesGames: React.FC<{
                 to={{
                   kind: "leaders",
                   query: new URLSearchParams({
-                    q: `${s.a.u},${s.b.u}`,
+                    q: `${slugA},${slugB}`,
                     ...(s.e ? { event: s.e } : {}),
                     ...(seriesYear ? { year: seriesYear } : {}),
                   }).toString(),
@@ -744,6 +753,8 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
   const red = g.p?.filter((p) => p.s === 2) || [];
   const gameYear = (g.date || s.date || "").slice(0, 4);
   const gamePeriod = /^\d{4}$/.test(gameYear) ? `y${gameYear}` : undefined;
+  const slugA = sideSlug(s.a);
+  const slugB = sideSlug(s.b);
   // each player's rating for this game (src/hub/playerRating.ts), and the best of the ten
   const ratingFile = useRatingFile();
   const ratings = useMemo(() => {
@@ -791,10 +802,10 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                   <HubLink
                     to={{
                       kind: "records",
-                      ...(s.en || gameYear
+                      ...(s.e || s.en || gameYear
                         ? {
                             query: new URLSearchParams({
-                              ...(s.en ? { q: s.en } : {}),
+                              ...(s.e || s.en ? { q: s.e || s.en } : {}),
                               ...(gameYear ? { year: gameYear } : {}),
                             }).toString(),
                           }
@@ -823,9 +834,9 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
               </HubLink>
             )}
             {g.date &&
-              (s.a.u && s.b.u ? (
+              (slugA && slugB ? (
                 <HubLink
-                  to={{ kind: "finder", query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}` }}
+                  to={{ kind: "finder", query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}` }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {new Date(`${g.date.replace(" ", "T")}Z`).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })}
@@ -867,16 +878,16 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
             )}
           </span>
           <span className="flex flex-wrap items-center gap-2 ml-auto">
-            {s.a.u && s.b.u && (
+            {slugA && slugB && (
               <>
                 <HubLink
-                  to={{ kind: "prep", a: s.a.u, b: s.b.u, period: gamePeriod }}
+                  to={{ kind: "prep", a: slugA, b: slugB, period: gamePeriod }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                 >
                   {tl("Match prep")}
                 </HubLink>
                 <HubLink
-                  to={{ kind: "compare", mode: "team", a: s.a.u, b: s.b.u, period: gamePeriod }}
+                  to={{ kind: "compare", mode: "team", a: slugA, b: slugB, period: gamePeriod }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                 >
                   {tl("Compare")}
@@ -891,7 +902,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(s.a.u)}&vs=${encodeURIComponent(s.b.u)}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}`,
+                    query: `team=${encodeURIComponent(slugA)}&vs=${encodeURIComponent(slugB)}${gameYear ? `&year=${encodeURIComponent(gameYear)}` : ""}`,
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                 >
@@ -901,7 +912,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      q: `${s.a.u},${s.b.u}`,
+                      q: `${slugA},${slugB}`,
                       ...(s.e ? { event: s.e } : {}),
                       ...(gameYear ? { year: gameYear } : {}),
                     }).toString(),
@@ -929,7 +940,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                 <HubLink
                   to={{
                     kind: "rankings",
-                    query: `q=${encodeURIComponent(s.a.u)},${encodeURIComponent(s.b.u)}`,
+                    query: `q=${encodeURIComponent(slugA)},${encodeURIComponent(slugB)}`,
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                 >

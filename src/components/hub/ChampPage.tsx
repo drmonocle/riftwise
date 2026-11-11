@@ -312,7 +312,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   <React.Fragment key={r.r}>
                     {i > 0 && " · "}
                     <HubLink
-                      to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&role=${encodeURIComponent(r.r)}` }}
+                      to={{ kind: "finder", query: `champ=${encodeURIComponent(cSlug)}&role=${encodeURIComponent(r.r)}` }}
                       className="hover:text-rw-accent hover:underline"
                     >
                       {`${roleName(r.r)} ${Math.round((r.p / totalRoles) * 100)}%`}
@@ -336,7 +336,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               >
                 {tl("Pro tier list")}
               </HubLink>
-              <HubLink to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }} className={heroBtn()}>
+              <HubLink to={{ kind: "finder", query: `champ=${encodeURIComponent(cSlug)}` }} className={heroBtn()}>
                 {tl("Game finder")}
               </HubLink>
               <HubLink to={{ kind: "items", query: `champ=${encodeURIComponent(cSlug)}` }} className={heroBtn()}>
@@ -358,7 +358,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 to={{
                   kind: "leaders",
                   query: new URLSearchParams({
-                    champ: c.name,
+                    champ: cSlug,
                     ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                   }).toString(),
                 }}
@@ -390,19 +390,19 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               label: tl("Picks"),
               value: fmtNum(c.p),
               bar: c.p + c.b > 0 ? { pct: Math.round((c.p / (c.p + c.b)) * 100), tone: "teal" } : undefined,
-              to: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}` },
+              to: { kind: "finder", query: `champ=${encodeURIComponent(cSlug)}` },
             },
             {
               label: tl("Bans"),
               value: fmtNum(c.b),
               bar: c.p + c.b > 0 ? { pct: Math.round((c.b / (c.p + c.b)) * 100), tone: "red" } : undefined,
-              to: { kind: "finder", query: `ban=${encodeURIComponent(c.name)}` },
+              to: { kind: "finder", query: `ban=${encodeURIComponent(cSlug)}` },
             },
             {
               label: tl("Win %"),
               value: winRate(c.w, c.p),
               bar: c.p > 0 ? { pct: Math.round((c.w / c.p) * 100), tone: c.w / c.p >= 0.5 ? "teal" : "red" } : undefined,
-              to: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}&result=w` },
+              to: { kind: "finder", query: `champ=${encodeURIComponent(cSlug)}&result=w` },
             },
             c.side && c.side[0] + c.side[2] > 0
               ? {
@@ -413,7 +413,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     split: [c.side[0] ? c.side[1] / c.side[0] : 0, c.side[2] ? c.side[3] / c.side[2] : 0],
                     splitColors: ["bg-[#4a9eff]/85", "bg-rw-red/80"],
                   },
-                  to: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}&side=b` },
+                  to: { kind: "finder", query: `champ=${encodeURIComponent(cSlug)}&side=b` },
                 }
               : null,
           ]}
@@ -497,7 +497,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 {tl("Draft board")} →
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}${buildRole ? `&role=${encodeURIComponent(buildRole)}` : ""}` }}
+                to={{ kind: "finder", query: `champ=${encodeURIComponent(cSlug)}${buildRole ? `&role=${encodeURIComponent(buildRole)}` : ""}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
@@ -506,7 +506,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 to={{
                   kind: "leaders",
                   query: new URLSearchParams({
-                    champ: c.name,
+                    champ: cSlug,
                     ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
                   }).toString(),
                 }}
@@ -749,7 +749,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `champ=${encodeURIComponent(c.name)}${hit ? `&vschamp=${encodeURIComponent(hit[0])}` : ""}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}`,
+                        query: `champ=${encodeURIComponent(cSlug)}${hit ? `&vschamp=${encodeURIComponent(resolveChampSlug(hit[0]))}` : ""}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -759,7 +759,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       to={{
                         kind: "leaders",
                         query: new URLSearchParams({
-                          champ: c.name,
+                          champ: cSlug,
                           ...(muRole ? { role: muRole } : {}),
                         }).toString(),
                       }}
@@ -924,7 +924,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((g / maxMuG) * 100))}%` }} />
                         </span>
                         <HubLink
-                          to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&vschamp=${encodeURIComponent(oc)}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}` }}
+                          to={{ kind: "finder", query: `champ=${encodeURIComponent(cSlug)}&vschamp=${encodeURIComponent(resolveChampSlug(oc))}${muRole ? `&role=${encodeURIComponent(muRole)}` : ""}` }}
                           className="hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -1075,7 +1075,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `champ=${encodeURIComponent(topDuo ? `${c.name},${topDuo[0]}` : c.name)}`,
+                        query: `champ=${encodeURIComponent(topDuo ? `${cSlug},${resolveChampSlug(topDuo[0])}` : cSlug)}`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -1085,7 +1085,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       to={{
                         kind: "leaders",
                         query: new URLSearchParams({
-                          champ: c.name,
+                          champ: cSlug,
                           role: "Bot",
                         }).toString(),
                       }}
@@ -1150,7 +1150,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((g / maxDuoG) * 100))}%` }} />
                         </span>
                         <HubLink
-                          to={{ kind: "finder", query: `champ=${encodeURIComponent(`${c.name},${pc}`)}` }}
+                          to={{ kind: "finder", query: `champ=${encodeURIComponent(`${cSlug},${resolveChampSlug(pc)}`)}` }}
                           className="hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -1160,7 +1160,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     </td>
                     <td className={td} data-sort={g ? w / g : 0}>
                       <HubLink
-                        to={{ kind: "finder", query: `champ=${encodeURIComponent(`${c.name},${pc}`)}` }}
+                        to={{ kind: "finder", query: `champ=${encodeURIComponent(`${cSlug},${resolveChampSlug(pc)}`)}` }}
                         className="hover:opacity-90"
                         title={tl("Game finder")}
                       >
@@ -1262,7 +1262,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `player=${encodeURIComponent(pList[0].u || pList[0].n)}&champ=${encodeURIComponent(c.name)}`,
+                        query: `player=${encodeURIComponent(pList[0].u || resolvePlayerSlug(pList[0].n))}&champ=${encodeURIComponent(cSlug)}`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -1273,11 +1273,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     to={{
                       kind: "leaders",
                       query: new URLSearchParams({
-                        champ: c.name,
+                        champ: cSlug,
                         ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                         ...(playerSearch.trim() && pList[0]
                           ? {
-                              q: `${pList[0].u || pList[0].n}${pList[1] ? `,${pList[1].u || pList[1].n}` : ""}`,
+                              q: `${pList[0].u || resolvePlayerSlug(pList[0].n)}${pList[1] ? `,${pList[1].u || resolvePlayerSlug(pList[1].n)}` : ""}`,
                             }
                           : {}),
                       }).toString(),
@@ -1376,8 +1376,8 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       <HubLink
                         to={
                           p.u
-                            ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}${playersRecent ? "&p=12m" : ""}` }
-                            : { kind: "finder", query: `player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c.name)}` }
+                            ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(cSlug)}${playersRecent ? "&p=12m" : ""}` }
+                            : { kind: "finder", query: `player=${encodeURIComponent(resolvePlayerSlug(p.n))}&champ=${encodeURIComponent(cSlug)}` }
                         }
                         className="hover:text-rw-accent hover:underline"
                         title={tl("Game finder")}
@@ -1390,8 +1390,8 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={
                         p.u
-                          ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}${playersRecent ? "&p=12m" : ""}` }
-                          : { kind: "finder", query: `player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c.name)}` }
+                          ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(cSlug)}${playersRecent ? "&p=12m" : ""}` }
+                          : { kind: "finder", query: `player=${encodeURIComponent(resolvePlayerSlug(p.n))}&champ=${encodeURIComponent(cSlug)}` }
                       }
                       className="hover:opacity-90"
                       title={tl("Game finder")}
@@ -1403,8 +1403,8 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={
                         p.u
-                          ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(c.name)}${playersRecent ? "&p=12m" : ""}` }
-                          : { kind: "finder", query: `player=${encodeURIComponent(p.n)}&champ=${encodeURIComponent(c.name)}` }
+                          ? { kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(cSlug)}${playersRecent ? "&p=12m" : ""}` }
+                          : { kind: "finder", query: `player=${encodeURIComponent(resolvePlayerSlug(p.n))}&champ=${encodeURIComponent(cSlug)}` }
                       }
                       className="inline-flex hover:opacity-85"
                       title={tl("Game finder")}
@@ -1536,10 +1536,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       to={{
                         kind: "leaders",
                         query: new URLSearchParams({
-                          champ: c.name,
+                          champ: cSlug,
                           ...(r0Year ? { year: r0Year } : {}),
                           ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
-                          ...(recentSearch.trim() && r0 ? { q: r0.u || r0.n } : {}),
+                          ...(recentSearch.trim() && r0 ? { q: r0.u || resolvePlayerSlug(r0.n) } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
@@ -1550,8 +1550,8 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       to={{
                         kind: "finder",
                         query: new URLSearchParams({
-                          champ: c.name,
-                          ...(recentSearch.trim() && r0 ? { player: r0.u || r0.n } : {}),
+                          champ: cSlug,
+                          ...(recentSearch.trim() && r0 ? { player: r0.u || resolvePlayerSlug(r0.n) } : {}),
                           ...(r0Year ? { year: r0Year } : {}),
                         }).toString(),
                       }}
@@ -1699,7 +1699,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `team=${encodeURIComponent(teamSlug(r.team))}&vs=${encodeURIComponent(teamSlug(r.opp))}&champ=${encodeURIComponent(c.name)}`,
+                            query: `team=${encodeURIComponent(teamSlug(r.team))}&vs=${encodeURIComponent(teamSlug(r.opp))}&champ=${encodeURIComponent(cSlug)}`,
                           }}
                           className="hidden md:inline text-[10px] hover:text-rw-accent hover:underline"
                         >
@@ -1836,7 +1836,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 {tl("Pro tier list")} →
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}` }}
+                to={{ kind: "finder", query: `champ=${encodeURIComponent(cSlug)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
@@ -1845,7 +1845,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 to={{
                   kind: "leaders",
                   query: new URLSearchParams({
-                    champ: c.name,
+                    champ: cSlug,
                     ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                   }).toString(),
                 }}
@@ -1894,7 +1894,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               return (
                 <HubLink
                   key={slot}
-                  to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}${side ? `&side=${side}` : ""}` }}
+                  to={{ kind: "finder", query: `champ=${encodeURIComponent(cSlug)}${side ? `&side=${side}` : ""}` }}
                   title={tl("Game finder")}
                   className="rounded-lg border border-rw-border bg-rw-bg px-2 py-1.5 text-center space-y-1 hover:border-rw-accent/60 hover:bg-rw-raised/40 transition-colors"
                 >
@@ -1971,7 +1971,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 {tl("Champions")} →
               </HubLink>
               <HubLink
-                to={{ kind: "patches", query: `q=${encodeURIComponent(c.name)}` }}
+                to={{ kind: "patches", query: `q=${encodeURIComponent(cSlug)}` }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
                 {tl("Patches")} →
@@ -1979,7 +1979,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `champ=${encodeURIComponent(c.name)}${c.patches[0]?.p ? `&patch=${encodeURIComponent(c.patches[0].p)}` : ""}`,
+                  query: `champ=${encodeURIComponent(cSlug)}${c.patches[0]?.p ? `&patch=${encodeURIComponent(c.patches[0].p)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1989,7 +1989,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 to={{
                   kind: "leaders",
                   query: new URLSearchParams({
-                    champ: c.name,
+                    champ: cSlug,
                     ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                   }).toString(),
                 }}
@@ -2043,7 +2043,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     {d == null ? "" : d === 0 ? "=" : `${d > 0 ? "+" : ""}${d}`}
                   </span>
                   <HubLink
-                    to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&patch=${encodeURIComponent(p.p)}` }}
+                    to={{ kind: "finder", query: `champ=${encodeURIComponent(cSlug)}&patch=${encodeURIComponent(p.p)}` }}
                     className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums text-right leading-tight sm:whitespace-nowrap sm:min-w-56"
                     title={tl("Game finder")}
                   >
@@ -2120,7 +2120,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `champ=${encodeURIComponent(c.name)}${latestY ? `&year=${encodeURIComponent(latestY)}` : ""}`,
+                      query: `champ=${encodeURIComponent(cSlug)}${latestY ? `&year=${encodeURIComponent(latestY)}` : ""}`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -2130,7 +2130,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     to={{
                       kind: "leaders",
                       query: new URLSearchParams({
-                        champ: c.name,
+                        champ: cSlug,
                         ...(latestY ? { year: latestY } : {}),
                         ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
                       }).toString(),
@@ -2177,7 +2177,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 <div className="bg-rw-red/50" style={{ width: `${(y.b / maxYear) * 100}%` }} />
               </div>
               <HubLink
-                to={{ kind: "finder", query: `champ=${encodeURIComponent(c.name)}&year=${encodeURIComponent(y.y)}` }}
+                to={{ kind: "finder", query: `champ=${encodeURIComponent(cSlug)}&year=${encodeURIComponent(y.y)}` }}
                 className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums text-right shrink-0 whitespace-nowrap min-w-44"
                 title={tl("Game finder")}
               >
