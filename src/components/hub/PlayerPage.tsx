@@ -117,8 +117,28 @@ const PlayerView: React.FC<{
   const routeQuery = nowRoute.kind === "player" && nowRoute.slug === p.u ? nowRoute.query : undefined;
   const urlParams = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
   const champParam = urlParams.get("champ");
-  const pParam = urlParams.get("p");
-  const qParam = urlParams.get("q") || urlParams.get("vs") || "";
+  const rawPeriod = urlParams.get("p") || urlParams.get("period");
+  const rawYear = urlParams.get("y") || urlParams.get("year");
+  const rawEvent = urlParams.get("event");
+  const rawPatch = urlParams.get("patch");
+  const pParam =
+    rawPeriod && /^y:?(\d{4})$/.test(rawPeriod)
+      ? `y${/^y:?(\d{4})$/.exec(rawPeriod)![1]}`
+      : rawPeriod && /^\d{4}$/.test(rawPeriod)
+        ? `y${rawPeriod}`
+        : rawPeriod ||
+          (rawYear && /^\d{4}$/.test(rawYear)
+            ? `y${rawYear}`
+            : rawEvent
+              ? rawEvent.startsWith("e:")
+                ? rawEvent
+                : `e:${rawEvent}`
+              : rawPatch
+                ? rawPatch.startsWith("p:")
+                  ? rawPatch
+                  : `p:${rawPatch.replace(/^p/i, "")}`
+                : null);
+  const qParam = urlParams.get("q") || urlParams.get("vs") || urlParams.get("team") || urlParams.get("event") || "";
   const [allEvents, setAllEvents] = useState(false);
   const [eventSearch, setEventSearch] = useState(qParam);
   useEffect(() => {

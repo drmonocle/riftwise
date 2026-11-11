@@ -10,6 +10,7 @@ import React, { useEffect, useId, useMemo, useState } from "react";
 import { tl, tc, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
 import { bare, loadPlayerGames, loadPlayerGames2y, matchesChampSearch, normText, prettySlug, resolveTeamAlias } from "../../hub/data";
+import { matchesPeriodEvent } from "../../hub/period";
 import { currentHubRoute } from "../../hub/route";
 import { playerRowLine, rateLine, type RatingFile } from "../../hub/playerRating";
 import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
@@ -603,8 +604,28 @@ export const PlayerOpponents: React.FC<{
 
   const rawRows = givenRows || loaded.data || [];
 
+  const nowRoute = currentHubRoute();
+  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
+
   // Quick tournament / year filter pills when rendered standalone on PlayerPage Overview
-  const [scope, setScope] = useState<string>("all");
+  const parseUrlScope = (rq?: string): string => {
+    const p = new URLSearchParams(rq ?? (typeof window !== "undefined" ? window.location.search : ""));
+    const raw = (p.get("p") || p.get("period") || "").trim();
+    if (/^y:?(\d{4})$/.test(raw)) return `y${/^y:?(\d{4})$/.exec(raw)![1]}`;
+    if (/^\d{4}$/.test(raw)) return `y${raw}`;
+    if (raw.startsWith("e:") && raw.length > 2) return raw;
+    const yr = (p.get("y") || p.get("year") || "").trim();
+    if (/^\d{4}$/.test(yr)) return `y${yr}`;
+    const ev = (p.get("event") || "").trim();
+    if (ev) return ev.startsWith("e:") ? ev : `e:${ev}`;
+    return "all";
+  };
+  const [scope, setScope] = useState<string>(() => (givenRows ? "all" : parseUrlScope(routeQuery)));
+  useEffect(() => {
+    if (givenRows) return;
+    const next = parseUrlScope(routeQuery);
+    if (next !== "all") setScope(next);
+  }, [givenRows, routeQuery]);
   const scopePills = useMemo(() => {
     if (givenRows || !rawRows.length) return [];
     const years = new Map<string, number>();
@@ -624,24 +645,34 @@ export const PlayerOpponents: React.FC<{
     const yrList = [...years.entries()]
       .sort((a, b) => b[0].localeCompare(a[0]))
       .slice(0, 2)
-      .map(([y]) => ({ key: `y:${y}`, label: y }));
+      .map(([y]) => ({ key: `y${y}`, label: y }));
     const evList = [...events.values()]
       .filter((e) => e.g >= 4)
       .sort((a, b) => b.last.localeCompare(a.last))
       .slice(0, 4)
       .map((e) => ({ key: `e:${e.slug}`, label: eventTitle(e.name) }));
-    return [...yrList, ...evList];
-  }, [givenRows, rawRows]);
+    const pills = [...yrList, ...evList];
+    if (scope !== "all" && !pills.some((p) => p.key === scope)) {
+      if (/^y\d{4}$/.test(scope) && years.has(scope.slice(1))) {
+        pills.unshift({ key: scope, label: scope.slice(1) });
+      } else if (scope.startsWith("e:")) {
+        const es = scope.slice(2);
+        const hit = [...events.values()].find((e) => matchesPeriodEvent(e.slug, e.name, es));
+        if (hit) pills.push({ key: scope, label: eventTitle(hit.name) });
+      }
+    }
+    return pills;
+  }, [givenRows, rawRows, scope]);
 
   const scopedRows = useMemo(() => {
     if (givenRows || scope === "all") return rawRows;
-    if (scope.startsWith("y:")) {
-      const y = scope.slice(2);
+    if (/^y:?(\d{4})$/.test(scope)) {
+      const y = /^y:?(\d{4})$/.exec(scope)![1];
       return rawRows.filter((r) => (r[0] || "").startsWith(y));
     }
     if (scope.startsWith("e:")) {
       const es = scope.slice(2);
-      return rawRows.filter((r) => r[11] === es);
+      return rawRows.filter((r) => matchesPeriodEvent(r[11] || "", r[9] || "", es));
     }
     return rawRows;
   }, [givenRows, rawRows, scope]);
@@ -662,15 +693,13 @@ export const PlayerOpponents: React.FC<{
           ? "kda"
           : metric;
 
-  const nowRoute = currentHubRoute();
-  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
   const [search, setSearch] = useState(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return p.get("vs") || "";
+    return p.get("vs") || p.get("opp") || p.get("team") || p.get("champ") || p.get("q") || "";
   });
   useEffect(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    const v = p.get("vs") || "";
+    const v = p.get("vs") || p.get("opp") || p.get("team") || p.get("champ") || p.get("q") || "";
     if (v) setSearch(v);
   }, [routeQuery]);
   const [showAll, setShowAll] = useState(false);
@@ -1419,11 +1448,11 @@ export const TeamOpponentsChart: React.FC<{
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
   const [search, setSearch] = useState(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return p.get("vs") || "";
+    return p.get("vs") || p.get("opp") || p.get("team") || p.get("q") || "";
   });
   useEffect(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    const v = p.get("vs") || "";
+    const v = p.get("vs") || p.get("opp") || p.get("team") || p.get("q") || "";
     if (v) setSearch(v);
   }, [routeQuery]);
   const [showAll, setShowAll] = useState(false);
@@ -1734,11 +1763,11 @@ export const TeamPeriodOpponents: React.FC<{
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return p.get("vs") || "";
+    return p.get("vs") || p.get("opp") || p.get("team") || p.get("q") || "";
   });
   useEffect(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    const v = p.get("vs") || "";
+    const v = p.get("vs") || p.get("opp") || p.get("team") || p.get("q") || "";
     if (v) setSearch(v);
   }, [routeQuery]);
 

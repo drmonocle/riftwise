@@ -3,7 +3,7 @@
  * and games won, the record against other regions, the best finish and (all years) titles and finals, plus the region
  * against region records. From the event's lines files (each team's region and final place, builds from 2026-10-23 on).
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { tl, regionName } from "../../i18n";
 import type { EventLines } from "../../hub/worldsFacts";
 import { normText } from "../../hub/data";
@@ -15,6 +15,24 @@ import { chanceShade } from "../SwissStandings";
 
 /** A region as fans know it today: renamed leagues count as one (EU is EMEA, LMS became PCS, LAN and LAS became LAT). */
 const MERGE: Record<string, string> = { EU: "EMEA", LMS: "PCS", LAN: "LAT", LAS: "LAT" };
+/** Common league/region search shorthands mapped to canonical region codes for Region vs region filtering. */
+const REGION_SEARCH_ALIASES: Record<string, string> = {
+  KR: "KR korea lck ogn",
+  CN: "CN china lpl",
+  EMEA: "EMEA EU europe lec eulcs",
+  NA: "NA north america lcs lta nalcs",
+  BR: "BR brazil cblol lta",
+  VN: "VN vietnam vcs lcp",
+  JP: "JP japan ljl lcp",
+  TR: "TR turkey tcl",
+  OCE: "OCE oceania lco opl lcp",
+  CIS: "CIS lcl",
+  PCS: "PCS taiwan lms lcp gpl",
+  APAC: "APAC pacific asia-pacific lcp pcs",
+  AME: "AME americas lta lcs cblol lla",
+  LAT: "LAT LAN LAS latin america lla lta",
+  SEA: "SEA southeast asia gpl pcs lcp",
+};
 /** region code -> [translation key, English name, flag] (no flag for regions of many countries) */
 const REGIONS: Record<string, [string, string, string | null]> = {
   KR: ["KOREA", "Korea", "kr"],
@@ -309,7 +327,17 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
     }
     return best;
   }, [files]);
-  const [pairSearch, setPairSearch] = useState("");
+  const nowRoute = currentHubRoute();
+  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
+  const [pairSearch, setPairSearch] = useState(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return p.get("region") || p.get("pair") || "";
+  });
+  useEffect(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    const v = p.get("region") || p.get("pair") || "";
+    if (v) setPairSearch(v);
+  }, [routeQuery]);
   const pairTerms = useMemo(
     () =>
       pairSearch
@@ -323,7 +351,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
     if (!pairTerms.length) return pairs;
     const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
     return pairs.filter((p) => {
-      const hay = normText(`${p.a} ${regionLabel(p.a)} ${p.b} ${regionLabel(p.b)}`);
+      const hay = normText(`${p.a} ${regionLabel(p.a)} ${REGION_SEARCH_ALIASES[p.a] || ""} ${p.b} ${regionLabel(p.b)} ${REGION_SEARCH_ALIASES[p.b] || ""}`);
       const hayBare = bare(hay);
       return pairTerms.some((t) => hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t))));
     });
@@ -809,7 +837,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               >
                 {tl("Player leaderboards")} →
               </HubLink>
-              {pairs.length > 6 && (
+              {(pairs.length > 6 || Boolean(pairSearch.trim())) && (
                 <input
                   type="search"
                   value={pairSearch}

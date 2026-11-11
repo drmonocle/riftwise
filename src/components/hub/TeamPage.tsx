@@ -80,8 +80,29 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
     [routeQuery],
   );
   const asParam = urlParams.get("as") || "";
-  const yParam = urlParams.get("y") || "";
-  const qParam = urlParams.get("q") || urlParams.get("vs") || "";
+  const rawPeriod = urlParams.get("p") || urlParams.get("period") || "";
+  const yParam =
+    urlParams.get("y") ||
+    urlParams.get("year") ||
+    (/^y:?(\d{4})$/.test(rawPeriod) ? /^y:?(\d{4})$/.exec(rawPeriod)![1] : /^\d{4}$/.test(rawPeriod) ? rawPeriod : "");
+  const pParam =
+    rawPeriod && /^y:?(\d{4})$/.test(rawPeriod)
+      ? `y${/^y:?(\d{4})$/.exec(rawPeriod)![1]}`
+      : rawPeriod && /^\d{4}$/.test(rawPeriod)
+        ? `y${rawPeriod}`
+        : rawPeriod ||
+          (yParam && /^\d{4}$/.test(yParam)
+            ? `y${yParam}`
+            : urlParams.get("event")
+              ? urlParams.get("event")!.startsWith("e:")
+                ? urlParams.get("event")!
+                : `e:${urlParams.get("event")!}`
+              : urlParams.get("patch")
+                ? urlParams.get("patch")!.startsWith("p:")
+                  ? urlParams.get("patch")!
+                  : `p:${urlParams.get("patch")!.replace(/^p/i, "")}`
+                : "");
+  const qParam = urlParams.get("q") || urlParams.get("vs") || urlParams.get("team") || urlParams.get("event") || "";
   const [allEvents, setAllEvents] = useState(false);
   const [eventSearch, setEventSearch] = useState(qParam);
   useEffect(() => {
@@ -1185,7 +1206,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 section={tl("Tournaments")}
                 name={t.name}
                 rows={() =>
-                  t.events
+                  filteredEvents
                     .filter((x) => !hiddenCheck(`team-event:${x.e}`, x.date))
                     .map((x, idx) => ({
                       rank: idx + 1,
@@ -1226,7 +1247,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           slug={t.u}
           teamName={t.name}
           initialQ={qParam}
-          initialYear={yParam || (urlParams.get("p")?.startsWith("y") ? urlParams.get("p")!.slice(1) : undefined)}
+          initialYear={yParam || undefined}
         />
       )}
 
@@ -1241,7 +1262,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
       {tab === "champions" && (
         <TeamChampionsTab
           t={t}
-          initialPeriod={urlParams.get("p") || (rosterYear && rosterYear !== t.roster[0]?.y ? `y${rosterYear}` : "all")}
+          initialPeriod={pParam || (rosterYear && rosterYear !== t.roster[0]?.y ? `y${rosterYear}` : "all")}
           initialChamp={urlParams.get("champ")}
           initialSearch={qParam}
           asParam={asParam}

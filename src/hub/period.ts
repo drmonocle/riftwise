@@ -103,7 +103,7 @@ export function inPeriod<T>(rows: T[], key: PeriodKey, get: (r: T) => { date: st
   if (!key || key === "all") return rows;
   const last = /^last(\d+)$/.exec(key);
   if (last) return rows.slice(0, Number(last[1]));
-  if (key.startsWith("y")) return rows.filter((r) => get(r).date.startsWith(key.slice(1)));
+  if (key.startsWith("y")) return rows.filter((r) => get(r).date.startsWith(key.startsWith("y:") ? key.slice(2) : key.slice(1)));
   if (key.startsWith("p:")) return rows.filter((r) => get(r).patch === key.slice(2));
   if (key.startsWith("e:")) {
     const ev = key.slice(2);
