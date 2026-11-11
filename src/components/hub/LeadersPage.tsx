@@ -127,6 +127,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   };
 
   const maxG = useMemo(() => Math.max(1, ...shownRows.map((p) => p.g)), [shownRows]);
+  const periodQ = `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`;
   const columns: Column<EventPlayer>[] = [
     {
       key: "n",
@@ -134,15 +135,15 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       value: (p) => p.n,
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-          <HubLink to={{ kind: "player", slug: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n) }} title={p.n} className="shrink-0">
+          <HubLink to={{ kind: "player", slug: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n), query: periodQ }} title={p.n} className="shrink-0">
             <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
           </HubLink>
-          <PlayerLink name={p.n} u={p.u} className="text-rw-text hover:text-rw-accent font-semibold" />
+          <PlayerLink name={p.n} u={p.u} query={periodQ} className="text-rw-text hover:text-rw-accent font-semibold" />
           <span className="inline-flex items-center gap-1 text-[10px] text-rw-muted">
-            <HubLink to={{ kind: "team", slug: p.tu || resolveTeamAlias(p.t, aliases.data?.team) || prettySlug(p.t) }} title={p.t} className="shrink-0">
+            <HubLink to={{ kind: "team", slug: p.tu || resolveTeamAlias(p.t, aliases.data?.team) || prettySlug(p.t), query: periodQ }} title={p.t} className="shrink-0">
               <TeamLogo name={p.t} size={13} />
             </HubLink>
-            <TeamLink name={p.t} u={p.tu} className="text-rw-muted hover:text-rw-accent" />
+            <TeamLink name={p.t} u={p.tu} query={periodQ} className="text-rw-muted hover:text-rw-accent" />
           </span>
           {p.c && p.c.length > 0 && (
             <span className="hidden lg:inline-flex items-center gap-0.5 ml-0.5">
@@ -419,6 +420,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                   kind: "items",
                   query: new URLSearchParams({
                     player: shownRows[0].u,
+                    ...(shownRows[1]?.u && shownRows[1].u !== shownRows[0].u ? { vsplayer: shownRows[1].u } : {}),
                     ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
                     ...(shownRows[0].tu || shownRows[0].t
                       ? { team: shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t) }
@@ -440,7 +442,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                   kind: "finder",
                   query: new URLSearchParams({
                     player: shownRows[0].u,
-                    ...(shownRows.length === 2 && shownRows[1]?.u && shownRows[1].u !== shownRows[0].u ? { vsplayer: shownRows[1].u } : {}),
+                    ...(shownRows[1]?.u && shownRows[1].u !== shownRows[0].u ? { vsplayer: shownRows[1].u } : {}),
                     ...(league ? { league } : {}),
                     ...(year ? { year } : {}),
                     ...(event ? { event } : {}),
@@ -478,7 +480,15 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     ...(year ? { key: `y${year}`, year } : {}),
                     ...(event ? { event } : {}),
                     ...(role || shownRows[0].r ? { role: role || shownRows[0].r } : {}),
-                    ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
+                    ...(q.get("champ") || shownRows[0]?.c?.[0]
+                      ? {
+                          q: [q.get("champ") || shownRows[0]?.c?.[0], shownRows[1]?.c?.[0]]
+                            .filter(Boolean)
+                            .map((c) => resolveChampSlug(c!))
+                            .filter((v, i, a) => a.indexOf(v) === i)
+                            .join(","),
+                        }
+                      : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -592,6 +602,9 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                            kind: "items",
                            query: new URLSearchParams({
                              player: top2[0].u || resolvePlayerSlug(top2[0].n) || prettySlug(top2[0].n),
+                             ...(top2[1] && (top2[1].u || resolvePlayerSlug(top2[1].n) || prettySlug(top2[1].n)) !== (top2[0].u || resolvePlayerSlug(top2[0].n) || prettySlug(top2[0].n))
+                               ? { vsplayer: top2[1].u || resolvePlayerSlug(top2[1].n) || prettySlug(top2[1].n) }
+                               : {}),
                              ...(q.get("champ") || top2[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || top2[0].c![0]) } : {}),
                              ...(top2[0].tu || top2[0].t
                                ? { team: top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t) }
@@ -672,7 +685,15 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(year ? { key: `y${year}`, year } : {}),
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
-                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
+                      ...(q.get("champ") || shownRows[0]?.c?.[0]
+                        ? {
+                            q: [q.get("champ") || shownRows[0]?.c?.[0], shownRows[1]?.c?.[0]]
+                              .filter(Boolean)
+                              .map((c) => resolveChampSlug(c!))
+                              .filter((v, i, a) => a.indexOf(v) === i)
+                              .join(","),
+                          }
+                        : {}),
                     }).toString(),
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
@@ -694,8 +715,16 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                           }
                         : {}),
                       p: event ? `e:${event}` : `y${year}`,
-                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
-                      ...(role ? { role } : {}),
+                      ...(q.get("champ") || shownRows[0]?.c?.[0]
+                        ? {
+                            champ: [q.get("champ") || shownRows[0]?.c?.[0], shownRows[1]?.c?.[0]]
+                              .filter(Boolean)
+                              .map((c) => resolveChampSlug(c!))
+                              .filter((v, i, a) => a.indexOf(v) === i)
+                              .join(","),
+                          }
+                        : {}),
+                      ...(role || shownRows[0]?.r ? { role: role || shownRows[0].r } : {}),
                     }).toString(),
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
@@ -708,7 +737,12 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     query:
                       new URLSearchParams({
                         ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || shownRows[0]!.c![0]) } : {}),
-                        ...(role ? { role } : {}),
+                        ...(shownRows[1]?.c?.[0] &&
+                        (q.get("champ") || shownRows[0]?.c?.[0]) &&
+                        resolveChampSlug(shownRows[1].c[0]) !== resolveChampSlug((q.get("champ") || shownRows[0]!.c![0])!)
+                          ? { vs: resolveChampSlug(shownRows[1].c[0]) }
+                          : {}),
+                        ...(role || shownRows[0]?.r ? { role: role || shownRows[0].r } : {}),
                         ...(event ? { event } : year ? { patch: `y${year}`, year } : {}),
                       }).toString() || undefined,
                   }}
@@ -723,12 +757,14 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),
-                      ...(role ? { role } : {}),
+                      ...(role || shownRows[0]?.r ? { role: role || shownRows[0].r } : {}),
                       ...(q.get("champ") ? { champ: resolveChampSlug(q.get("champ")!) } : {}),
-                      ...((search.trim() || shownRows.length === 1) && shownRows[0]
+                      ...(shownRows[0]
                         ? { player: shownRows[0].u || resolvePlayerSlug(shownRows[0].n) || prettySlug(shownRows[0].n) }
                         : {}),
-                      ...(search.trim() && shownRows.length === 2 && shownRows[1]
+                      ...(shownRows[1] &&
+                      (shownRows[1].u || resolvePlayerSlug(shownRows[1].n) || prettySlug(shownRows[1].n)) !==
+                        (shownRows[0]?.u || resolvePlayerSlug(shownRows[0]?.n || "") || prettySlug(shownRows[0]?.n || ""))
                         ? { vsplayer: shownRows[1].u || resolvePlayerSlug(shownRows[1].n) || prettySlug(shownRows[1].n) }
                         : {}),
                     }).toString(),
@@ -873,7 +909,15 @@ const LeaderSpotlight: React.FC<{
           }`}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <HubLink to={{ kind: "player", slug: c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n) }} title={c.top.n} className="shrink-0">
+            <HubLink
+              to={{
+                kind: "player",
+                slug: c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n),
+                ...(event || year ? { query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}` } : {}),
+              }}
+              title={c.top.n}
+              className="shrink-0"
+            >
               <PlayerPhoto name={c.top.n} team={c.top.t} slug={c.top.u ?? undefined} size={22} />
             </HubLink>
             <div className="min-w-0">
@@ -889,13 +933,31 @@ const LeaderSpotlight: React.FC<{
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{c.label}</div>
               )}
               <div className="mt-0.5 truncate">
-                <PlayerLink name={c.top.n} u={c.top.u} className="font-semibold text-rw-text hover:text-rw-accent" />
+                <PlayerLink
+                  name={c.top.n}
+                  u={c.top.u}
+                  query={event || year ? `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}` : undefined}
+                  className="font-semibold text-rw-text hover:text-rw-accent"
+                />
               </div>
               <div className="text-[10px] text-rw-muted flex items-center gap-1 min-w-0">
-                <HubLink to={{ kind: "team", slug: c.top.tu || resolveTeamAlias(c.top.t) || prettySlug(c.top.t) }} title={c.top.t} className="shrink-0">
+                <HubLink
+                  to={{
+                    kind: "team",
+                    slug: c.top.tu || resolveTeamAlias(c.top.t) || prettySlug(c.top.t),
+                    ...(event || year ? { query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}` } : {}),
+                  }}
+                  title={c.top.t}
+                  className="shrink-0"
+                >
                   <TeamLogo name={c.top.t} size={12} />
                 </HubLink>
-                <TeamLink name={c.top.t} u={c.top.tu} className="text-rw-muted hover:text-rw-accent truncate" />
+                <TeamLink
+                  name={c.top.t}
+                  u={c.top.tu}
+                  query={event || year ? `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}` : undefined}
+                  className="text-rw-muted hover:text-rw-accent truncate"
+                />
                 <span className="shrink-0">
                   ·{" "}
                   {c.top.u ? (

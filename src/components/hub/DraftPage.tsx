@@ -435,7 +435,13 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
             <p className="text-rw-text font-semibold">{tl("Draft board")}</p>
             {(rawInitChamp || resolvedInitRole) && (
               <span className="inline-flex flex-wrap items-center gap-2 text-[11px] text-rw-sub">
-                {rawInitChamp && <ChampLink name={rawInitChamp} size={16} />}
+                {rawInitChamp
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .map((c) => (
+                    <ChampLink key={c} name={c} size={16} />
+                  ))}
                 {resolvedInitRole && ROLES.includes(resolvedInitRole) && (
                   <span className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-rw-accent font-semibold">
                     {roleName(resolvedInitRole)}
@@ -464,15 +470,25 @@ export const DraftPage: React.FC<{ query?: string }> = ({ query }) => {
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="inline-flex items-center gap-1.5 font-semibold text-rw-text min-w-0">
                       {label && <TeamLogo name={label} size={18} />}
-                      <HubLink to={{ kind: "team", slug }} className="truncate hover:text-rw-accent hover:underline">
+                      <HubLink
+                        to={{
+                          kind: "team",
+                          slug,
+                          ...((q.get("p") || q.get("period")) && (q.get("p") || q.get("period")) !== "all"
+                            ? { query: `p=${encodeURIComponent((q.get("p") || q.get("period"))!)}` }
+                            : {}),
+                        }}
+                        className="truncate hover:text-rw-accent hover:underline"
+                      >
                         {label}
                       </HubLink>
                     </span>
                     <span className="flex flex-wrap items-center gap-2 shrink-0 text-[11px]">
                       {(() => {
                         const rawP = (q.get("p") || q.get("period") || "") as PeriodKey;
-                        const topChamp = side?.team.champs[0]?.c;
-                        const vsChamp = side?.team.champs[1]?.c;
+                        const initChamps = rawInitChamp.split(",").map((s) => s.trim()).filter(Boolean);
+                        const topChamp = initChamps[0] || side?.team.champs[0]?.c;
+                        const vsChamp = initChamps[1] || side?.team.champs[1]?.c;
                         const lg = side?.team.rating?.league ? resolveLeagueSlug(side.team.rating.league) || side.team.rating.league : "";
                         return (
                           <>
@@ -822,7 +838,8 @@ const Board: React.FC<{
 
   useEffect(() => {
     if (!initChamp) return;
-    const hit = all.find((c) => sameChamp(c, initChamp)) || all.find((c) => matchesChampSearch(c, initChamp));
+    const firstChamp = initChamp.split(",").map((s) => s.trim()).filter(Boolean)[0] || initChamp;
+    const hit = all.find((c) => sameChamp(c, firstChamp)) || all.find((c) => matchesChampSearch(c, firstChamp));
     if (hit) setFocus(hit);
   }, [initChamp, all]);
 
@@ -1060,7 +1077,10 @@ const Board: React.FC<{
             {gameNum != null && gameNum >= 1 ? ` · ${tl("Game {n}", { n: gameNum })}` : ""}
           </div>
           <h1 className="text-lg font-bold flex flex-wrap items-center gap-2 min-w-0">
-            <HubLink to={{ kind: "team", slug: blue.team.u }} className="inline-flex items-center gap-1.5 min-w-0 text-rw-side-a hover:underline">
+            <HubLink
+              to={{ kind: "team", slug: blue.team.u, ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+              className="inline-flex items-center gap-1.5 min-w-0 text-rw-side-a hover:underline"
+            >
               <TeamLogo name={blue.team.name} size={22} />
               <span className="truncate">{blue.team.name}</span>
             </HubLink>
@@ -1071,7 +1091,10 @@ const Board: React.FC<{
             >
               vs
             </HubLink>
-            <HubLink to={{ kind: "team", slug: red.team.u }} className="inline-flex items-center gap-1.5 min-w-0 text-rw-side-b hover:underline">
+            <HubLink
+              to={{ kind: "team", slug: red.team.u, ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+              className="inline-flex items-center gap-1.5 min-w-0 text-rw-side-b hover:underline"
+            >
               <TeamLogo name={red.team.name} size={22} />
               <span className="truncate">{red.team.name}</span>
             </HubLink>
@@ -1180,9 +1203,10 @@ const Board: React.FC<{
             to={{
               kind: "tiers",
               ...(() => {
-                const c0 = focus || picksOf("b")[0] || picksOf("r")[0];
+                const c0 = focus || picksOf("b")[0] || picksOf("r")[0] || shown[0];
+                const c1 = picksOf("b")[0] && picksOf("r")[0] && picksOf("b")[0] !== picksOf("r")[0] ? (c0 === picksOf("b")[0] ? picksOf("r")[0] : picksOf("b")[0]) : undefined;
                 const qStr = new URLSearchParams({
-                  ...(c0 ? { q: resolveChampSlug(c0) } : {}),
+                  ...(c0 ? { q: [c0, c1].filter(Boolean).map((x) => resolveChampSlug(x!)).join(",") } : {}),
                   ...(blue.team.rating?.league && blue.team.rating.league === red.team.rating?.league
                     ? (() => {
                         const lg = resolveLeagueSlug(blue.team.rating.league) || blue.team.rating.league;
@@ -1210,6 +1234,8 @@ const Board: React.FC<{
               kind: "items",
               ...(() => {
                 const c0 = focus || picksOf("b")[0] || picksOf("r")[0] || shown[0];
+                const bWho = c0 ? champOf(c0, pools.b)?.u : undefined;
+                const rWho = c0 ? champOf(c0, pools.r)?.u : undefined;
                 const yr = period.startsWith("y") && period.length === 5 ? period.slice(1) : "";
                 const ev = period.startsWith("e:") ? resolveEventSlug(period.slice(2)) : "";
                 const pt = period.startsWith("p:") ? period.slice(2) : "";
@@ -1217,6 +1243,8 @@ const Board: React.FC<{
                   query: new URLSearchParams({
                     team: blue.team.u,
                     vs: red.team.u,
+                    ...(bWho || rWho ? { player: (bWho || rWho)! } : {}),
+                    ...(bWho && rWho && bWho !== rWho ? { vsplayer: rWho } : {}),
                     ...(c0 ? { champ: resolveChampSlug(c0) } : {}),
                     ...(typeof role === "number" ? { role: ROLES[role] } : {}),
                     ...(pt ? { patch: pt } : {}),
@@ -2055,6 +2083,7 @@ const DraftMatchupPanel: React.FC<{
                   team: blue.team.u,
                   vs: red.team.u,
                   ...(activeLane?.bPlayer?.u || activeLane?.rPlayer?.u ? { player: (activeLane.bPlayer?.u || activeLane.rPlayer?.u)! } : {}),
+                  ...(activeLane?.bPlayer?.u && activeLane?.rPlayer?.u && activeLane.bPlayer.u !== activeLane.rPlayer.u ? { vsplayer: activeLane.rPlayer.u } : {}),
                   ...(activeLane?.rKey ? { role: activeLane.rKey } : {}),
                   ...(activeChamp ? { champ: resolveChampSlug(activeChamp) } : {}),
                   ...(period.startsWith("p:")
@@ -2303,6 +2332,7 @@ const DraftMatchupPanel: React.FC<{
                           team: blue.team.u,
                           vs: red.team.u,
                           ...(bPlayer?.u ? { player: bPlayer.u } : {}),
+                          ...(rPlayer?.u && rPlayer.u !== bPlayer?.u ? { vsplayer: rPlayer.u } : {}),
                           ...(period.startsWith("p:")
                             ? { patch: period.slice(2) }
                             : period.startsWith("y") && period.length === 5
@@ -2732,6 +2762,7 @@ const PlayerPools: React.FC<{
                 kind: "counters",
                 query: new URLSearchParams({
                   champ: resolveChampSlug(rows[0].champs[0].c),
+                  ...(rows[0].champs[1]?.c ? { vs: resolveChampSlug(rows[0].champs[1].c) } : {}),
                   role: ROLES[rows[0].role],
                   ...(period.startsWith("y") && period.length === 5
                     ? { patch: period, year: period.slice(1) }
@@ -2753,6 +2784,9 @@ const PlayerPools: React.FC<{
                 kind: "items",
                 query: new URLSearchParams({
                   player: rows[0].u,
+                  ...(other?.players[rows[0].role]?.p.u && other.players[rows[0].role]!.p.u !== rows[0].u
+                    ? { vsplayer: other.players[rows[0].role]!.p.u! }
+                    : {}),
                   team: side.team.u,
                   ...(other ? { vs: other.team.u } : {}),
                   role: ROLES[rows[0].role],
@@ -2866,7 +2900,7 @@ const PlayerPools: React.FC<{
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(side.team.u)}${
+              query: `team=${encodeURIComponent(side.team.u)}${other ? `&vs=${encodeURIComponent(other.team.u)}` : ""}${
                 period.startsWith("y")
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
@@ -3621,7 +3655,7 @@ const Priorities: React.FC<{
               kind: "tiers",
               query:
                 new URLSearchParams({
-                  ...(open[0] ? { q: resolveChampSlug(open[0][0]) } : {}),
+                  ...(open[0] ? { q: open.slice(0, 2).map((x) => resolveChampSlug(x[0])).join(",") } : {}),
                   ...(open[0] && p.roles.get(open[0][0])?.size === 1 ? { role: ROLES[[...p.roles.get(open[0][0])!][0]] } : {}),
                   ...(side.team.rating?.league
                     ? (() => {
@@ -3709,7 +3743,7 @@ const Priorities: React.FC<{
           <HubLink
             to={{
               kind: "finder",
-              query: `team=${encodeURIComponent(side.team.u)}${
+              query: `team=${encodeURIComponent(side.team.u)}${otherSide ? `&vs=${encodeURIComponent(otherSide.team.u)}` : ""}${
                 period.startsWith("y")
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
