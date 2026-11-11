@@ -155,7 +155,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; yea
                 ? {
                     query: new URLSearchParams({
                       ...(lg ? { scope: lg, league: lg } : {}),
-                      ...(year ? { key: `y${year}` } : {}),
+                      ...(year ? { key: `y${year}`, year } : {}),
                     }).toString(),
                   }
                 : {}),
@@ -484,7 +484,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           const q = new URLSearchParams({
                             scope: lg,
                             league: lg,
-                            ...(yr ? { key: `y${yr}` } : {}),
+                            ...(yr ? { key: `y${yr}`, year: yr } : {}),
                           }).toString();
                           navigateHub({
                             kind: "tiers",

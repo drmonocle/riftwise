@@ -399,14 +399,12 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
               const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
-              const patchKey = win.gameMetadata.patchVersion
-                ? `p${win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".")}`
-                : yr
-                  ? `y${yr}`
-                  : "";
+              const patchNum = win.gameMetadata.patchVersion ? win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".") : "";
+              const patchKey = patchNum ? `p${patchNum}` : yr ? `y${yr}` : "";
               const q = new URLSearchParams({
                 ...(lg ? { scope: lg, league: lg } : {}),
                 ...(patchKey ? { key: patchKey } : {}),
+                ...(patchNum ? { patch: patchNum } : yr ? { year: yr } : {}),
               }).toString();
               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
             }}
@@ -477,9 +475,11 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
               type="button"
               onClick={() => {
                 const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
+                const patchNum = win.gameMetadata.patchVersion!.split(".").slice(0, 2).join(".");
                 const q = new URLSearchParams({
                   ...(lg ? { scope: lg, league: lg } : {}),
-                  key: `p${win.gameMetadata.patchVersion!.split(".").slice(0, 2).join(".")}`,
+                  key: `p${patchNum}`,
+                  patch: patchNum,
                 }).toString();
                 navigateHub({ kind: "champions", query: q });
               }}
@@ -522,7 +522,14 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
 
       {open && (
         <div className="space-y-3">
-          <Players left={left} right={right} details={state.details} year={match.startTimeUtc?.slice(0, 4)} league={resolveLeagueSlug(match.leagueSlug || match.leagueName) || undefined} />
+          <Players
+            left={left}
+            right={right}
+            details={state.details}
+            year={match.startTimeUtc?.slice(0, 4)}
+            league={resolveLeagueSlug(match.leagueSlug || match.leagueName) || undefined}
+            patch={win.gameMetadata.patchVersion ? win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".") : undefined}
+          />
           {!finished && <p className="text-[10px] text-rw-muted">{tl("From Riot's live stats feed, about a minute behind the broadcast.")}</p>}
         </div>
       )}
@@ -775,7 +782,7 @@ const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: stri
   );
 };
 
-const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsParticipant[] | null; year?: string; league?: string }> = ({ left, right, details, year, league }) => {
+const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsParticipant[] | null; year?: string; league?: string; patch?: string }> = ({ left, right, details, year, league, patch }) => {
   const byRole = (side: SideInfo) =>
     ROLE_ORDER.map((role) => {
       const meta = side.meta.find((p) => p.role === role);
@@ -801,7 +808,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
             const lShare = lf && rf && lf.totalGold + rf.totalGold > 0 ? Math.round((lf.totalGold / (lf.totalGold + rf.totalGold)) * 100) : 50;
             return (
               <tr key={role} className="border-t border-rw-border/60">
-                <PlayerCells p={l[i]} teamName={left.name} align="left" year={year} league={league} />
+                <PlayerCells p={l[i]} teamName={left.name} align="left" year={year} league={league} patch={patch} />
                 <td className="px-1 text-center text-[9px] uppercase text-rw-muted min-w-14 whitespace-nowrap align-middle">
                   {l[i].meta && r[i].meta ? (
                     <button
@@ -857,7 +864,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                       onClick={() =>
                         navigateHub({
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(l[i].meta!.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(r[i].meta!.championId)))}&role=${encodeURIComponent(ROLE_LABEL[role])}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                          query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(l[i].meta!.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(r[i].meta!.championId)))}&role=${encodeURIComponent(ROLE_LABEL[role])}${patch ? `&patch=${encodeURIComponent(patch)}` : year ? `&patch=y${encodeURIComponent(year)}` : ""}`,
                         })
                       }
                       className="block w-full text-[9px] normal-case text-rw-muted hover:text-rw-accent hover:underline mt-0.5"
@@ -867,7 +874,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                     </button>
                   )}
                 </td>
-                <PlayerCells p={r[i]} teamName={right.name} align="right" year={year} league={league} />
+                <PlayerCells p={r[i]} teamName={right.name} align="right" year={year} league={league} patch={patch} />
               </tr>
             );
           })}
@@ -879,7 +886,7 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
 
 type PlayerRow = { meta?: LiveParticipantMeta; frame?: LiveFrame["blueTeam"]["participants"][number]; det?: LiveDetailsParticipant };
 
-const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "right"; year?: string; league?: string }> = ({ p, teamName, align, year, league }) => {
+const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "right"; year?: string; league?: string; patch?: string }> = ({ p, teamName, align, year, league, patch }) => {
   if (!p.meta || !p.frame) return <td className="py-1" />;
   const icon = champIcon(p.meta.championId);
   const items = (p.det?.items || []).filter((id) => id > 0).slice(0, 7);
@@ -926,6 +933,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
                     player: playerSlug(pName),
                     champ: resolveChampSlug(champNameById(p.meta!.championId)),
                     ...(league ? { league } : {}),
+                    ...(patch ? { patch } : {}),
                     ...(year ? { year } : {}),
                   }).toString(),
                 })
@@ -1324,14 +1332,12 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
               const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
-              const patchKey = win.gameMetadata.patchVersion
-                ? `p${win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".")}`
-                : yr
-                  ? `y${yr}`
-                  : "";
+              const patchNum = win.gameMetadata.patchVersion ? win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".") : "";
+              const patchKey = patchNum ? `p${patchNum}` : yr ? `y${yr}` : "";
               const q = new URLSearchParams({
                 ...(lg ? { scope: lg, league: lg } : {}),
                 ...(patchKey ? { key: patchKey } : {}),
+                ...(patchNum ? { patch: patchNum } : yr ? { year: yr } : {}),
               }).toString();
               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
             }}
@@ -1453,12 +1459,13 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                 {p?.championId && q?.championId && champNameById(p.championId) && champNameById(q.championId) && (
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      const patchNum = meta.patchVersion ? meta.patchVersion.split(".").slice(0, 2).join(".") : "";
                       navigateHub({
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(p.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(q.championId)))}&role=${encodeURIComponent(ROLE_LABEL[p.role] || p.role)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
-                      })
-                    }
+                        query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(p.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(q.championId)))}&role=${encodeURIComponent(ROLE_LABEL[p.role] || p.role)}${patchNum ? `&patch=${encodeURIComponent(patchNum)}` : yr ? `&patch=y${encodeURIComponent(yr)}` : ""}`,
+                      });
+                    }}
                     className="text-[8px] text-rw-sub hover:text-rw-accent hover:underline text-center"
                     title={tl("Counters")}
                   >

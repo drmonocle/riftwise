@@ -146,7 +146,7 @@ export const RosterMoves: React.FC = () => {
                     ? {
                         query: new URLSearchParams({
                           ...(lg0 ? { scope: lg0, league: lg0 } : {}),
-                          ...(yr0 ? { key: `y${yr0}` } : {}),
+                          ...(yr0 ? { key: `y${yr0}`, year: yr0 } : {}),
                           ...(role0 ? { role: role0 } : {}),
                         }).toString(),
                       }

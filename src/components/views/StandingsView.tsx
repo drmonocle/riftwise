@@ -229,7 +229,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       query: new URLSearchParams({
                         scope: lg,
                         league: lg,
-                        ...(yr ? { key: `y${yr}` } : {}),
+                        ...(yr ? { key: `y${yr}`, year: yr } : {}),
                       }).toString(),
                     })
                   }
@@ -245,7 +245,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                       query: new URLSearchParams({
                         scope: lg,
                         league: lg,
-                        ...(yr ? { key: `y${yr}` } : {}),
+                        ...(yr ? { key: `y${yr}`, year: yr } : {}),
                       }).toString(),
                     })
                   }
@@ -464,7 +464,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 const lg = activeLeague ? resolveLeagueSlug(activeLeague) : "";
                                 const q = new URLSearchParams({
                                   ...(lg ? { scope: lg, league: lg } : {}),
-                                  ...(yr ? { key: `y${yr}` } : {}),
+                                  ...(yr ? { key: `y${yr}`, year: yr } : {}),
                                 }).toString();
                                 navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
                               }}
@@ -558,7 +558,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               const lg = activeLeague ? resolveLeagueSlug(activeLeague) : "";
                               const q = new URLSearchParams({
                                 ...(lg ? { scope: lg, league: lg } : {}),
-                                ...(yr ? { key: `y${yr}` } : {}),
+                                ...(yr ? { key: `y${yr}`, year: yr } : {}),
                               }).toString();
                               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
                             }}
@@ -809,7 +809,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               const lg = activeLeague ? resolveLeagueSlug(activeLeague) : "";
                               const q = new URLSearchParams({
                                 ...(lg ? { scope: lg, league: lg } : {}),
-                                ...(yr ? { key: `y${yr}` } : {}),
+                                ...(yr ? { key: `y${yr}`, year: yr } : {}),
                               }).toString();
                               navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
                             }}

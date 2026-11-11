@@ -404,11 +404,11 @@ export const LiveNextGamePreview: React.FC<{
                       ? { scope: resolveLeagueSlug(match.leagueSlug || match.leagueName), league: resolveLeagueSlug(match.leagueSlug || match.leagueName) }
                       : {}),
                     ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5
-                      ? { key: draftIntel.period }
+                      ? { key: draftIntel.period, year: draftIntel.period.slice(1) }
                       : draftIntel.period.startsWith("e:")
                         ? { event: draftIntel.period.slice(2) }
                         : draftIntel.period.startsWith("p:")
-                          ? { key: `p${draftIntel.period.slice(2)}` }
+                          ? { key: `p${draftIntel.period.slice(2)}`, patch: draftIntel.period.slice(2) }
                           : {}),
                     ...(draftIntel.rolesA[0]?.open[0]?.c || draftIntel.rolesB[0]?.open[0]?.c
                       ? { q: [draftIntel.rolesA[0]?.open[0]?.c, draftIntel.rolesB[0]?.open[0]?.c].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",") }
@@ -680,7 +680,18 @@ export const LiveNextGamePreview: React.FC<{
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(ra.open[0].c))}&vs=${encodeURIComponent(resolveChampSlug(rb.open[0].c))}&role=${encodeURIComponent(rLabel)}${draftIntel.period.startsWith("y") && draftIntel.period.length === 5 ? `&year=${encodeURIComponent(draftIntel.period.slice(1))}` : ""}`,
+                          query: new URLSearchParams({
+                            champ: resolveChampSlug(ra.open[0].c),
+                            vs: resolveChampSlug(rb.open[0].c),
+                            role: rLabel,
+                            ...(draftIntel.period.startsWith("p:")
+                              ? { patch: draftIntel.period.slice(2) }
+                              : draftIntel.period.startsWith("y") && draftIntel.period.length === 5
+                                ? { patch: draftIntel.period }
+                                : draftIntel.period.startsWith("e:")
+                                  ? { event: draftIntel.period.slice(2) }
+                                  : {}),
+                          }).toString(),
                         }}
                         className="text-[8px] text-rw-sub hover:text-rw-accent hover:underline text-center"
                         title={tl("Counters")}
