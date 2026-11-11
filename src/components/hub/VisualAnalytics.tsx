@@ -254,11 +254,15 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
   const myClubSlug = p.club
     ? teamSlug(p.club, p.clubU)
     : periodRows.map((r) => (r[7] ? teamSlug(r[7]) : "")).find(Boolean);
+  const recentOpp = periodRows
+    .map((r) => (r[8] ? teamSlug(r[8]) : ""))
+    .find((s) => Boolean(s) && s !== myClubSlug);
   const c0Slug = agg.champs[0] ? resolveChampSlug(agg.champs[0].c) : undefined;
   const overviewTabQuery = (() => {
     const qp = new URLSearchParams();
     if (periodKey) qp.set("p", periodKey);
     if (myClubSlug) qp.set("team", myClubSlug);
+    if (recentOpp) qp.set("q", recentOpp);
     if (p.role) qp.set("role", p.role);
     if (c0Slug) qp.set("champ", c0Slug);
     const s = qp.toString();
@@ -295,9 +299,6 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                   {tl("Compare")} →
                 </HubLink>
                 {(() => {
-                  const recentOpp = periodRows
-                    .map((r) => (r[8] ? teamSlug(r[8]) : ""))
-                    .find((s) => Boolean(s) && s !== myClubSlug);
                   const c1Slug = agg.champs.map((x) => resolveChampSlug(x.c)).find((s) => Boolean(s) && s !== c0Slug);
                   const qChamps = [c0Slug, c1Slug]
                     .filter((v, idx, arr): v is string => Boolean(v) && arr.indexOf(v) === idx)
@@ -806,6 +807,8 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                 if (sel?.date && /^\d{4}/.test(sel.date)) qp.set("p", `y${sel.date.slice(0, 4)}`);
                 const tSlug = sel?.team ? teamSlug(sel.team) : p.club ? teamSlug(p.club, p.clubU) : "";
                 if (tSlug) qp.set("team", tSlug);
+                const oppSlug = sel?.opp ? teamSlug(sel.opp) : "";
+                if (oppSlug) qp.set("q", oppSlug);
                 if (p.role) qp.set("role", p.role);
                 if (sel?.champ) qp.set("champ", resolveChampSlug(sel.champ));
                 const formQ = qp.toString() || undefined;
@@ -1008,6 +1011,7 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     query: new URLSearchParams({
                       player: p.u,
                       ...(sel.team ? { team: teamSlug(sel.team) } : p.club ? { team: teamSlug(p.club, p.clubU) } : {}),
+                      ...(sel.opp ? { vs: teamSlug(sel.opp) } : {}),
                       ...(p.role ? { role: p.role } : {}),
                       ...(sel.row?.[11]
                         ? { p: `e:${resolveEventSlug(sel.row[11])}` }
@@ -1103,7 +1107,12 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     }).toString()}
                   />
                   <span className="text-rw-muted">·</span>
-                  <EventLink name={sel.event} u={sel.row[11]} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
+                  <EventLink
+                    name={sel.event}
+                    u={sel.row[11]}
+                    query={`q=${encodeURIComponent([p.u, sel.team ? teamSlug(sel.team) : "", teamSlug(sel.opp)].filter(Boolean).join(","))}`}
+                    className="text-rw-sub hover:text-rw-accent hover:underline truncate"
+                  />
                 </span>
               </span>
               <span className="flex items-center gap-2 shrink-0 text-rw-muted">
@@ -1435,12 +1444,14 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                 kind: "player",
                 slug: p.u,
                 tab: "champions",
-                ...((myClubSlug || p.role || c0Slug)
+                ...((myClubSlug || recentOppSlug || p.role || c0Slug || latestYr)
                   ? {
                       query: new URLSearchParams({
                         ...(myClubSlug ? { team: myClubSlug } : {}),
+                        ...(recentOppSlug ? { q: recentOppSlug } : {}),
                         ...(p.role ? { role: p.role } : {}),
                         ...(c0Slug ? { champ: c0Slug } : {}),
+                        ...(latestYr ? { p: `y${latestYr}` } : {}),
                       }).toString(),
                     }
                   : {}),
@@ -1486,7 +1497,9 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                   query: new URLSearchParams({
                     champ: resolveChampSlug(c.c),
                     ...(myClubSlug ? { team: myClubSlug } : {}),
+                    ...(recentOppSlug ? { q: recentOppSlug } : {}),
                     ...(p.role ? { role: p.role } : {}),
+                    ...(latestYr ? { p: `y${latestYr}` } : {}),
                   }).toString(),
                 }}
                 className="group rounded-xl border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/60 p-2.5 flex flex-col justify-between gap-2 transition-colors"
@@ -1964,7 +1977,12 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                         }).toString()}
                       />
                       <span className="text-rw-muted">·</span>
-                      <EventLink name={sel.en} u={sel.e} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
+                      <EventLink
+                        name={sel.en}
+                        u={sel.e}
+                        query={`q=${encodeURIComponent(`${t.u},${oppSlug}`)}`}
+                        className="text-rw-muted hover:text-rw-accent hover:underline truncate"
+                      />
                     </span>
                     <span className="flex items-center gap-2 shrink-0 text-rw-muted">
                       {sel.g ? (

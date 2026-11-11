@@ -1627,6 +1627,7 @@ export const PlayerOpponents: React.FC<{
                         query: new URLSearchParams({
                           player: slug,
                           ...(g[7] ? { team: resolveOppSlug(g[7]) } : {}),
+                          vs: resolveOppSlug(expanded.opp, expanded.u),
                           ...(g[10] ? { role: g[10] } : {}),
                           ...(g[11]
                             ? { p: `e:${resolveEventSlug(g[11])}` }
@@ -1652,7 +1653,12 @@ export const PlayerOpponents: React.FC<{
                         {g[3]}/{g[4]}/{g[5]}
                       </span>
                     )}
-                    <EventLink name={g[9]} u={g[11]} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
+                    <EventLink
+                      name={g[9]}
+                      u={g[11]}
+                      query={`q=${encodeURIComponent([slug, g[7] ? resolveOppSlug(g[7]) : "", resolveOppSlug(expanded.opp, expanded.u)].filter(Boolean).join(","))}`}
+                      className="text-rw-muted hover:text-rw-accent hover:underline truncate"
+                    />
                   </span>
                   <span className="flex items-center gap-2 shrink-0 text-rw-muted tabular-nums">
                     {rv != null && <RatingBadge v={rv} />}
@@ -1853,7 +1859,7 @@ export const PlayerOpponents: React.FC<{
                             kind: "player",
                             slug,
                             tab: "champions",
-                            query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}${subTeam ? `&team=${encodeURIComponent(subTeam)}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${(period || scope) && (period || scope) !== "all" ? `&p=${encodeURIComponent((period || scope)!)}` : ""}`,
+                            query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}&q=${encodeURIComponent(resolveOppSlug(o.opp, o.u))}${subTeam ? `&team=${encodeURIComponent(subTeam)}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${(period || scope) && (period || scope) !== "all" ? `&p=${encodeURIComponent((period || scope)!)}` : ""}`,
                           }}
                           title={`${champName(c.c)}: ${c.w}–${c.g - c.w}`}
                         >
@@ -2249,6 +2255,12 @@ export const TeamOpponentsChart: React.FC<{
                       </HubLink>
                       <HubLink to={{ kind: "compare", mode: "team", a: teamSlug, b: oppSlug, ...(rowYr ? { period: `y${rowYr}` } : {}) }} className="text-rw-muted hover:text-rw-accent hover:underline">
                         {tl("Compare")}
+                      </HubLink>
+                      <HubLink
+                        to={{ kind: "rankings", query: `q=${encodeURIComponent(`${teamSlug},${oppSlug}`)}` }}
+                        className="text-rw-muted hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Power rankings")}
                       </HubLink>
                       <HubLink
                         to={{ kind: "items", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(oppSlug)}${rowYr ? `&year=${encodeURIComponent(rowYr)}` : ""}` }}
@@ -2802,6 +2814,7 @@ export const TeamPeriodOpponents: React.FC<{
                               slug: chSlug,
                               query: new URLSearchParams({
                                 team: teamSlug,
+                                vs: resolveOppSlug(expanded.opp, expanded.u),
                                 ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
                                 ...(otherCh ? { vschamp: resolveChampSlug(otherCh) } : {}),
                                 ...(pVal
@@ -2830,7 +2843,12 @@ export const TeamPeriodOpponents: React.FC<{
                           {g[9]}–{g[10]}
                         </span>
                       ))}
-                    <EventLink name={g[3]} u={g[2]} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
+                    <EventLink
+                      name={g[3]}
+                      u={g[2]}
+                      query={`q=${encodeURIComponent(`${teamSlug},${resolveOppSlug(expanded.opp, expanded.u)}`)}`}
+                      className="text-rw-muted hover:text-rw-accent hover:underline truncate"
+                    />
                   </span>
                   <span className="flex items-center gap-2 shrink-0 text-rw-muted tabular-nums">
                     {g[1] ? (
@@ -2995,6 +3013,13 @@ export const TeamPeriodOpponents: React.FC<{
                           title={tl("Compare")}
                         >
                           {tl("Compare")}
+                        </HubLink>
+                        <HubLink
+                          to={{ kind: "rankings", query: `q=${encodeURIComponent(`${teamSlug},${oppSlug}`)}` }}
+                          className="text-rw-muted hover:text-rw-accent hover:underline"
+                          title={tl("Power rankings")}
+                        >
+                          {tl("Power rankings")}
                         </HubLink>
                         <HubLink
                           to={{ kind: "items", query: `team=${encodeURIComponent(teamSlug)}&vs=${encodeURIComponent(oppSlug)}${rosterP}${rowC0 ? `&champ=${encodeURIComponent(rowC0)}` : ""}${rowC1 ? `&vschamp=${encodeURIComponent(rowC1)}` : ""}${pSuffix}` }}

@@ -175,32 +175,46 @@ export const HubHome: React.FC<{
           <div className={`${card} flex flex-col`}>
             <h2 className={tileHead}><User className="w-4 h-4 text-rw-accent" />{tl("Players")}</h2>
             <ul className="text-xs space-y-1.5">
-              {(home.data?.potm || []).slice(0, 3).map((p) => (
+              {(home.data?.potm || []).slice(0, 3).map((p) => {
+                const potmYr = home.data?.potmFrom && /^\d{4}/.test(home.data.potmFrom) ? home.data.potmFrom.slice(0, 4) : undefined;
+                const pSlug = playerSlug(p.n, p.u);
+                const tSlug = p.t ? teamSlug(p.t) : "";
+                const pQuery = new URLSearchParams({
+                  ...(tSlug ? { team: tSlug } : {}),
+                  ...(p.r ? { role: p.r } : {}),
+                  ...(potmYr ? { p: `y${potmYr}` } : {}),
+                }).toString();
+                const tQuery = new URLSearchParams({
+                  ...(potmYr ? { p: `y${potmYr}` } : {}),
+                  ...(pSlug ? { q: pSlug } : {}),
+                }).toString();
+                return (
                 <li key={p.u || p.n} className="flex items-center gap-2 min-w-0">
-                  <HubLink to={{ kind: "player", slug: playerSlug(p.n, p.u) }} className="shrink-0">
+                  <HubLink to={{ kind: "player", slug: pSlug, ...(pQuery ? { query: pQuery } : {}) }} className="shrink-0">
                     <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={24} />
                   </HubLink>
-                  <PlayerLink name={p.n} u={p.u} className="font-semibold truncate" />
+                  <PlayerLink name={p.n} u={p.u} query={pQuery || undefined} className="font-semibold truncate" />
                   <span className="inline-flex items-center gap-1 text-rw-muted truncate ml-auto">
                     {p.t && (
-                      <HubLink to={{ kind: "team", slug: teamSlug(p.t) }} className="shrink-0">
+                      <HubLink to={{ kind: "team", slug: tSlug, ...(tQuery ? { query: tQuery } : {}) }} className="shrink-0">
                         <TeamLogo name={p.t} size={13} />
                       </HubLink>
                     )}
                     <span className="truncate">
                       {p.r ? (
-                        <HubLink to={{ kind: "player", slug: playerSlug(p.n, p.u), tab: "stats" }} className="hover:text-rw-accent hover:underline">
+                        <HubLink to={{ kind: "player", slug: pSlug, tab: "stats", ...(pQuery ? { query: pQuery } : {}) }} className="hover:text-rw-accent hover:underline">
                           {roleName(p.r)}
                         </HubLink>
                       ) : (
                         ""
                       )}
                       {p.r && p.t ? " · " : ""}
-                      {p.t ? <TeamLink name={p.t} className="text-rw-muted hover:text-rw-accent hover:underline" /> : null}
+                      {p.t ? <TeamLink name={p.t} query={tQuery || undefined} className="text-rw-muted hover:text-rw-accent hover:underline" /> : null}
                     </span>
                   </span>
                 </li>
-              ))}
+                );
+              })}
             </ul>
             <HubLink to={{ kind: "players" }} className={more}>{tl("Every player, by role and team →")}</HubLink>
           </div>
@@ -687,7 +701,13 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
           <h2 {...clickable(open)} className="font-head text-2xl font-bold text-rw-text hover:text-rw-accent cursor-pointer leading-tight mt-1">{title}</h2>
           {ev && running[0] && (
             <p className="text-[11px] text-rw-muted font-num">
-              <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(running[0].u)}` }} className="hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: `event=${encodeURIComponent(running[0].u)}${running[0].w ? `&team=${encodeURIComponent(teamSlug(running[0].w, undefined, running[0].wu))}` : ""}`,
+                }}
+                className="hover:text-rw-accent hover:underline"
+              >
                 {line(running[0])}
               </HubLink>
             </p>
@@ -712,23 +732,30 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
       {!ev && (
         <ul className="text-xs space-y-1.5">
           {running.length === 0 && <li className="text-rw-muted">{tl("No tournament is running this week.")}</li>}
-          {running.slice(0, 5).map((e) => (
+          {running.slice(0, 5).map((e) => {
+            const wSlug = e.w ? teamSlug(e.w, undefined, e.wu) : "";
+            return (
             <li key={e.u} className="min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">
-                <EventLink name={e.n} u={e.u} />
+                <EventLink name={e.n} u={e.u} query={wSlug ? `q=${encodeURIComponent(wSlug)}` : undefined} />
                 <EventLink
                   name={`${fmtDate(e.st, false)} – ${fmtDate(e.en, false)}`}
                   u={e.u}
+                  query={wSlug ? `q=${encodeURIComponent(wSlug)}` : undefined}
                   className="text-rw-muted hover:text-rw-accent hover:underline shrink-0"
                 />
               </div>
               <div className="text-[11px] text-rw-muted font-num">
-                <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }} className="hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}${wSlug ? `&team=${encodeURIComponent(wSlug)}` : ""}` }}
+                  className="hover:text-rw-accent hover:underline"
+                >
                   {line(e)}
                 </HubLink>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
       {ev && intl && (
@@ -938,13 +965,20 @@ const TopTeams: React.FC<{ rows?: RatingRow[]; n: number; ranked?: boolean }> = 
     <ol className="text-xs space-y-1.5">
       {top.map((t, i) => {
         const barPct = Math.round(Math.max(12, Math.min(100, ((t[5] - (minR - 50)) / Math.max(1, maxR - (minR - 50))) * 100)));
+        const rivalSlug = top.find((x) => x[0] !== t[0])?.[0];
+        const tQuery = rivalSlug ? `q=${encodeURIComponent(rivalSlug)}` : undefined;
+        const lgParam = t[4] || (t[3] ? resolveLeagueSlug(t[3]) : "");
+        const rankQ = new URLSearchParams({
+          ...(lgParam ? { league: lgParam } : {}),
+          q: [t[0], rivalSlug].filter(Boolean).join(","),
+        }).toString();
         return (
           <li key={t[0]} className="flex items-center gap-2 min-w-0">
             {ranked && <span className="w-3 text-rw-muted font-num tabular-nums shrink-0">{i + 1}</span>}
-            <HubLink to={{ kind: "team", slug: t[0] }} className="shrink-0">
+            <HubLink to={{ kind: "team", slug: t[0], ...(tQuery ? { query: tQuery } : {}) }} className="shrink-0">
               <TeamLogo name={t[1]} code={t[2]} size={22} />
             </HubLink>
-            <TeamLink name={t[1]} u={t[0]} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
+            <TeamLink name={t[1]} u={t[0]} query={tQuery} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
             <span className="ml-auto flex items-center gap-2 shrink-0">
               {!ranked && (
                 t[4] ? (
@@ -959,14 +993,14 @@ const TopTeams: React.FC<{ rows?: RatingRow[]; n: number; ranked?: boolean }> = 
                 <span className="h-full bg-rw-accent/80 rounded-full" style={{ width: `${barPct}%` }} />
               </span>
               <HubLink
-                to={{ kind: "rankings", ...((t[4] || t[3]) ? { query: `league=${encodeURIComponent(t[4] || resolveLeagueSlug(t[3]))}` } : {}) }}
+                to={{ kind: "rankings", ...(rankQ ? { query: rankQ } : {}) }}
                 className="font-num tabular-nums font-bold text-rw-text hover:text-rw-accent hover:underline"
               >
                 {Math.round(t[5])}
               </HubLink>
               {ranked && t[6] != null && (
                 <HubLink
-                  to={{ kind: "team", slug: t[0], tab: "matches" }}
+                  to={{ kind: "team", slug: t[0], tab: "matches", ...(tQuery ? { query: tQuery } : {}) }}
                   className={`font-num tabular-nums text-[11px] w-9 text-right hover:underline ${t[6] >= 0 ? "text-rw-accent" : "text-rw-muted"}`}
                   title={tl("30-day change")}
                 >
@@ -997,12 +1031,18 @@ const PatchMovers: React.FC = () => {
           const wr = winChange(m, before);
           const deltaPct = Math.round(Math.max(12, Math.min(100, (Math.abs(now - was) / maxDelta) * 100)));
           const wrTone = wr.now == null ? "" : wr.now >= 0.55 ? "text-rw-teal font-semibold" : wr.now < 0.45 ? "text-rw-red" : "text-rw-sub";
+          const cSlug = resolveChampSlug(c);
+          const otherMover = rows.map((r) => resolveChampSlug(r.m[0])).find((s) => Boolean(s) && s !== cSlug);
+          const cQuery = new URLSearchParams({
+            ...(p ? { p: `p:${p.p}` } : {}),
+            ...(otherMover ? { vschamp: otherMover } : {}),
+          }).toString();
           return (
             <li key={c} className="flex items-center gap-2 min-w-0">
-              <HubLink to={{ kind: "champ", slug: resolveChampSlug(c) }} className="shrink-0">
+              <HubLink to={{ kind: "champ", slug: cSlug, ...(cQuery ? { query: cQuery } : {}) }} className="shrink-0">
                 <ChampIcon name={c} size={22} />
               </HubLink>
-              <HubLink to={{ kind: "champ", slug: resolveChampSlug(c) }} className="font-semibold text-rw-text hover:text-rw-accent truncate">
+              <HubLink to={{ kind: "champ", slug: cSlug, ...(cQuery ? { query: cQuery } : {}) }} className="font-semibold text-rw-text hover:text-rw-accent truncate">
                 {champName(c)}
               </HubLink>
               <span className="ml-auto flex items-center gap-1.5 font-num tabular-nums text-[11px] whitespace-nowrap shrink-0">
@@ -1012,7 +1052,7 @@ const PatchMovers: React.FC = () => {
                 <HubLink
                   to={{
                     kind: "champions",
-                    ...(p ? { query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}${p.prev ? `&vs=p${encodeURIComponent(p.prev)}` : ""}&q=${encodeURIComponent(resolveChampSlug(c))}` } : {}),
+                    ...(p ? { query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}${p.prev ? `&vs=p${encodeURIComponent(p.prev)}` : ""}&q=${encodeURIComponent(cSlug)}${otherMover ? `,${encodeURIComponent(otherMover)}` : ""}` } : {}),
                   }}
                   className={`hover:underline ${up ? "text-rw-accent" : "text-rw-muted"}`}
                 >
@@ -1022,7 +1062,7 @@ const PatchMovers: React.FC = () => {
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: p ? `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(resolveChampSlug(c))}` : `champ=${encodeURIComponent(resolveChampSlug(c))}`,
+                      query: p ? `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(cSlug)}${otherMover ? `&vschamp=${encodeURIComponent(otherMover)}` : ""}` : `champ=${encodeURIComponent(cSlug)}`,
                     }}
                     className={`${wrTone} hover:underline`}
                     title={tl("Game finder")}
@@ -1412,13 +1452,15 @@ const hubPathOf = (r: HubRoute) => JSON.stringify(r);
 
 const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);
+  const wSlug = e.w && !hidden ? teamSlug(e.w, undefined, e.wu) : "";
+  const evQuery = wSlug ? `q=${encodeURIComponent(wSlug)}` : undefined;
   return (
     <li className="flex items-center justify-between gap-2 min-w-0">
       <span className="truncate min-w-0">
-        <EventLink name={e.n} u={e.u} />
+        <EventLink name={e.n} u={e.u} query={evQuery} />
         <span className="text-rw-muted">
           {" · "}
-          <EventLink name={fmtDate(e.en, false)} u={e.u} className="text-rw-muted hover:text-rw-accent hover:underline" />
+          <EventLink name={fmtDate(e.en, false)} u={e.u} query={evQuery} className="text-rw-muted hover:text-rw-accent hover:underline" />
         </span>
       </span>
       {e.w && (
@@ -1765,15 +1807,18 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
 
 const BrowseRow: React.FC<{ e: EventListItem; maxG: number; q?: string; onSetQ?: (q: string) => void }> = ({ e, maxG, q = "", onSetQ }) => {
   const [hidden, reveal] = useHidden(`event:${e.u}`, e.en);
+  const wSlug = e.w && !hidden ? teamSlug(e.w, undefined, e.wu) : "";
+  const evQuery = wSlug ? `q=${encodeURIComponent(wSlug)}` : undefined;
   return (
     <tr className="border-t border-rw-border">
       <td className={`${td} max-w-[16rem] truncate`} data-sort={e.n}>
-        <EventLink name={e.n} u={e.u} />
+        <EventLink name={e.n} u={e.u} query={evQuery} />
       </td>
       <td className={`${td} text-rw-muted`} data-sort={e.st}>
         <EventLink
           name={`${fmtDate(e.st, false)}${e.en && e.en !== e.st ? ` – ${fmtDate(e.en, false)}` : ""}`}
           u={e.u}
+          query={evQuery}
           className="text-rw-muted hover:text-rw-accent hover:underline"
         />
       </td>
@@ -1814,7 +1859,10 @@ const BrowseRow: React.FC<{ e: EventListItem; maxG: number; q?: string; onSetQ?:
       <td className={`${td} text-rw-muted`} data-sort={e.g || 0}>
         {e.g ? (
           <span className="inline-flex items-center gap-1.5 tabular-nums">
-            <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }} className="w-5 text-right hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}${wSlug ? `&team=${encodeURIComponent(wSlug)}` : ""}` }}
+              className="w-5 text-right hover:text-rw-accent hover:underline"
+            >
               {e.g}
             </HubLink>
             <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden hidden sm:inline-flex shrink-0">
