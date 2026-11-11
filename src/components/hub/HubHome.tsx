@@ -567,8 +567,8 @@ const FeaturedMatch: React.FC<{
                 ...(lg || yr
                   ? {
                       query: new URLSearchParams({
-                        ...(lg ? { scope: lg } : {}),
-                        ...(yr ? { key: `y${yr}` } : {}),
+                        ...(lg ? { scope: lg, league: lg } : {}),
+                        ...(yr ? { key: `y${yr}`, year: yr } : {}),
                       }).toString(),
                     }
                   : {}),
@@ -852,7 +852,7 @@ const LatestTournaments: React.FC<{ latest: EventListItem[] }> = ({ latest }) =>
                   {tl("Tournaments")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tiers", ...(latestYr ? { query: `key=y${encodeURIComponent(latestYr)}` } : {}) }}
+                  to={{ kind: "tiers", ...(latestYr ? { query: `key=y${encodeURIComponent(latestYr)}&year=${encodeURIComponent(latestYr)}` } : {}) }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Pro tier list")} →
@@ -972,7 +972,7 @@ const PatchMovers: React.FC = () => {
                 <HubLink
                   to={{
                     kind: "champions",
-                    ...(p ? { query: `key=p${encodeURIComponent(p.p)}${p.prev ? `&vs=p${encodeURIComponent(p.prev)}` : ""}` } : {}),
+                    ...(p ? { query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}${p.prev ? `&vs=p${encodeURIComponent(p.prev)}` : ""}&q=${encodeURIComponent(resolveChampSlug(c))}` } : {}),
                   }}
                   className={`hover:underline ${up ? "text-rw-accent" : "text-rw-muted"}`}
                 >
@@ -996,7 +996,7 @@ const PatchMovers: React.FC = () => {
         })}
       </ul>
       <HubLink
-        to={{ kind: "champions", ...(p ? { query: `key=p${encodeURIComponent(p.p)}` } : {}) }}
+        to={{ kind: "champions", ...(p ? { query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}` } : {}) }}
         className={more}
       >
         {p ? tl("Patch {patch}, tier list, counters, items →", { patch: p.p }) : tl("Pick, ban and win rates →")}
@@ -1157,7 +1157,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                       ...(r0 || potmYr
                         ? {
                             query: new URLSearchParams({
-                              ...(potmYr ? { key: `y${potmYr}` } : {}),
+                              ...(potmYr ? { key: `y${potmYr}`, year: potmYr } : {}),
                               ...(r0 ? { role: r0 } : {}),
                             }).toString(),
                           }
@@ -1599,8 +1599,9 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                       to={{
                         kind: "champions",
                         query: new URLSearchParams({
-                          ...(singleLg ? { league: singleLg } : {}),
+                          ...(singleLg ? { scope: singleLg, league: singleLg } : {}),
                           year,
+                          key: `y${year}`,
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1611,8 +1612,9 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          ...(singleLg ? { scope: singleLg } : {}),
+                          ...(singleLg ? { scope: singleLg, league: singleLg } : {}),
                           key: `y${year}`,
+                          year,
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

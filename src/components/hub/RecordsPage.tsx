@@ -391,7 +391,10 @@ const PentakillRecords: React.FC<{
                     </HubLink>
                     {recentRows[0].c && (
                       <HubLink
-                        to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(recentRows[0].c))}` }}
+                        to={{
+                          kind: "counters",
+                          query: `champ=${encodeURIComponent(resolveChampSlug(recentRows[0].c))}${r0Year ? `&patch=y${encodeURIComponent(r0Year)}&year=${encodeURIComponent(r0Year)}` : ""}`,
+                        }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Counters")} →
@@ -401,7 +404,7 @@ const PentakillRecords: React.FC<{
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          ...(r0Year ? { key: `y${r0Year}` } : {}),
+                          ...(r0Year ? { key: `y${r0Year}`, year: r0Year } : {}),
                           ...(recentRows[0].c ? { q: resolveChampSlug(recentRows[0].c) } : {}),
                         }).toString() || undefined,
                       }}
@@ -641,6 +644,7 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
               kind: "champions",
               query: new URLSearchParams({
                 key: `y${label}`,
+                year: label,
                 ...(year.player.kills[0]?.c ? { q: resolveChampSlug(year.player.kills[0].c) } : {}),
               }).toString(),
             }}
@@ -653,6 +657,7 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
               kind: "tiers",
               query: new URLSearchParams({
                 key: `y${label}`,
+                year: label,
                 ...(year.player.kills[0]?.c ? { q: resolveChampSlug(year.player.kills[0].c) } : {}),
               }).toString(),
             }}
@@ -701,7 +706,7 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(year.player.kills[0].c))}${all.player.kills[0]?.c && all.player.kills[0].c !== year.player.kills[0].c ? `&vs=${encodeURIComponent(resolveChampSlug(all.player.kills[0].c))}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(year.player.kills[0].c))}${all.player.kills[0]?.c && all.player.kills[0].c !== year.player.kills[0].c ? `&vs=${encodeURIComponent(resolveChampSlug(all.player.kills[0].c))}` : ""}&patch=y${encodeURIComponent(label)}&year=${encodeURIComponent(label)}`,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -983,7 +988,7 @@ export const RecordsPanel: React.FC = () => {
                             {tl("Best games")} →
                           </HubLink>
                           <HubLink
-                            to={{ kind: "tiers", ...(year !== "all" ? { query: `key=y${encodeURIComponent(year)}` } : {}) }}
+                            to={{ kind: "tiers", ...(year !== "all" ? { query: `key=y${encodeURIComponent(year)}&year=${encodeURIComponent(year)}` } : {}) }}
                             className="text-rw-sub hover:text-rw-accent hover:underline"
                           >
                             {tl("Pro tier list")} →
@@ -1154,7 +1159,7 @@ export const RecordsPanel: React.FC = () => {
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}`,
+                        query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}${year !== "all" ? `&patch=y${encodeURIComponent(year)}&year=${encodeURIComponent(year)}` : ""}`,
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1177,7 +1182,7 @@ export const RecordsPanel: React.FC = () => {
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          ...(year !== "all" ? { key: `y${year}` } : {}),
+                          ...(year !== "all" ? { key: `y${year}`, year } : {}),
                           ...(rows[0].c ? { q: [resolveChampSlug(rows[0].c), rows[1]?.c ? resolveChampSlug(rows[1].c) : ""].filter(Boolean).join(",") } : {}),
                         }).toString() || undefined,
                       }}
@@ -1487,7 +1492,7 @@ export const RecordsPanel: React.FC = () => {
                   to={{
                     kind: "champions",
                     query: new URLSearchParams({
-                      ...(year !== "all" ? { key: `y${year}` } : {}),
+                      ...(year !== "all" ? { key: `y${year}`, year } : {}),
                       ...(search.trim() ? { q: search.trim() } : {}),
                     }).toString() || undefined,
                   }}
@@ -1499,7 +1504,7 @@ export const RecordsPanel: React.FC = () => {
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
-                      ...(year !== "all" ? { key: `y${year}` } : {}),
+                      ...(year !== "all" ? { key: `y${year}`, year } : {}),
                       ...(search.trim() ? { q: search.trim() } : {}),
                     }).toString() || undefined,
                   }}
@@ -2064,7 +2069,7 @@ export const TitlesPanel: React.FC = () => {
                     return (
                       <>
                         <HubLink
-                          to={{ kind: "tournaments", ...(tYr ? { query: `year=${encodeURIComponent(tYr)}` } : {}) }}
+                          to={{ kind: "tournaments", ...(tYr ? { year: tYr } : {}) }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Tournaments")} →
@@ -2109,7 +2114,7 @@ export const TitlesPanel: React.FC = () => {
                               ? {
                                   query: new URLSearchParams({
                                     ...(tEv ? { event: tEv } : {}),
-                                    ...(tYr ? { key: `y${tYr}` } : {}),
+                                    ...(tYr ? { key: `y${tYr}`, year: tYr } : {}),
                                   }).toString(),
                                 }
                               : {}),
