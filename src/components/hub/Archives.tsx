@@ -977,7 +977,8 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                   player: slug,
                   ...(champ !== "all" ? { champ: resolveChampSlug(champ) } : champs[0] ? { champ: resolveChampSlug(champs[0][0]) } : {}),
                   ...(evSlug ? { event: evSlug } : {}),
-                  ...(year !== "all" ? { year } : {}),
+                  ...(year !== "all" ? { year } : period?.startsWith("p:") ? { patch: period.slice(2) } : {}),
+                  ...(opp !== "all" ? { vs: tSlug(opp) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-accent hover:underline"
@@ -1371,7 +1372,9 @@ export const PlayerGamesArchive: React.FC<{
                   ? { year: period.slice(1) }
                   : period?.startsWith("e:")
                     ? { event: resolveEventSlug(period.slice(2)) }
-                    : {}),
+                    : period?.startsWith("p:")
+                      ? { patch: period.slice(2) }
+                      : {}),
             }).toString(),
           }}
           className="text-rw-accent hover:underline"
@@ -1523,7 +1526,7 @@ export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; cha
         <HubLink
           to={{
             kind: "items",
-            query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(resolveChampSlug(champ))}${year ? `&year=${encodeURIComponent(year)}` : period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : ""}`,
+            query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(resolveChampSlug(champ))}${year ? `&year=${encodeURIComponent(year)}` : period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period?.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
           }}
           className="text-rw-accent hover:underline"
         >
