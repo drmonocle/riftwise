@@ -5,7 +5,8 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, roleName, regionName } from "../../i18n";
-import { bare, loadAliases, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
+import { bare, loadAliases, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias } from "../../hub/data";
+import { normalizeRole } from "../../hub/champAgg";
 import { navigateHub, hubShareUrl, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
 import { SortTable, type Column } from "./SortTable";
@@ -112,8 +113,9 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
     if (!rawRegion) return "";
     if (regions.includes(rawRegion)) return rawRegion;
     const low = rawRegion.toLowerCase();
-    const cands = [low, ...(REGION_ALIASES[low] || [])];
-    return regions.find((r) => cands.includes(r.toLowerCase())) || rawRegion;
+    const canon = resolveRegionFilter(low);
+    const cands = [low, ...(canon ? [canon] : []), ...(REGION_ALIASES[low] || [])];
+    return regions.find((r) => cands.includes(r.toLowerCase()) || resolveRegionFilter(r) === canon) || rawRegion;
   }, [rawRegion, regions]);
   const years = useMemo(() => yearChoices(rows.map((t) => t[3])), [rows]);
   const list = useMemo(() => {
@@ -127,10 +129,12 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       if (!terms.length) return true;
       const u = (t[1] || prettySlug(t[0])).toLowerCase();
       const rowCanon = resolveTeamAlias(u) || resolveTeamAlias(t[0]);
+      const rowRegCanon = t[6] ? resolveRegionFilter(t[6]) : null;
       const hay = normText(`${t[0]} | ${t[1] || ""} | ${t[3] || ""} | ${t[4]} | ${t[5]} | ${t[6] || ""} | ${t[6] ? regionName(t[6], t[6]) : ""}`);
       const hayBare = bare(hay);
       return terms.some((term) => {
         if (hay.includes(term) || (term.length >= 2 && hayBare.includes(bare(term)))) return true;
+        if (rowRegCanon && resolveRegionFilter(term) === rowRegCanon) return true;
         const canonTeam = aliases.data?.team[term] || resolveTeamAlias(term) || prettySlug(term);
         return Boolean(canonTeam && (canonTeam === u || (rowCanon && canonTeam === rowCanon)));
       });
@@ -512,10 +516,11 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
   const { q, set } = useFilters("players", query);
   const aliases = useLoad(loadAliases, []);
   const rawRole = q.get("role") || "";
-  const role = ROLE_ALIASES[rawRole.toLowerCase()] || rawRole;
+  const role = ROLE_ALIASES[rawRole.toLowerCase()] || normalizeRole(rawRole) || rawRole;
   const words = q.get("q") || q.get("player") || q.get("team") || "";
   const since = q.get("since") || (words.trim() ? "all" : THIS_YEAR);
   const shown = Number(q.get("n")) || STEP;
+  const teamSlugOf = (t: string) => aliases.data?.team[t.toLowerCase()] || resolveTeamAlias(t) || prettySlug(t);
   const years = useMemo(() => yearChoices(rows.map((p) => p[4])), [rows]);
   const list = useMemo(() => {
     const terms = words
@@ -528,15 +533,15 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       if (!terms.length) return true;
       const u = p[1] || prettySlug(p[0]);
       const pRole = ROLE_OF[p[5]] || "";
-      const pTeamSlug = p[2] ? aliases.data?.team[p[2].toLowerCase()] || resolveTeamAlias(p[2]) || prettySlug(p[2]) : "";
+      const pTeamSlug = p[2] ? teamSlugOf(p[2]) : "";
       const hay = normText(`${p[0]} | ${u} | ${p[2]} | ${p[4] || ""} | ${pRole} | ${pRole ? roleName(pRole) : ""} | ${p[6]}`);
       const hayBare = bare(hay);
       return terms.some(
         (term) =>
           hay.includes(term) ||
           resolvePlayerSlug(term) === u ||
-          (pRole && ROLE_ALIASES[term] === pRole) ||
-          (pTeamSlug && (aliases.data?.team[term] || resolveTeamAlias(term) || prettySlug(term)) === pTeamSlug) ||
+          (pRole && (ROLE_ALIASES[term] === pRole || normalizeRole(term) === pRole)) ||
+          (pTeamSlug && teamSlugOf(term) === pTeamSlug) ||
           (term.length >= 2 && hayBare.includes(bare(term))),
       );
     });
@@ -579,10 +584,10 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       render: (p) =>
         p[2] ? (
           <span className="inline-flex items-center gap-1.5 min-w-0">
-            <HubLink to={{ kind: "team", slug: prettySlug(p[2]) }} title={p[2]} className="shrink-0">
+            <HubLink to={{ kind: "team", slug: teamSlugOf(p[2]) }} title={p[2]} className="shrink-0">
               <TeamLogo name={p[2]} size={15} />
             </HubLink>
-            <TeamLink name={p[2]} u={prettySlug(p[2])} />
+            <TeamLink name={p[2]} u={teamSlugOf(p[2])} />
           </span>
         ) : null,
       className: "text-rw-sub max-w-[12rem] truncate",
@@ -644,7 +649,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       value: () => null,
       render: (p) => {
         const u = p[1] || prettySlug(p[0]);
-        const teamSlug = p[2] ? prettySlug(p[2]) : "";
+        const teamSlug = p[2] ? teamSlugOf(p[2]) : "";
         const yr = since !== "all" ? since : undefined;
         return (
           <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">
@@ -736,8 +741,8 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                 <HubLink
                   to={{
                     kind: "prep",
-                    a: prettySlug(list[0][2] || list[1][2]),
-                    ...(list[0][2] && list[1]?.[2] && prettySlug(list[0][2]) !== prettySlug(list[1][2]) ? { b: prettySlug(list[1][2]) } : {}),
+                    a: teamSlugOf(list[0][2] || list[1][2]),
+                    ...(list[0][2] && list[1]?.[2] && teamSlugOf(list[0][2]) !== teamSlugOf(list[1][2]) ? { b: teamSlugOf(list[1][2]) } : {}),
                     ...(since !== "all" ? { period: `y${since}` } : {}),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -747,9 +752,9 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(list[0][2] || list[1][2]))}${
-                      list[0][2] && list[1]?.[2] && prettySlug(list[0][2]) !== prettySlug(list[1][2])
-                        ? `,${encodeURIComponent(prettySlug(list[1][2]))}`
+                    query: `teams=${encodeURIComponent(teamSlugOf(list[0][2] || list[1][2]))}${
+                      list[0][2] && list[1]?.[2] && teamSlugOf(list[0][2]) !== teamSlugOf(list[1][2])
+                        ? `,${encodeURIComponent(teamSlugOf(list[1][2]))}`
                         : ""
                     }${since !== "all" ? `&p=y${encodeURIComponent(since)}` : ""}`,
                   }}
@@ -842,7 +847,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             query:
               list[0]?.[2] || list[1]?.[2]
                 ? `q=${encodeURIComponent(
-                    Array.from(new Set([list[0]?.[2], list[1]?.[2]].filter(Boolean).map((t) => prettySlug(t!)))).join(","),
+                    Array.from(new Set([list[0]?.[2], list[1]?.[2]].filter(Boolean).map((t) => teamSlugOf(t!)))).join(","),
                   )}`
                 : undefined,
           }}

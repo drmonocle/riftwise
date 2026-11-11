@@ -154,10 +154,10 @@ export function regionStats(files: (EventLines | null)[], years: string[]) {
  * regions, edition by edition, as shaded percentages (teal above 50%, red below; the record on hover). Regions in at
  * least three editions, the most series against other regions first.
  */
-const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; name: string }> = ({ files, years, name }) => {
+const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; name: string; league?: string }> = ({ files, years, name, league }) => {
   const intlLeague = useMemo(
-    () => (/msi|mid-season/i.test(name) ? "msi" : /first stand/i.test(name) ? "first-stand" : "world-championship"),
-    [name],
+    () => league || (/msi|mid-season/i.test(name) ? "mid-season-invitational" : /first stand/i.test(name) ? "first-stand" : "world-championship"),
+    [league, name],
   );
   const t = useMemo(() => {
     // an edition has several stage files: group them by year
@@ -295,12 +295,12 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
 
 const bestText = (p: number | null) => (p == null ? "–" : p === 1 ? tl("Won it") : p === 2 ? tl("Final") : p <= 4 ? tl("Semifinal") : p <= 8 ? tl("Quarterfinal") : tl("Top {n}", { n: p }));
 
-export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string[]; all: boolean; name: string }> = ({ files, years, all, name }) => {
+export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string[]; all: boolean; name: string; league?: string }> = ({ files, years, all, name, league }) => {
   const { list, pairs } = useMemo(() => regionStats(files, years), [files, years]);
   const singleYear = useMemo(() => (!all ? /\d{4}/.exec(years[0] || "")?.[0] : undefined), [all, years]);
   const intlLeague = useMemo(
-    () => (/msi|mid-season/i.test(name) ? "msi" : /first stand/i.test(name) ? "first-stand" : "world-championship"),
-    [name],
+    () => league || (/msi|mid-season/i.test(name) ? "mid-season-invitational" : /first stand/i.test(name) ? "first-stand" : "world-championship"),
+    [league, name],
   );
   const topTeamByRegion = useMemo(() => {
     const wins = new Map<string, Map<string, number>>();
@@ -916,7 +916,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
         </Section>
       )}
     </div>
-    {all && <RegionTrend files={files} years={years} name={name} />}
+    {all && <RegionTrend files={files} years={years} name={name} league={intlLeague} />}
     </>
   );
 };

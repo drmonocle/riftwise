@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl } from "../../i18n";
-import { loadRatings, normText } from "../../hub/data";
+import { bare, loadRatings, normText, resolveTeamAlias } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import type { HubEvent } from "../../hub/types";
 import { playoffOdds } from "../../hub/playoffOdds";
@@ -21,13 +21,15 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
   const today = new Date().toISOString().slice(0, 10);
   const odds = useMemo(() => (ratings.data ? playoffOdds(e, ratings.data, today) : null), [e, ratings.data, today]);
   const [pick, setPick] = useState<number | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => {
+    const qp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    return qp.get("q") || qp.get("team") || qp.get("vs") || "";
+  });
   const [hidden, reveal] = useHidden(`playoffs:${e.u}`, e.end);
   if (!odds) return null;
   const cut = pick != null && odds.cuts.includes(pick) ? pick : odds.cut;
   const ci = odds.cuts.indexOf(cut);
   const rows = [...odds.rows].sort((a, b) => b.top[ci] - a.top[ci] || b.first - a.first || b.sw - a.sw);
-  const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
   const terms = search
     .trim()
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -37,7 +39,12 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
     ? rows.filter((r) => {
         const hay = normText(`${r.name} ${r.u}`);
         const hayBare = bare(hay);
-        return terms.some((q) => hay.includes(q) || (q.length >= 2 && hayBare.includes(bare(q))));
+        const rCanon = resolveTeamAlias(r.u) || resolveTeamAlias(r.name);
+        return terms.some((q) => {
+          if (hay.includes(q) || (q.length >= 2 && hayBare.includes(bare(q)))) return true;
+          const qCanon = resolveTeamAlias(q);
+          return Boolean(qCanon && (qCanon === r.u || (rCanon && qCanon === rCanon)));
+        });
       })
     : rows;
   const unrated = odds.rows.filter((r) => r.unrated).length;

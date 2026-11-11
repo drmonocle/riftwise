@@ -6,7 +6,7 @@
 import React, { useMemo, useState } from "react";
 import { tl } from "../../i18n";
 import { champName } from "../../champions";
-import { prettySlug } from "../../hub/data";
+import { prettySlug, resolveTeamAlias } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import type { EventLines } from "../../hub/worldsFacts";
 import { cinderella, comebacks, editionYear, finals, finalsRecords, hosts, playerTitles, runs, swissRuns, upsets, yearLines, type FileRef, type Run } from "../../hub/intlInsights";
@@ -22,6 +22,7 @@ const mmss = (m: number | null) => {
 };
 const k = (v: number) => `${(v / 1000).toFixed(1)}k`;
 const yearOnly = (label: string) => String(editionYear(label) || label);
+const teamSlug = (name: string) => resolveTeamAlias(name) || prettySlug(name);
 const placeText = (p: number | string | null | undefined) => {
   const n = typeof p === "number" ? p : Number(/^\d+/.exec(p || "")?.[0] || NaN);
   if (p == null || Number.isNaN(n)) return "–";
@@ -39,12 +40,13 @@ const Item: React.FC<{ left: React.ReactNode; right: React.ReactNode; sub?: Reac
   </li>
 );
 
-export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: string[]; stages: string[]; all: boolean; name: string }> = ({
+export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: string[]; stages: string[]; all: boolean; name: string; league?: string }> = ({
   files,
   years,
   stages,
   all,
   name,
+  league,
 }) => {
   const refs = useMemo<FileRef[]>(
     () => files.map((f, i) => (f ? { f, year: years[i], stage: stages[i] } : null)).filter((x): x is FileRef => !!x),
@@ -52,8 +54,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
   );
   const singleYear = useMemo(() => (!all ? String(editionYear(years[0] || "") || "") : ""), [all, years]);
   const intlLeague = useMemo(
-    () => (/msi|mid-season/i.test(name) ? "msi" : /first stand/i.test(name) ? "first-stand" : "world-championship"),
-    [name],
+    () => league || (/msi|mid-season/i.test(name) ? "mid-season-invitational" : /first stand/i.test(name) ? "first-stand" : "world-championship"),
+    [league, name],
   );
   const up = useMemo(() => upsets(refs), [refs]);
   const cb = useMemo(() => comebacks(refs), [refs]);
@@ -92,8 +94,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "prep",
-                    a: prettySlug(up.games[0].winner),
-                    b: prettySlug(up.games[0].loser),
+                    a: teamSlug(up.games[0].winner),
+                    b: teamSlug(up.games[0].loser),
                     ...(singleYear ? { period: `y${singleYear}` } : {}),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -104,7 +106,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(up.games[0].winner))},${encodeURIComponent(prettySlug(up.games[0].loser))}${singleYear ? `&p=y${singleYear}` : ""}`,
+                    query: `teams=${encodeURIComponent(teamSlug(up.games[0].winner))},${encodeURIComponent(teamSlug(up.games[0].loser))}${singleYear ? `&p=y${singleYear}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -115,8 +117,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   to={{
                     kind: "compare",
                     mode: "team",
-                    a: prettySlug(up.games[0].winner),
-                    b: prettySlug(up.games[0].loser),
+                    a: teamSlug(up.games[0].winner),
+                    b: teamSlug(up.games[0].loser),
                     ...(singleYear ? { period: `y${singleYear}` } : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -133,7 +135,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   league: intlLeague,
                   ...(up.games[0]?.winner
                     ? {
-                        q: `${prettySlug(up.games[0].winner)}${up.games[0].loser ? `,${prettySlug(up.games[0].loser)}` : ""}`,
+                        q: `${teamSlug(up.games[0].winner)}${up.games[0].loser ? `,${teamSlug(up.games[0].loser)}` : ""}`,
                       }
                     : {}),
                 }).toString(),
@@ -151,7 +153,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   ...(singleYear ? { year: singleYear } : {}),
                   ...(up.games[0]?.winner
                     ? {
-                        q: `${prettySlug(up.games[0].winner)}${up.games[0].loser ? `,${prettySlug(up.games[0].loser)}` : ""}`,
+                        q: `${teamSlug(up.games[0].winner)}${up.games[0].loser ? `,${teamSlug(up.games[0].loser)}` : ""}`,
                       }
                     : {}),
                 }).toString(),
@@ -167,8 +169,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
-                  ...(up.games[0]?.winner ? { team: prettySlug(up.games[0].winner) } : {}),
-                  ...(up.games[0]?.loser ? { vs: prettySlug(up.games[0].loser) } : {}),
+                  ...(up.games[0]?.winner ? { team: teamSlug(up.games[0].winner) } : {}),
+                  ...(up.games[0]?.loser ? { vs: teamSlug(up.games[0].loser) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -179,7 +181,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink
               to={{
                 kind: "records",
-                ...(up.games[0]?.winner ? { query: `q=${encodeURIComponent(prettySlug(up.games[0].winner))}` } : {}),
+                ...(up.games[0]?.winner ? { query: `q=${encodeURIComponent(teamSlug(up.games[0].winner))}` } : {}),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
@@ -194,7 +196,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   ...(singleYear ? { year: singleYear } : {}),
                   ...(up.games[0]?.winner
                     ? {
-                        q: `${prettySlug(up.games[0].winner)}${up.games[0].loser ? `,${prettySlug(up.games[0].loser)}` : ""}`,
+                        q: `${teamSlug(up.games[0].winner)}${up.games[0].loser ? `,${teamSlug(up.games[0].loser)}` : ""}`,
                       }
                     : {}),
                 }).toString(),
@@ -303,8 +305,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "prep",
-                    a: prettySlug(cb[0].winner),
-                    b: prettySlug(cb[0].loser),
+                    a: teamSlug(cb[0].winner),
+                    b: teamSlug(cb[0].loser),
                     ...(singleYear ? { period: `y${singleYear}` } : {}),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -315,7 +317,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(cb[0].winner))},${encodeURIComponent(prettySlug(cb[0].loser))}${singleYear ? `&p=y${singleYear}` : ""}`,
+                    query: `teams=${encodeURIComponent(teamSlug(cb[0].winner))},${encodeURIComponent(teamSlug(cb[0].loser))}${singleYear ? `&p=y${singleYear}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -326,8 +328,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   to={{
                     kind: "compare",
                     mode: "team",
-                    a: prettySlug(cb[0].winner),
-                    b: prettySlug(cb[0].loser),
+                    a: teamSlug(cb[0].winner),
+                    b: teamSlug(cb[0].loser),
                     ...(singleYear ? { period: `y${singleYear}` } : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -340,7 +342,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
             <HubLink
               to={{
                 kind: "records",
-                ...(cb[0]?.winner ? { query: `q=${encodeURIComponent(prettySlug(cb[0].winner))}` } : {}),
+                ...(cb[0]?.winner ? { query: `q=${encodeURIComponent(teamSlug(cb[0].winner))}` } : {}),
               }}
               className="text-[11px] font-semibold text-rw-accent hover:underline"
               data-nocapture="1"
@@ -355,7 +357,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   ...(singleYear ? { year: singleYear } : {}),
                   ...(cb[0]?.winner
                     ? {
-                        q: `${prettySlug(cb[0].winner)}${cb[0].loser ? `,${prettySlug(cb[0].loser)}` : ""}`,
+                        q: `${teamSlug(cb[0].winner)}${cb[0].loser ? `,${teamSlug(cb[0].loser)}` : ""}`,
                       }
                     : {}),
                 }).toString(),
@@ -371,8 +373,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
-                  ...(cb[0]?.winner ? { team: prettySlug(cb[0].winner) } : {}),
-                  ...(cb[0]?.loser ? { vs: prettySlug(cb[0].loser) } : {}),
+                  ...(cb[0]?.winner ? { team: teamSlug(cb[0].winner) } : {}),
+                  ...(cb[0]?.loser ? { vs: teamSlug(cb[0].loser) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -387,7 +389,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   league: intlLeague,
                   ...(cb[0]?.winner
                     ? {
-                        q: `${prettySlug(cb[0].winner)}${cb[0].loser ? `,${prettySlug(cb[0].loser)}` : ""}`,
+                        q: `${teamSlug(cb[0].winner)}${cb[0].loser ? `,${teamSlug(cb[0].loser)}` : ""}`,
                       }
                     : {}),
                 }).toString(),
@@ -405,7 +407,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   ...(singleYear ? { year: singleYear } : {}),
                   ...(cb[0]?.winner
                     ? {
-                        q: `${prettySlug(cb[0].winner)}${cb[0].loser ? `,${prettySlug(cb[0].loser)}` : ""}`,
+                        q: `${teamSlug(cb[0].winner)}${cb[0].loser ? `,${teamSlug(cb[0].loser)}` : ""}`,
                       }
                     : {}),
                 }).toString(),
@@ -1134,8 +1136,8 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     <HubLink
                       to={{
                         kind: "prep",
-                        a: prettySlug(titles[0].team),
-                        ...(titles[1]?.team && prettySlug(titles[1].team) !== prettySlug(titles[0].team) ? { b: prettySlug(titles[1].team) } : {}),
+                        a: teamSlug(titles[0].team),
+                        ...(titles[1]?.team && teamSlug(titles[1].team) !== teamSlug(titles[0].team) ? { b: teamSlug(titles[1].team) } : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                       data-nocapture="1"
@@ -1145,9 +1147,9 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(prettySlug(titles[0].team))}${
-                          titles[1]?.team && prettySlug(titles[1].team) !== prettySlug(titles[0].team)
-                            ? `,${encodeURIComponent(prettySlug(titles[1].team))}`
+                        query: `teams=${encodeURIComponent(teamSlug(titles[0].team))}${
+                          titles[1]?.team && teamSlug(titles[1].team) !== teamSlug(titles[0].team)
+                            ? `,${encodeURIComponent(teamSlug(titles[1].team))}`
                             : ""
                         }`,
                       }}
@@ -1213,7 +1215,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                 kind: "rankings",
                 query: new URLSearchParams({
                   league: intlLeague,
-                  ...(titles[0]?.team ? { q: prettySlug(titles[0].team) } : {}),
+                  ...(titles[0]?.team ? { q: teamSlug(titles[0].team) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

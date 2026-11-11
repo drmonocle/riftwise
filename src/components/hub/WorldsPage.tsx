@@ -677,7 +677,10 @@ const SwissTable: React.FC<{ rec: Record<string, [number, number]>; byU: Map<str
   next,
   eventSlug,
 }) => {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => {
+    const qp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    return qp.get("q") || qp.get("team") || qp.get("vs") || "";
+  });
   const allRows = Object.keys(rec).sort((a, b) => rec[b][0] - rec[a][0] || rec[a][1] - rec[b][1] || (byU.get(a)?.n || a).localeCompare(byU.get(b)?.n || b));
   const terms = search
     .trim()
@@ -1088,10 +1091,10 @@ const FactsTab: React.FC<{ d: Loaded; kind: IntlKind }> = ({ d, kind }) => {
         />
       )}
       <div id="jump-regions">
-        <RegionStats files={shownFiles} years={years} all={d.all} name={d.name} />
+        <RegionStats files={shownFiles} years={years} all={d.all} name={d.name} league={INTL[kind].league} />
       </div>
       <div id="jump-insights" className="space-y-3">
-        <IntlInsights files={shownFiles} years={years} stages={stageSlugs} all={d.all} name={d.name} />
+        <IntlInsights files={shownFiles} years={years} stages={stageSlugs} all={d.all} name={d.name} league={INTL[kind].league} />
       </div>
       {!d.all && (
         <div id="jump-winners">
@@ -1129,6 +1132,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
   const [hidden, reveal] = useHidden(`worlds-facts:${kind}:${list[0]?.y || ""}`, list[0]?.date);
   if (!list.length) return null;
   const shown = hidden ? list.slice(1) : list;
+  const runnerSlug = (l: string) => resolveTeamAlias(l) || prettySlug(l);
   // back-to-back and longer runs by the same organisation (its stats page, whatever it was called then)
   const runs: { team: string; u?: string | null; from: string; to: string; n: number }[] = [];
   const old = [...shown].reverse();
@@ -1149,8 +1153,8 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
               <HubLink
                 to={{
                   kind: "prep",
-                  a: shown[0].u || prettySlug(shown[0].as),
-                  b: prettySlug(shown[0].l),
+                  a: shown[0].u || runnerSlug(shown[0].as),
+                  b: runnerSlug(shown[0].l),
                   period: shown[0].e ? `e:${shown[0].e}` : `y${shown[0].y}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1160,7 +1164,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(shown[0].u || prettySlug(shown[0].as))},${encodeURIComponent(prettySlug(shown[0].l))}&p=${encodeURIComponent(shown[0].e ? `e:${shown[0].e}` : `y${shown[0].y}`)}`,
+                  query: `teams=${encodeURIComponent(shown[0].u || runnerSlug(shown[0].as))},${encodeURIComponent(runnerSlug(shown[0].l))}&p=${encodeURIComponent(shown[0].e ? `e:${shown[0].e}` : `y${shown[0].y}`)}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1170,8 +1174,8 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                 to={{
                   kind: "compare",
                   mode: "team",
-                  a: shown[0].u || prettySlug(shown[0].as),
-                  b: prettySlug(shown[0].l),
+                  a: shown[0].u || runnerSlug(shown[0].as),
+                  b: runnerSlug(shown[0].l),
                   period: shown[0].e ? `e:${shown[0].e}` : `y${shown[0].y}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1181,7 +1185,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(shown[0].u || prettySlug(shown[0].as))}&vs=${encodeURIComponent(prettySlug(shown[0].l))}${shown[0].e ? `&event=${encodeURIComponent(shown[0].e)}` : `&year=${encodeURIComponent(shown[0].y)}`}`,
+                  query: `team=${encodeURIComponent(shown[0].u || runnerSlug(shown[0].as))}&vs=${encodeURIComponent(runnerSlug(shown[0].l))}${shown[0].e ? `&event=${encodeURIComponent(shown[0].e)}` : `&year=${encodeURIComponent(shown[0].y)}`}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1190,7 +1194,7 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
               <HubLink
                 to={{
                   kind: "titles",
-                  query: `${kind === "worlds" ? "kind=Worlds" : "kind=International"}&q=${encodeURIComponent(shown[0].u || prettySlug(shown[0].as))}`,
+                  query: `${kind === "worlds" ? "kind=Worlds" : "kind=International"}&q=${encodeURIComponent(shown[0].u || runnerSlug(shown[0].as))}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1199,8 +1203,8 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
               <HubLink
                 to={{
                   kind: "rankings",
-                  query: `league=${encodeURIComponent(INTL[kind].league)}&q=${encodeURIComponent(shown[0].u || prettySlug(shown[0].as))}${
-                    shown[0].l && prettySlug(shown[0].l) !== (shown[0].u || prettySlug(shown[0].as)) ? `,${encodeURIComponent(prettySlug(shown[0].l))}` : ""
+                  query: `league=${encodeURIComponent(INTL[kind].league)}&q=${encodeURIComponent(shown[0].u || runnerSlug(shown[0].as))}${
+                    shown[0].l && runnerSlug(shown[0].l) !== (shown[0].u || runnerSlug(shown[0].as)) ? `,${encodeURIComponent(runnerSlug(shown[0].l))}` : ""
                   }`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1219,8 +1223,8 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
               <HubLink
                 to={{
                   kind: "leaders",
-                  query: `league=${encodeURIComponent(INTL[kind].league)}&year=${encodeURIComponent(shown[0].y)}${shown[0].e ? `&event=${encodeURIComponent(shown[0].e)}` : ""}&q=${encodeURIComponent(shown[0].u || prettySlug(shown[0].as))}${
-                    shown[0].l && prettySlug(shown[0].l) !== (shown[0].u || prettySlug(shown[0].as)) ? `,${encodeURIComponent(prettySlug(shown[0].l))}` : ""
+                  query: `league=${encodeURIComponent(INTL[kind].league)}&year=${encodeURIComponent(shown[0].y)}${shown[0].e ? `&event=${encodeURIComponent(shown[0].e)}` : ""}&q=${encodeURIComponent(shown[0].u || runnerSlug(shown[0].as))}${
+                    shown[0].l && runnerSlug(shown[0].l) !== (shown[0].u || runnerSlug(shown[0].as)) ? `,${encodeURIComponent(runnerSlug(shown[0].l))}` : ""
                   }`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1292,13 +1296,13 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                         x.score
                       )}{" "}
                       <HubLink
-                        to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l), period: `y${x.y}` }}
+                        to={{ kind: "compare", mode: "team", a: x.u || runnerSlug(x.as), b: runnerSlug(x.l), period: `y${x.y}` }}
                         className="text-rw-muted hover:text-rw-accent hover:underline"
                         title={tl("Compare")}
                       >
                         {tl("vs")}
                       </HubLink>{" "}
-                      <TeamLink name={x.l} u={prettySlug(x.l)} className="hover:text-rw-accent hover:underline" />
+                      <TeamLink name={x.l} u={runnerSlug(x.l)} className="hover:text-rw-accent hover:underline" />
                     </span>
                   )}
                 </td>
@@ -1339,32 +1343,32 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                   {x.l ? (
                     <span className="inline-flex items-center gap-1.5">
                       <HubLink
-                        to={{ kind: "compare", mode: "team", a: x.u || prettySlug(x.as), b: prettySlug(x.l), period: `y${x.y}` }}
+                        to={{ kind: "compare", mode: "team", a: x.u || runnerSlug(x.as), b: runnerSlug(x.l), period: `y${x.y}` }}
                         className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                         title={tl("Compare")}
                       >
                         {tl("vs")}
                       </HubLink>
-                      <HubLink to={{ kind: "team", slug: prettySlug(x.l) }} className="shrink-0 hover:opacity-80" title={x.l}>
+                      <HubLink to={{ kind: "team", slug: runnerSlug(x.l) }} className="shrink-0 hover:opacity-80" title={x.l}>
                         <TeamLogo name={x.l} size={15} className="shrink-0" />
                       </HubLink>
-                      <TeamLink name={x.l} u={prettySlug(x.l)} className="hover:text-rw-accent" />
+                      <TeamLink name={x.l} u={runnerSlug(x.l)} className="hover:text-rw-accent" />
                       <HubLink
-                        to={{ kind: "prep", a: x.u || prettySlug(x.as), b: prettySlug(x.l), period: `y${x.y}` }}
+                        to={{ kind: "prep", a: x.u || runnerSlug(x.as), b: runnerSlug(x.l), period: `y${x.y}` }}
                         className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                         title={tl("Match prep")}
                       >
                         · {tl("Match prep")}
                       </HubLink>
                       <HubLink
-                        to={{ kind: "draft", query: `teams=${encodeURIComponent(x.u || prettySlug(x.as))},${encodeURIComponent(prettySlug(x.l))}&p=y${x.y}` }}
+                        to={{ kind: "draft", query: `teams=${encodeURIComponent(x.u || runnerSlug(x.as))},${encodeURIComponent(runnerSlug(x.l))}&p=y${x.y}` }}
                         className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                         title={tl("Draft board")}
                       >
                         · {tl("Draft board")}
                       </HubLink>
                       <HubLink
-                        to={{ kind: "finder", query: `team=${encodeURIComponent(x.u || prettySlug(x.as))}&vs=${encodeURIComponent(prettySlug(x.l))}&year=${encodeURIComponent(x.y)}` }}
+                        to={{ kind: "finder", query: `team=${encodeURIComponent(x.u || runnerSlug(x.as))}&vs=${encodeURIComponent(runnerSlug(x.l))}&year=${encodeURIComponent(x.y)}` }}
                         className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                         title={tl("Game finder")}
                       >
