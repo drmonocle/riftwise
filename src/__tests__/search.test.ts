@@ -91,11 +91,13 @@ describe("stats search", () => {
     });
   });
 
-  it("links champion vs champion searches to Counter-pick finder and Game finder", () => {
+  it("links champion vs champion searches to Counter-pick finder, Game finder, Item history and Tier list", () => {
     const cvc = matchupShortcuts(index, "Ahri vs Azir");
     expect(cvc.map((s) => s.route)).toEqual([
       { kind: "counters", query: "champ=ahri&vs=azir" },
       { kind: "finder", query: "champ=ahri&vschamp=azir" },
+      { kind: "items", query: "champ=ahri&vschamp=azir" },
+      { kind: "tiers", query: "q=ahri%2Cazir" },
     ]);
   });
 

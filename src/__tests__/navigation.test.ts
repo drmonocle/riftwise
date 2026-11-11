@@ -257,6 +257,18 @@ describe("search shortcuts", () => {
       kind: "items",
       query: "champ=azir&year=2025",
     });
+    expect(siblingSectionRoute({ kind: "prep", a: "t1", b: "geng", period: "y2025" }, "items")).toEqual({
+      kind: "items",
+      query: "team=t1&vs=geng&year=2025",
+    });
+    expect(siblingSectionRoute({ kind: "counters", query: "champ=azir&vs=orianna&role=Mid&patch=16.5" }, "draft")).toEqual({
+      kind: "draft",
+      query: "p=p%3A16.5&champ=azir%2Corianna&role=Mid",
+    });
+    expect(siblingSectionRoute({ kind: "compare", mode: "player", a: "faker", b: "chovy", period: "y2025" }, "best")).toEqual({
+      kind: "best",
+      query: "year=2025&q=faker%2Cchovy",
+    });
     expect(siblingSectionRoute({ kind: "tiers", query: "key=p16.5" }, "patches")).toEqual({
       kind: "patches",
       query: "patch=16.5",

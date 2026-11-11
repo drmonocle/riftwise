@@ -1204,13 +1204,17 @@ const pSlug = (name: string, u?: string | null) => u || resolvePlayerSlug(name) 
 /** One series as two team lines with scores; links to its match page. */
 const seriesKey = (r: SeriesRow) => `series:${r.g || r.a + r.b + r.date}`;
 
-export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: React.ReactNode; compact?: boolean; eventSlug?: string; leagueSlug?: string | null }> = ({ r, hideResult, note, compact, eventSlug, leagueSlug }) => {
+export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: React.ReactNode; compact?: boolean; eventSlug?: string; leagueSlug?: string | null; year?: number | string | null }> = ({ r, hideResult, note, compact, eventSlug, leagueSlug, year }) => {
   const [hiddenBySpoiler, reveal] = useHidden(seriesKey(r), r.date);
   const hidden = hideResult || hiddenBySpoiler;
   const played = r.sa != null && r.sb != null;
   const au = r.a ? tSlug(r.a, r.au) : "";
   const bu = r.b ? tSlug(r.b, r.bu) : "";
-  const sYr = /^\d{4}$/.test((r.date || "").slice(0, 4)) ? (r.date || "").slice(0, 4) : "";
+  const sYr = /^\d{4}$/.test((r.date || "").slice(0, 4))
+    ? (r.date || "").slice(0, 4)
+    : year != null && /^\d{4}$/.test(String(year))
+      ? String(year)
+      : "";
   const sPeriod = eventSlug ? `e:${eventSlug}` : sYr ? `y${sYr}` : undefined;
   const sPeriodQ = sPeriod ? `p=${encodeURIComponent(sPeriod)}` : undefined;
   const line = (name: string, u: string | null, score: number | null, won: boolean) => (
@@ -1365,7 +1369,7 @@ export const EventBracketBlock: React.FC<{ e: HubEvent }> = ({ e }) => {
   const tables = e.standings || [];
   return (
     <>
-      {bracket.length > 0 && <Bracket stages={bracket} eventSlug={e.u} leagueSlug={e.lu} />}
+      {bracket.length > 0 && <Bracket stages={bracket} eventSlug={e.u} leagueSlug={e.lu} year={(e.start || e.end || "").slice(0, 4)} />}
       {tables.length > 0 && (
         <div className={`grid gap-3 ${tables.length > 1 ? "md:grid-cols-2" : ""}`}>
           {tables.map((t, i) => (
@@ -1422,7 +1426,7 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
         ))}
         <EventLink name={tl("Open {stage}", { stage: x.n })} u={x.u} className="ml-auto text-rw-accent hover:underline" />
       </div>
-      {b.length > 0 && <Bracket key={x.u} stages={b} eventSlug={x.u} leagueSlug={x.lu} />}
+      {b.length > 0 && <Bracket key={x.u} stages={b} eventSlug={x.u} leagueSlug={x.lu} year={(x.start || x.end || "").slice(0, 4)} />}
       {x.standings && x.standings.length > 0 && (
         <div className={`grid gap-3 ${x.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
           {x.standings.map((t, k) => (
@@ -1444,13 +1448,14 @@ const ChildStages: React.FC<{ kids: { n: string; u: string }[] }> = ({ kids }) =
 };
 
 /** Knockout rounds as bracket columns (quarterfinals → semifinals → final), joined by lines. */
-export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boolean; note?: (r: SeriesRow) => React.ReactNode; title?: string; eventSlug?: string; leagueSlug?: string | null }> = ({
+export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boolean; note?: (r: SeriesRow) => React.ReactNode; title?: string; eventSlug?: string; leagueSlug?: string | null; year?: number | string | null }> = ({
   stages,
   hide,
   note,
   title,
   eventSlug,
   leagueSlug,
+  year,
 }) => {
   const hiddenNow = useHiddenCheck();
   const columns: BracketColumn[] = stages.map((st) => ({
@@ -1462,7 +1467,7 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
         key: `${st.name}-${i}`,
         teams: [r.a, r.b],
         winner: shown ? (r.w === 1 ? r.a : r.w === 2 ? r.b : null) : null,
-        node: <SeriesBox r={r} hideResult={hide?.(r)} note={note?.(r)} compact eventSlug={eventSlug} leagueSlug={leagueSlug} />,
+        node: <SeriesBox r={r} hideResult={hide?.(r)} note={note?.(r)} compact eventSlug={eventSlug} leagueSlug={leagueSlug} year={year} />,
       };
     }),
   }));
@@ -1472,6 +1477,12 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
   const rawFB = finalS?.b ? tSlug(finalS.b, finalS.bu) : "";
   const fTeamA = rawFA || rawFB;
   const fTeamB = rawFA && rawFB && rawFB !== rawFA ? rawFB : undefined;
+  const bYr = /^\d{4}$/.test((finalS?.date || "").slice(0, 4))
+    ? (finalS?.date || "").slice(0, 4)
+    : year != null && /^\d{4}$/.test(String(year))
+      ? String(year)
+      : "";
+  const bPeriod = eventSlug ? `e:${eventSlug}` : bYr ? `y${bYr}` : undefined;
   return (
     <div className={columns.length >= 4 ? "rw-span" : undefined}>
       <Section
@@ -1484,7 +1495,7 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
                   kind: "prep",
                   a: fTeamA,
                   ...(fTeamB ? { b: fTeamB } : {}),
-                  ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
+                  ...(bPeriod ? { period: bPeriod } : {}),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1493,7 +1504,7 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(fTeamA)}${fTeamB ? `,${encodeURIComponent(fTeamB)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}`,
+                  query: `teams=${encodeURIComponent(fTeamA)}${fTeamB ? `,${encodeURIComponent(fTeamB)}` : ""}${bPeriod ? `&p=${encodeURIComponent(bPeriod)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1505,7 +1516,7 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
                   mode: "team",
                   a: fTeamA,
                   ...(fTeamB ? { b: fTeamB } : {}),
-                  ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
+                  ...(bPeriod ? { period: bPeriod } : {}),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1519,7 +1530,7 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
                     team: fTeamA,
                     ...(fTeamB ? { vs: fTeamB } : {}),
                     ...(leagueSlug ? { league: leagueSlug } : {}),
-                    ...(/^\d{4}$/.test((finalS?.date || "").slice(0, 4)) ? { year: (finalS?.date || "").slice(0, 4) } : {}),
+                    ...(bYr ? { year: bYr } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -1546,6 +1557,8 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
                     ...(eventSlug ? { event: eventSlug } : {}),
                     team: fTeamA,
                     ...(fTeamB ? { vs: fTeamB } : {}),
+                    ...(leagueSlug ? { league: leagueSlug } : {}),
+                    ...(bYr ? { year: bYr } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
@@ -1558,7 +1571,7 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
                   query:
                     new URLSearchParams({
                       ...(leagueSlug ? { scope: leagueSlug, league: leagueSlug } : {}),
-                      ...(/^\d{4}$/.test((finalS?.date || "").slice(0, 4)) ? { key: `y${(finalS?.date || "").slice(0, 4)}`, year: (finalS?.date || "").slice(0, 4) } : {}),
+                      ...(bYr ? { key: `y${bYr}`, year: bYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                     }).toString() || undefined,
                 }}
@@ -1572,7 +1585,7 @@ export const Bracket: React.FC<{ stages: Stage[]; hide?: (r: SeriesRow) => boole
                   query:
                     new URLSearchParams({
                       ...(leagueSlug ? { league: leagueSlug } : {}),
-                      ...(/^\d{4}$/.test((finalS?.date || "").slice(0, 4)) ? { year: (finalS?.date || "").slice(0, 4) } : {}),
+                      ...(bYr ? { year: bYr } : {}),
                       ...(eventSlug ? { event: eventSlug } : {}),
                       ...(finalS?.a || finalS?.b
                         ? { q: [finalS?.a ? tSlug(finalS.a, finalS.au) : "", finalS?.b ? tSlug(finalS.b, finalS.bu) : ""].filter(Boolean).join(",") }

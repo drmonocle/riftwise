@@ -815,12 +815,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       kind: "leaders",
                       query: new URLSearchParams({
                         ...(settings.followedLeagues.length === 1 ? { league: resolveLeagueSlug(settings.followedLeagues[0]) } : {}),
-                        q: (settings.followedPlayers.length > 0
-                          ? settings.followedPlayers.slice(0, 6).map((p) => resolvePlayerSlug(p))
-                          : settings.followedTeams
-                              .slice(0, 6)
-                              .map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t))
-                        ).join(","),
+                        q: [
+                          ...settings.followedPlayers.slice(0, 6).map((p) => resolvePlayerSlug(p)),
+                          ...settings.followedTeams
+                            .slice(0, 6)
+                            .map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t)),
+                        ]
+                          .filter((v, idx, arr) => Boolean(v) && arr.indexOf(v) === idx)
+                          .join(","),
                       }).toString(),
                     }}
                     className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
@@ -839,17 +841,43 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 ? { vs: teamSlug(catalog ? pickTeamByCode(catalog.teams, settings.followedTeams[1])?.name : undefined, settings.followedTeams[1]) }
                                 : {}),
                             }
-                          : settings.followedPlayers.length >= 1
-                            ? {
-                                player: resolvePlayerSlug(settings.followedPlayers[0]),
-                                ...(settings.followedPlayers.length >= 2 ? { vsplayer: resolvePlayerSlug(settings.followedPlayers[1]) } : {}),
-                              }
-                            : {}),
+                          : {}),
+                        ...(settings.followedPlayers.length >= 1
+                          ? {
+                              player: resolvePlayerSlug(settings.followedPlayers[0]),
+                              ...(settings.followedPlayers.length >= 2 ? { vsplayer: resolvePlayerSlug(settings.followedPlayers[1]) } : {}),
+                            }
+                          : {}),
                       }).toString(),
                     }}
                     className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
                   >
                     {tl("Game finder")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        ...(settings.followedLeagues.length === 1 ? { league: resolveLeagueSlug(settings.followedLeagues[0]) } : {}),
+                        ...(settings.followedTeams.length >= 1
+                          ? {
+                              team: teamSlug(catalog ? pickTeamByCode(catalog.teams, settings.followedTeams[0])?.name : undefined, settings.followedTeams[0]),
+                              ...(settings.followedTeams.length >= 2
+                                ? { vs: teamSlug(catalog ? pickTeamByCode(catalog.teams, settings.followedTeams[1])?.name : undefined, settings.followedTeams[1]) }
+                                : {}),
+                            }
+                          : {}),
+                        ...(settings.followedPlayers.length >= 1
+                          ? {
+                              player: resolvePlayerSlug(settings.followedPlayers[0]),
+                              ...(settings.followedPlayers.length >= 2 ? { vsplayer: resolvePlayerSlug(settings.followedPlayers[1]) } : {}),
+                            }
+                          : {}),
+                      }).toString(),
+                    }}
+                    className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                  >
+                    {tl("Item history")} →
                   </HubLink>
                 </>
               )}
@@ -857,7 +885,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <HubLink
                   to={{
                     kind: "tiers",
-                    ...(settings.followedLeagues.length === 1 ? { scope: resolveLeagueSlug(settings.followedLeagues[0]) } : {}),
+                    ...(settings.followedLeagues.length === 1
+                      ? {
+                          query: new URLSearchParams({
+                            scope: resolveLeagueSlug(settings.followedLeagues[0]),
+                            league: resolveLeagueSlug(settings.followedLeagues[0]),
+                          }).toString(),
+                        }
+                      : {}),
                   }}
                   className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
                 >

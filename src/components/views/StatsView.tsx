@@ -200,7 +200,8 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     const next = new URLSearchParams();
     if (teamA || teamB) next.set("teams", [teamA, teamB].filter(Boolean).join(","));
     if (period) next.set("p", period);
-    if (champ) next.set("champ", champ);
+    const dc = [champ, vsChamp].filter(Boolean).join(",");
+    if (dc) next.set("champ", dc);
     if (role) next.set("role", role);
     const qs = next.toString();
     return { kind: "draft", ...(qs ? { query: qs } : {}) };
@@ -223,10 +224,17 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
   }
   if (targetKind === "items") {
     const next = new URLSearchParams();
+    if (teamA) next.set("team", teamA);
+    if (teamB) next.set("vs", teamB);
     if (playerA) next.set("player", playerA);
+    if (playerB) next.set("vsplayer", playerB);
     if (item) next.set("item", item);
     if (champ) next.set("champ", champ);
+    if (vsChamp) next.set("vschamp", vsChamp);
+    if (role) next.set("role", role);
+    if (patchNum) next.set("patch", patchNum);
     if (event) next.set("event", event);
+    if (league) next.set("league", league);
     if (year) next.set("year", year);
     const qs = next.toString();
     return { kind: "items", ...(qs ? { query: qs } : {}) };
@@ -347,7 +355,7 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     if (year) next.set("year", year);
     if (league) next.set("league", league);
     if (event) next.set("event", event);
-    const bq = q || [teamA, teamB].filter(Boolean).join(",");
+    const bq = q || [teamA, teamB, playerA, playerB].filter(Boolean).join(",");
     if (bq) next.set("q", bq);
     const qs = next.toString();
     return { kind: "best", ...(qs ? { query: qs } : {}) };

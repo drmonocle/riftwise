@@ -628,6 +628,23 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             type="button"
                             onClick={() => {
                               const q = new URLSearchParams({
+                                q: [playerSlug(p.name), teamSlug(displayName, upperCode)].filter(Boolean).join(","),
+                                ...(rRole && rRole !== "Sub" ? { role: rRole } : {}),
+                                ...(lg ? { league: lg } : {}),
+                                ...(yr ? { year: yr } : {}),
+                              }).toString();
+                              navigateHub({ kind: "leaders", query: q });
+                              onClose();
+                            }}
+                            className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-surface text-[10px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 transition-colors hidden md:inline-block"
+                            title={tl("Player leaderboards")}
+                          >
+                            {tl("Player leaderboards")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const q = new URLSearchParams({
                                 player: playerSlug(p.name),
                                 team: teamSlug(displayName, upperCode),
                                 ...(rRole && rRole !== "Sub" ? { role: rRole } : {}),

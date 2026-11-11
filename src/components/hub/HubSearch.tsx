@@ -9,7 +9,7 @@ import { tl, tk, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
 import { winRate } from "../../stats";
-import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubChamp, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, prettySlug, resolveChampSlug, resolvePlayerSlug, sameChamp, searchHub } from "../../hub/data";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubChamp, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchHub } from "../../hub/data";
 import type { ItemIndexRow } from "../../hub/types";
 import { itemName } from "../../hub/ddragon";
 import { HubRoute, navigateHub } from "../../hub/route";
@@ -90,6 +90,20 @@ export function matchupShortcuts(index: HubIndex, q: string): Shortcut[] {
         sub: tl("Any game by team, champion, player"),
         icon: <Compass className="w-3.5 h-3.5" />,
       },
+      {
+        key: "items",
+        route: { kind: "items", query: `champ=${encodeURIComponent(ca.slug)}&vschamp=${encodeURIComponent(cb.slug)}` },
+        label: `${tl("Item history")}: ${champName(ca.name)} vs ${champName(cb.name)}`,
+        sub: tl("Has a pro ever built it?"),
+        icon: <Package className="w-3.5 h-3.5" />,
+      },
+      {
+        key: "tiers",
+        route: { kind: "tiers", query: `q=${encodeURIComponent(`${ca.slug},${cb.slug}`)}` },
+        label: `${tl("Pro tier list")}: ${champName(ca.name)} vs ${champName(cb.name)}`,
+        sub: tl("What pros play on each patch, by role"),
+        icon: <Rows3 className="w-3.5 h-3.5" />,
+      },
     ];
   return [];
 }
@@ -133,12 +147,14 @@ export function itemShortcuts(items: ItemIndexRow[] | null, index: HubIndex | nu
     const tail = words.slice(i).join(" ");
     splits.push([tail, head], [head, tail]);
   }
-  // once per side of the search, only when an item fits the other side (a whole search over every player each time)
+  // once per side of the search, only when an item fits the other side (a whole search over every player/champ/team each time)
   const seen = new Map<string, HubHit | undefined>();
-  const playerOf = (rest: string) => {
+  const entityOf = (rest: string) => {
     if (!seen.has(rest)) {
-      const p = rest && index ? searchHub(index, rest, 1).player[0] : undefined;
-      seen.set(rest, p && (p.score ?? 9) <= 1.5 ? p : undefined);
+      const h = rest && index ? searchHub(index, rest, 1) : undefined;
+      const candidates = [h?.player[0], h?.champ[0], h?.team[0]].filter((x): x is HubHit => !!x && (x.score ?? 9) <= 1.5);
+      candidates.sort((a, b) => (a.score ?? 9) - (b.score ?? 9));
+      seen.set(rest, candidates[0]);
     }
     return seen.get(rest);
   };
@@ -152,10 +168,10 @@ export function itemShortcuts(items: ItemIndexRow[] | null, index: HubIndex | nu
         if (!best || s < best.s) best = { s, len: n.length };
         continue;
       }
-      // an item and a player
+      // an item and a player, champion or team
       for (const [part, rest] of splits) {
         if (part.length < 4 || !n.startsWith(part)) continue;
-        const p = playerOf(rest);
+        const p = entityOf(rest);
         if (p && (!best || best.s > 2)) best = { s: 2, len: part.length, p };
       }
     }
@@ -165,8 +181,17 @@ export function itemShortcuts(items: ItemIndexRow[] | null, index: HubIndex | nu
   return hits.slice(0, limit).map(({ r, p }) => {
     const label = itemName(r[0]);
     const icon = <ItemIcon name={r[0]} size={16} />;
-    if (p)
-      return { key: `item-${r[1]}-${p.slug}`, route: { kind: "items", query: `player=${p.slug}&item=${r[1]}` }, label: `${p.name} · ${label}`, sub: tl("Has a pro ever built it?"), icon };
+    if (p) {
+      const param = p.kind === "champ" ? "champ" : p.kind === "team" ? "team" : "player";
+      const whoName = p.kind === "champ" ? champName(p.name) : p.name;
+      return {
+        key: `item-${r[1]}-${p.kind}-${p.slug}`,
+        route: { kind: "items", query: `${param}=${encodeURIComponent(p.slug)}&item=${encodeURIComponent(r[1])}` },
+        label: `${whoName} · ${label}`,
+        sub: tl("Has a pro ever built it?"),
+        icon,
+      };
+    }
     return { key: `item-${r[1]}`, route: { kind: "items", query: `item=${r[1]}` }, label, sub: `${tl("Item history")} · ${tl("{n} games", { n: fmtNum(r[2]) })}`, icon };
   });
 }
@@ -528,6 +553,16 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               icon: <Rows3 className="w-3.5 h-3.5" />,
             },
             {
+              key: `top-c-leaders-${c.u}`,
+              route: {
+                kind: "leaders",
+                query: `champ=${encodeURIComponent(c.u)}${c.roles[0]?.r ? `&role=${encodeURIComponent(c.roles[0].r)}` : ""}`,
+              },
+              label: `${champName(c.name)} · ${tl("Player leaderboards")}`,
+              sub: tl("Every player on every stat, by league and role"),
+              icon: <ListOrdered className="w-3.5 h-3.5" />,
+            },
+            {
               key: `top-c-finder-${c.u}`,
               route: {
                 kind: "finder",
@@ -545,12 +580,14 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
       loadHubPlayer(filledEntity.slug)
         .then((p) => {
           if (!alive) return;
+          const ptRaw = p.teams?.[0]?.u || p.teams?.[0]?.n || "";
+          const ptSlug = ptRaw ? resolveTeamAlias(ptRaw) || prettySlug(ptRaw) : "";
           const top: Shortcut[] = [
             ...p.champs.slice(0, 4).map((c) => ({
               key: `top-p-${p.u}-${c.c}`,
               route: { kind: "player" as const, slug: p.u, tab: "champions" as const, query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}` },
               label: `${p.name} · ${champName(c.c)}`,
-              sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)}) · KDA ${fmtN(c.kda)}`,
+              sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, p.g)}) · KDA ${fmtN(c.kda)}`,
               icon: <ChampIcon name={c.c} size={16} />,
               fillText: `${p.name} ${champName(c.c)}`,
             })),
@@ -566,7 +603,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               route: {
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: p.u,
+                  q: [p.u, ptSlug].filter(Boolean).join(","),
                   ...(p.role ? { role: p.role } : {}),
                   ...(p.champs[0]?.c ? { champ: resolveChampSlug(p.champs[0].c) } : {}),
                 }).toString(),
@@ -581,6 +618,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                 kind: "items",
                 query: new URLSearchParams({
                   player: p.u,
+                  ...(ptSlug ? { team: ptSlug } : {}),
                   ...(p.role ? { role: p.role } : {}),
                   ...(p.champs[0]?.c ? { champ: resolveChampSlug(p.champs[0].c) } : {}),
                 }).toString(),
@@ -595,6 +633,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                 kind: "finder",
                 query: new URLSearchParams({
                   player: p.u,
+                  ...(ptSlug ? { team: ptSlug } : {}),
                   ...(p.role ? { role: p.role } : {}),
                   ...(p.champs[0]?.c ? { champ: resolveChampSlug(p.champs[0].c) } : {}),
                 }).toString(),

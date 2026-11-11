@@ -287,9 +287,14 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                   <button
                     type="button"
                     onClick={() => {
+                      const sameLg = t1.league && t1.league === t2.league ? resolveLeagueSlug(t1.league) : "";
                       navigateHub({
                         kind: "finder",
-                        query: new URLSearchParams({ team: teamSlug(t1.name, c1), vs: teamSlug(t2.name, c2) }).toString(),
+                        query: new URLSearchParams({
+                          team: teamSlug(t1.name, c1),
+                          vs: teamSlug(t2.name, c2),
+                          ...(sameLg ? { league: sameLg } : {}),
+                        }).toString(),
                       });
                       onClose();
                     }}

@@ -329,7 +329,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
       )}
       {/* a wide window: the bracket and the standings side by side */}
       <div className={`grid gap-3 items-start ${bracket.length > 0 && ev.standings?.length ? "3xl:grid-cols-2" : ""}`}>
-      {bracket.length > 0 && <Bracket stages={bracket} hide={hide} note={note} eventSlug={ev.u} leagueSlug={lgSlug} />}
+      {bracket.length > 0 && <Bracket stages={bracket} hide={hide} note={note} eventSlug={ev.u} leagueSlug={lgSlug} year={which.year} />}
       {ev.standings && ev.standings.length > 0 && (
         <div className={`grid gap-3 ${ev.standings.length > 1 ? "md:grid-cols-2" : ""}`}>
           {ev.standings.map((t, i) => (
@@ -351,7 +351,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
           <div className="text-[10px] font-semibold text-rw-muted">{stageLabel(st.name)}</div>
           <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4">
             {st.series.map((r, i) => (
-              <SeriesBox key={i} r={r} hideResult={hide(r)} note={note(r)} eventSlug={ev.u} leagueSlug={lgSlug} />
+              <SeriesBox key={i} r={r} hideResult={hide(r)} note={note(r)} eventSlug={ev.u} leagueSlug={lgSlug} year={which.year} />
             ))}
           </div>
         </div>
