@@ -355,6 +355,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                     ...(topTeams[1] ? { vs: topTeams[1] } : {}),
                     ...(role !== "All" ? { role } : rows[0]?.r ? { role: rows[0].r } : {}),
                     ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                    ...(topChamps[1] ? { vschamp: topChamps[1] } : {}),
                     ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                     ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                     event: e.u,
@@ -587,6 +588,11 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                   ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
                   ...(rows[1].t && rows[1].t !== rows[0].t ? { vs: tSlug(rows[1].t, rows[1].tu) } : {}),
                   ...(rows[0].c?.[0] ? { champ: resolveChampSlug(rows[0].c[0]) } : {}),
+                  ...(rows[1].c?.[0] && rows[1].c[0] !== rows[0].c?.[0]
+                    ? { vschamp: resolveChampSlug(rows[1].c[0]) }
+                    : topChamps[1] && topChamps[1] !== (rows[0].c?.[0] ? resolveChampSlug(rows[0].c[0]) : "")
+                      ? { vschamp: topChamps[1] }
+                      : {}),
                   ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
                 }).toString(),
               }}
@@ -669,6 +675,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                   ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
                   ...(topTeams[1] ? { vs: topTeams[1] } : {}),
                   ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                  ...(topChamps[1] ? { vschamp: topChamps[1] } : {}),
                   ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
                 }).toString(),
               }}
@@ -953,6 +960,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                     team: topTeam0,
                     ...(topTeam1 ? { vs: topTeam1 } : {}),
                     ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                    ...(evChamps[1] ? { vschamp: evChamps[1] } : {}),
                     ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                     ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                   }).toString(),
@@ -1042,6 +1050,8 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               kind: "finder",
               query: new URLSearchParams({
                 event: e.u,
+                ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
                 ...(topTeam0 ? { team: topTeam0 } : {}),
                 ...(topTeam1 ? { vs: topTeam1 } : {}),
                 ...(evChamps[0] ? { champ: evChamps[0] } : {}),
@@ -1145,6 +1155,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                     team: pair[0],
                     vs: pair[1],
                     ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                    ...(evChamps[1] ? { vschamp: evChamps[1] } : {}),
                     ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                     ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                   }).toString(),
@@ -1201,6 +1212,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                     team: topTeam0,
                     ...(topTeam1 ? { vs: topTeam1 } : {}),
                     ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                    ...(evChamps[1] ? { vschamp: evChamps[1] } : {}),
                     ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                     ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                   }).toString(),

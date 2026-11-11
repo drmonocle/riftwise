@@ -226,7 +226,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                           team: a,
                           vs: b,
                           ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
-                          ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                          ...(topChamps[0] ? { champ: topChamps[0], ...(topChamps[1] ? { vschamp: topChamps[1] } : {}) } : {}),
                           ...(lg ? { league: lg } : {}),
                           ...(yr ? { year: yr } : {}),
                         }).toString(),
@@ -273,16 +273,32 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               <HubLink
                 to={{
                   kind: "leaders",
-                  query:
-                    new URLSearchParams({
-                      ...(blocks[0]?.m && (blocks[0].m.leagueSlug || blocks[0].m.leagueName) ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName) } : {}),
-                      ...(blocks[0]?.m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4)) ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
-                      ...(blocks[0]?.m
-                        ? {
-                            q: `${teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code)},${teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code)}`,
-                          }
-                        : {}),
-                    }).toString() || undefined,
+                  query: (() => {
+                    const cs = blocks[0]
+                      ? Array.from(new Set(blocks[0].lines.map((l) => (l.champ ? resolveChampSlug(l.champ) : "")).filter(Boolean))).slice(0, 2)
+                      : [];
+                    const ps = blocks[0]
+                      ? Array.from(new Set(blocks[0].lines.map((l) => (l.who?.to.kind === "player" ? l.who.to.slug : "")).filter(Boolean))).slice(0, 2)
+                      : [];
+                    return (
+                      new URLSearchParams({
+                        ...(blocks[0]?.m && (blocks[0].m.leagueSlug || blocks[0].m.leagueName) ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName) } : {}),
+                        ...(blocks[0]?.m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4)) ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
+                        ...(cs[0] ? { champ: cs[0] } : {}),
+                        ...(blocks[0]?.m
+                          ? {
+                              q: [
+                                teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code),
+                                teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code),
+                                ...ps,
+                              ]
+                                .filter((v, idx, arr) => Boolean(v) && arr.indexOf(v) === idx)
+                                .join(","),
+                            }
+                          : {}),
+                      }).toString() || undefined
+                    );
+                  })(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -320,12 +336,18 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   kind: "finder",
                   ...(blocks[0]?.m
                     ? {
-                        query: new URLSearchParams({
-                          team: teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code),
-                          vs: teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code),
-                          ...(blocks[0].m.leagueSlug || blocks[0].m.leagueName ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName) } : {}),
-                          ...(blocks[0].m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4)) ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
-                        }).toString(),
+                        query: (() => {
+                          const cs = Array.from(new Set(blocks[0].lines.map((l) => (l.champ ? resolveChampSlug(l.champ) : "")).filter(Boolean))).slice(0, 2);
+                          const ps = Array.from(new Set(blocks[0].lines.map((l) => (l.who?.to.kind === "player" ? l.who.to.slug : "")).filter(Boolean))).slice(0, 2);
+                          return new URLSearchParams({
+                            team: teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code),
+                            vs: teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code),
+                            ...(ps[0] ? { player: ps[0], ...(ps[1] ? { vsplayer: ps[1] } : {}) } : {}),
+                            ...(cs[0] ? { champ: cs[0], ...(cs[1] ? { vschamp: cs[1] } : {}) } : {}),
+                            ...(blocks[0].m.leagueSlug || blocks[0].m.leagueName ? { league: resolveLeagueSlug(blocks[0].m.leagueSlug || blocks[0].m.leagueName) } : {}),
+                            ...(blocks[0].m.startTimeUtc && /^\d{4}$/.test(blocks[0].m.startTimeUtc.slice(0, 4)) ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
+                          }).toString();
+                        })(),
                       }
                     : {}),
                 }}
@@ -373,7 +395,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       team: a,
                       vs: b,
                       ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
-                      ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                      ...(topChamps[0] ? { champ: topChamps[0], ...(topChamps[1] ? { vschamp: topChamps[1] } : {}) } : {}),
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
                     }).toString(),
@@ -389,7 +411,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       team: a,
                       vs: b,
                       ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
-                      ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                      ...(topChamps[0] ? { champ: topChamps[0], ...(topChamps[1] ? { vschamp: topChamps[1] } : {}) } : {}),
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
                     }).toString(),
@@ -566,7 +588,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       team: t1Slug,
                       vs: t2Slug,
                       ...(mPlayers[0] ? { player: mPlayers[0], ...(mPlayers[1] ? { vsplayer: mPlayers[1] } : {}) } : {}),
-                      ...(mChamps[0] ? { champ: mChamps[0] } : {}),
+                      ...(mChamps[0] ? { champ: mChamps[0], ...(mChamps[1] ? { vschamp: mChamps[1] } : {}) } : {}),
                       ...(m.leagueSlug || m.leagueName ? { league: resolveLeagueSlug(m.leagueSlug || m.leagueName) } : {}),
                       ...(mYr && /^\d{4}$/.test(mYr) ? { year: mYr } : {}),
                     }).toString(),
@@ -582,7 +604,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       team: t1Slug,
                       vs: t2Slug,
                       ...(mPlayers[0] ? { player: mPlayers[0], ...(mPlayers[1] ? { vsplayer: mPlayers[1] } : {}) } : {}),
-                      ...(mChamps[0] ? { champ: mChamps[0] } : {}),
+                      ...(mChamps[0] ? { champ: mChamps[0], ...(mChamps[1] ? { vschamp: mChamps[1] } : {}) } : {}),
                       ...(m.leagueSlug || m.leagueName ? { league: resolveLeagueSlug(m.leagueSlug || m.leagueName) } : {}),
                       ...(mYr && /^\d{4}$/.test(mYr) ? { year: mYr } : {}),
                     }).toString(),

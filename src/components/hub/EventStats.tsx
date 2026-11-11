@@ -194,7 +194,12 @@ export const FactGroups: React.FC<{
                       ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) }
                       : {}),
                     ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
-                    ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                    ...(topChamps[0]
+                      ? {
+                          champ: resolveChampSlug(topChamps[0]),
+                          ...(topChamps[1] ? { vschamp: resolveChampSlug(topChamps[1]) } : {}),
+                        }
+                      : {}),
                     ...(normLg ? { league: normLg } : {}),
                     ...(evYr ? { year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
@@ -477,7 +482,7 @@ export const FactCard: React.FC<{
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(cardPlayers[0])}${cardPlayers[1] ? `&vsplayer=${encodeURIComponent(cardPlayers[1])}` : ""}${cardTeams[0] ? `&team=${encodeURIComponent(cardTeams[0])}` : ""}${cardTeams[1] ? `&vs=${encodeURIComponent(cardTeams[1])}` : ""}${cardChamps[0] ? `&champ=${encodeURIComponent(cardChamps[0])}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
+                    query: `player=${encodeURIComponent(cardPlayers[0])}${cardPlayers[1] ? `&vsplayer=${encodeURIComponent(cardPlayers[1])}` : ""}${cardTeams[0] ? `&team=${encodeURIComponent(cardTeams[0])}` : ""}${cardTeams[1] ? `&vs=${encodeURIComponent(cardTeams[1])}` : ""}${cardChamps[0] ? `&champ=${encodeURIComponent(cardChamps[0])}` : ""}${cardChamps[1] ? `&vschamp=${encodeURIComponent(cardChamps[1])}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -708,7 +713,7 @@ export const FactCard: React.FC<{
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `champ=${encodeURIComponent(cardChamps[0])}${cardTeams[0] ? `&team=${encodeURIComponent(cardTeams[0])}` : ""}${cardTeams[1] ? `&vs=${encodeURIComponent(cardTeams[1])}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
+                    query: `champ=${encodeURIComponent(cardChamps[0])}${cardChamps[1] ? `&vschamp=${encodeURIComponent(cardChamps[1])}` : ""}${cardTeams[0] ? `&team=${encodeURIComponent(cardTeams[0])}` : ""}${cardTeams[1] ? `&vs=${encodeURIComponent(cardTeams[1])}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"

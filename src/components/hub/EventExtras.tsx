@@ -285,6 +285,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                       ...(featTeams[0] ? { team: featTeams[0] } : {}),
                       ...(featTeams[1] ? { vs: featTeams[1] } : {}),
                       ...(pentaChamps[0] ? { champ: pentaChamps[0] } : {}),
+                      ...(pentaChamps[1] ? { vschamp: pentaChamps[1] } : {}),
                       ...(normLg ? { league: normLg } : {}),
                       ...(yr ? { year: yr } : {}),
                     }).toString(),
@@ -598,6 +599,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                         ...(featGame?.a ? { team: tSlug(featGame.a) } : {}),
                         ...(featGame?.b && tSlug(featGame.b) !== tSlug(featGame.a) ? { vs: tSlug(featGame.b) } : {}),
                         ...(pentaChamps[0] ? { champ: pentaChamps[0] } : {}),
+                        ...(pentaChamps[1] ? { vschamp: pentaChamps[1] } : {}),
                         ...(normLg ? { league: normLg } : {}),
                         ...(yr ? { year: yr } : {}),
                         ...(slug ? { event: slug } : {}),
@@ -772,6 +774,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                         ...(featTeams[0] ? { team: featTeams[0] } : {}),
                         ...(featTeams[1] ? { vs: featTeams[1] } : {}),
                         ...(pentaChamps[0] ? { champ: pentaChamps[0] } : {}),
+                        ...(pentaChamps[1] ? { vschamp: pentaChamps[1] } : {}),
                         ...(normLg ? { league: normLg } : {}),
                         ...(yr ? { year: yr } : {}),
                         ...(slug ? { event: slug } : {}),
@@ -1406,6 +1409,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
                 ...(topTeamA ? { team: topTeamA } : {}),
                 ...(topTeamB && topTeamB !== topTeamA ? { vs: topTeamB } : {}),
                 ...(regChamps[0] ? { champ: regChamps[0] } : {}),
+                ...(regChamps[1] ? { vschamp: regChamps[1] } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
