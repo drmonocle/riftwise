@@ -59,9 +59,6 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     setTableSearch("");
     setDuoSearch("");
   }, [data.data?.m?.c, slug]);
-  useEffect(() => {
-    setVsInput(vsParam ? champName(vsParam) : "");
-  }, [vsParam]);
   const matchChamp = (raw: string) => {
     const trimmed = raw.trim();
     const resolved = resolveChampSlug(trimmed);
@@ -72,6 +69,19 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       list.find((c) => c[1] === resolved || bare(c[0]) === b || bare(champName(c[0])) === b || c[1] === b || sameChamp(c[0], trimmed)) ||
       (b.length >= 3 ? list.find((c) => bare(c[0]).startsWith(b) || bare(champName(c[0])).startsWith(b)) : undefined) ||
       list.find((c) => matchesChampSearch(c[0], trimmed))
+    );
+  };
+  const exactChamp = (raw: string) => {
+    const trimmed = raw.trim();
+    const b = bare(trimmed);
+    if (!b) return undefined;
+    const resolved = trimmed.length >= 2 ? resolveChampSlug(trimmed) : "";
+    const isAlias = resolved && resolved !== prettySlug(trimmed);
+    return (index.data?.champs || []).find(
+      (c) =>
+        bare(c[0]) === b ||
+        bare(champName(c[0])) === b ||
+        (isAlias && (c[1] === resolved || prettySlug(c[0]) === resolved)),
     );
   };
   const rows = useMemo<Row[]>(() => {
@@ -267,6 +277,9 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     const avgGd = gdRows.length > 0 ? Math.round(gdRows.reduce((s, r) => s + (r.gd || 0) * r.g, 0) / gdRows.reduce((s, r) => s + r.g, 0)) : null;
     return { oppCanon, totalG, totalW, avgGd, roles: allRows };
   }, [data.data, vsParam, span]);
+  useEffect(() => {
+    setVsInput(vsMatch?.oppCanon ? champName(vsMatch.oppCanon) : vsParam ? champName(vsParam) : "");
+  }, [vsParam, vsMatch?.oppCanon]);
   return (
     <div className="rw-page">
       <div className={`rw-span ${card} space-y-2`}>
@@ -283,15 +296,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
             onChange={(e) => {
               const v = e.target.value;
               setInputVal(v);
-              const exact = (index.data?.champs || []).find(
-                (c) => bare(c[0]) === bare(v.trim()) || bare(champName(c[0])) === bare(v.trim()),
-              );
+              const exact = exactChamp(v);
               if (exact) set({ champ: champSlug(exact) });
             }}
+            onBlur={() => {
+              if (!inputVal.trim()) return;
+              const hit = matchChamp(inputVal);
+              if (hit && champSlug(hit) !== slug) set({ champ: champSlug(hit) });
+            }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey && inputVal.trim())) {
                 const hit = matchChamp(inputVal);
-                if (hit) set({ champ: champSlug(hit) });
+                if (hit && champSlug(hit) !== slug) set({ champ: champSlug(hit) });
               }
             }}
             className={`${sel} w-44`}
@@ -320,10 +336,13 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 set({ vs: undefined });
                 return;
               }
-              const exact = (index.data?.champs || []).find(
-                (c) => bare(c[0]) === bare(v.trim()) || bare(champName(c[0])) === bare(v.trim()),
-              );
+              const exact = exactChamp(v);
               if (exact) set({ vs: exact[0] });
+            }}
+            onBlur={() => {
+              if (!vsInput.trim()) return;
+              const hit = matchChamp(vsInput);
+              if (hit && hit[0] !== vsParam) set({ vs: hit[0] });
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -1260,6 +1279,24 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           >
                             {tl("Counters")} →
                           </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "tiers",
+                              query: `role=Bot&q=${encodeURIComponent(`${rawChamp || cName},${topDuo[0]}`)}`,
+                            }}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Pro tier list")} →
+                          </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "draft",
+                              query: `role=Bot&champ=${encodeURIComponent(`${rawChamp || cName},${topDuo[0]}`)}`,
+                            }}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Draft board")} →
+                          </HubLink>
                         </>
                       ) : null;
                     })()}
@@ -1268,18 +1305,6 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Item history")} →
-                    </HubLink>
-                    <HubLink
-                      to={{ kind: "tiers", query: `role=Bot&q=${encodeURIComponent(rawChamp || cName)}` }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Pro tier list")} →
-                    </HubLink>
-                    <HubLink
-                      to={{ kind: "draft", query: `role=Bot&champ=${encodeURIComponent(rawChamp || cName)}` }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Draft board")} →
                     </HubLink>
                     <HubLink
                       to={{
