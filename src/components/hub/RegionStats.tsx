@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, regionName } from "../../i18n";
 import type { EventLines } from "../../hub/worldsFacts";
-import { normText, searchAlias } from "../../hub/data";
+import { normText, resolveLeagueSlug, searchAlias } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { HubLink, Section } from "./ui";
 import { STable } from "../STable";
@@ -53,7 +53,7 @@ const REGIONS: Record<string, [string, string, string | null]> = {
 };
 const regionKey = (code: string) => MERGE[code] || code;
 export const regionLabel = (code: string) => (REGIONS[code] ? regionName(REGIONS[code][0], REGIONS[code][1]) : code);
-const regionLeagueQuery = (code: string) => (code === "EMEA" ? "EMEA, Europe" : REGIONS[code]?.[1] || code);
+export const regionLeagueQuery = (code: string) => (code === "EMEA" ? "EMEA, Europe" : REGIONS[code]?.[1] || code);
 
 export const RegionFlag: React.FC<{ code: string }> = ({ code }) => {
   const flag = REGIONS[code]?.[2];
@@ -156,7 +156,10 @@ export function regionStats(files: (EventLines | null)[], years: string[]) {
  */
 const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; name: string; league?: string }> = ({ files, years, name, league }) => {
   const intlLeague = useMemo(
-    () => league || (/msi|mid-season/i.test(name) ? "mid-season-invitational" : /first stand/i.test(name) ? "first-stand" : "world-championship"),
+    () =>
+      resolveLeagueSlug(
+        league || (/msi|mid-season/i.test(name) ? "mid-season-invitational" : /first stand/i.test(name) ? "first-stand" : "world-championship"),
+      ) || "world-championship",
     [league, name],
   );
   const t = useMemo(() => {
@@ -203,7 +206,7 @@ const RegionTrend: React.FC<{ files: (EventLines | null)[]; years: string[]; nam
           <HubLink to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Game finder")} →
           </HubLink>
-          <HubLink to={{ kind: "tiers", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
+          <HubLink to={{ kind: "tiers", query: `scope=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
             {tl("Pro tier list")} →
           </HubLink>
           <HubLink to={{ kind: "best", query: `league=${encodeURIComponent(intlLeague)}` }} className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline" data-nocapture="1">
@@ -299,7 +302,10 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
   const { list, pairs } = useMemo(() => regionStats(files, years), [files, years]);
   const singleYear = useMemo(() => (!all ? /\d{4}/.exec(years[0] || "")?.[0] : undefined), [all, years]);
   const intlLeague = useMemo(
-    () => league || (/msi|mid-season/i.test(name) ? "mid-season-invitational" : /first stand/i.test(name) ? "first-stand" : "world-championship"),
+    () =>
+      resolveLeagueSlug(
+        league || (/msi|mid-season/i.test(name) ? "mid-season-invitational" : /first stand/i.test(name) ? "first-stand" : "world-championship"),
+      ) || "world-championship",
     [league, name],
   );
   const topTeamByRegion = useMemo(() => {
@@ -472,7 +478,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               to={{
                 kind: "tiers",
                 query: new URLSearchParams({
-                  league: intlLeague,
+                  scope: intlLeague,
                   ...(singleYear ? { key: `y${singleYear}` } : {}),
                 }).toString(),
               }}
@@ -803,7 +809,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 to={{
                   kind: "tiers",
                   query: new URLSearchParams({
-                    league: intlLeague,
+                    scope: intlLeague,
                     ...(singleYear ? { key: `y${singleYear}` } : {}),
                   }).toString(),
                 }}

@@ -1913,7 +1913,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             <HubLink
               to={{
                 kind: "counters",
-                query: `champ=${encodeURIComponent(c.u)}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}`,
+                query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}`,
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
@@ -1933,7 +1933,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
               {tl("Pro tier list")} →
             </HubLink>
             <HubLink
-              to={{ kind: "items", query: `champ=${encodeURIComponent(c.u)}` }}
+              to={{ kind: "items", query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}` }}
               className="text-rw-accent hover:underline font-semibold"
             >
               {tl("Item history")} →
@@ -2246,7 +2246,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </HubLink>{" "}
                     ·{" "}
                     <HubLink
-                      to={{ kind: "items", query: `champ=${encodeURIComponent(c.u)}` }}
+                      to={{ kind: "items", query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}` }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Item history")} →
