@@ -1263,16 +1263,34 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
             {(() => {
               const shown = rows.slice(0, 6);
               const maxG = Math.max(1, ...shown.map((p) => p.g));
-              return shown.map((p, i) => (
+              const potmYr = from && /^\d{4}/.test(from) ? from.slice(0, 4) : undefined;
+              return shown.map((p, i) => {
+                const pSlug = playerSlug(p.n, p.u);
+                const tSlug = p.t ? teamSlug(p.t) : "";
+                const rNorm = normalizeRole(p.r) || "";
+                const pQ = (() => {
+                  const qp = new URLSearchParams();
+                  if (potmYr) qp.set("p", `y${potmYr}`);
+                  if (tSlug) qp.set("team", tSlug);
+                  if (rNorm) qp.set("role", rNorm);
+                  return qp.toString() || undefined;
+                })();
+                const tQ = (() => {
+                  const qp = new URLSearchParams();
+                  if (potmYr) qp.set("p", `y${potmYr}`);
+                  if (pSlug) qp.set("q", pSlug);
+                  return qp.toString() || undefined;
+                })();
+                return (
                 <li key={p.u || p.n} className="flex items-center gap-2 min-w-0">
                   <span className="w-3 text-right text-rw-muted tabular-nums shrink-0">{i + 1}</span>
-                  <HubLink to={{ kind: "player", slug: playerSlug(p.n, p.u) }} className="shrink-0">
+                  <HubLink to={{ kind: "player", slug: pSlug, ...(pQ ? { query: pQ } : {}) }} className="shrink-0">
                     <PlayerPhoto name={p.n} team={p.t} slug={p.u || undefined} size={26} />
                   </HubLink>
                   <span className="inline-flex items-center gap-1 truncate min-w-0">
-                    <PlayerLink name={p.n} u={p.u} />
+                    <PlayerLink name={p.n} u={p.u} query={pQ} />
                     {p.t && (
-                      <HubLink to={{ kind: "team", slug: teamSlug(p.t) }} className="shrink-0">
+                      <HubLink to={{ kind: "team", slug: tSlug, ...(tQ ? { query: tQ } : {}) }} className="shrink-0">
                         <TeamLogo name={p.t} size={13} />
                       </HubLink>
                     )}
@@ -1280,7 +1298,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                       {p.r ? (
                         <>
                           {"· "}
-                          <HubLink to={{ kind: "player", slug: playerSlug(p.n, p.u), tab: "stats" }} className="hover:text-rw-accent hover:underline">
+                          <HubLink to={{ kind: "player", slug: pSlug, tab: "stats", ...(pQ ? { query: pQ } : {}) }} className="hover:text-rw-accent hover:underline">
                             {roleName(p.r)}
                           </HubLink>
                         </>
@@ -1290,7 +1308,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                       {p.t ? (
                         <>
                           {" · "}
-                          <TeamLink name={p.t} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                          <TeamLink name={p.t} query={tQ} className="text-rw-muted hover:text-rw-accent hover:underline" />
                         </>
                       ) : null}
                     </span>
@@ -1303,10 +1321,10 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                       to={{
                         kind: "finder",
                         query: new URLSearchParams({
-                          player: playerSlug(p.n, p.u),
-                          ...(p.t ? { team: teamSlug(p.t) } : {}),
-                          ...(normalizeRole(p.r) ? { role: normalizeRole(p.r)! } : {}),
-                          ...(from && /^\d{4}/.test(from) ? { year: from.slice(0, 4) } : {}),
+                          player: pSlug,
+                          ...(tSlug ? { team: tSlug } : {}),
+                          ...(rNorm ? { role: rNorm } : {}),
+                          ...(potmYr ? { year: potmYr } : {}),
                         }).toString(),
                       }}
                       className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline tabular-nums"
@@ -1314,18 +1332,28 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                       {tn("{n} game", "{n} games", p.g)}
                     </HubLink>
                     <HubLink
-                      to={{ kind: "player", slug: playerSlug(p.n, p.u), tab: "matches" }}
+                      to={{ kind: "player", slug: pSlug, tab: "matches", ...(pQ ? { query: pQ } : {}) }}
                       title={tl("Recent games")}
                     >
                       <RatingBadge v={p.rt} />
                     </HubLink>
                   </span>
                 </li>
-              ));
+                );
+              });
             })()}
           </ol>
           <p className="text-[10px] text-rw-muted">
-            <HubLink to={{ kind: "leaders" }} className="hover:text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  ...(from && /^\d{4}/.test(from) ? { year: from.slice(0, 4) } : {}),
+                  ...(rows[0] ? { q: playerSlug(rows[0].n, rows[0].u) } : {}),
+                }).toString(),
+              }}
+              className="hover:text-rw-accent hover:underline"
+            >
               {tl("Average RiftWise rating since {date} in the top leagues and international events (at least {n} games).", { date: fmtDate(from), n: 6 })}
             </HubLink>
           </p>
@@ -1400,10 +1428,10 @@ const LatestRow: React.FC<{ e: EventListItem }> = ({ e }) => {
             <RevealButton onReveal={reveal} small />
           ) : (
             <span className="inline-flex items-center gap-1 min-w-0">
-              <HubLink to={{ kind: "team", slug: teamSlug(e.w, undefined, e.wu) }} className="shrink-0">
+              <HubLink to={{ kind: "team", slug: teamSlug(e.w, undefined, e.wu), query: `p=e:${encodeURIComponent(e.u)}` }} className="shrink-0">
                 <TeamLogo name={e.w} size={14} />
               </HubLink>
-              <TeamLink name={e.w} u={e.wu} className="text-rw-accent hover:underline" />
+              <TeamLink name={e.w} u={e.wu} query={`p=e:${encodeURIComponent(e.u)}`} className="text-rw-accent hover:underline" />
             </span>
           )}
           {e.rs ? <span className="hidden sm:inline"><StandingsFirst /></span> : null}
@@ -1772,10 +1800,10 @@ const BrowseRow: React.FC<{ e: EventListItem; maxG: number; q?: string; onSetQ?:
             <RevealButton onReveal={reveal} small />
           ) : (
             <span className="inline-flex items-center gap-1.5 min-w-0">
-              <HubLink to={{ kind: "team", slug: teamSlug(e.w, undefined, e.wu) }} className="shrink-0">
+              <HubLink to={{ kind: "team", slug: teamSlug(e.w, undefined, e.wu), query: `p=e:${encodeURIComponent(e.u)}` }} className="shrink-0">
                 <TeamLogo name={e.w} size={15} />
               </HubLink>
-              <TeamLink name={e.w} u={e.wu} />
+              <TeamLink name={e.w} u={e.wu} query={`p=e:${encodeURIComponent(e.u)}`} />
             </span>
           )
         ) : (

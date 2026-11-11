@@ -251,6 +251,19 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
       tab: "champions",
     },
   ];
+  const myClubSlug = p.club
+    ? teamSlug(p.club, p.clubU)
+    : periodRows.map((r) => (r[7] ? teamSlug(r[7]) : "")).find(Boolean);
+  const c0Slug = agg.champs[0] ? resolveChampSlug(agg.champs[0].c) : undefined;
+  const overviewTabQuery = (() => {
+    const qp = new URLSearchParams();
+    if (periodKey) qp.set("p", periodKey);
+    if (myClubSlug) qp.set("team", myClubSlug);
+    if (p.role) qp.set("role", p.role);
+    if (c0Slug) qp.set("champ", c0Slug);
+    const s = qp.toString();
+    return s || undefined;
+  })();
 
   return (
     <>
@@ -264,13 +277,13 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
             ) : (
               <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
                 <HubLink
-                  to={{ kind: "player", slug: p.u, tab: "stats", ...(periodKey ? { query: `p=${encodeURIComponent(periodKey)}` } : {}) }}
+                  to={{ kind: "player", slug: p.u, tab: "stats", ...(overviewTabQuery ? { query: overviewTabQuery } : {}) }}
                   className="text-rw-muted hover:text-rw-accent hover:underline font-mono"
                 >
                   {periodLabel}
                 </HubLink>
                 <HubLink
-                  to={{ kind: "player", slug: p.u, tab: "stats", ...(periodKey ? { query: `p=${encodeURIComponent(periodKey)}` } : {}) }}
+                  to={{ kind: "player", slug: p.u, tab: "stats", ...(overviewTabQuery ? { query: overviewTabQuery } : {}) }}
                   className="text-rw-accent hover:underline font-semibold"
                 >
                   {tl("Stats")} · {tl("Open →")}
@@ -282,13 +295,9 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                   {tl("Compare")} →
                 </HubLink>
                 {(() => {
-                  const myClubSlug = p.club
-                    ? teamSlug(p.club, p.clubU)
-                    : periodRows.map((r) => (r[7] ? teamSlug(r[7]) : "")).find(Boolean);
                   const recentOpp = periodRows
                     .map((r) => (r[8] ? teamSlug(r[8]) : ""))
                     .find((s) => Boolean(s) && s !== myClubSlug);
-                  const c0Slug = agg.champs[0] ? resolveChampSlug(agg.champs[0].c) : undefined;
                   const c1Slug = agg.champs.map((x) => resolveChampSlug(x.c)).find((s) => Boolean(s) && s !== c0Slug);
                   const qChamps = [c0Slug, c1Slug]
                     .filter((v, idx, arr): v is string => Boolean(v) && arr.indexOf(v) === idx)
@@ -430,7 +439,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                   {tags.map((x) => (
                     <HubLink
                       key={x.tag}
-                      to={{ kind: "player", slug: p.u, tab: "stats", ...(periodKey ? { query: `p=${encodeURIComponent(periodKey)}` } : {}) }}
+                      to={{ kind: "player", slug: p.u, tab: "stats", ...(overviewTabQuery ? { query: overviewTabQuery } : {}) }}
                       title={x.why}
                       className={`px-2.5 py-1 rounded-full border text-[11px] hover:border-rw-accent/60 transition-colors ${
                         x.good === true
@@ -449,7 +458,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
                 {metrics.map((m) => (
                   <HubLink
                     key={m.label}
-                    to={{ kind: "player", slug: p.u, tab: m.tab, ...(periodKey ? { query: `p=${encodeURIComponent(periodKey)}` } : {}) }}
+                    to={{ kind: "player", slug: p.u, tab: m.tab, ...(overviewTabQuery ? { query: overviewTabQuery } : {}) }}
                     className="rounded-lg border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/40 px-2.5 py-2 flex flex-col justify-between gap-1.5 transition-colors"
                   >
                     <div>
@@ -792,32 +801,45 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
         <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
             <div className="flex flex-wrap items-center gap-3">
-              <HubLink
-                to={{
-                  kind: "player",
-                  slug: p.u,
-                  tab: "matches",
-                  ...(sel?.date && /^\d{4}/.test(sel.date) ? { query: `p=y${encodeURIComponent(sel.date.slice(0, 4))}` } : {}),
-                }}
-                className="font-semibold text-rw-text tabular-nums hover:text-rw-accent hover:underline"
-              >
-                {winsCount}W – {points.length - winsCount}L{" "}
-                <span className="text-rw-sub">({winRate(winsCount, points.length)})</span>
-              </HubLink>
-              <span className="text-rw-sub tabular-nums">
-                {activeMetric === "rating" ? tl("Rating") : activeMetric === "gd15" ? "GD@15" : tl("KDA")}:{" "}
-                <HubLink
-                  to={{
-                    kind: "player",
-                    slug: p.u,
-                    tab: "stats",
-                    ...(sel?.date && /^\d{4}/.test(sel.date) ? { query: `p=y${encodeURIComponent(sel.date.slice(0, 4))}` } : {}),
-                  }}
-                  className="font-bold text-rw-accent hover:underline"
-                >
-                  {fmtMetric(avgVal)}
-                </HubLink>
-              </span>
+              {(() => {
+                const qp = new URLSearchParams();
+                if (sel?.date && /^\d{4}/.test(sel.date)) qp.set("p", `y${sel.date.slice(0, 4)}`);
+                const tSlug = sel?.team ? teamSlug(sel.team) : p.club ? teamSlug(p.club, p.clubU) : "";
+                if (tSlug) qp.set("team", tSlug);
+                if (p.role) qp.set("role", p.role);
+                if (sel?.champ) qp.set("champ", resolveChampSlug(sel.champ));
+                const formQ = qp.toString() || undefined;
+                return (
+                  <>
+                    <HubLink
+                      to={{
+                        kind: "player",
+                        slug: p.u,
+                        tab: "matches",
+                        ...(formQ ? { query: formQ } : {}),
+                      }}
+                      className="font-semibold text-rw-text tabular-nums hover:text-rw-accent hover:underline"
+                    >
+                      {winsCount}W – {points.length - winsCount}L{" "}
+                      <span className="text-rw-sub">({winRate(winsCount, points.length)})</span>
+                    </HubLink>
+                    <span className="text-rw-sub tabular-nums">
+                      {activeMetric === "rating" ? tl("Rating") : activeMetric === "gd15" ? "GD@15" : tl("KDA")}:{" "}
+                      <HubLink
+                        to={{
+                          kind: "player",
+                          slug: p.u,
+                          tab: "stats",
+                          ...(formQ ? { query: formQ } : {}),
+                        }}
+                        className="font-bold text-rw-accent hover:underline"
+                      >
+                        {fmtMetric(avgVal)}
+                      </HubLink>
+                    </span>
+                  </>
+                );
+              })()}
             </div>
             <div className="flex items-center gap-3 text-[10px] text-rw-muted">
               <span className="inline-flex items-center gap-1">
@@ -983,11 +1005,16 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   to={{
                     kind: "champ",
                     slug: resolveChampSlug(sel.champ),
-                    ...(sel.row?.[11]
-                      ? { query: `p=e:${encodeURIComponent(resolveEventSlug(sel.row[11]))}` }
-                      : sel.date && /^\d{4}/.test(sel.date)
-                        ? { query: `p=y${encodeURIComponent(sel.date.slice(0, 4))}` }
-                        : {}),
+                    query: new URLSearchParams({
+                      player: p.u,
+                      ...(sel.team ? { team: teamSlug(sel.team) } : p.club ? { team: teamSlug(p.club, p.clubU) } : {}),
+                      ...(p.role ? { role: p.role } : {}),
+                      ...(sel.row?.[11]
+                        ? { p: `e:${resolveEventSlug(sel.row[11])}` }
+                        : sel.date && /^\d{4}/.test(sel.date)
+                          ? { p: `y${sel.date.slice(0, 4)}` }
+                          : {}),
+                    }).toString(),
                   }}
                   className="inline-flex items-center gap-1.5 font-semibold text-rw-text hover:text-rw-accent hover:underline"
                 >
@@ -1050,11 +1077,14 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                     to={{
                       kind: "team",
                       slug: teamSlug(sel.opp),
-                      ...(sel.row?.[11]
-                        ? { query: `p=e:${encodeURIComponent(resolveEventSlug(sel.row[11]))}` }
-                        : sel.date && /^\d{4}/.test(sel.date)
-                          ? { query: `p=y${encodeURIComponent(sel.date.slice(0, 4))}` }
-                          : {}),
+                      query: new URLSearchParams({
+                        ...(sel.row?.[11]
+                          ? { p: `e:${resolveEventSlug(sel.row[11])}` }
+                          : sel.date && /^\d{4}/.test(sel.date)
+                            ? { p: `y${sel.date.slice(0, 4)}` }
+                            : {}),
+                        q: p.u,
+                      }).toString(),
                     }}
                     className="shrink-0"
                   >
@@ -1063,13 +1093,14 @@ const PlayerFormChart: React.FC<{ p: HubPlayer; rows: PlayerGameRow[]; cardSub?:
                   <TeamLink
                     name={sel.opp}
                     u={teamSlug(sel.opp)}
-                    query={
-                      sel.row?.[11]
-                        ? `p=e:${encodeURIComponent(resolveEventSlug(sel.row[11]))}`
+                    query={new URLSearchParams({
+                      ...(sel.row?.[11]
+                        ? { p: `e:${resolveEventSlug(sel.row[11])}` }
                         : sel.date && /^\d{4}/.test(sel.date)
-                          ? `p=y${encodeURIComponent(sel.date.slice(0, 4))}`
-                          : undefined
-                    }
+                          ? { p: `y${sel.date.slice(0, 4)}` }
+                          : {}),
+                      q: p.u,
+                    }).toString()}
                   />
                   <span className="text-rw-muted">·</span>
                   <EventLink name={sel.event} u={sel.row[11]} className="text-rw-sub hover:text-rw-accent hover:underline truncate" />
@@ -1399,7 +1430,23 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
                 </HubLink>
               </>
             )}
-            <HubLink to={{ kind: "player", slug: p.u, tab: "champions" }} className="text-rw-accent hover:underline font-semibold">
+            <HubLink
+              to={{
+                kind: "player",
+                slug: p.u,
+                tab: "champions",
+                ...((myClubSlug || p.role || c0Slug)
+                  ? {
+                      query: new URLSearchParams({
+                        ...(myClubSlug ? { team: myClubSlug } : {}),
+                        ...(p.role ? { role: p.role } : {}),
+                        ...(c0Slug ? { champ: c0Slug } : {}),
+                      }).toString(),
+                    }
+                  : {}),
+              }}
+              className="text-rw-accent hover:underline font-semibold"
+            >
               {tl("Show all {n}", { n: p.nChamps })} →
             </HubLink>
             <SectionCard
@@ -1432,7 +1479,16 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
             return (
               <HubLink
                 key={c.c}
-                to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}` }}
+                to={{
+                  kind: "player",
+                  slug: p.u,
+                  tab: "champions",
+                  query: new URLSearchParams({
+                    champ: resolveChampSlug(c.c),
+                    ...(myClubSlug ? { team: myClubSlug } : {}),
+                    ...(p.role ? { role: p.role } : {}),
+                  }).toString(),
+                }}
                 className="group rounded-xl border border-rw-border bg-rw-bg/50 hover:border-rw-accent/60 hover:bg-rw-raised/60 p-2.5 flex flex-col justify-between gap-2 transition-colors"
                 title={`${p.name} · ${champName(c.c)} (${c.w}-${c.g - c.w})`}
               >
@@ -1861,12 +1917,26 @@ export const TeamFormAndSideCard: React.FC<{ t: HubTeam; cardSub?: string }> = (
                         vs
                       </HubLink>
                       <HubLink
-                        to={{ kind: "team", slug: oppSlug, ...(selPeriod ? { query: `p=${encodeURIComponent(selPeriod)}` } : {}) }}
+                        to={{
+                          kind: "team",
+                          slug: oppSlug,
+                          query: new URLSearchParams({
+                            ...(selPeriod ? { p: selPeriod } : {}),
+                            q: t.u,
+                          }).toString(),
+                        }}
                         className="shrink-0"
                       >
                         <TeamLogo name={sel.opp} sizeClass="w-3.5 h-3.5" />
                       </HubLink>
-                      <TeamLink name={sel.opp} u={oppSlug} query={selPeriod ? `p=${encodeURIComponent(selPeriod)}` : undefined} />
+                      <TeamLink
+                        name={sel.opp}
+                        u={oppSlug}
+                        query={new URLSearchParams({
+                          ...(selPeriod ? { p: selPeriod } : {}),
+                          q: t.u,
+                        }).toString()}
+                      />
                       <span className="text-rw-muted">·</span>
                       <EventLink name={sel.en} u={sel.e} className="text-rw-muted hover:text-rw-accent hover:underline truncate" />
                     </span>

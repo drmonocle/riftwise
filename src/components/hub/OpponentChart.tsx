@@ -439,40 +439,53 @@ const ColoredOpponentGraph: React.FC<{
         </div>
         {active && (
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-rw-sub ml-auto">
-            <span className="inline-flex items-center gap-1 font-semibold text-rw-text">
-              <HubLink
-                to={{
-                  kind: "team",
-                  slug: resolveOppSlug(active.opp, active.u),
-                  ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
-                }}
-                className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
-              >
-                <TeamLogo name={active.opp} size={16} />
-              </HubLink>
-              <TeamLink name={active.opp} u={active.u} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
-            </span>
-            <HubLink
-              to={{
-                kind: "team",
-                slug: resolveOppSlug(active.opp, active.u),
-                ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
-              }}
-              className="tabular-nums font-bold hover:underline"
-              style={{ color: toneColor(active.tone) }}
-            >
-              {active.fmt}
-            </HubLink>
-            <HubLink
-              to={{
-                kind: "team",
-                slug: resolveOppSlug(active.opp, active.u),
-                ...(period && period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
-              }}
-              className="text-rw-muted tabular-nums hover:text-rw-accent hover:underline"
-            >
-              {active.sub}
-            </HubLink>
+            {(() => {
+              const activeTeamQ = (() => {
+                const qp = new URLSearchParams();
+                if (period && period !== "all") qp.set("p", period);
+                const subQ = subjectPlayerSlug || subjectTeamSlug;
+                if (subQ) qp.set("q", subQ);
+                return qp.toString() || undefined;
+              })();
+              return (
+                <>
+                  <span className="inline-flex items-center gap-1 font-semibold text-rw-text">
+                    <HubLink
+                      to={{
+                        kind: "team",
+                        slug: resolveOppSlug(active.opp, active.u),
+                        ...(activeTeamQ ? { query: activeTeamQ } : {}),
+                      }}
+                      className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
+                    >
+                      <TeamLogo name={active.opp} size={16} />
+                    </HubLink>
+                    <TeamLink name={active.opp} u={active.u} query={activeTeamQ} />
+                  </span>
+                  <HubLink
+                    to={{
+                      kind: "team",
+                      slug: resolveOppSlug(active.opp, active.u),
+                      ...(activeTeamQ ? { query: activeTeamQ } : {}),
+                    }}
+                    className="tabular-nums font-bold hover:underline"
+                    style={{ color: toneColor(active.tone) }}
+                  >
+                    {active.fmt}
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "team",
+                      slug: resolveOppSlug(active.opp, active.u),
+                      ...(activeTeamQ ? { query: activeTeamQ } : {}),
+                    }}
+                    className="text-rw-muted tabular-nums hover:text-rw-accent hover:underline"
+                  >
+                    {active.sub}
+                  </HubLink>
+                </>
+              );
+            })()}
             {active.champs && active.champs.length > 0 && (
               <span className="inline-flex items-center gap-0.5">
                 {active.champs.slice(0, 3).map((c) => (
@@ -1416,7 +1429,10 @@ export const PlayerOpponents: React.FC<{
                 to={{
                   kind: "team",
                   slug: resolveOppSlug(expanded.opp, expanded.u),
-                  ...((period || scope) && (period || scope) !== "all" ? { query: `p=${encodeURIComponent((period || scope)!)}` } : {}),
+                  query: new URLSearchParams({
+                    ...((period || scope) && (period || scope) !== "all" ? { p: (period || scope)! } : {}),
+                    q: slug,
+                  }).toString(),
                 }}
                 className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
               >
@@ -1425,7 +1441,10 @@ export const PlayerOpponents: React.FC<{
               <TeamLink
                 name={expanded.opp}
                 u={expanded.u}
-                query={(period || scope) && (period || scope) !== "all" ? `p=${encodeURIComponent((period || scope)!)}` : undefined}
+                query={new URLSearchParams({
+                  ...((period || scope) && (period || scope) !== "all" ? { p: (period || scope)! } : {}),
+                  q: slug,
+                }).toString()}
               />
               <HubLink
                 to={{
@@ -1699,7 +1718,10 @@ export const PlayerOpponents: React.FC<{
                         to={{
                           kind: "team",
                           slug: resolveOppSlug(o.opp, o.u),
-                          ...((period || scope) && (period || scope) !== "all" ? { query: `p=${encodeURIComponent((period || scope)!)}` } : {}),
+                          query: new URLSearchParams({
+                            ...((period || scope) && (period || scope) !== "all" ? { p: (period || scope)! } : {}),
+                            q: slug,
+                          }).toString(),
                         }}
                         className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
                       >
@@ -1708,7 +1730,10 @@ export const PlayerOpponents: React.FC<{
                       <TeamLink
                         name={o.opp}
                         u={o.u}
-                        query={(period || scope) && (period || scope) !== "all" ? `p=${encodeURIComponent((period || scope)!)}` : undefined}
+                        query={new URLSearchParams({
+                          ...((period || scope) && (period || scope) !== "all" ? { p: (period || scope)! } : {}),
+                          q: slug,
+                        }).toString()}
                         className="text-rw-text hover:text-rw-accent hover:underline truncate"
                       />
                     </span>
@@ -1819,7 +1844,7 @@ export const PlayerOpponents: React.FC<{
                             kind: "player",
                             slug,
                             tab: "champions",
-                            query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${(period || scope) && (period || scope) !== "all" ? `&p=${encodeURIComponent((period || scope)!)}` : ""}`,
+                            query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}${subTeam ? `&team=${encodeURIComponent(subTeam)}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${(period || scope) && (period || scope) !== "all" ? `&p=${encodeURIComponent((period || scope)!)}` : ""}`,
                           }}
                           title={`${champName(c.c)}: ${c.w}–${c.g - c.w}`}
                         >
@@ -2136,12 +2161,26 @@ export const TeamOpponentsChart: React.FC<{
                   <td className={`${td} max-w-[13rem] truncate`} data-sort={o.n}>
                     <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
                       <HubLink
-                        to={{ kind: "team", slug: oppSlug, ...(rowYr ? { query: `p=y${encodeURIComponent(rowYr)}` } : {}) }}
+                        to={{
+                          kind: "team",
+                          slug: oppSlug,
+                          query: new URLSearchParams({
+                            ...(rowYr ? { p: `y${rowYr}` } : {}),
+                            q: teamSlug,
+                          }).toString(),
+                        }}
                         className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
                       >
                         <TeamLogo name={o.n} size={18} />
                       </HubLink>
-                      <TeamLink name={o.n} u={oppSlug} query={rowYr ? `p=y${encodeURIComponent(rowYr)}` : undefined} />
+                      <TeamLink
+                        name={o.n}
+                        u={oppSlug}
+                        query={new URLSearchParams({
+                          ...(rowYr ? { p: `y${rowYr}` } : {}),
+                          q: teamSlug,
+                        }).toString()}
+                      />
                     </span>
                   </td>
                   <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.g}>
@@ -2556,13 +2595,23 @@ export const TeamPeriodOpponents: React.FC<{
                 to={{
                   kind: "team",
                   slug: resolveOppSlug(expanded.opp, expanded.u),
-                  ...(pVal ? { query: `p=${encodeURIComponent(pVal)}` } : {}),
+                  query: new URLSearchParams({
+                    ...(pVal ? { p: pVal } : {}),
+                    q: teamSlug,
+                  }).toString(),
                 }}
                 className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
               >
                 <TeamLogo name={expanded.opp} size={18} />
               </HubLink>
-              <TeamLink name={expanded.opp} u={expanded.u} query={pVal ? `p=${encodeURIComponent(pVal)}` : undefined} />
+              <TeamLink
+                name={expanded.opp}
+                u={expanded.u}
+                query={new URLSearchParams({
+                  ...(pVal ? { p: pVal } : {}),
+                  q: teamSlug,
+                }).toString()}
+              />
               <HubLink
                 to={{
                   kind: "finder",
@@ -2825,12 +2874,26 @@ export const TeamPeriodOpponents: React.FC<{
                   <td className={`${td} max-w-[13rem] truncate`} data-sort={o.opp}>
                     <span className="inline-flex items-center gap-1.5 min-w-0" onClick={(e) => e.stopPropagation()}>
                       <HubLink
-                        to={{ kind: "team", slug: oppSlug, ...(pVal ? { query: `p=${encodeURIComponent(pVal)}` } : {}) }}
+                        to={{
+                          kind: "team",
+                          slug: oppSlug,
+                          query: new URLSearchParams({
+                            ...(pVal ? { p: pVal } : {}),
+                            q: teamSlug,
+                          }).toString(),
+                        }}
                         className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
                       >
                         <TeamLogo name={o.opp} size={18} />
                       </HubLink>
-                      <TeamLink name={o.opp} u={o.u} query={pVal ? `p=${encodeURIComponent(pVal)}` : undefined} />
+                      <TeamLink
+                        name={o.opp}
+                        u={o.u}
+                        query={new URLSearchParams({
+                          ...(pVal ? { p: pVal } : {}),
+                          q: teamSlug,
+                        }).toString()}
+                      />
                     </span>
                   </td>
                   <td className={`${td} text-rw-sub tabular-nums`} data-sort={o.g}>

@@ -761,11 +761,28 @@ export const PlayerRanks: React.FC<{
                 }).toString(),
               };
             }}
-            lastTo={{ kind: "player", slug, tab: "matches", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
+            lastTo={{
+              kind: "player",
+              slug,
+              tab: "matches",
+              query: new URLSearchParams({
+                ...(year ? { p: `y${year}` } : {}),
+                ...(me.t ? { team: me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) } : {}),
+                ...(me.r ? { role: me.r } : {}),
+              }).toString(),
+            }}
           />
           <p className="text-[10px] text-rw-muted">
             <HubLink
-              to={{ kind: "leaders", query: new URLSearchParams({ league: lu, year, role: me.r, q: slug }).toString() }}
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  league: lu,
+                  year,
+                  role: me.r,
+                  q: [slug, me.t ? me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) : ""].filter(Boolean).join(","),
+                }).toString(),
+              }}
               className="hover:text-rw-accent hover:underline"
             >
               {tl(
@@ -1066,7 +1083,7 @@ export const TeamRanks: React.FC<{
           lastTo={{ kind: "team", slug, tab: "matches", ...(year ? { query: `p=y${encodeURIComponent(year)}` } : {}) }}
         />
         <p className="text-[10px] text-rw-muted">
-          <HubLink to={{ kind: "league", slug: lu, year }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "league", slug: lu, year, query: `q=${encodeURIComponent(slug)}` }} className="hover:text-rw-accent hover:underline">
             {tl(
               "Compared with the {n} teams of {league} {year} (all splits and playoffs).",
               {
