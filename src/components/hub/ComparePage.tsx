@@ -8,7 +8,7 @@ import { Check, Copy } from "lucide-react";
 import { tl, tc, tn, roleName, fmtDec, locale, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { winRate } from "../../stats";
-import { bare, HubHit, HubIndex, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, matchesChampSearch, normText, prettySlug, resolveTeamAlias, searchHub, teamStarter } from "../../hub/data";
+import { bare, HubHit, HubIndex, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadPlayerGames, loadTeamGames, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias, searchHub, teamStarter } from "../../hub/data";
 import { normalizeRole } from "../../hub/champAgg";
 import { countView } from "../../usage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
@@ -527,7 +527,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
                   q: `${info.a!.u},${info.b!.u}`,
                   ...((info.a as HubTeam).rating?.league &&
                   (info.a as HubTeam).rating?.league === (info.b as HubTeam).rating?.league
-                    ? { league: (info.a as HubTeam).rating!.league! }
+                    ? { league: resolveLeagueSlug((info.a as HubTeam).rating!.league!) || (info.a as HubTeam).rating!.league! }
                     : {}),
                 }).toString(),
               }}
@@ -545,7 +545,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
                       query: new URLSearchParams({
                         ...((info.a as HubTeam).rating?.league &&
                         (info.a as HubTeam).rating?.league === (info.b as HubTeam).rating?.league
-                          ? { league: (info.a as HubTeam).rating!.league! }
+                          ? { league: resolveLeagueSlug((info.a as HubTeam).rating!.league!) || (info.a as HubTeam).rating!.league! }
                           : {}),
                         ...(period.startsWith("y") && period.length === 5
                           ? { key: period }
@@ -564,10 +564,10 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: `${info.a!.name},${info.b!.name}`,
+                  q: `${info.a!.u},${info.b!.u}`,
                   ...((info.a as HubTeam).rating?.league &&
                   (info.a as HubTeam).rating?.league === (info.b as HubTeam).rating?.league
-                    ? { league: (info.a as HubTeam).rating!.league! }
+                    ? { league: resolveLeagueSlug((info.a as HubTeam).rating!.league!) || (info.a as HubTeam).rating!.league! }
                     : {}),
                   ...(period.startsWith("y") && period.length === 5
                     ? { year: period.slice(1) }
@@ -586,8 +586,8 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
           <>
             {((info.a as HubPlayer).club || (info.b as HubPlayer).club) &&
               (() => {
-                const ca = (info.a as HubPlayer).clubU || ((info.a as HubPlayer).club ? prettySlug((info.a as HubPlayer).club!) : "");
-                const cb = (info.b as HubPlayer).clubU || ((info.b as HubPlayer).club ? prettySlug((info.b as HubPlayer).club!) : "");
+                const ca = (info.a as HubPlayer).clubU || ((info.a as HubPlayer).club ? resolveTeamAlias((info.a as HubPlayer).club!) || prettySlug((info.a as HubPlayer).club!) : "");
+                const cb = (info.b as HubPlayer).clubU || ((info.b as HubPlayer).club ? resolveTeamAlias((info.b as HubPlayer).club!) || prettySlug((info.b as HubPlayer).club!) : "");
                 const aTeam = ca || cb;
                 const bTeam = ca && cb && ca !== cb ? cb : undefined;
                 return (
@@ -649,7 +649,7 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: `${info.a!.name},${info.b!.name}`,
+                  q: `${info.a!.u},${info.b!.u}`,
                   ...((info.a as HubPlayer).role && (info.a as HubPlayer).role === (info.b as HubPlayer).role
                     ? { role: (info.a as HubPlayer).role! }
                     : {}),
@@ -699,8 +699,8 @@ export const ComparePage: React.FC<{ route: CompareRoute }> = ({ route }) => {
               to={{
                 kind: "rankings",
                 ...(() => {
-                  const ca = (info.a as HubPlayer).clubU || ((info.a as HubPlayer).club ? prettySlug((info.a as HubPlayer).club!) : "");
-                  const cb = (info.b as HubPlayer).clubU || ((info.b as HubPlayer).club ? prettySlug((info.b as HubPlayer).club!) : "");
+                  const ca = (info.a as HubPlayer).clubU || ((info.a as HubPlayer).club ? resolveTeamAlias((info.a as HubPlayer).club!) || prettySlug((info.a as HubPlayer).club!) : "");
+                  const cb = (info.b as HubPlayer).clubU || ((info.b as HubPlayer).club ? resolveTeamAlias((info.b as HubPlayer).club!) || prettySlug((info.b as HubPlayer).club!) : "");
                   const clubs = [ca, cb].filter(Boolean);
                   return clubs.length ? { query: `q=${clubs.map(encodeURIComponent).join(",")}` } : {};
                 })(),
@@ -1109,7 +1109,7 @@ export const TeamRows: React.FC<{
                 kind: "rankings",
                 query: new URLSearchParams({
                   q: `${x.u},${y.u}`,
-                  ...(x.rating?.league && x.rating.league === y.rating?.league ? { league: x.rating.league } : {}),
+                  ...(x.rating?.league && x.rating.league === y.rating?.league ? { league: resolveLeagueSlug(x.rating.league) || x.rating.league } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1136,7 +1136,7 @@ export const TeamRows: React.FC<{
                                 .join(","),
                             }
                           : {}),
-                        ...(x.rating?.league && x.rating.league === y.rating?.league ? { league: x.rating.league } : {}),
+                        ...(x.rating?.league && x.rating.league === y.rating?.league ? { league: resolveLeagueSlug(x.rating.league) || x.rating.league } : {}),
                         ...(period && period.startsWith("y") && period.length === 5
                           ? { key: period }
                           : period?.startsWith("e:")
@@ -1155,8 +1155,8 @@ export const TeamRows: React.FC<{
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: `${x.name},${y.name}`,
-                  ...(x.rating?.league && x.rating.league === y.rating?.league ? { league: x.rating.league } : {}),
+                  q: `${x.u},${y.u}`,
+                  ...(x.rating?.league && x.rating.league === y.rating?.league ? { league: resolveLeagueSlug(x.rating.league) || x.rating.league } : {}),
                   ...(period && period.startsWith("y") && period.length === 5
                     ? { year: period.slice(1) }
                     : period?.startsWith("e:")
@@ -1309,7 +1309,7 @@ export const TeamRows: React.FC<{
                       ? {
                           query: new URLSearchParams({
                             ...(s.t.picks[0] ? { q: s.t.picks[0][0] } : {}),
-                            ...(s.league ? { league: s.league } : {}),
+                            ...(s.league ? { league: resolveLeagueSlug(s.league) || s.league } : {}),
                             ...(period && period.startsWith("y") && period.length === 5
                               ? { key: period }
                               : period?.startsWith("e:")
@@ -1328,7 +1328,7 @@ export const TeamRows: React.FC<{
                     kind: "rankings",
                     query: new URLSearchParams({
                       q: s.u,
-                      ...(s.league ? { league: s.league } : {}),
+                      ...(s.league ? { league: resolveLeagueSlug(s.league) || s.league } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1339,9 +1339,9 @@ export const TeamRows: React.FC<{
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      q: s.n,
+                      q: s.u,
                       ...(s.t.picks[0] ? { champ: s.t.picks[0][0] } : {}),
-                      ...(s.league ? { league: s.league } : {}),
+                      ...(s.league ? { league: resolveLeagueSlug(s.league) || s.league } : {}),
                       ...(period && period.startsWith("y") && period.length === 5
                         ? { year: period.slice(1) }
                         : period?.startsWith("e:")
@@ -1688,8 +1688,8 @@ const PlayerRows: React.FC<{
             <span className="text-[11px] text-rw-sub whitespace-nowrap">{periodLabel}</span>
             {(x.club || y.club) &&
               (() => {
-                const ca = x.club ? x.clubU || prettySlug(x.club) : "";
-                const cb = y.club ? y.clubU || prettySlug(y.club) : "";
+                const ca = x.club ? x.clubU || resolveTeamAlias(x.club) || prettySlug(x.club) : "";
+                const cb = y.club ? y.clubU || resolveTeamAlias(y.club) || prettySlug(y.club) : "";
                 const aTeam = ca || cb;
                 const bTeam = ca && cb && ca !== cb ? cb : undefined;
                 return (
@@ -1749,7 +1749,7 @@ const PlayerRows: React.FC<{
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: `${x.name},${y.name}`,
+                  q: `${x.u},${y.u}`,
                   ...(x.role && x.role === y.role ? { role: x.role } : {}),
                   ...(period && period.startsWith("y") && period.length === 5
                     ? { year: period.slice(1) }
@@ -1801,8 +1801,8 @@ const PlayerRows: React.FC<{
               to={{
                 kind: "rankings",
                 ...(() => {
-                  const ca = x.clubU || (x.club ? prettySlug(x.club) : "");
-                  const cb = y.clubU || (y.club ? prettySlug(y.club) : "");
+                  const ca = x.clubU || (x.club ? resolveTeamAlias(x.club) || prettySlug(x.club) : "");
+                  const cb = y.clubU || (y.club ? resolveTeamAlias(y.club) || prettySlug(y.club) : "");
                   const clubs = [ca, cb].filter(Boolean);
                   return clubs.length ? { query: `q=${clubs.map(encodeURIComponent).join(",")}` } : {};
                 })(),
@@ -1856,9 +1856,11 @@ const PlayerRows: React.FC<{
       </Section>
       <div className="grid sm:grid-cols-2 gap-3">
         {[
-          { n: x.name, u: x.u, club: x.club, p: A },
-          { n: y.name, u: y.u, club: y.club, p: B },
-        ].map((s) => (
+          { n: x.name, u: x.u, club: x.club, clubU: x.clubU, p: A },
+          { n: y.name, u: y.u, club: y.club, clubU: y.clubU, p: B },
+        ].map((s) => {
+          const sClubSlug = s.club ? s.clubU || resolveTeamAlias(s.club) || prettySlug(s.club) : "";
+          return (
           <Section
             key={s.n}
             title={tl("Champions: {player}", { player: s.n })}
@@ -1935,7 +1937,7 @@ const PlayerRows: React.FC<{
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      q: s.n,
+                      q: s.u,
                       ...(s.p.roles[0] ? { role: s.p.roles[0] } : {}),
                       ...(s.p.champs[0] ? { champ: s.p.champs[0].c } : {}),
                       ...(period && period.startsWith("y") && period.length === 5
@@ -1949,12 +1951,12 @@ const PlayerRows: React.FC<{
                 >
                   {tl("Player leaderboards")} →
                 </HubLink>
-                {s.club && (
+                {sClubSlug && (
                   <>
                     <HubLink
                       to={{
                         kind: "prep",
-                        a: prettySlug(s.club),
+                        a: sClubSlug,
                         ...(period && period !== "all" ? { period } : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1964,7 +1966,7 @@ const PlayerRows: React.FC<{
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(prettySlug(s.club))}${s.p.champs[0] ? `&champ=${encodeURIComponent(s.p.champs[0].c)}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                        query: `teams=${encodeURIComponent(sClubSlug)}${s.p.champs[0] ? `&champ=${encodeURIComponent(s.p.champs[0].c)}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1975,7 +1977,7 @@ const PlayerRows: React.FC<{
                 <HubLink
                   to={{
                     kind: "rankings",
-                    ...(s.club ? { query: `q=${encodeURIComponent(prettySlug(s.club))}` } : {}),
+                    ...(sClubSlug ? { query: `q=${encodeURIComponent(sClubSlug)}` } : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -2058,7 +2060,8 @@ const PlayerRows: React.FC<{
               })()}
             </ul>
           </Section>
-        ))}
+          );
+        })}
       </div>
       {shared.length > 0 && (
         <Section
@@ -2121,7 +2124,7 @@ const PlayerRows: React.FC<{
                 to={{
                   kind: "leaders",
                   query: new URLSearchParams({
-                    q: `${x.name},${y.name}`,
+                    q: `${x.u},${y.u}`,
                     ...(x.role && x.role === y.role ? { role: x.role } : {}),
                     ...(shared[0] ? { champ: shared[0].c.c } : {}),
                     ...(period && period.startsWith("y") && period.length === 5
@@ -2139,7 +2142,10 @@ const PlayerRows: React.FC<{
                 to={{
                   kind: "rankings",
                   ...(() => {
-                    const clubs = [x.club ? prettySlug(x.club) : "", y.club ? prettySlug(y.club) : ""].filter(Boolean);
+                    const clubs = [
+                      x.club ? x.clubU || resolveTeamAlias(x.club) || prettySlug(x.club) : "",
+                      y.club ? y.clubU || resolveTeamAlias(y.club) || prettySlug(y.club) : "",
+                    ].filter(Boolean);
                     return clubs.length ? { query: `q=${Array.from(new Set(clubs)).map(encodeURIComponent).join(",")}` } : {};
                   })(),
                 }}
@@ -2305,8 +2311,8 @@ const PlayerHeadToHead: React.FC<{
   bSlug,
   spoilerKey,
 }) => {
-  const sa = aSlug || prettySlug(aName);
-  const sb = bSlug || prettySlug(bName);
+  const sa = aSlug || resolvePlayerSlug(aName) || prettySlug(aName);
+  const sb = bSlug || resolvePlayerSlug(bName) || prettySlug(bName);
   const meetings = useMemo(() => playerMeetings(a, b), [a, b]);
   const [hidden, reveal] = useHidden(spoilerKey, meetings.find((m) => isFresh(m.a[0]))?.a[0]);
   const [n, setN] = useState(10);
@@ -2315,7 +2321,7 @@ const PlayerHeadToHead: React.FC<{
   const filteredGames = useMemo(() => {
     const terms = champFilter
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-      .map((t) => normText(t))
+      .map((t) => normText(searchAlias(t.trim())))
       .filter(Boolean);
     if (!terms.length) return shown;
     return shown.filter((m) => {
@@ -2422,7 +2428,7 @@ const PlayerHeadToHead: React.FC<{
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: `${aName},${bName}`,
+                  q: `${sa},${sb}`,
                   ...(shown[0]?.a[10] ? { role: shown[0].a[10] } : {}),
                   ...(s.top[0] ? { champ: s.top[0].ca } : {}),
                   ...(shown[0]?.a[0] && /^\d{4}/.test(shown[0].a[0]) ? { year: shown[0].a[0].slice(0, 4) } : {}),
@@ -2453,7 +2459,7 @@ const PlayerHeadToHead: React.FC<{
               to={{
                 kind: "rankings",
                 ...(() => {
-                  const teams = Array.from(new Set([shown[0]?.a[7], shown[0]?.b[7]].filter(Boolean).map((t) => prettySlug(t!))));
+                  const teams = Array.from(new Set([shown[0]?.a[7], shown[0]?.b[7]].filter(Boolean).map((t) => resolveTeamAlias(t!) || prettySlug(t!))));
                   return teams.length ? { query: `q=${teams.map(encodeURIComponent).join(",")}` } : {};
                 })(),
               }}
@@ -2801,8 +2807,8 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
             const c0 = (aggs[0] as PlayerAgg | null)?.champs[0]?.c;
             const c1 = (aggs[1] as PlayerAgg | null)?.champs[0]?.c;
             const r0 = (aggs[0] as PlayerAgg | null)?.roles[0];
-            const ca = (rows[0].info as HubPlayer).club ? prettySlug((rows[0].info as HubPlayer).club!) : "";
-            const cb = rows[1] && (rows[1].info as HubPlayer).club ? prettySlug((rows[1].info as HubPlayer).club!) : "";
+            const ca = (rows[0].info as HubPlayer).clubU || ((rows[0].info as HubPlayer).club ? resolveTeamAlias((rows[0].info as HubPlayer).club!) || prettySlug((rows[0].info as HubPlayer).club!) : "");
+            const cb = rows[1] ? (rows[1].info as HubPlayer).clubU || ((rows[1].info as HubPlayer).club ? resolveTeamAlias((rows[1].info as HubPlayer).club!) || prettySlug((rows[1].info as HubPlayer).club!) : "") : "";
             return (
               <>
                 {ca && (
@@ -2886,7 +2892,7 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: rows.map((r) => r.info.name).join(","),
+                  q: rows.map((r) => r.slug).join(","),
                   ...(period && period.startsWith("y") && period.length === 5
                     ? { year: period.slice(1) }
                     : period && period.startsWith("e:")
@@ -2935,7 +2941,7 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                     mode === "team"
                       ? rows.map((r) => r.slug)
                       : rows
-                          .map((r) => (r.info as HubPlayer).clubU || ((r.info as HubPlayer).club ? prettySlug((r.info as HubPlayer).club!) : ""))
+                          .map((r) => (r.info as HubPlayer).clubU || ((r.info as HubPlayer).club ? resolveTeamAlias((r.info as HubPlayer).club!) || prettySlug((r.info as HubPlayer).club!) : ""))
                           .filter(Boolean);
                   return qSlugs.length ? { query: `q=${qSlugs.map(encodeURIComponent).join(",")}` } : {};
                 })(),

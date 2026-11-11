@@ -241,8 +241,8 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
               const qVsChamp = (q.get("vschamp") || "").split(",").map((s) => s.trim()).filter(Boolean)[0] || "";
               const qTeam = resolveTeamAlias(q.get("team") || "", aliases.data?.team);
               const qVs = resolveTeamAlias(q.get("vs") || "", aliases.data?.team);
-              const qPlayer = q.get("player") || "";
-              const qVsPlayer = q.get("vsplayer") || "";
+              const qPlayer = resolvePlayerSlug(prettySlug(q.get("player") || ""));
+              const qVsPlayer = resolvePlayerSlug(prettySlug(q.get("vsplayer") || ""));
               return (
                 <>
                   {qTeam && (
@@ -327,8 +327,8 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                     to={{
                       kind: "counters",
                       query: new URLSearchParams({
-                        ...(qChamp ? { champ: prettySlug(qChamp) } : {}),
-                        ...(qChamp && qVsChamp ? { vs: prettySlug(qVsChamp) } : {}),
+                        ...(qChamp ? { champ: resolveChampSlug(qChamp) } : {}),
+                        ...(qChamp && qVsChamp ? { vs: resolveChampSlug(qVsChamp) } : {}),
                         ...(qRole ? { role: qRole } : {}),
                       }).toString(),
                     }}
@@ -355,7 +355,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                       kind: "items",
                       query: new URLSearchParams({
                         ...(qPlayer ? { player: qPlayer } : {}),
-                        ...(qChamp ? { champ: prettySlug(qChamp) } : {}),
+                        ...(qChamp ? { champ: resolveChampSlug(qChamp) } : {}),
                         ...(year ? { year } : {}),
                       }).toString(),
                     }}
@@ -946,8 +946,8 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "prep",
-                      a: found[0].g[12] || prettySlug(found[0].g[10]!),
-                      b: found[0].g[13] || prettySlug(found[0].g[11]!),
+                      a: found[0].g[12] || resolveTeamAlias(found[0].g[10]!) || prettySlug(found[0].g[10]!),
+                      b: found[0].g[13] || resolveTeamAlias(found[0].g[11]!) || prettySlug(found[0].g[11]!),
                       period: year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -957,7 +957,7 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "draft",
-                      query: `teams=${encodeURIComponent(found[0].g[12] || prettySlug(found[0].g[10]!))},${encodeURIComponent(found[0].g[13] || prettySlug(found[0].g[11]!))}${year ? `&p=y${encodeURIComponent(year)}` : ""}`,
+                      query: `teams=${encodeURIComponent(found[0].g[12] || resolveTeamAlias(found[0].g[10]!) || prettySlug(found[0].g[10]!))},${encodeURIComponent(found[0].g[13] || resolveTeamAlias(found[0].g[11]!) || prettySlug(found[0].g[11]!))}${year ? `&p=y${encodeURIComponent(year)}` : ""}`,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -967,8 +967,8 @@ const FinderBody: React.FC<{
                     to={{
                       kind: "compare",
                       mode: "team",
-                      a: found[0].g[12] || prettySlug(found[0].g[10]!),
-                      b: found[0].g[13] || prettySlug(found[0].g[11]!),
+                      a: found[0].g[12] || resolveTeamAlias(found[0].g[10]!) || prettySlug(found[0].g[10]!),
+                      b: found[0].g[13] || resolveTeamAlias(found[0].g[11]!) || prettySlug(found[0].g[11]!),
                       period: year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -1327,7 +1327,7 @@ const FinderBody: React.FC<{
                         <span className="inline-flex items-center gap-1.5 min-w-0">
                           {(g[3] === 1 ? g[10] : g[11]) && (
                             <HubLink
-                              to={{ kind: "team", slug: (g[3] === 1 ? g[12] : g[13]) || prettySlug((g[3] === 1 ? g[10] : g[11])!) }}
+                              to={{ kind: "team", slug: (g[3] === 1 ? g[12] : g[13]) || resolveTeamAlias((g[3] === 1 ? g[10] : g[11])!) || prettySlug((g[3] === 1 ? g[10] : g[11])!) }}
                               className="shrink-0"
                             >
                               <TeamLogo name={(g[3] === 1 ? g[10] : g[11])!} size={14} />
@@ -1717,7 +1717,7 @@ const TeamCell: React.FC<{
   >
     <span className="inline-flex items-center gap-1.5 min-w-0">
       {name && (
-        <HubLink to={{ kind: "team", slug: u || prettySlug(name) }} className="shrink-0">
+        <HubLink to={{ kind: "team", slug: u || resolveTeamAlias(name) || prettySlug(name) }} className="shrink-0">
           <TeamLogo name={name} size={14} />
         </HubLink>
       )}

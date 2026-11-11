@@ -182,7 +182,7 @@ export const PickemBoard: React.FC<{
                       ...(evLg ? { league: evLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
                       event,
-                      ...(teams.length >= 1 ? { q: `${teams[0].n || teams[0].u}${teams[1] ? `,${teams[1].n || teams[1].u}` : ""}` } : {}),
+                      ...(teams.length >= 1 ? { q: `${teams[0].u || teams[0].n}${teams[1] ? `,${teams[1].u || teams[1].n}` : ""}` } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

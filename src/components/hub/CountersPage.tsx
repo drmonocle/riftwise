@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, matchesChampSearch, normText, prettySlug, resolveChampSlug, sameChamp } from "../../hub/data";
+import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, matchesChampSearch, normText, prettySlug, resolveChampSlug, sameChamp, searchAlias } from "../../hub/data";
 import { normalizeRole, ROLES } from "../../hub/champAgg";
 import type { HubChamp, HubMatchups } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
@@ -242,7 +242,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     if (!raw) return rows;
     const terms = raw
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-      .map((s) => normText(s))
+      .map((s) => normText(searchAlias(s.trim())))
       .filter(Boolean);
     return rows.filter((r) => {
       const rDisp = r.role >= 0 ? normText(roleName(ROLES[r.role])) : "";
@@ -671,7 +671,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     </HubLink>
                     <button
                       type="button"
-                      onClick={() => set({ champ: prettySlug(vsMatch.oppCanon), vs: rawChamp })}
+                      onClick={() => set({ champ: resolveChampSlug(vsMatch.oppCanon), vs: rawChamp })}
                       className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                     >
                       ⇄ {champName(vsMatch.oppCanon)} {tl("vs")} {cName}
@@ -1253,7 +1253,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       const raw = normText(duoSearch);
                       const terms = raw
                         .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-                        .map((s) => normText(s))
+                        .map((s) => normText(searchAlias(s.trim())))
                         .filter(Boolean);
                       const dList = terms.length
                         ? data.data!.ch!.duos!.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))
@@ -1328,7 +1328,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         const raw = normText(duoSearch);
                         const terms = raw
                           .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-                          .map((s) => normText(s))
+                          .map((s) => normText(searchAlias(s.trim())))
                           .filter(Boolean);
                         const list = terms.length
                           ? data.data!.ch!.duos!.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))
@@ -1351,7 +1351,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     const raw = normText(duoSearch);
                     const terms = raw
                       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-                      .map((s) => normText(s))
+                      .map((s) => normText(searchAlias(s.trim())))
                       .filter(Boolean);
                     const list = terms.length
                       ? data.data.ch.duos.filter(([pc]) => terms.some((t) => matchesChampSearch(pc, t)))

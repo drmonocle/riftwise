@@ -5,6 +5,7 @@
 import { load, loadText, MissingFile, statsFileUrl } from "../stats";
 import { IS_WEB, SITE_URL } from "../platform";
 import { searchAlias } from "../searchAliases";
+export { searchAlias };
 import { normalizeTeamCode } from "../helpers";
 import { champName } from "../champions";
 import type {
