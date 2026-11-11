@@ -2320,7 +2320,7 @@ const PlayerHeadToHead: React.FC<{
     if (!terms.length) return shown;
     return shown.filter((m) => {
       const hay = normText(
-        `${champName(m.a[2])} ${m.a[2]} ${champName(m.b[2])} ${m.b[2]} ${m.a[7] || ""} ${m.b[7] || ""} ${m.a[9] || ""} ${m.a[11] || ""} ${m.a[10] || ""} ${m.a[0] || ""}`,
+        `${champName(m.a[2])} ${m.a[2]} ${champName(m.b[2])} ${m.b[2]} ${m.a[7] || ""} ${m.b[7] || ""} ${m.a[9] || ""} ${m.a[11] || ""} ${m.a[10] || ""} ${m.a[0] || ""} ${m.a[24] || ""}`,
       );
       const tA = resolveTeamAlias(m.a[7] || "");
       const tB = resolveTeamAlias(m.b[7] || "");
@@ -2341,14 +2341,14 @@ const PlayerHeadToHead: React.FC<{
     });
   }, [shown, champFilter]);
   const s = useMemo(() => {
-    const w = shown.filter((m) => m.a[6]).length;
+    const w = filteredGames.filter((m) => m.a[6]).length;
     // lane leads only when they played the same role (then each one's lead is over the other)
-    const lane = shown.filter((m) => m.a[10] && m.a[10] === m.b[10] && m.a[21]?.[3] != null);
+    const lane = filteredGames.filter((m) => m.a[10] && m.a[10] === m.b[10] && m.a[21]?.[3] != null);
     const gd15 = lane.length ? lane.reduce((t, m) => t + (m.a[21]![3] as number), 0) / lane.length : null;
-    const laneCsd = shown.filter((m) => m.a[10] && m.a[10] === m.b[10] && m.a[21]?.[4] != null);
+    const laneCsd = filteredGames.filter((m) => m.a[10] && m.a[10] === m.b[10] && m.a[21]?.[4] != null);
     const csd15 = laneCsd.length ? laneCsd.reduce((t, m) => t + (m.a[21]![4] as number), 0) / laneCsd.length : null;
     const pairs = new Map<string, { ca: string; cb: string; g: number; w: number }>();
-    for (const m of shown) {
+    for (const m of filteredGames) {
       const k = `${m.a[2]}|${m.b[2]}`;
       const x = pairs.get(k) || { ca: m.a[2], cb: m.b[2], g: 0, w: 0 };
       x.g++;
@@ -2356,11 +2356,11 @@ const PlayerHeadToHead: React.FC<{
       pairs.set(k, x);
     }
     const series = new Map<string, number>();
-    for (const m of shown) series.set(m.a[1], (series.get(m.a[1]) || 0) + (m.a[6] ? 1 : -1));
+    for (const m of filteredGames) series.set(m.a[1], (series.get(m.a[1]) || 0) + (m.a[6] ? 1 : -1));
     const sw = [...series.values()].filter((v) => v > 0).length;
     const sl = [...series.values()].filter((v) => v < 0).length;
-    return { w, l: shown.length - w, gd15, csd15, lane: lane.length, top: [...pairs.values()].sort((x, y) => y.g - x.g).slice(0, 5), sw, sl };
-  }, [shown]);
+    return { w, l: filteredGames.length - w, gd15, csd15, lane: lane.length, top: [...pairs.values()].sort((x, y) => y.g - x.g).slice(0, 5), sw, sl };
+  }, [filteredGames]);
   if (meetings.length === 0) return null;
   return (
     <Section

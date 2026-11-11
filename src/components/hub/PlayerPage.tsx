@@ -1565,7 +1565,8 @@ const PlayerView: React.FC<{
             playerName={p.name}
             initialQ={qParam}
             initialChamp={champParam || undefined}
-            initialYear={pParam && /^y\d{4}$/.test(pParam) ? pParam.slice(1) : urlParams.get("y") || undefined}
+            initialYear={pParam && /^y\d{4}$/.test(pParam) ? pParam.slice(1) : rawYear || undefined}
+            period={pParam || undefined}
           />
         </div>
       )}

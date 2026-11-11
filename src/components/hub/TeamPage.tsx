@@ -1248,6 +1248,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           teamName={t.name}
           initialQ={qParam}
           initialYear={yParam || undefined}
+          period={pParam || undefined}
         />
       )}
 

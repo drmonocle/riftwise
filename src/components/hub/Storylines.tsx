@@ -7,7 +7,8 @@ import { Sparkles } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
 import { load } from "../../stats";
-import { bare, matchesChampSearch, normText, prettySlug } from "../../hub/data";
+import { bare, matchesChampSearch, normText, prettySlug, resolveTeamAlias } from "../../hub/data";
+import { matchesPeriodEvent } from "../../hub/period";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { ChampIcon, HubLink, PlayerPhoto, RevealButton, Section, TeamLogo, fmtNum, useHidden, useLoad, GRID_COLS, useColumns } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -542,9 +543,17 @@ export const HomeStorylines: React.FC = () => {
     ? all.filter((r) => {
         const hay = normText(`${r.name} ${r.u} ${r.c || ""} ${r.c ? champName(r.c) : ""} ${r.e || ""} ${notePlainText(r)}`);
         const hayBare = bare(hay);
+        const rTeam = r.t === "team" ? resolveTeamAlias(r.u || r.name) : "";
         return terms.some((t) => {
           const tb = bare(t);
-          return hay.includes(t) || (tb.length >= 2 && hayBare.includes(tb)) || (r.c ? matchesChampSearch(r.c, t) : false);
+          const qTeam = rTeam ? resolveTeamAlias(t) : "";
+          return (
+            hay.includes(t) ||
+            (tb.length >= 2 && hayBare.includes(tb)) ||
+            (r.c ? matchesChampSearch(r.c, t) : false) ||
+            Boolean(qTeam && qTeam === rTeam) ||
+            Boolean(r.e && matchesPeriodEvent(r.e, undefined, t))
+          );
         });
       })
     : all.slice(0, 8 + (cols - 1) * 6);

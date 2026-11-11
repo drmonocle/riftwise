@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tk, roleName, fmtDec } from "../../i18n";
-import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug } from "../../hub/data";
+import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug, resolveLeagueSlug } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { EventPlayer, EventTeamStats, LeagueRow, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { hubShareUrl, type HubRoute } from "../../hub/route";
@@ -639,8 +639,12 @@ function defaultRankSeason(
   const search = query ?? (typeof window !== "undefined" ? window.location.search : "");
   if (search) {
     const params = new URLSearchParams(search);
-    const p = params.get("p") || "";
-    const y = params.get("y") || (/^y(\d{4})$/.exec(p)?.[1] ?? "");
+    const rawP = (params.get("p") || params.get("period") || "").trim();
+    const rawEv = (params.get("event") || "").trim();
+    const p = rawP || (rawEv ? (rawEv.startsWith("e:") ? rawEv : `e:${rawEv}`) : "");
+    const rawLg = (params.get("league") || params.get("scope") || "").trim();
+    const lgSlug = rawLg ? resolveLeagueSlug(rawLg) : "";
+    const y = (params.get("y") || params.get("year") || (/^y:?(\d{4})$/.exec(p)?.[1] ?? (/^\d{4}$/.test(p) ? p : ""))).trim();
     if (p.startsWith("e:")) {
       const evSlug = p.slice(2);
       const ev = events.find((e) => e.e && matchesPeriodEvent(e.e, undefined, evSlug));
@@ -651,12 +655,16 @@ function defaultRankSeason(
       }
       const yrFromSlug = /(?:^|-)(20\d{2})(?:-|$)/.exec(evSlug)?.[1];
       if (yrFromSlug) {
-        const hit = seasons.find((s) => s[1] === yrFromSlug);
+        const hit = (lgSlug && seasons.find((s) => s[0] === lgSlug && s[1] === yrFromSlug)) || seasons.find((s) => s[1] === yrFromSlug);
         if (hit) return `${hit[0]}|${hit[1]}`;
       }
     }
     if (/^\d{4}$/.test(y)) {
-      const hit = seasons.find((s) => s[1] === y);
+      const hit = (lgSlug && seasons.find((s) => s[0] === lgSlug && s[1] === y)) || seasons.find((s) => s[1] === y);
+      if (hit) return `${hit[0]}|${hit[1]}`;
+    }
+    if (lgSlug) {
+      const hit = seasons.find((s) => s[0] === lgSlug);
       if (hit) return `${hit[0]}|${hit[1]}`;
     }
   }

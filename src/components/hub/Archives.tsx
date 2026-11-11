@@ -190,11 +190,12 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
   );
 };
 
-const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: string; initialYear?: string }> = ({
+const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: string; initialYear?: string; period?: PeriodKey }> = ({
   slug,
   teamName,
   initialQ = "",
   initialYear,
+  period,
 }) => {
   const state = useLoad(() => loadTeamSeries(slug), [slug]);
   const aliases = useLoad(loadAliases, []);
@@ -207,28 +208,36 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: stri
   useEffect(() => {
     setQ(initialQ);
   }, [initialQ]);
-  const years = useMemo(() => [...new Set((state.data || []).map((r) => r[0].slice(0, 4)))], [state.data]);
+  const data = useMemo(
+    () =>
+      period && period.startsWith("e:")
+        ? (state.data || []).filter((r) => Boolean(r[6] && matchesPeriodEvent(r[6], r[5], period.slice(2))))
+        : state.data || [],
+    [state.data, period],
+  );
+  const years = useMemo(() => [...new Set(data.map((r) => r[0].slice(0, 4)))], [data]);
   const rows = useMemo(() => {
     const terms = q
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((t) => normText(t))
       .filter(Boolean);
-    return (state.data || []).filter(
+    return data.filter(
       (r) =>
         (year === "all" || r[0].startsWith(year)) &&
         (!terms.length ||
           terms.some((qq) => {
-            const hay = normText(`${r[1]} ${r[2] || ""} ${r[5]} ${r[6] || ""}`);
+            const hay = normText(`${r[1]} ${r[2] || ""} ${r[5]} ${r[6] || ""} ${r[8] || ""} ${r[9] || ""}`);
             const canonTeam = resolveTeamAlias(qq, aliases.data?.team);
             return (
               hay.includes(qq) ||
               (bare(qq).length >= 2 && bare(hay).includes(bare(qq))) ||
               Boolean((r[2] || r[1]) && canonTeam === resolveTeamAlias(r[2] || r[1], aliases.data?.team)) ||
+              Boolean(r[9] && canonTeam === resolveTeamAlias(r[9], aliases.data?.team)) ||
               Boolean(r[6] && matchesPeriodEvent(r[6], r[5], qq))
             );
           })),
     );
-  }, [state.data, aliases.data, year, q]);
+  }, [data, aliases.data, year, q]);
   // the same spoiler switch as the list below: while its fresh results are hidden, so is the count of wins
   const [seriesHidden] = useHidden(`teamseries:${slug}:${year}:${q}`, rows.find((r) => isFresh(r[0]))?.[0]);
   // best-rated first; results still hidden by spoiler mode stay out so the order gives nothing away
@@ -355,11 +364,12 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: stri
   );
 };
 
-export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string; initialQ?: string; initialYear?: string }> = ({
+export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string; initialQ?: string; initialYear?: string; period?: PeriodKey }> = ({
   slug,
   teamName,
   initialQ,
   initialYear,
+  period,
 }) => (
   <Section
     title={tl("Every series")}
@@ -390,7 +400,7 @@ export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string; initi
       </span>
     }
   >
-    <TeamSeriesBody slug={slug} teamName={teamName} initialQ={initialQ} initialYear={initialYear} />
+    <TeamSeriesBody slug={slug} teamName={teamName} initialQ={initialQ} initialYear={initialYear} period={period} />
   </Section>
 );
 
@@ -404,7 +414,10 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
   const [year, setYear] = useState("all");
   const events = useMemo(() => [...new Map(all.map((r) => [r[6], r[5]])).entries()], [all]);
   const years = useMemo(() => [...new Set(all.map((r) => r[0].slice(0, 4)))], [all]);
-  const rows = useMemo(() => all.filter((r) => (event === "all" || r[6] === event) && (year === "all" || r[0].startsWith(year))), [all, event, year]);
+  const rows = useMemo(
+    () => all.filter((r) => (event === "all" || matchesPeriodEvent(r[6] || "", r[5] || "", event)) && (year === "all" || r[0].startsWith(year))),
+    [all, event, year],
+  );
   const [hidden] = useHidden(`h2h:${a}:${b}`, rows.find((r) => isFresh(r[0]))?.[0]);
   if (state.loading) return <Loading />;
   if (state.error) return null;
@@ -734,7 +747,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
         (opp === "all" || r[8] === opp) &&
         (!terms.length ||
           terms.some((term) => {
-            const hay = normText(`${r[2] || ""} ${champName(r[2] || "")} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""} ${r[10] || ""} ${r[11] || ""}`);
+            const hay = normText(`${r[2] || ""} ${champName(r[2] || "")} ${r[7] || ""} ${r[8] || ""} ${r[9] || ""} ${r[10] || ""} ${r[11] || ""} ${r[24] || ""}`);
             const canonTeam = resolveTeamAlias(term, aliases.data?.team);
             const roleHit = normalizeRole(term);
             return (
@@ -1168,12 +1181,20 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
   );
 };
 
-export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string; initialQ?: string; initialChamp?: string; initialYear?: string }> = ({
+export const PlayerGamesArchive: React.FC<{
+  slug: string;
+  playerName?: string;
+  initialQ?: string;
+  initialChamp?: string;
+  initialYear?: string;
+  period?: PeriodKey;
+}> = ({
   slug,
   playerName,
   initialQ,
   initialChamp,
   initialYear,
+  period,
 }) => (
   <Section
     title={tl("Every game")}
@@ -1204,7 +1225,7 @@ export const PlayerGamesArchive: React.FC<{ slug: string; playerName?: string; i
       </span>
     }
   >
-    <PlayerGamesBody slug={slug} playerName={playerName} initialQ={initialQ} champ={initialChamp} year={initialYear} />
+    <PlayerGamesBody slug={slug} playerName={playerName} initialQ={initialQ} champ={initialChamp} year={initialYear} period={period} />
   </Section>
 );
 
