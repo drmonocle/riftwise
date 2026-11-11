@@ -118,6 +118,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const topPlayer =
     data.data?.ch?.players?.[0]?.u ||
     (data.data?.ch?.players?.[0]?.n ? resolvePlayerSlug(data.data.ch.players[0].n) : "");
+  const secPlayer =
+    data.data?.ch?.players?.[1]?.u ||
+    (data.data?.ch?.players?.[1]?.n ? resolvePlayerSlug(data.data.ch.players[1].n) : "");
+  const leaderQ = [topPlayer, secPlayer, topTeam, topOpp].filter(Boolean).slice(0, 2).join(",");
   const finderLink = (opp: string, n: number | string, roleIdx?: number) => {
     const rStr = roleIdx != null && roleIdx >= 0 ? ROLES[roleIdx] : role || "";
     return rawChamp ? (
@@ -461,6 +465,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   kind: "items",
                   query: new URLSearchParams({
                     champ: slug,
+                    ...(vsMatch ? { vschamp: resolveChampSlug(vsMatch.oppCanon) } : {}),
                     ...(role ? { role } : {}),
                     ...(topTeam ? { team: topTeam } : {}),
                     ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
@@ -495,7 +500,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     ...(role ? { role } : {}),
                     ...(yearParam ? { year: yearParam } : {}),
                     ...(evParam ? { event: evParam } : {}),
-                    ...(topPlayer ? { q: topPlayer } : {}),
+                    ...(leaderQ ? { q: leaderQ } : {}),
                   }).toString(),
                 }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
@@ -705,6 +710,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               kind: "items",
                               query: new URLSearchParams({
                                 champ: slug,
+                                vschamp: resolveChampSlug(vsMatch.oppCanon),
                                 ...(vsRole ? { role: vsRole } : {}),
                                 ...(topTeam ? { team: topTeam } : {}),
                                 ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
@@ -753,7 +759,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 ...(vsRole ? { role: vsRole } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
                                 ...(evParam ? { event: evParam } : {}),
-                                ...(topPlayer ? { q: topPlayer } : {}),
+                                ...(leaderQ ? { q: leaderQ } : {}),
                               }).toString(),
                             }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -885,20 +891,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             )}
                           </div>
                           <div className={`font-mono font-bold ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}>
-                            {rawChamp ? (
-                              <HubLink
-                                to={{
-                                  kind: "finder",
-                                  query: `champ=${encodeURIComponent(slug)}&vschamp=${encodeURIComponent(resolveChampSlug(vsMatch.oppCanon))}${rStr ? `&role=${encodeURIComponent(rStr)}` : ""}`,
-                                }}
-                                className="hover:underline"
-                                title={tl("Game finder")}
-                              >
-                                {wr}%
-                              </HubLink>
-                            ) : (
-                              `${wr}%`
-                            )}
+                            {finderLink(vsMatch.oppCanon, `${wr}%`, r.role)}
                           </div>
                           <div className="text-[10px] font-mono text-rw-sub">
                             {finderLink(vsMatch.oppCanon, r.g, r.role)}G
@@ -968,6 +961,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "items",
                         query: new URLSearchParams({
                           champ: slug,
+                          ...(good[0] ? { vschamp: resolveChampSlug(good[0].c) } : {}),
                           ...(role ? { role } : good[0] && good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
                           ...(topTeam ? { team: topTeam } : {}),
                           ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
@@ -1016,7 +1010,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(role ? { role } : good[0] && good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
-                          ...(topPlayer ? { q: topPlayer } : {}),
+                          ...(leaderQ ? { q: leaderQ } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1151,6 +1145,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         kind: "items",
                         query: new URLSearchParams({
                           champ: slug,
+                          ...(bad[0] ? { vschamp: resolveChampSlug(bad[0].c) } : {}),
                           ...(role ? { role } : bad[0] && bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
                           ...(topTeam ? { team: topTeam } : {}),
                           ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
@@ -1199,7 +1194,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(role ? { role } : bad[0] && bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
-                          ...(topPlayer ? { q: topPlayer } : {}),
+                          ...(leaderQ ? { q: leaderQ } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1346,6 +1341,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       kind: "items",
                       query: new URLSearchParams({
                         champ: slug,
+                        ...(filteredRows[0] ? { vschamp: resolveChampSlug(filteredRows[0].c) } : {}),
                         ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
                         ...(topTeam ? { team: topTeam } : {}),
                         ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
@@ -1394,7 +1390,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
                         ...(yearParam ? { year: yearParam } : {}),
                         ...(evParam ? { event: evParam } : {}),
-                        ...(topPlayer ? { q: topPlayer } : {}),
+                        ...(leaderQ ? { q: leaderQ } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1444,7 +1440,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     kind: "finder",
                     query: new URLSearchParams({
                       champ: slug,
-                      ...(role ? { role } : {}),
+                      ...(filteredRows[0] ? { vschamp: resolveChampSlug(filteredRows[0].c) } : {}),
+                      ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
+                      ...(topTeam ? { team: topTeam } : {}),
+                      ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                       ...(evParam ? { event: evParam } : {}),
                       ...(patchParam ? { patch: patchParam } : {}),
                       ...(yearParam ? { year: yearParam } : {}),
@@ -1495,6 +1494,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               query: new URLSearchParams({
                                 champ: `${slug},${resolveChampSlug(topDuo[0])}`,
                                 role: "Bot",
+                                ...(topTeam ? { team: topTeam } : {}),
+                                ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                                 ...(evParam ? { event: evParam } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
@@ -1548,26 +1549,45 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           >
                             {tl("Draft board")} →
                           </HubLink>
+                          <HubLink
+                            to={{
+                              kind: "items",
+                              query: new URLSearchParams({
+                                champ: slug,
+                                vschamp: resolveChampSlug(topDuo[0]),
+                                role: "Bot",
+                                ...(topTeam ? { team: topTeam } : {}),
+                                ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                                ...(patchParam ? { patch: patchParam } : {}),
+                                ...(yearParam ? { year: yearParam } : {}),
+                                ...(evParam ? { event: evParam } : {}),
+                              }).toString(),
+                            }}
+                            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          >
+                            {tl("Item history")} →
+                          </HubLink>
                         </>
-                      ) : null;
+                      ) : (
+                        <HubLink
+                          to={{
+                            kind: "items",
+                            query: new URLSearchParams({
+                              champ: slug,
+                              role: "Bot",
+                              ...(topTeam ? { team: topTeam } : {}),
+                              ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                              ...(patchParam ? { patch: patchParam } : {}),
+                              ...(yearParam ? { year: yearParam } : {}),
+                              ...(evParam ? { event: evParam } : {}),
+                            }).toString(),
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Item history")} →
+                        </HubLink>
+                      );
                     })()}
-                    <HubLink
-                      to={{
-                        kind: "items",
-                        query: new URLSearchParams({
-                          champ: slug,
-                          role: "Bot",
-                          ...(topTeam ? { team: topTeam } : {}),
-                          ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
-                          ...(patchParam ? { patch: patchParam } : {}),
-                          ...(yearParam ? { year: yearParam } : {}),
-                          ...(evParam ? { event: evParam } : {}),
-                        }).toString(),
-                      }}
-                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                    >
-                      {tl("Item history")} →
-                    </HubLink>
                     <HubLink
                       to={{
                         kind: "leaders",
@@ -1576,7 +1596,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           champ: slug,
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
-                          ...(topPlayer ? { q: topPlayer } : {}),
+                          ...(leaderQ ? { q: leaderQ } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1659,6 +1679,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                   query: new URLSearchParams({
                                     champ: `${slug},${resolveChampSlug(pc)}`,
                                     role: "Bot",
+                                    ...(topTeam ? { team: topTeam } : {}),
+                                    ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                                     ...(evParam ? { event: evParam } : {}),
                                     ...(patchParam ? { patch: patchParam } : {}),
                                     ...(yearParam ? { year: yearParam } : {}),

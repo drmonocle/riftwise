@@ -68,6 +68,7 @@ interface Picks {
   vsplayer?: string;
   item: string;
   champ: string;
+  vschamp?: string;
   year: string;
   event?: string;
   patch?: string;
@@ -97,11 +98,14 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   const canonRole = normalizeRole(q.get("role"));
   const canonPlayer = resolvePlayerSlug(prettySlug(q.get("player") || ""));
   const canonVsPlayer = resolvePlayerSlug(prettySlug(q.get("vsplayer") || ""));
+  const canonChamp = resolveChampSlug(q.get("champ") || "");
+  const canonVsChamp = resolveChampSlug(q.get("vschamp") || "");
   const picks: Picks = {
     player: canonPlayer,
     vsplayer: canonVsPlayer && canonVsPlayer !== canonPlayer ? canonVsPlayer : undefined,
     item: resolveItemSlug(q.get("item") || ""),
-    champ: resolveChampSlug(q.get("champ") || ""),
+    champ: canonChamp,
+    vschamp: canonVsChamp && canonVsChamp !== canonChamp ? canonVsChamp : undefined,
     year: q.get("year") || pYr || patchYr || evYr || "",
     event: canonEvent || undefined,
     patch: cleanPatch || undefined,
@@ -109,7 +113,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
     team: canonTeam || undefined,
     role: canonRole || undefined,
   };
-  const { player, vsplayer, item, champ, year, event, patch, vs, team, role } = picks;
+  const { player, vsplayer, item, champ, vschamp, year, event, patch, vs, team, role } = picks;
   const queryWith = (upd: Partial<Record<keyof Picks, string | undefined>>) => {
     const next = new URLSearchParams(query || "");
     if ("year" in upd || "event" in upd || "patch" in upd) {
@@ -136,6 +140,11 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   const champs = useMemo(() => [...(people.data?.champs || [])].sort((a, b) => champName(a[0]).localeCompare(champName(b[0]))), [people.data]);
   const champRow = useMemo(() => champs.find((r) => sameChamp(r[1] || r[0], champ) || sameChamp(r[0], champ)), [champs, champ]);
   const champLabel = champRow ? champName(champRow[0]) : champ;
+  const vsChampRow = useMemo(
+    () => (vschamp ? champs.find((r) => sameChamp(r[1] || r[0], vschamp) || sameChamp(r[0], vschamp)) : undefined),
+    [champs, vschamp],
+  );
+  const vsChampLabel = vsChampRow ? champName(vsChampRow[0]) : vschamp || "";
   const thisYear = new Date().getFullYear();
   const years = Array.from({ length: thisYear - FIRST_YEAR + 1 }, (_, i) => String(thisYear - i));
   const scope = scopeText(champLabel, year);
@@ -272,7 +281,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
               </option>
             ))}
           </select>
-          {(player || vsplayer || item || champ || year || event || patch || vs || team || role) && (
+          {(player || vsplayer || item || champ || vschamp || year || event || patch || vs || team || role) && (
             <span className="flex flex-wrap gap-1.5 items-center">
               {who && (
                 <span className="flex items-center gap-1">
@@ -338,6 +347,34 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                     title={champLabel}
+                  >
+                    →
+                  </HubLink>
+                </span>
+              )}
+              {vschamp && (
+                <span className="flex items-center gap-1">
+                  {champ && (
+                    <button
+                      type="button"
+                      onClick={() => set({ champ: vschamp, vschamp: champ })}
+                      className={chip}
+                      title={`⇄ ${vsChampLabel}`}
+                    >
+                      ⇄
+                    </button>
+                  )}
+                  <button type="button" onClick={() => set({ vschamp: undefined })} className={chip} title={tl("Clear")}>
+                    {tl("vs")} {vsChampRow && <ChampIcon name={vsChampRow[0]} size={16} />} {vsChampLabel} ✕
+                  </button>
+                  <HubLink
+                    to={{
+                      kind: "champ",
+                      slug: vschamp,
+                      ...(event ? { query: `event=${encodeURIComponent(event)}` } : patch ? { query: `p=p:${encodeURIComponent(patch)}` } : year ? { query: `p=y${encodeURIComponent(year)}&year=${encodeURIComponent(year)}` } : {}),
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                    title={vsChampLabel}
                   >
                     →
                   </HubLink>
@@ -460,7 +497,7 @@ const PlayerItemsView: React.FC<{
   itemTitle?: string;
   onItem: (slug: string) => void;
 }> = ({ slug, name, picks, champLabel, scope, itemTitle, onItem }) => {
-  const { vsplayer, item, champ, year, event, patch, vs, team, role } = picks;
+  const { vsplayer, item, champ, vschamp, year, event, patch, vs, team, role } = picks;
   const mine = useLoad(() => loadPlayerItems(slug), [slug]);
   const log = useLoad(() => loadPlayerGames(slug), [slug]);
   const [filter, setFilter] = useState("");
@@ -485,6 +522,7 @@ const PlayerItemsView: React.FC<{
           item,
           ...(vsplayer ? { vsplayer } : {}),
           ...(champ ? { champ } : {}),
+          ...(vschamp ? { vschamp } : {}),
           ...(year ? { year } : {}),
           ...(event ? { event } : {}),
           ...(patch ? { patch } : {}),
@@ -513,7 +551,7 @@ const PlayerItemsView: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `player=${encodeURIComponent(slug)}${vsplayer ? `&vsplayer=${encodeURIComponent(vsplayer)}` : ""}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${vs ? `&vs=${encodeURIComponent(vs)}` : ""}${team ? `&team=${encodeURIComponent(team)}` : ""}`,
+                query: `player=${encodeURIComponent(slug)}${vsplayer ? `&vsplayer=${encodeURIComponent(vsplayer)}` : ""}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${vschamp ? `&vschamp=${encodeURIComponent(vschamp)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${vs ? `&vs=${encodeURIComponent(vs)}` : ""}${team ? `&team=${encodeURIComponent(team)}` : ""}`,
               }}
               className="hover:text-rw-accent hover:underline"
               title={tl("Game finder")}
@@ -545,7 +583,7 @@ const PlayerItemsView: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `player=${encodeURIComponent(slug)}${vsplayer ? `&vsplayer=${encodeURIComponent(vsplayer)}` : ""}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${vs ? `&vs=${encodeURIComponent(vs)}` : ""}${team ? `&team=${encodeURIComponent(team)}` : ""}`,
+                query: `player=${encodeURIComponent(slug)}${vsplayer ? `&vsplayer=${encodeURIComponent(vsplayer)}` : ""}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${vschamp ? `&vschamp=${encodeURIComponent(vschamp)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${vs ? `&vs=${encodeURIComponent(vs)}` : ""}${team ? `&team=${encodeURIComponent(team)}` : ""}`,
               }}
               className="text-[11px] text-rw-accent hover:underline font-semibold"
               data-nocapture="1"
@@ -558,6 +596,7 @@ const PlayerItemsView: React.FC<{
                   kind: "counters",
                   query: new URLSearchParams({
                     champ: resolveChampSlug(champ || g[0][2]),
+                    ...(vschamp ? { vs: vschamp } : {}),
                     ...(role ? { role } : {}),
                     ...(event ? { event } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
                   }).toString(),
@@ -591,7 +630,9 @@ const PlayerItemsView: React.FC<{
                   ...(year ? { key: `y${year}`, year } : patch ? { key: `p${patch}`, patch } : {}),
                   ...(event ? { event } : {}),
                   ...(role ? { role } : {}),
-                  ...(champ || g[0]?.[2] ? { q: resolveChampSlug(champ || g[0][2]) } : {}),
+                  ...(champ || g[0]?.[2]
+                    ? { q: [resolveChampSlug(champ || g[0][2]), vschamp].filter(Boolean).join(",") }
+                    : {}),
                 }).toString() || undefined,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -618,7 +659,9 @@ const PlayerItemsView: React.FC<{
                 kind: "draft",
                 query: new URLSearchParams({
                   ...(primaryTeam ? { teams: `${primaryTeam}${primaryVs && primaryVs !== primaryTeam ? `,${primaryVs}` : ""}` } : {}),
-                  ...(champ || g[0]?.[2] ? { champ: resolveChampSlug(champ || g[0][2]) } : {}),
+                  ...(champ || g[0]?.[2]
+                    ? { champ: [resolveChampSlug(champ || g[0][2]), vschamp].filter(Boolean).join(",") }
+                    : {}),
                   ...(role ? { role } : {}),
                   ...(event ? { p: `e:${event}` } : patch ? { p: `p:${patch}` } : year ? { p: `y${year}` } : {}),
                 }).toString(),
@@ -715,6 +758,7 @@ const PlayerItemsView: React.FC<{
                   kind: "counters",
                   query: new URLSearchParams({
                     champ: resolveChampSlug(champ || list[0][1][0][2]),
+                    ...(vschamp ? { vs: vschamp } : {}),
                     ...(role ? { role } : {}),
                     ...(event ? { event } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
                   }).toString(),
@@ -741,7 +785,7 @@ const PlayerItemsView: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `player=${encodeURIComponent(slug)}${vsplayer ? `&vsplayer=${encodeURIComponent(vsplayer)}` : ""}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${vs ? `&vs=${encodeURIComponent(vs)}` : ""}${team ? `&team=${encodeURIComponent(team)}` : ""}`,
+                query: `player=${encodeURIComponent(slug)}${vsplayer ? `&vsplayer=${encodeURIComponent(vsplayer)}` : ""}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${vschamp ? `&vschamp=${encodeURIComponent(vschamp)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${vs ? `&vs=${encodeURIComponent(vs)}` : ""}${team ? `&team=${encodeURIComponent(team)}` : ""}`,
               }}
               className="text-[11px] text-rw-accent hover:underline font-semibold"
               data-nocapture="1"
@@ -771,7 +815,9 @@ const PlayerItemsView: React.FC<{
                   ...(year ? { key: `y${year}`, year } : patch ? { key: `p${patch}`, patch } : {}),
                   ...(event ? { event } : {}),
                   ...(role ? { role } : {}),
-                  ...(champ || list[0]?.[1]?.[0]?.[2] ? { q: resolveChampSlug(champ || list[0][1][0][2]) } : {}),
+                  ...(champ || list[0]?.[1]?.[0]?.[2]
+                    ? { q: [resolveChampSlug(champ || list[0][1][0][2]), vschamp].filter(Boolean).join(",") }
+                    : {}),
                 }).toString() || undefined,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -798,7 +844,9 @@ const PlayerItemsView: React.FC<{
                 kind: "draft",
                 query: new URLSearchParams({
                   ...(listTeam ? { teams: `${listTeam}${listVs && listVs !== listTeam ? `,${listVs}` : ""}` } : {}),
-                  ...(champ || list[0]?.[1]?.[0]?.[2] ? { champ: resolveChampSlug(champ || list[0][1][0][2]) } : {}),
+                  ...(champ || list[0]?.[1]?.[0]?.[2]
+                    ? { champ: [resolveChampSlug(champ || list[0][1][0][2]), vschamp].filter(Boolean).join(",") }
+                    : {}),
                   ...(role ? { role } : {}),
                   ...(event ? { p: `e:${event}` } : patch ? { p: `p:${patch}` } : year ? { p: `y${year}` } : {}),
                 }).toString(),
@@ -2709,6 +2757,7 @@ const CopyItemsPost: React.FC<{
     if (picks.vsplayer) qs.set("vsplayer", picks.vsplayer);
     if (picks.item) qs.set("item", picks.item);
     if (picks.champ) qs.set("champ", picks.champ);
+    if (picks.vschamp) qs.set("vschamp", picks.vschamp);
     if (picks.role) qs.set("role", picks.role);
     if (picks.year) qs.set("year", picks.year);
     if (picks.event) qs.set("event", picks.event);

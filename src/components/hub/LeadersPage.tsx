@@ -422,6 +422,11 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     player: shownRows[0].u,
                     ...(shownRows[1]?.u && shownRows[1].u !== shownRows[0].u ? { vsplayer: shownRows[1].u } : {}),
                     ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
+                    ...(shownRows[1]?.c?.[0] &&
+                    (q.get("champ") || shownRows[0]?.c?.[0]) &&
+                    resolveChampSlug(shownRows[1].c[0]) !== resolveChampSlug((q.get("champ") || shownRows[0].c![0])!)
+                      ? { vschamp: resolveChampSlug(shownRows[1].c[0]) }
+                      : {}),
                     ...(shownRows[0].tu || shownRows[0].t
                       ? { team: shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t) }
                       : {}),
@@ -443,6 +448,12 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                   query: new URLSearchParams({
                     player: shownRows[0].u,
                     ...(shownRows[1]?.u && shownRows[1].u !== shownRows[0].u ? { vsplayer: shownRows[1].u } : {}),
+                    ...(shownRows[0].tu || shownRows[0].t
+                      ? { team: shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t) }
+                      : {}),
+                    ...(shownRows[1] && (shownRows[1].tu || shownRows[1].t) && (shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t))
+                      ? { vs: shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t) }
+                      : {}),
                     ...(league ? { league } : {}),
                     ...(year ? { year } : {}),
                     ...(event ? { event } : {}),
@@ -606,6 +617,11 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                                ? { vsplayer: top2[1].u || resolvePlayerSlug(top2[1].n) || prettySlug(top2[1].n) }
                                : {}),
                              ...(q.get("champ") || top2[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || top2[0].c![0]) } : {}),
+                             ...(top2[1]?.c?.[0] &&
+                             (q.get("champ") || top2[0]?.c?.[0]) &&
+                             resolveChampSlug(top2[1].c[0]) !== resolveChampSlug((q.get("champ") || top2[0].c![0])!)
+                               ? { vschamp: resolveChampSlug(top2[1].c[0]) }
+                               : {}),
                              ...(top2[0].tu || top2[0].t
                                ? { team: top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t) }
                                : {}),
@@ -636,143 +652,157 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                           {tl("Match prep")} →
                         </HubLink>
                       )}
+                      <HubLink
+                        to={{
+                          kind: "rankings",
+                          query: new URLSearchParams({
+                            ...(league ? { league } : {}),
+                            ...(top2[0]?.tu || top2[0]?.t
+                              ? {
+                                  q: [
+                                    top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t),
+                                    top2[1] && (top2[1].tu || top2[1].t) && (top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t)) !== (top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t))
+                                      ? top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t)
+                                      : "",
+                                  ]
+                                    .filter(Boolean)
+                                    .join(","),
+                                }
+                              : {}),
+                          }).toString() || undefined,
+                        }}
+                        className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Power rankings")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "champions",
+                          query: new URLSearchParams({
+                            ...(league ? { league } : {}),
+                            ...(year ? { key: `y${year}`, year } : {}),
+                            ...(event ? { event } : {}),
+                            ...(role ? { role } : {}),
+                            ...(q.get("champ") || top2[0]?.c?.[0]
+                              ? {
+                                  q: [q.get("champ") || top2[0]?.c?.[0], top2[1]?.c?.[0]]
+                                    .filter(Boolean)
+                                    .map((c) => resolveChampSlug(c!))
+                                    .filter((v, i, a) => a.indexOf(v) === i)
+                                    .join(","),
+                                }
+                              : {}),
+                          }).toString(),
+                        }}
+                        className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Champions")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "tiers",
+                          query: new URLSearchParams({
+                            ...(league ? { scope: league, league } : {}),
+                            ...(year ? { key: `y${year}`, year } : {}),
+                            ...(event ? { event } : {}),
+                            ...(role ? { role } : {}),
+                            ...(q.get("champ") || top2[0]?.c?.[0]
+                              ? {
+                                  q: [q.get("champ") || top2[0]?.c?.[0], top2[1]?.c?.[0]]
+                                    .filter(Boolean)
+                                    .map((c) => resolveChampSlug(c!))
+                                    .filter((v, i, a) => a.indexOf(v) === i)
+                                    .join(","),
+                                }
+                              : {}),
+                          }).toString(),
+                        }}
+                        className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Pro tier list")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "draft",
+                          query: new URLSearchParams({
+                            ...(top2[0]?.tu || top2[0]?.t
+                              ? {
+                                  teams: `${top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t)}${
+                                    (top2[1]?.tu || top2[1]?.t) &&
+                                    (top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t)) !== (top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t))
+                                      ? `,${top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t)}`
+                                      : ""
+                                  }`,
+                                }
+                              : {}),
+                            p: event ? `e:${event}` : `y${year}`,
+                            ...(q.get("champ") || top2[0]?.c?.[0]
+                              ? {
+                                  champ: [q.get("champ") || top2[0]?.c?.[0], top2[1]?.c?.[0]]
+                                    .filter(Boolean)
+                                    .map((c) => resolveChampSlug(c!))
+                                    .filter((v, i, a) => a.indexOf(v) === i)
+                                    .join(","),
+                                }
+                              : {}),
+                            ...(role || top2[0]?.r ? { role: role || top2[0].r } : {}),
+                          }).toString(),
+                        }}
+                        className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Draft board")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "counters",
+                          query:
+                            new URLSearchParams({
+                              ...(q.get("champ") || top2[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || top2[0]!.c![0]) } : {}),
+                              ...(top2[1]?.c?.[0] &&
+                              (q.get("champ") || top2[0]?.c?.[0]) &&
+                              resolveChampSlug(top2[1].c[0]) !== resolveChampSlug((q.get("champ") || top2[0]!.c![0])!)
+                                ? { vs: resolveChampSlug(top2[1].c[0]) }
+                                : {}),
+                              ...(role || top2[0]?.r ? { role: role || top2[0].r } : {}),
+                              ...(event ? { event } : year ? { patch: `y${year}`, year } : {}),
+                            }).toString() || undefined,
+                        }}
+                        className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Counters")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "finder",
+                          query: new URLSearchParams({
+                            ...(league ? { league } : {}),
+                            ...(year ? { year } : {}),
+                            ...(event ? { event } : {}),
+                            ...(role || top2[0]?.r ? { role: role || top2[0].r } : {}),
+                            ...(q.get("champ") ? { champ: resolveChampSlug(q.get("champ")!) } : {}),
+                            ...(top2[0]?.tu || top2[0]?.t
+                              ? { team: top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t) }
+                              : {}),
+                            ...(top2[1] && (top2[1].tu || top2[1].t) && (top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t)) !== (top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t))
+                              ? { vs: top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t) }
+                              : {}),
+                            ...(top2[0]
+                              ? { player: top2[0].u || resolvePlayerSlug(top2[0].n) || prettySlug(top2[0].n) }
+                              : {}),
+                            ...(top2[1] &&
+                            (top2[1].u || resolvePlayerSlug(top2[1].n) || prettySlug(top2[1].n)) !==
+                              (top2[0]?.u || resolvePlayerSlug(top2[0]?.n || "") || prettySlug(top2[0]?.n || ""))
+                              ? { vsplayer: top2[1].u || resolvePlayerSlug(top2[1].n) || prettySlug(top2[1].n) }
+                              : {}),
+                          }).toString(),
+                        }}
+                        className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Game finder")} →
+                      </HubLink>
                     </>
                   ) : null;
                 })()}
-                <HubLink
-                  to={{
-                    kind: "rankings",
-                    query: new URLSearchParams({
-                      ...(league ? { league } : {}),
-                      ...(shownRows[0]?.tu || shownRows[0]?.t
-                        ? {
-                            q: [
-                              shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t),
-                              shownRows[1] && (shownRows[1].tu || shownRows[1].t) && (shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t))
-                                ? shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)
-                                : "",
-                            ]
-                              .filter(Boolean)
-                              .join(","),
-                          }
-                        : {}),
-                    }).toString() || undefined,
-                  }}
-                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Power rankings")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "champions",
-                    query: new URLSearchParams({
-                      ...(league ? { league } : {}),
-                      ...(year ? { key: `y${year}`, year } : {}),
-                      ...(event ? { event } : {}),
-                      ...(role ? { role } : {}),
-                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
-                    }).toString(),
-                  }}
-                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Champions")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "tiers",
-                    query: new URLSearchParams({
-                      ...(league ? { scope: league, league } : {}),
-                      ...(year ? { key: `y${year}`, year } : {}),
-                      ...(event ? { event } : {}),
-                      ...(role ? { role } : {}),
-                      ...(q.get("champ") || shownRows[0]?.c?.[0]
-                        ? {
-                            q: [q.get("champ") || shownRows[0]?.c?.[0], shownRows[1]?.c?.[0]]
-                              .filter(Boolean)
-                              .map((c) => resolveChampSlug(c!))
-                              .filter((v, i, a) => a.indexOf(v) === i)
-                              .join(","),
-                          }
-                        : {}),
-                    }).toString(),
-                  }}
-                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Pro tier list")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "draft",
-                    query: new URLSearchParams({
-                      ...(shownRows[0]?.tu || shownRows[0]?.t
-                        ? {
-                            teams: `${shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t)}${
-                              (shownRows[1]?.tu || shownRows[1]?.t) &&
-                              (shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t))
-                                ? `,${shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)}`
-                                : ""
-                            }`,
-                          }
-                        : {}),
-                      p: event ? `e:${event}` : `y${year}`,
-                      ...(q.get("champ") || shownRows[0]?.c?.[0]
-                        ? {
-                            champ: [q.get("champ") || shownRows[0]?.c?.[0], shownRows[1]?.c?.[0]]
-                              .filter(Boolean)
-                              .map((c) => resolveChampSlug(c!))
-                              .filter((v, i, a) => a.indexOf(v) === i)
-                              .join(","),
-                          }
-                        : {}),
-                      ...(role || shownRows[0]?.r ? { role: role || shownRows[0].r } : {}),
-                    }).toString(),
-                  }}
-                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Draft board")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "counters",
-                    query:
-                      new URLSearchParams({
-                        ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || shownRows[0]!.c![0]) } : {}),
-                        ...(shownRows[1]?.c?.[0] &&
-                        (q.get("champ") || shownRows[0]?.c?.[0]) &&
-                        resolveChampSlug(shownRows[1].c[0]) !== resolveChampSlug((q.get("champ") || shownRows[0]!.c![0])!)
-                          ? { vs: resolveChampSlug(shownRows[1].c[0]) }
-                          : {}),
-                        ...(role || shownRows[0]?.r ? { role: role || shownRows[0].r } : {}),
-                        ...(event ? { event } : year ? { patch: `y${year}`, year } : {}),
-                      }).toString() || undefined,
-                  }}
-                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Counters")} →
-                </HubLink>
-                <HubLink
-                  to={{
-                    kind: "finder",
-                    query: new URLSearchParams({
-                      ...(league ? { league } : {}),
-                      ...(year ? { year } : {}),
-                      ...(event ? { event } : {}),
-                      ...(role || shownRows[0]?.r ? { role: role || shownRows[0].r } : {}),
-                      ...(q.get("champ") ? { champ: resolveChampSlug(q.get("champ")!) } : {}),
-                      ...(shownRows[0]
-                        ? { player: shownRows[0].u || resolvePlayerSlug(shownRows[0].n) || prettySlug(shownRows[0].n) }
-                        : {}),
-                      ...(shownRows[1] &&
-                      (shownRows[1].u || resolvePlayerSlug(shownRows[1].n) || prettySlug(shownRows[1].n)) !==
-                        (shownRows[0]?.u || resolvePlayerSlug(shownRows[0]?.n || "") || prettySlug(shownRows[0]?.n || ""))
-                        ? { vsplayer: shownRows[1].u || resolvePlayerSlug(shownRows[1].n) || prettySlug(shownRows[1].n) }
-                        : {}),
-                    }).toString(),
-                  }}
-                  className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Game finder")} →
-                </HubLink>
                 <HubLink
                   to={{
                     kind: "best",
@@ -1000,6 +1030,7 @@ const LeaderSpotlight: React.FC<{
                   ...(event ? { event } : {}),
                   ...(c.top.r ? { role: c.top.r } : {}),
                   ...(c.top.tu || c.top.t ? { team: c.top.tu || resolveTeamAlias(c.top.t) || prettySlug(c.top.t) } : {}),
+                  ...(c.top.c?.length === 1 ? { champ: resolveChampSlug(c.top.c[0]) } : {}),
                   player: c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n),
                 }).toString(),
               }}
@@ -1014,6 +1045,7 @@ const LeaderSpotlight: React.FC<{
                 query: new URLSearchParams({
                   player: c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n),
                   ...(c.top.c?.[0] ? { champ: resolveChampSlug(c.top.c[0]) } : {}),
+                  ...(c.top.c?.[1] && resolveChampSlug(c.top.c[1]) !== resolveChampSlug(c.top.c[0]) ? { vschamp: resolveChampSlug(c.top.c[1]) } : {}),
                   ...(c.top.tu || c.top.t ? { team: c.top.tu || resolveTeamAlias(c.top.t) || prettySlug(c.top.t) } : {}),
                   ...(c.top.r ? { role: c.top.r } : {}),
                   ...(year ? { year } : {}),

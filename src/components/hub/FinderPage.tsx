@@ -362,6 +362,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                         ...(qPlayer ? { player: qPlayer } : {}),
                         ...(qVsPlayer ? { vsplayer: qVsPlayer } : {}),
                         ...(qChamp ? { champ: resolveChampSlug(qChamp) } : {}),
+                        ...(qVsChamp ? { vschamp: resolveChampSlug(qVsChamp) } : {}),
                         ...(qTeam ? { team: qTeam } : {}),
                         ...(qVs ? { vs: qVs } : {}),
                         ...(qRole ? { role: qRole } : {}),
@@ -889,8 +890,21 @@ const FinderBody: React.FC<{
               champ={champs[0] || ""}
               player={playerOption(opts.players, q.get("player")) || q.get("player") || ""}
               vsplayer={playerOption(opts.players, q.get("vsplayer")) || q.get("vsplayer") || ""}
-              team={teamOption(opts.teams, q.get("team")) || q.get("team") || ""}
-              vs={teamOption(opts.teams, q.get("vs") || q.get("vsteam")) || q.get("vs") || q.get("vsteam") || ""}
+              team={
+                teamOption(opts.teams, q.get("team")) ||
+                q.get("team") ||
+                (found[0]
+                  ? (sideCond && found[0].s === 1 ? found[0].g[13] || found[0].g[11] : found[0].g[12] || found[0].g[10]) || ""
+                  : "")
+              }
+              vs={
+                teamOption(opts.teams, q.get("vs") || q.get("vsteam")) ||
+                q.get("vs") ||
+                q.get("vsteam") ||
+                (found[0]
+                  ? (sideCond && found[0].s === 1 ? found[0].g[12] || found[0].g[10] : found[0].g[13] || found[0].g[11]) || ""
+                  : "")
+              }
               league={q.get("league") || ""}
               year={year || ""}
               event={q.get("event") ? resolveEventSlug(q.get("event")!) : ""}
@@ -1048,6 +1062,24 @@ const FinderBody: React.FC<{
                       className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                     >
                       {tl("Player leaderboards")} →
+                    </HubLink>
+                  )}
+                  {!champs[0] && !q.get("player") && (
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          team: found[0].g[12] || resolveTeamAlias(found[0].g[10]!) || prettySlug(found[0].g[10]!),
+                          vs: found[0].g[13] || resolveTeamAlias(found[0].g[11]!) || prettySlug(found[0].g[11]!),
+                          ...(q.get("role") ? { role: q.get("role")! } : {}),
+                          ...(year ? { year } : {}),
+                          ...(q.get("event") ? { event: resolveEventSlug(q.get("event")!) } : {}),
+                          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+                        }).toString(),
+                      }}
+                      className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                    >
+                      {tl("Item history")} →
                     </HubLink>
                   )}
                 </>
@@ -1312,6 +1344,7 @@ const FinderBody: React.FC<{
                         kind: "items",
                         query: new URLSearchParams({
                           champ: resolveChampSlug(champs[0]),
+                          ...(q.get("vschamp") ? { vschamp: resolveChampSlug(q.get("vschamp")!) } : champs[1] ? { vschamp: resolveChampSlug(champs[1]) } : {}),
                           ...(q.get("team") ? { team: teamOption(opts.teams, q.get("team")) || q.get("team")! } : {}),
                           ...(q.get("vs") ? { vs: teamOption(opts.teams, q.get("vs")) || q.get("vs")! } : {}),
                           ...(q.get("role") ? { role: q.get("role")! } : {}),
@@ -1348,6 +1381,7 @@ const FinderBody: React.FC<{
                         player: playerOption(opts.players, q.get("player")) || q.get("player")!,
                         ...(q.get("vsplayer") ? { vsplayer: playerOption(opts.players, q.get("vsplayer")) || q.get("vsplayer")! } : {}),
                         ...(champs[0] ? { champ: resolveChampSlug(champs[0]) } : {}),
+                        ...(q.get("vschamp") ? { vschamp: resolveChampSlug(q.get("vschamp")!) } : champs[1] ? { vschamp: resolveChampSlug(champs[1]) } : {}),
                         ...(q.get("team") ? { team: teamOption(opts.teams, q.get("team")) || q.get("team")! } : {}),
                         ...(q.get("vs") ? { vs: teamOption(opts.teams, q.get("vs")) || q.get("vs")! } : {}),
                         ...(q.get("role") ? { role: q.get("role")! } : {}),
@@ -1680,6 +1714,7 @@ const Cohort: React.FC<{
                       ...(player ? { player: resolvePlayerSlug(prettySlug(player)) } : {}),
                       ...(vsplayer ? { vsplayer: resolvePlayerSlug(prettySlug(vsplayer)) } : {}),
                       champ: resolveChampSlug(rows[0][0]),
+                      ...(rows[1] ? { vschamp: resolveChampSlug(rows[1][0]) } : {}),
                       ...(team ? { team: resolveTeamAlias(team) || prettySlug(team) } : {}),
                       ...(vs ? { vs: resolveTeamAlias(vs) || prettySlug(vs) } : {}),
                       ...(role ? { role } : {}),
