@@ -128,19 +128,33 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
   const yr = m.startTimeUtc && /^\d{4}$/.test(m.startTimeUtc.slice(0, 4)) ? m.startTimeUtc.slice(0, 4) : "";
   const period = yr ? `y${yr}` : undefined;
   const lg = m.leagueSlug || m.leagueName ? resolveLeagueSlug(m.leagueSlug || m.leagueName) : "";
+  const lgTeamsQ = [t1Slug, t2Slug].filter(Boolean).join(",");
   return (
     <div className="space-y-3">
       <div className={card}>
         <div className="text-[11px] text-rw-muted flex flex-wrap items-center justify-between gap-2">
           <span className="flex flex-wrap gap-x-2">
-            <HubLink to={{ kind: "league", slug: lg || resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) }} className="text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "league",
+                slug: lg || resolveLeagueSlug(m.leagueSlug || m.leagueName),
+                ...(yr ? { year: yr } : {}),
+                ...(lgTeamsQ ? { query: `q=${encodeURIComponent(lgTeamsQ)}` } : {}),
+              }}
+              className="text-rw-accent hover:underline"
+            >
               {m.leagueName}
             </HubLink>
             {m.blockName && (
               <span>
                 ·{" "}
                 <HubLink
-                  to={{ kind: "league", slug: lg || resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(yr ? { year: yr } : {}) }}
+                  to={{
+                    kind: "league",
+                    slug: lg || resolveLeagueSlug(m.leagueSlug || m.leagueName),
+                    ...(yr ? { year: yr } : {}),
+                    ...(lgTeamsQ ? { query: `q=${encodeURIComponent(lgTeamsQ)}` } : {}),
+                  }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {stageLabel(m.blockName)}
@@ -303,7 +317,14 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
         <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className={`text-right text-base sm:text-lg font-bold truncate ${!hidden && m.team1Score > m.team2Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
             <HubLink
-              to={{ kind: "team", slug: t1Slug, ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+              to={{
+                kind: "team",
+                slug: t1Slug,
+                query: new URLSearchParams({
+                  ...(period ? { p: period } : {}),
+                  ...(t2Slug && t2Slug !== t1Slug ? { q: t2Slug } : {}),
+                }).toString() || undefined,
+              }}
               className="inline-flex items-center justify-end gap-2 hover:text-rw-accent max-w-full"
             >
               <span className="sm:hidden truncate">{m.team1Code}</span>
@@ -339,7 +360,14 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
           </div>
           <div className={`text-base sm:text-lg font-bold truncate ${!hidden && m.team2Score > m.team1Score && !live ? "text-rw-teal" : "text-rw-text"}`}>
             <HubLink
-              to={{ kind: "team", slug: t2Slug, ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+              to={{
+                kind: "team",
+                slug: t2Slug,
+                query: new URLSearchParams({
+                  ...(period ? { p: period } : {}),
+                  ...(t1Slug && t1Slug !== t2Slug ? { q: t1Slug } : {}),
+                }).toString() || undefined,
+              }}
               className="inline-flex items-center gap-2 hover:text-rw-accent max-w-full"
             >
               <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={22} />

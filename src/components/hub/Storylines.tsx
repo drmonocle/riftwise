@@ -358,7 +358,7 @@ export const OwnStorylines: React.FC<{
   notes?: Notes;
   spoilerKey: string;
   share?: string;
-  who?: { kind: "team" | "player"; slug: string; team?: string };
+  who?: { kind: "team" | "player"; slug: string; team?: string; opp?: string; role?: string };
 }> = ({ notes, spoilerKey, share, who }) =>
   notes && notes.list.length ? (
     <StoryList

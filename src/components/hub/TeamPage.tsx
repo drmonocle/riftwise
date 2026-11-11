@@ -361,10 +361,17 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         )}
         {(overview ? (activeRoster ? [activeRoster] : []) : t.roster).map((yr) => {
           const eraName = t.years.find((y) => y.y === yr.y)?.as;
+          const rOpp0Slug = t.opps.map((o) => o.u || resolveTeamAlias(o.n) || prettySlug(o.n)).find((s) => s && s !== t.u);
+          const rC0Slug = t.champs[0]?.c ? resolveChampSlug(t.champs[0].c) : "";
+          const yrStatsQ = new URLSearchParams({
+            p: `y${yr.y}`,
+            ...(rOpp0Slug ? { q: rOpp0Slug } : {}),
+            ...(rC0Slug ? { champ: rC0Slug } : {}),
+          }).toString();
           return (
             <div key={yr.y} className="text-xs flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
               <HubLink
-                to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${yr.y}` }}
+                to={{ kind: "team", slug: t.u, tab: "stats", query: yrStatsQ }}
                 title={`${tl("Stats for")} ${yr.y}`}
                 className="text-rw-muted hover:text-rw-accent hover:underline font-semibold whitespace-nowrap"
               >
@@ -372,7 +379,13 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                 {eraName && eraName !== t.name ? ` (${eraName})` : ""}
               </HubLink>
               {yr.p.map((p, i) => {
-                const pRosterQ = `p=y${yr.y}&team=${encodeURIComponent(t.u)}${p.r ? `&role=${encodeURIComponent(p.r)}` : ""}`;
+                const pRosterQ = new URLSearchParams({
+                  p: `y${yr.y}`,
+                  team: t.u,
+                  ...(rOpp0Slug ? { q: rOpp0Slug } : {}),
+                  ...(p.r ? { role: p.r } : {}),
+                  ...(rC0Slug ? { champ: rC0Slug } : {}),
+                }).toString();
                 return (
                 <span key={p.n + i} className="inline-flex items-center gap-1.5 whitespace-nowrap">
                   {i > 0 && !overview && <span className="text-rw-muted/60 mr-0.5">·</span>}
@@ -1018,12 +1031,17 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     </HubLink>
                     {(() => {
                       const rOppSlug = t.opps.find((o) => o.n === r.opp)?.u || resolveTeamAlias(r.opp) || prettySlug(r.opp);
+                      const rC0Slug = t.champs[0]?.c ? resolveChampSlug(t.champs[0].c) : "";
+                      const rP0Slug = t.roster[0]?.p[0]?.u || "";
                       const rOppQ = new URLSearchParams({
                         ...(r.e ? { p: `e:${r.e}` } : /^\d{4}/.test(r.date) ? { p: `y${r.date.slice(0, 4)}` } : {}),
                         q: t.u,
+                        ...(rC0Slug ? { champ: rC0Slug } : {}),
                       }).toString();
                       const rEvQ = new URLSearchParams({
                         q: [t.u, rOppSlug].filter(Boolean).join(","),
+                        ...(rC0Slug ? { champ: rC0Slug } : {}),
+                        ...(rP0Slug ? { player: rP0Slug } : {}),
                       }).toString();
                       return (
                         <>
@@ -1251,17 +1269,25 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
             <tbody>
               {(() => {
                 const maxYrG = Math.max(1, ...t.years.map((x) => x.g));
-                return t.years.map((y) => (
+                const yrOpp0Slug = t.opps.map((o) => o.u || resolveTeamAlias(o.n) || prettySlug(o.n)).find((s) => s && s !== t.u);
+                const yrC0Slug = t.champs[0]?.c ? resolveChampSlug(t.champs[0].c) : "";
+                return t.years.map((y) => {
+                  const yrRowQ = new URLSearchParams({
+                    p: `y${y.y}`,
+                    ...(yrOpp0Slug ? { q: yrOpp0Slug } : {}),
+                    ...(yrC0Slug ? { champ: yrC0Slug } : {}),
+                  }).toString();
+                  return (
                   <tr key={y.y} className="border-t border-rw-border hover:bg-rw-raised/50">
                     <td className={`${td} text-rw-text`} data-sort={y.y}>
-                      <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="hover:text-rw-accent hover:underline font-medium">
+                      <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: yrRowQ }} className="hover:text-rw-accent hover:underline font-medium">
                         {y.y}
                       </HubLink>
                       {y.as !== t.name && (
                         <>
                           {" "}
                           <HubLink
-                            to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }}
+                            to={{ kind: "team", slug: t.u, tab: "stats", query: yrRowQ }}
                             className="text-rw-muted text-[10px] hover:text-rw-accent hover:underline"
                           >
                             {tl("as {name}", { name: y.as })}
@@ -1270,7 +1296,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       )}
                     </td>
                     <td className={`${td} text-rw-sub`} data-sort={y.g}>
-                      <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline tabular-nums">
+                      <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: yrRowQ }} className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline tabular-nums">
                         <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(6, Math.round((y.g / maxYrG) * 100))}%` }} />
                         </span>
@@ -1278,12 +1304,13 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                       </HubLink>
                     </td>
                     <td className={`${td} text-rw-sub`} data-sort={y.g ? y.w / y.g : 0}>
-                      <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${y.y}` }} className="inline-flex hover:opacity-85">
+                      <HubLink to={{ kind: "team", slug: t.u, tab: "stats", query: yrRowQ }} className="inline-flex hover:opacity-85">
                         <WinBar w={y.w} g={y.g} />
                       </HubLink>
                     </td>
                   </tr>
-                ));
+                  );
+                });
               })()}
             </tbody>
           </STable>
@@ -1307,7 +1334,19 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
         </div>
       )}
 
-      {overview && <OwnStorylines notes={t.notes} spoilerKey={`notes:team:${t.u}`} share={`${t.u}-storylines`} who={{ kind: "team", slug: t.u, team: t.name }} />}
+      {overview && (
+        <OwnStorylines
+          notes={t.notes}
+          spoilerKey={`notes:team:${t.u}`}
+          share={`${t.u}-storylines`}
+          who={{
+            kind: "team",
+            slug: t.u,
+            team: t.name,
+            opp: t.opps.map((o) => o.u || resolveTeamAlias(o.n) || prettySlug(o.n)).find((s) => s && s !== t.u),
+          }}
+        />
+      )}
 
       {overview && t.titles.length > 0 && (
         <Section
@@ -1483,12 +1522,22 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           <ul className="text-xs space-y-1">
             {t.titles.map((x) => {
               const lSlug = t.opps.find((o) => o.n === x.l)?.u || resolveTeamAlias(x.l) || prettySlug(x.l);
+              const tC0Slug = t.champs[0]?.c ? resolveChampSlug(t.champs[0].c) : "";
+              const tP0Slug = t.roster[0]?.p[0]?.u || "";
               const tEvQ = new URLSearchParams({
                 q: [t.u, lSlug].filter(Boolean).join(","),
+                ...(tC0Slug ? { champ: tC0Slug } : {}),
+                ...(tP0Slug ? { player: tP0Slug } : {}),
               }).toString();
               const lTeamQ = new URLSearchParams({
                 ...(x.e ? { p: `e:${x.e}` } : /^\d{4}/.test(x.date) ? { p: `y${x.date.slice(0, 4)}` } : {}),
                 q: t.u,
+                ...(tC0Slug ? { champ: tC0Slug } : {}),
+              }).toString();
+              const tAsStatsQ = new URLSearchParams({
+                p: `y${x.date.slice(0, 4)}`,
+                ...(lSlug ? { q: lSlug } : {}),
+                ...(tC0Slug ? { champ: tC0Slug } : {}),
               }).toString();
               return (
               <li key={x.t + x.date} className="flex justify-between gap-2">
@@ -1499,7 +1548,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     <span className="text-rw-muted">
                       {" ("}
                       <HubLink
-                        to={{ kind: "team", slug: t.u, tab: "stats", query: `p=y${x.date.slice(0, 4)}` }}
+                        to={{ kind: "team", slug: t.u, tab: "stats", query: tAsStatsQ }}
                         className="hover:text-rw-accent hover:underline"
                       >
                         {tl("as {name}", { name: x.as })}
@@ -2682,6 +2731,9 @@ const TeamChampGames: React.FC<{
               slug: resolveChampSlug(canonical),
               query: new URLSearchParams({
                 team: t.u,
+                ...(t.opps.map((o) => o.u || resolveTeamAlias(o.n) || prettySlug(o.n)).find((s) => s && s !== t.u)
+                  ? { vs: t.opps.map((o) => o.u || resolveTeamAlias(o.n) || prettySlug(o.n)).find((s) => s && s !== t.u)! }
+                  : {}),
                 ...(playersSummary[0]?.u ? { player: playersSummary[0].u } : {}),
                 ...(playersSummary[0]?.r ? { role: playersSummary[0].r } : {}),
                 ...(year !== "all"
@@ -2921,11 +2973,11 @@ const TeamChampGames: React.FC<{
                   kind: "team",
                   slug: t.u,
                   tab: "stats",
-                  ...(year !== "all"
-                    ? { query: `p=y${encodeURIComponent(year)}` }
-                    : period !== "all"
-                      ? { query: `p=${encodeURIComponent(period)}` }
-                      : {}),
+                  query: new URLSearchParams({
+                    ...(year !== "all" ? { p: `y${year}` } : period !== "all" ? { p: period } : {}),
+                    champ: resolveChampSlug(canonical),
+                    ...(opp0Slug ? { q: opp0Slug } : {}),
+                  }).toString(),
                 }}
               />
               <Stat
@@ -3079,7 +3131,8 @@ const TeamChampGames: React.FC<{
                 </div>
                 <ul className="space-y-1">
                   {playersSummary.map((pl) => {
-                    const plChampQ = `champ=${encodeURIComponent(resolveChampSlug(canonical))}&team=${encodeURIComponent(t.u)}${pl.r ? `&role=${encodeURIComponent(pl.r)}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`;
+                    const plOpp0Slug = t.opps.map((o) => o.u || resolveTeamAlias(o.n) || prettySlug(o.n)).find((s) => s && s !== t.u);
+                    const plChampQ = `champ=${encodeURIComponent(resolveChampSlug(canonical))}&team=${encodeURIComponent(t.u)}${plOpp0Slug ? `&q=${encodeURIComponent(plOpp0Slug)}` : ""}${pl.r ? `&role=${encodeURIComponent(pl.r)}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`;
                     return (
                     <li key={pl.u || pl.n} className="flex items-center justify-between gap-2 min-w-0">
                       <span className="flex items-center gap-1.5 min-w-0">
@@ -3450,7 +3503,7 @@ const TeamChampGames: React.FC<{
                         to={{
                           kind: "champ",
                           slug: resolveChampSlug(canonical),
-                          query: `team=${encodeURIComponent(t.u)}${who?.u ? `&player=${encodeURIComponent(who.u)}` : ""}${roleStr ? `&role=${encodeURIComponent(roleStr)}` : ""}${/^\d{4}/.test(r[0]) ? `&p=y${r[0].slice(0, 4)}&year=${r[0].slice(0, 4)}` : ""}`,
+                          query: `team=${encodeURIComponent(t.u)}&vs=${encodeURIComponent(r[5] || resolveTeamAlias(r[4]) || prettySlug(r[4]))}${who?.u ? `&player=${encodeURIComponent(who.u)}` : ""}${roleStr ? `&role=${encodeURIComponent(roleStr)}` : ""}${/^\d{4}/.test(r[0]) ? `&p=y${r[0].slice(0, 4)}&year=${r[0].slice(0, 4)}` : ""}`,
                         }}
                         className="shrink-0"
                       >
@@ -3463,7 +3516,7 @@ const TeamChampGames: React.FC<{
                               to={{
                                 kind: "player",
                                 slug: who.u || resolvePlayerSlug(who.n),
-                                query: `team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}${roleStr ? `&role=${encodeURIComponent(roleStr)}` : ""}${/^\d{4}/.test(r[0]) ? `&p=y${r[0].slice(0, 4)}` : ""}`,
+                                query: `team=${encodeURIComponent(t.u)}&q=${encodeURIComponent(r[5] || resolveTeamAlias(r[4]) || prettySlug(r[4]))}&champ=${encodeURIComponent(resolveChampSlug(canonical))}${roleStr ? `&role=${encodeURIComponent(roleStr)}` : ""}${/^\d{4}/.test(r[0]) ? `&p=y${r[0].slice(0, 4)}` : ""}`,
                               }}
                               className="shrink-0 hover:opacity-80"
                               title={who.n}
@@ -3474,7 +3527,7 @@ const TeamChampGames: React.FC<{
                               <PlayerLink
                                 name={who.n}
                                 u={who.u}
-                                query={`team=${encodeURIComponent(t.u)}&champ=${encodeURIComponent(resolveChampSlug(canonical))}${roleStr ? `&role=${encodeURIComponent(roleStr)}` : ""}${/^\d{4}/.test(r[0]) ? `&p=y${r[0].slice(0, 4)}` : ""}`}
+                                query={`team=${encodeURIComponent(t.u)}&q=${encodeURIComponent(r[5] || resolveTeamAlias(r[4]) || prettySlug(r[4]))}&champ=${encodeURIComponent(resolveChampSlug(canonical))}${roleStr ? `&role=${encodeURIComponent(roleStr)}` : ""}${/^\d{4}/.test(r[0]) ? `&p=y${r[0].slice(0, 4)}` : ""}`}
                                 className="font-semibold text-rw-text hover:text-rw-accent"
                               />
                             ) : (
@@ -3646,15 +3699,25 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; t: HubTeam }> = ({ x, t
     event: x.e || prettySlug(x.en),
     ...(evYr ? { year: evYr } : {}),
   }).toString();
+  const evLinkQuery = new URLSearchParams({
+    q: [teamSlug, opp0Slug].filter(Boolean).join(","),
+    ...(c0Slug ? { champ: c0Slug } : {}),
+    ...(rPlayers[0] ? { player: rPlayers[0] } : {}),
+  }).toString();
+  const evStatsQuery = new URLSearchParams({
+    p: x.e ? `e:${x.e}` : `y${x.date.slice(0, 4)}`,
+    ...(opp0Slug ? { q: opp0Slug } : {}),
+    ...(c0Slug ? { champ: c0Slug } : {}),
+  }).toString();
   return (
     <tr className="border-t border-rw-border">
       <td className={`${td} max-w-[14rem] truncate`} data-sort={x.en}>
-        <EventLink name={x.en} u={x.e} query={`q=${encodeURIComponent(teamSlug)}`} />
+        <EventLink name={x.en} u={x.e} query={evLinkQuery} />
         {x.as && x.as !== teamName && (
           <>
             {" "}
             <HubLink
-              to={{ kind: "team", slug: teamSlug, tab: "stats", query: x.e ? `p=e:${x.e}` : `p=y${x.date.slice(0, 4)}` }}
+              to={{ kind: "team", slug: teamSlug, tab: "stats", query: evStatsQuery }}
               className="text-rw-muted text-[10px] hover:text-rw-accent hover:underline"
             >
               {tl("as {name}", { name: x.as })}
@@ -3669,7 +3732,7 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; t: HubTeam }> = ({ x, t
         {hidden ? (
           <RevealButton onReveal={reveal} small />
         ) : x.pl && x.e ? (
-          <HubLink to={{ kind: "event", slug: x.e, query: `q=${encodeURIComponent(teamSlug)}` }} className="hover:text-rw-accent hover:underline">
+          <HubLink to={{ kind: "event", slug: x.e, query: evLinkQuery }} className="hover:text-rw-accent hover:underline">
             {x.pl}
           </HubLink>
         ) : (
@@ -3701,7 +3764,7 @@ const EventRow: React.FC<{ x: HubTeam["events"][number]; t: HubTeam }> = ({ x, t
       <td className={`${td} text-rw-muted`} data-sort={x.usd && !hidden ? x.usd : 0}>
         {x.usd && !hidden ? (
           x.e ? (
-            <HubLink to={{ kind: "event", slug: x.e, query: `q=${encodeURIComponent(teamSlug)}` }} className="hover:text-rw-accent hover:underline">
+            <HubLink to={{ kind: "event", slug: x.e, query: evLinkQuery }} className="hover:text-rw-accent hover:underline">
               {fmtUsd(x.usd)}
             </HubLink>
           ) : (
@@ -3924,7 +3987,16 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
                     {tl("Player leaderboards")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "team", slug: t.u, tab: "stats", ...(latestYr ? { query: `p=y${latestYr}` } : {}) }}
+                    to={{
+                      kind: "team",
+                      slug: t.u,
+                      tab: "stats",
+                      query: new URLSearchParams({
+                        ...(latestYr ? { p: `y${latestYr}` } : {}),
+                        ...(opp0Slug ? { q: opp0Slug } : {}),
+                        ...(topChamp ? { champ: topChamp } : {}),
+                      }).toString() || undefined,
+                    }}
                     className="text-rw-accent hover:underline font-semibold"
                   >
                     {tl("Stats")} · {tl("Open →")}
@@ -3952,33 +4024,44 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
         <p className="text-[11px] text-rw-muted italic">{tl("Hidden while spoiler mode is on.")}</p>
       ) : (
         <div className="space-y-2.5">
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {tags.map((x) => (
-                <HubLink
-                  key={x.tag}
-                  to={{ kind: "team", slug: t.u, tab: "stats", ...(/^\d{4}/.test(periodLabel) ? { query: `p=y${periodLabel.slice(0, 4)}` } : {}) }}
-                  title={x.why}
-                  className={`px-2.5 py-1 rounded-full border text-[11px] hover:border-rw-accent/60 transition-colors ${
-                    x.good === true
-                      ? "border-rw-teal/60 bg-rw-teal/10 text-rw-teal"
-                      : x.good === false
-                        ? "border-rw-red/60 bg-rw-red/10 text-rw-red"
-                        : "border-rw-border bg-rw-bg/60 text-rw-sub"
-                  }`}
-                >
-                  <span className="font-semibold">{x.tag}</span> <span className="text-rw-muted">· {x.why}</span>
-                </HubLink>
-              ))}
-            </div>
-          )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-            {metrics.map((m) => (
-              <HubLink
-                key={m.label}
-                to={{ kind: "team", slug: t.u, tab: "stats", ...(/^\d{4}/.test(periodLabel) ? { query: `p=y${periodLabel.slice(0, 4)}` } : {}) }}
-                className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex flex-col justify-between gap-1.5 hover:border-rw-accent/55 hover:bg-rw-raised/40 transition-colors"
-              >
+          {(() => {
+            const pStatsQ =
+              new URLSearchParams({
+                ...(/^\d{4}/.test(periodLabel) ? { p: `y${periodLabel.slice(0, 4)}` } : {}),
+                ...(t.opps.map((o) => o.u || resolveTeamAlias(o.n) || prettySlug(o.n)).find((s) => s && s !== t.u)
+                  ? { q: t.opps.map((o) => o.u || resolveTeamAlias(o.n) || prettySlug(o.n)).find((s) => s && s !== t.u)! }
+                  : {}),
+                ...(agg.picks[0]?.[0] ? { champ: resolveChampSlug(agg.picks[0][0]) } : {}),
+              }).toString() || undefined;
+            return (
+              <>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {tags.map((x) => (
+                      <HubLink
+                        key={x.tag}
+                        to={{ kind: "team", slug: t.u, tab: "stats", ...(pStatsQ ? { query: pStatsQ } : {}) }}
+                        title={x.why}
+                        className={`px-2.5 py-1 rounded-full border text-[11px] hover:border-rw-accent/60 transition-colors ${
+                          x.good === true
+                            ? "border-rw-teal/60 bg-rw-teal/10 text-rw-teal"
+                            : x.good === false
+                              ? "border-rw-red/60 bg-rw-red/10 text-rw-red"
+                              : "border-rw-border bg-rw-bg/60 text-rw-sub"
+                        }`}
+                      >
+                        <span className="font-semibold">{x.tag}</span> <span className="text-rw-muted">· {x.why}</span>
+                      </HubLink>
+                    ))}
+                  </div>
+                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                  {metrics.map((m) => (
+                    <HubLink
+                      key={m.label}
+                      to={{ kind: "team", slug: t.u, tab: "stats", ...(pStatsQ ? { query: pStatsQ } : {}) }}
+                      className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex flex-col justify-between gap-1.5 hover:border-rw-accent/55 hover:bg-rw-raised/40 transition-colors"
+                    >
                 <div>
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{m.label}</div>
                   <div
@@ -4000,9 +4083,12 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
                   </div>
                   {m.sub && <div className="text-[10px] text-rw-muted truncate" title={m.sub}>{m.sub}</div>}
                 </div>
-              </HubLink>
-            ))}
-          </div>
+                    </HubLink>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
           {tags.length > 0 && (
             <p className="text-[10px] text-rw-muted">{tl("Compared with every pro team season since 2024: a label means the top or bottom fifth.")}</p>
           )}
