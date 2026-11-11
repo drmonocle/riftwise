@@ -225,51 +225,80 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         ]
       : null;
   const teamYrQ = asOfYr ? `p=y${encodeURIComponent(asOfYr)}` : undefined;
+  const rowTeamSlug = (r: RatingRow) => r[0] || resolveTeamAlias(r[1], aliases.data?.team) || prettySlug(r[1]);
+  const rowRivalSlug = (r: RatingRow) => {
+    const s = rowTeamSlug(r);
+    if (pair) return pair[0] !== s ? pair[0] : pair[1] !== s ? pair[1] : "";
+    const topS = top ? rowTeamSlug(top) : "";
+    if (topS && topS !== s) return topS;
+    const sec = rows[1]?.r ? rowTeamSlug(rows[1].r) : "";
+    return sec && sec !== s ? sec : "";
+  };
+  const rowTeamQ = (r: RatingRow) => {
+    const rv = rowRivalSlug(r);
+    return new URLSearchParams({
+      ...(asOfYr ? { p: `y${asOfYr}` } : {}),
+      ...(rv ? { q: rv } : {}),
+    }).toString() || undefined;
+  };
   const columns: Column<Row>[] = [
     {
       key: "rank",
       label: "#",
       value: (x) => x.rank,
-      render: (x) =>
-        x.r[0] ? (
-          <HubLink to={{ kind: "team", slug: x.r[0], ...(teamYrQ ? { query: teamYrQ } : {}) }} className="hover:text-rw-accent hover:underline">
+      render: (x) => {
+        const tQ = rowTeamQ(x.r);
+        return x.r[0] ? (
+          <HubLink to={{ kind: "team", slug: x.r[0], ...(tQ ? { query: tQ } : {}) }} className="hover:text-rw-accent hover:underline">
             {x.rank}
           </HubLink>
         ) : (
           x.rank
-        ),
+        );
+      },
       className: "text-rw-muted tabular-nums",
     },
     {
       key: "team",
       label: tl("Team"),
       value: (x) => x.r[1],
-      render: (x) => (
-        <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink
-            to={{ kind: "team", slug: x.r[0] || resolveTeamAlias(x.r[1], aliases.data?.team) || prettySlug(x.r[1]), ...(teamYrQ ? { query: teamYrQ } : {}) }}
-            title={x.r[1]}
-            className="shrink-0"
-          >
-            <TeamLogo name={x.r[1]} size={16} />
-          </HubLink>
-          <TeamLink
-            name={x.r[1]}
-            u={x.r[0] || resolveTeamAlias(x.r[1], aliases.data?.team)}
-            query={teamYrQ}
-            className="text-rw-text hover:text-rw-accent hover:underline font-semibold"
-          />
-        </span>
-      ),
+      render: (x) => {
+        const tQ = rowTeamQ(x.r);
+        return (
+          <span className="inline-flex items-center gap-1.5 min-w-0">
+            <HubLink
+              to={{ kind: "team", slug: rowTeamSlug(x.r), ...(tQ ? { query: tQ } : {}) }}
+              title={x.r[1]}
+              className="shrink-0"
+            >
+              <TeamLogo name={x.r[1]} size={16} />
+            </HubLink>
+            <TeamLink
+              name={x.r[1]}
+              u={x.r[0] || resolveTeamAlias(x.r[1], aliases.data?.team)}
+              query={tQ}
+              className="text-rw-text hover:text-rw-accent hover:underline font-semibold"
+            />
+          </span>
+        );
+      },
     },
     {
       key: "league",
       label: tl("League"),
       value: (x) => x.r[10] || x.r[3],
-      render: (x) =>
-        x.r[4] ? (
+      render: (x) => {
+        const s = rowTeamSlug(x.r);
+        const rv = rowRivalSlug(x.r);
+        const lgQ = [s, rv].filter(Boolean).join(",");
+        return x.r[4] ? (
           <HubLink
-            to={{ kind: "league", slug: x.r[4], ...(asOfYr ? { year: asOfYr } : {}) }}
+            to={{
+              kind: "league",
+              slug: x.r[4],
+              ...(asOfYr ? { year: asOfYr } : {}),
+              ...(lgQ ? { query: `q=${encodeURIComponent(lgQ)}` } : {}),
+            }}
             title={x.r[3]}
             className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
           >
@@ -277,7 +306,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           </HubLink>
         ) : (
           <span className="text-rw-sub" title={x.r[3]}>{x.r[10] || x.r[3] || "–"}</span>
-        ),
+        );
+      },
     },
     {
       key: "country",
@@ -291,9 +321,10 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       value: (x) => x.r[5],
       render: (x) => {
         const w = Math.max(10, Math.min(100, Math.round(((x.r[5] - minRowRating) / Math.max(1, maxRowRating - minRowRating)) * 100)));
+        const tQ = rowTeamQ(x.r);
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[3.25rem]">
-            <HubLink to={{ kind: "team", slug: x.r[0], ...(teamYrQ ? { query: teamYrQ } : {}) }} className="hover:underline">
+            <HubLink to={{ kind: "team", slug: x.r[0], ...(tQ ? { query: tQ } : {}) }} className="hover:underline">
               {x.r[5]}
             </HubLink>
             <span className="h-1 w-11 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
@@ -312,8 +343,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       render: (x) => {
         const p = trend(x.r);
         if (!p || p.length <= 1) return null;
+        const tQ = rowTeamQ(x.r);
         return x.r[0] ? (
-          <HubLink to={{ kind: "team", slug: x.r[0], tab: "matches", ...(teamYrQ ? { query: teamYrQ } : {}) }} className="inline-block hover:opacity-85">
+          <HubLink to={{ kind: "team", slug: x.r[0], tab: "matches", ...(tQ ? { query: tQ } : {}) }} className="inline-block hover:opacity-85">
             <Sparkline points={p} width={80} height={20} />
           </HubLink>
         ) : (
@@ -329,8 +361,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       value: (x) => change(x.r),
       render: (x) => {
         const v = change(x.r);
+        const tQ = rowTeamQ(x.r);
         return v != null ? (
-          <HubLink to={{ kind: "team", slug: x.r[0], tab: "matches", ...(teamYrQ ? { query: teamYrQ } : {}) }} className="hover:underline">
+          <HubLink to={{ kind: "team", slug: x.r[0], tab: "matches", ...(tQ ? { query: tQ } : {}) }} className="hover:underline">
             <Change v={v} />
           </HubLink>
         ) : (
@@ -376,6 +409,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       value: (x) => x.r[7],
       render: (x) => {
         const w = Math.max(6, Math.min(100, Math.round(((x.r[7] || 0) / maxRowGames) * 100)));
+        const s = rowTeamSlug(x.r);
+        const vsPair = pair ? (pair[0] !== s ? pair[0] : pair[1] !== s ? pair[1] : "") : "";
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[2.75rem]">
             <HubLink
@@ -384,7 +419,8 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 query: new URLSearchParams({
                   ...(x.r[4] ? { league: x.r[4] } : {}),
                   ...(asOfYr ? { year: asOfYr } : {}),
-                  team: x.r[0] || resolveTeamAlias(x.r[1], aliases.data?.team) || prettySlug(x.r[1]),
+                  team: s,
+                  ...(vsPair ? { vs: vsPair } : {}),
                 }).toString(),
               }}
               className="hover:text-rw-accent hover:underline"
@@ -404,17 +440,19 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       key: "last",
       label: tl("Last game"),
       value: (x) => x.r[8],
-      render: (x) =>
-        x.r[8] ? (
+      render: (x) => {
+        const tQ = rowTeamQ(x.r);
+        return x.r[8] ? (
           <HubLink
-            to={{ kind: "team", slug: x.r[0], tab: "matches", ...(teamYrQ ? { query: teamYrQ } : {}) }}
+            to={{ kind: "team", slug: x.r[0], tab: "matches", ...(tQ ? { query: tQ } : {}) }}
             className="hover:text-rw-accent hover:underline"
           >
             {fmtDate(x.r[8])}
           </HubLink>
         ) : (
           "–"
-        ),
+        );
+      },
       className: "text-rw-muted",
     },
   ];
@@ -1241,7 +1279,16 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                   const maxLr = Math.max(1500, ...shownLeagues.map((x) => x[2]));
                   const minLr = Math.min(1200, ...shownLeagues.map((x) => x[2]));
                   return shownLeagues.map(([l, u, r, n], i) => {
-                    const best = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5])[0];
+                    const lTeams = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5]);
+                    const best = lTeams[0];
+                    const second = lTeams[1];
+                    const bestSlug = best ? rowTeamSlug(best) : "";
+                    const secondSlug = second ? rowTeamSlug(second) : "";
+                    const bestTeamQ = new URLSearchParams({
+                      ...(asOfYr ? { p: `y${asOfYr}` } : {}),
+                      ...(secondSlug && secondSlug !== bestSlug ? { q: secondSlug } : {}),
+                    }).toString() || teamYrQ;
+                    const lgRowQ = [bestSlug, secondSlug && secondSlug !== bestSlug ? secondSlug : ""].filter(Boolean).join(",");
                     const barW = Math.max(10, Math.min(100, Math.round(((r - minLr + 80) / Math.max(1, maxLr - minLr + 80)) * 100)));
                     return (
                       <tr key={l} className="border-t border-rw-border">
@@ -1258,7 +1305,12 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                         <td className={td} data-sort={l}>
                           {u ? (
                             <HubLink
-                              to={{ kind: "league", slug: u, ...(asOfYr ? { year: asOfYr } : {}) }}
+                              to={{
+                                kind: "league",
+                                slug: u,
+                                ...(asOfYr ? { year: asOfYr } : {}),
+                                ...(lgRowQ ? { query: `q=${encodeURIComponent(lgRowQ)}` } : {}),
+                              }}
                               className="text-rw-text hover:text-rw-accent hover:underline"
                             >
                               {l}
@@ -1273,15 +1325,15 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                               <HubLink
                                 to={{
                                   kind: "team",
-                                  slug: best[0] || resolveTeamAlias(best[1], aliases.data?.team) || prettySlug(best[1]),
-                                  ...(teamYrQ ? { query: teamYrQ } : {}),
+                                  slug: bestSlug,
+                                  ...(bestTeamQ ? { query: bestTeamQ } : {}),
                                 }}
                                 title={best[1]}
                                 className="shrink-0"
                               >
                                 <TeamLogo name={best[1]} size={15} />
                               </HubLink>
-                              <TeamLink name={best[1]} u={best[0] || resolveTeamAlias(best[1], aliases.data?.team)} query={teamYrQ} />
+                              <TeamLink name={best[1]} u={best[0] || resolveTeamAlias(best[1], aliases.data?.team)} query={bestTeamQ} />
                             </span>
                           ) : (
                             "–"

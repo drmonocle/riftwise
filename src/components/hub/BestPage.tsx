@@ -568,14 +568,21 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   );
 };
 
-const Team: React.FC<{ name: string; u?: string | null; won: boolean; period?: string }> = ({ name, u, won, period }) => (
-  <span className={`inline-flex items-center gap-1 ${won ? "font-bold text-rw-teal" : "text-rw-text"}`}>
-    <HubLink to={{ kind: "team", slug: u || resolveTeamAlias(name) || prettySlug(name), ...(period ? { query: `p=${encodeURIComponent(period)}` } : {}) }} title={name} className="shrink-0">
-      <TeamLogo name={name} size={15} />
-    </HubLink>
-    <TeamLink name={name} u={u} className={won ? "font-bold text-rw-teal hover:underline" : "text-rw-text hover:text-rw-accent hover:underline"} />
-  </span>
-);
+const Team: React.FC<{ name: string; u?: string | null; won: boolean; period?: string; vs?: string }> = ({ name, u, won, period, vs }) => {
+  const tQ =
+    new URLSearchParams({
+      ...(period ? { p: period } : {}),
+      ...(vs ? { q: vs } : {}),
+    }).toString() || undefined;
+  return (
+    <span className={`inline-flex items-center gap-1 ${won ? "font-bold text-rw-teal" : "text-rw-text"}`}>
+      <HubLink to={{ kind: "team", slug: u || resolveTeamAlias(name) || prettySlug(name), ...(tQ ? { query: tQ } : {}) }} title={name} className="shrink-0">
+        <TeamLogo name={name} size={15} />
+      </HubLink>
+      <TeamLink name={name} u={u} query={tQ} className={won ? "font-bold text-rw-teal hover:underline" : "text-rw-text hover:text-rw-accent hover:underline"} />
+    </span>
+  );
+};
 
 const GameRow: React.FC<{ r: BestGame; rank: number; league?: string }> = ({ r, rank, league }) => {
   const [rating, slug, n, date, en, eslug, stage, a, aSlug, b, bSlug, w, min, ka, kb, vod] = r;
@@ -586,6 +593,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number; league?: string }> = ({ r, 
   const period = canonEslug ? `e:${canonEslug}` : /^\d{4}$/.test(y) ? `y${y}` : undefined;
   const sa = aSlug || (a ? resolveTeamAlias(a) || prettySlug(a) : "");
   const sb = bSlug || (b ? resolveTeamAlias(b) || prettySlug(b) : "");
+  const evQ = sa && sb ? `q=${encodeURIComponent(`${sa},${sb}`)}` : sa ? `q=${encodeURIComponent(sa)}` : undefined;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>
@@ -600,7 +608,7 @@ const GameRow: React.FC<{ r: BestGame; rank: number; league?: string }> = ({ r, 
       </td>
       <td className="py-2 pr-3 sm:min-w-[12rem]" data-sort={min || 0}>
         <div className="inline-flex flex-wrap items-center gap-x-1.5">
-          <Team name={a} u={aSlug} won={w === 1} period={period} />
+          <Team name={a} u={aSlug} won={w === 1} period={period} vs={sb} />
           <HubLink
             to={
               sa && sb
@@ -612,17 +620,17 @@ const GameRow: React.FC<{ r: BestGame; rank: number; league?: string }> = ({ r, 
           >
             vs
           </HubLink>
-          <Team name={b} u={bSlug} won={w === 2} period={period} />
+          <Team name={b} u={bSlug} won={w === 2} period={period} vs={sa} />
           <HubLink to={{ kind: "match", slug, game: n }} className="text-rw-sub hover:text-rw-accent hover:underline">
             · {tl("Game {n}", { n })}
           </HubLink>
         </div>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
-          <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
+          <EventLink name={en} u={eslug} query={evQ} className="hover:text-rw-accent hover:underline" />
           {stage ? (
             <>
               {" · "}
-              {eslug ? <EventLink name={stageLabel(stage)} u={eslug} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
+              {eslug ? <EventLink name={stageLabel(stage)} u={eslug} query={evQ} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
             </>
           ) : null}{" "}
           ·{" "}
@@ -693,10 +701,10 @@ const GameRow: React.FC<{ r: BestGame; rank: number; league?: string }> = ({ r, 
         </div>
       </td>
       <td className="py-2 pr-3 min-w-[10rem] hidden sm:table-cell" data-sort={en}>
-        <EventLink name={en} u={eslug} className="text-rw-sub hover:text-rw-accent hover:underline" />
+        <EventLink name={en} u={eslug} query={evQ} className="text-rw-sub hover:text-rw-accent hover:underline" />
         {stage && (
           <div className="text-[10px] text-rw-muted">
-            {eslug ? <EventLink name={stageLabel(stage)} u={eslug} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
+            {eslug ? <EventLink name={stageLabel(stage)} u={eslug} query={evQ} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
           </div>
         )}
       </td>
@@ -718,6 +726,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number; league?: string }> = ({
   const period = canonEslug ? `e:${canonEslug}` : /^\d{4}$/.test(y) ? `y${y}` : undefined;
   const sa = aSlug || (a ? resolveTeamAlias(a) || prettySlug(a) : "");
   const sb = bSlug || (b ? resolveTeamAlias(b) || prettySlug(b) : "");
+  const evQ = sa && sb ? `q=${encodeURIComponent(`${sa},${sb}`)}` : sa ? `q=${encodeURIComponent(sa)}` : undefined;
   return (
     <tr className="border-t border-rw-border/60 first:border-t-0 hover:bg-rw-raised/50">
       <td className="py-2 pr-2 text-rw-muted tabular-nums w-8 text-right" data-sort={rank}>
@@ -732,7 +741,7 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number; league?: string }> = ({
       </td>
       <td className="py-2 pr-3 sm:min-w-[12rem]" data-sort={games || totalS}>
         <div className="inline-flex flex-wrap items-center gap-x-1.5">
-          <Team name={a} u={aSlug} won={wa > wb} period={period} />
+          <Team name={a} u={aSlug} won={wa > wb} period={period} vs={sb} />
           <HubLink to={{ kind: "match", slug }} className="inline-flex items-center gap-1 tabular-nums text-rw-text hover:text-rw-accent hover:underline font-semibold">
             <span>{wa}–{wb}</span>
             {totalS > 0 && (
@@ -742,14 +751,14 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number; league?: string }> = ({
               </span>
             )}
           </HubLink>
-          <Team name={b} u={bSlug} won={wb > wa} period={period} />
+          <Team name={b} u={bSlug} won={wb > wa} period={period} vs={sa} />
         </div>
         <div className="text-[10px] text-rw-muted mt-0.5 sm:hidden">
-          <EventLink name={en} u={eslug} className="hover:text-rw-accent hover:underline" />
+          <EventLink name={en} u={eslug} query={evQ} className="hover:text-rw-accent hover:underline" />
           {stage ? (
             <>
               {" · "}
-              {eslug ? <EventLink name={stageLabel(stage)} u={eslug} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
+              {eslug ? <EventLink name={stageLabel(stage)} u={eslug} query={evQ} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
             </>
           ) : null}{" "}
           ·{" "}
@@ -864,10 +873,10 @@ const SeriesRow: React.FC<{ r: BestSeries; rank: number; league?: string }> = ({
         )}
       </td>
       <td className="py-2 pr-3 min-w-[10rem] hidden sm:table-cell" data-sort={en}>
-        <EventLink name={en} u={eslug} className="text-rw-sub hover:text-rw-accent hover:underline" />
+        <EventLink name={en} u={eslug} query={evQ} className="text-rw-sub hover:text-rw-accent hover:underline" />
         {stage && (
           <div className="text-[10px] text-rw-muted">
-            {eslug ? <EventLink name={stageLabel(stage)} u={eslug} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
+            {eslug ? <EventLink name={stageLabel(stage)} u={eslug} query={evQ} className="hover:text-rw-accent hover:underline" /> : stageLabel(stage)}
           </div>
         )}
       </td>

@@ -127,52 +127,85 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   };
 
   const maxG = useMemo(() => Math.max(1, ...shownRows.map((p) => p.g)), [shownRows]);
-  const periodQ = `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`;
-  const playerPeriodQ = `${periodQ}${q.get("champ") ? `&champ=${encodeURIComponent(resolveChampSlug(q.get("champ")!))}` : ""}`;
+  const rowPlayerQ = (p: EventPlayer) => {
+    const pSlug = p.u || resolvePlayerSlug(p.n) || prettySlug(p.n);
+    const pTeam = p.tu || resolveTeamAlias(p.t, aliases.data?.team) || prettySlug(p.t);
+    const otherRow = shownRows.find((x) => (x.u || x.n) !== (p.u || p.n));
+    const otherTeam = otherRow ? otherRow.tu || resolveTeamAlias(otherRow.t, aliases.data?.team) || prettySlug(otherRow.t) : "";
+    const otherPlayer = otherRow ? otherRow.u || resolvePlayerSlug(otherRow.n) || prettySlug(otherRow.n) : "";
+    const topC = q.get("champ") ? resolveChampSlug(q.get("champ")!) : p.c?.[0] ? resolveChampSlug(p.c[0]) : "";
+    return new URLSearchParams({
+      p: event ? `e:${event}` : `y${year}`,
+      ...(pTeam ? { team: pTeam } : {}),
+      ...(otherTeam && otherTeam !== pTeam ? { q: otherTeam } : otherPlayer && otherPlayer !== pSlug ? { q: otherPlayer } : {}),
+      ...(p.r ? { role: p.r } : {}),
+      ...(topC ? { champ: topC } : {}),
+    }).toString();
+  };
+  const rowTeamQ = (p: EventPlayer) => {
+    const pSlug = p.u || resolvePlayerSlug(p.n) || prettySlug(p.n);
+    const pTeam = p.tu || resolveTeamAlias(p.t, aliases.data?.team) || prettySlug(p.t);
+    const otherTeamRow = shownRows.find((x) => (x.tu || resolveTeamAlias(x.t, aliases.data?.team) || prettySlug(x.t)) !== pTeam);
+    const otherTeam = otherTeamRow ? otherTeamRow.tu || resolveTeamAlias(otherTeamRow.t, aliases.data?.team) || prettySlug(otherTeamRow.t) : "";
+    return new URLSearchParams({
+      p: event ? `e:${event}` : `y${year}`,
+      ...(search.trim() && otherTeam ? { q: otherTeam } : pSlug ? { q: pSlug } : {}),
+    }).toString();
+  };
   const columns: Column<EventPlayer>[] = [
     {
       key: "n",
       label: tl("Player"),
       value: (p) => p.n,
-      render: (p) => (
-        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-          <HubLink to={{ kind: "player", slug: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n), query: playerPeriodQ }} title={p.n} className="shrink-0">
-            <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
-          </HubLink>
-          <PlayerLink name={p.n} u={p.u} query={playerPeriodQ} className="text-rw-text hover:text-rw-accent font-semibold" />
-          <span className="inline-flex items-center gap-1 text-[10px] text-rw-muted">
-            <HubLink to={{ kind: "team", slug: p.tu || resolveTeamAlias(p.t, aliases.data?.team) || prettySlug(p.t), query: periodQ }} title={p.t} className="shrink-0">
-              <TeamLogo name={p.t} size={13} />
+      render: (p) => {
+        const pQ = rowPlayerQ(p);
+        const tQ = rowTeamQ(p);
+        const pTeam = p.tu || resolveTeamAlias(p.t, aliases.data?.team) || prettySlug(p.t);
+        const otherTeamRow = search.trim()
+          ? shownRows.find((x) => (x.tu || resolveTeamAlias(x.t, aliases.data?.team) || prettySlug(x.t)) !== pTeam)
+          : undefined;
+        const vsTeam = otherTeamRow ? otherTeamRow.tu || resolveTeamAlias(otherTeamRow.t, aliases.data?.team) || prettySlug(otherTeamRow.t) : "";
+        return (
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            <HubLink to={{ kind: "player", slug: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n), query: pQ }} title={p.n} className="shrink-0">
+              <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
             </HubLink>
-            <TeamLink name={p.t} u={p.tu} query={periodQ} className="text-rw-muted hover:text-rw-accent" />
-          </span>
-          {p.c && p.c.length > 0 && (
-            <span className="hidden lg:inline-flex items-center gap-0.5 ml-0.5">
-              {p.c.slice(0, 3).map((c) => (
-                <HubLink
-                  key={c}
-                  to={{
-                    kind: "finder",
-                    query: new URLSearchParams({
-                      ...(league ? { league } : {}),
-                      ...(year ? { year } : {}),
-                      ...(event ? { event } : {}),
-                      ...(p.r ? { role: p.r } : {}),
-                      ...(p.tu || p.t ? { team: p.tu || resolveTeamAlias(p.t, aliases.data?.team) || prettySlug(p.t) } : {}),
-                      player: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n),
-                      champ: resolveChampSlug(c),
-                    }).toString(),
-                  }}
-                  title={`${p.n} · ${champName(c)}`}
-                  className="hover:opacity-80 shrink-0"
-                >
-                  <ChampIcon name={c} size={14} />
-                </HubLink>
-              ))}
+            <PlayerLink name={p.n} u={p.u} query={pQ} className="text-rw-text hover:text-rw-accent font-semibold" />
+            <span className="inline-flex items-center gap-1 text-[10px] text-rw-muted">
+              <HubLink to={{ kind: "team", slug: pTeam, query: tQ }} title={p.t} className="shrink-0">
+                <TeamLogo name={p.t} size={13} />
+              </HubLink>
+              <TeamLink name={p.t} u={p.tu} query={tQ} className="text-rw-muted hover:text-rw-accent" />
             </span>
-          )}
-        </span>
-      ),
+            {p.c && p.c.length > 0 && (
+              <span className="hidden lg:inline-flex items-center gap-0.5 ml-0.5">
+                {p.c.slice(0, 3).map((c) => (
+                  <HubLink
+                    key={c}
+                    to={{
+                      kind: "finder",
+                      query: new URLSearchParams({
+                        ...(league ? { league } : {}),
+                        ...(year ? { year } : {}),
+                        ...(event ? { event } : {}),
+                        ...(p.r ? { role: p.r } : {}),
+                        ...(pTeam ? { team: pTeam } : {}),
+                        ...(vsTeam ? { vs: vsTeam } : {}),
+                        player: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n),
+                        champ: resolveChampSlug(c),
+                      }).toString(),
+                    }}
+                    title={`${p.n} · ${champName(c)}`}
+                    className="hover:opacity-80 shrink-0"
+                  >
+                    <ChampIcon name={c} size={14} />
+                  </HubLink>
+                ))}
+              </span>
+            )}
+          </span>
+        );
+      },
     },
     {
       key: "r",
@@ -231,6 +264,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
         if (v == null) return "–";
         const z = zOf(m.key, p, v);
         const good = z == null ? 0 : m.low ? -z : z;
+        const pQ = rowPlayerQ(p);
         if (!zMode) {
           if (m.key === "wr") {
             const pct = Math.max(0, Math.min(100, Math.round(v * 100)));
@@ -272,7 +306,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 kind: "player",
                 slug: p.u,
                 tab: "stats",
-                query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+                query: pQ,
               }}
               className={`hover:underline ${tone || "hover:text-rw-accent"}`}
             >
@@ -292,7 +326,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
               kind: "player",
               slug: p.u,
               tab: "stats",
-              query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
+              query: pQ,
             }}
             className={`hover:underline ${zTone || "hover:text-rw-accent"}`}
             title={m.fmt(v)}
@@ -568,7 +602,11 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
             </>
           )}
           <HubLink
-            to={event ? { kind: "event", slug: event } : { kind: "league", slug: league, year }}
+            to={
+              event
+                ? { kind: "event", slug: event, ...(search.trim() ? { query: `q=${encodeURIComponent(search.trim())}` } : {}) }
+                : { kind: "league", slug: league, year, ...(search.trim() ? { query: `q=${encodeURIComponent(search.trim())}` } : {}) }
+            }
             className="ml-auto text-rw-accent hover:underline font-semibold"
           >
             {scope} →
@@ -961,84 +999,101 @@ const LeaderSpotlight: React.FC<{
   if (cards.length < 2) return null;
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
-      {cards.map((c) => (
-        <div
-          key={c.key}
-          className={`rounded-lg border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2 ${
-            activeStat === c.key ? "border-rw-accent" : "border-rw-border"
-          }`}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <HubLink
-              to={{
-                kind: "player",
-                slug: c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n),
-                ...(event || year ? { query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}` } : {}),
-              }}
-              title={c.top.n}
-              className="shrink-0"
-            >
-              <PlayerPhoto name={c.top.n} team={c.top.t} slug={c.top.u ?? undefined} size={22} />
-            </HubLink>
-            <div className="min-w-0">
-              {onPickStat ? (
-                <button
-                  type="button"
-                  onClick={() => onPickStat(c.key)}
-                  className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted hover:text-rw-accent truncate block text-left"
-                >
-                  {c.label}
-                </button>
-              ) : (
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{c.label}</div>
-              )}
-              <div className="mt-0.5 truncate">
-                <PlayerLink
-                  name={c.top.n}
-                  u={c.top.u}
-                  query={event || year ? `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}` : undefined}
-                  className="font-semibold text-rw-text hover:text-rw-accent"
-                />
-              </div>
-              <div className="text-[10px] text-rw-muted flex items-center gap-1 min-w-0">
-                <HubLink
-                  to={{
-                    kind: "team",
-                    slug: c.top.tu || resolveTeamAlias(c.top.t) || prettySlug(c.top.t),
-                    ...(event || year ? { query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}` } : {}),
-                  }}
-                  title={c.top.t}
-                  className="shrink-0"
-                >
-                  <TeamLogo name={c.top.t} size={12} />
-                </HubLink>
-                <TeamLink
-                  name={c.top.t}
-                  u={c.top.tu}
-                  query={event || year ? `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}` : undefined}
-                  className="text-rw-muted hover:text-rw-accent truncate"
-                />
-                <span className="shrink-0">
-                  ·{" "}
-                  {c.top.u ? (
-                    <HubLink
-                      to={{
-                        kind: "player",
-                        slug: c.top.u,
-                        tab: "stats",
-                        query: `p=${encodeURIComponent(event ? `e:${event}` : `y${year}`)}`,
-                      }}
-                      className="hover:text-rw-accent hover:underline"
-                    >
-                      {roleName(c.top.r)}
-                    </HubLink>
-                  ) : (
-                    roleName(c.top.r)
-                  )}
-                </span>
+      {cards.map((c) => {
+        const cSlug = c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n);
+        const cTeamSlug = c.top.tu || resolveTeamAlias(c.top.t) || prettySlug(c.top.t);
+        const otherCard = cards.find((x) => (x.top.u || x.top.n) !== (c.top.u || c.top.n));
+        const otherTeamSlug = otherCard ? otherCard.top.tu || resolveTeamAlias(otherCard.top.t) || prettySlug(otherCard.top.t) : "";
+        const otherPlayerSlug = otherCard ? otherCard.top.u || resolvePlayerSlug(otherCard.top.n) || prettySlug(otherCard.top.n) : "";
+        const cPlayerQ = new URLSearchParams({
+          ...(event || year ? { p: event ? `e:${event}` : `y${year}` } : {}),
+          ...(cTeamSlug ? { team: cTeamSlug } : {}),
+          ...(otherTeamSlug && otherTeamSlug !== cTeamSlug ? { q: otherTeamSlug } : otherPlayerSlug && otherPlayerSlug !== cSlug ? { q: otherPlayerSlug } : {}),
+          ...(c.top.r ? { role: c.top.r } : {}),
+          ...(c.top.c?.[0] ? { champ: resolveChampSlug(c.top.c[0]) } : {}),
+        }).toString() || undefined;
+        const cTeamQ = new URLSearchParams({
+          ...(event || year ? { p: event ? `e:${event}` : `y${year}` } : {}),
+          ...(otherTeamSlug && otherTeamSlug !== cTeamSlug ? { q: otherTeamSlug } : cSlug ? { q: cSlug } : {}),
+        }).toString() || undefined;
+        return (
+          <div
+            key={c.key}
+            className={`rounded-lg border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2 ${
+              activeStat === c.key ? "border-rw-accent" : "border-rw-border"
+            }`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <HubLink
+                to={{
+                  kind: "player",
+                  slug: cSlug,
+                  ...(cPlayerQ ? { query: cPlayerQ } : {}),
+                }}
+                title={c.top.n}
+                className="shrink-0"
+              >
+                <PlayerPhoto name={c.top.n} team={c.top.t} slug={c.top.u ?? undefined} size={22} />
+              </HubLink>
+              <div className="min-w-0">
+                {onPickStat ? (
+                  <button
+                    type="button"
+                    onClick={() => onPickStat(c.key)}
+                    className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted hover:text-rw-accent truncate block text-left"
+                  >
+                    {c.label}
+                  </button>
+                ) : (
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{c.label}</div>
+                )}
+                <div className="mt-0.5 truncate">
+                  <PlayerLink
+                    name={c.top.n}
+                    u={c.top.u}
+                    query={cPlayerQ}
+                    className="font-semibold text-rw-text hover:text-rw-accent"
+                  />
+                </div>
+                <div className="text-[10px] text-rw-muted flex items-center gap-1 min-w-0">
+                  <HubLink
+                    to={{
+                      kind: "team",
+                      slug: cTeamSlug,
+                      ...(cTeamQ ? { query: cTeamQ } : {}),
+                    }}
+                    title={c.top.t}
+                    className="shrink-0"
+                  >
+                    <TeamLogo name={c.top.t} size={12} />
+                  </HubLink>
+                  <TeamLink
+                    name={c.top.t}
+                    u={c.top.tu}
+                    query={cTeamQ}
+                    className="text-rw-muted hover:text-rw-accent truncate"
+                  />
+                  <span className="shrink-0">
+                    ·{" "}
+                    {c.top.u ? (
+                      <HubLink
+                        to={{
+                          kind: "player",
+                          slug: c.top.u,
+                          tab: "stats",
+                          ...(cPlayerQ ? { query: cPlayerQ } : {}),
+                        }}
+                        className="hover:text-rw-accent hover:underline"
+                      >
+                        {roleName(c.top.r)}
+                      </HubLink>
+                    ) : (
+                      roleName(c.top.r)
+                    )}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
           <div className="text-right shrink-0">
             {onPickStat ? (
               <button
@@ -1059,9 +1114,11 @@ const LeaderSpotlight: React.FC<{
                   ...(year ? { year } : {}),
                   ...(event ? { event } : {}),
                   ...(c.top.r ? { role: c.top.r } : {}),
-                  ...(c.top.tu || c.top.t ? { team: c.top.tu || resolveTeamAlias(c.top.t) || prettySlug(c.top.t) } : {}),
+                  ...(cTeamSlug ? { team: cTeamSlug } : {}),
+                  ...(otherTeamSlug && otherTeamSlug !== cTeamSlug ? { vs: otherTeamSlug } : {}),
+                  ...(otherPlayerSlug && otherPlayerSlug !== cSlug ? { vsplayer: otherPlayerSlug } : {}),
                   ...(c.top.c?.length === 1 ? { champ: resolveChampSlug(c.top.c[0]) } : {}),
-                  player: c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n),
+                  player: cSlug,
                 }).toString(),
               }}
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"
@@ -1073,10 +1130,12 @@ const LeaderSpotlight: React.FC<{
               to={{
                 kind: "items",
                 query: new URLSearchParams({
-                  player: c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n),
+                  player: cSlug,
+                  ...(otherPlayerSlug && otherPlayerSlug !== cSlug ? { vsplayer: otherPlayerSlug } : {}),
                   ...(c.top.c?.[0] ? { champ: resolveChampSlug(c.top.c[0]) } : {}),
                   ...(c.top.c?.[1] && resolveChampSlug(c.top.c[1]) !== resolveChampSlug(c.top.c[0]) ? { vschamp: resolveChampSlug(c.top.c[1]) } : {}),
-                  ...(c.top.tu || c.top.t ? { team: c.top.tu || resolveTeamAlias(c.top.t) || prettySlug(c.top.t) } : {}),
+                  ...(cTeamSlug ? { team: cTeamSlug } : {}),
+                  ...(otherTeamSlug && otherTeamSlug !== cTeamSlug ? { vs: otherTeamSlug } : {}),
                   ...(c.top.r ? { role: c.top.r } : {}),
                   ...(year ? { year } : {}),
                   ...(event ? { event } : {}),
@@ -1088,7 +1147,8 @@ const LeaderSpotlight: React.FC<{
             </HubLink>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
