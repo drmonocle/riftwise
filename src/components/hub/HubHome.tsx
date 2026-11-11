@@ -36,6 +36,7 @@ import { INTL_EVENTS, intlMatchNow } from "../../intlNow";
 import { LatestResults } from "../IdleHome";
 import { bare, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
+import { normalizeRole } from "../../hub/champAgg";
 import { BroadcastCardButton, SectionCard, rankingsCard } from "./BroadcastCard";
 import type { TabKey } from "../Navigation";
 
@@ -1073,6 +1074,8 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
               const t1 = rows[1]?.t && rows[1].t !== rows[0]?.t ? teamSlug(rows[1].t) : "";
               const p0 = rows[0] ? playerSlug(rows[0].n, rows[0].u) : "";
               const p1 = rows[1] ? playerSlug(rows[1].n, rows[1].u) : "";
+              const r0 = normalizeRole(rows[0]?.r);
+              const r1 = normalizeRole(rows[1]?.r);
               return (
                 <>
                   {t0 && (
@@ -1127,7 +1130,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                       <HubLink
                         to={{
                           kind: "finder",
-                          query: `player=${encodeURIComponent(p0)}${potmYr ? `&year=${encodeURIComponent(potmYr)}` : ""}`,
+                          query: `player=${encodeURIComponent(p0)}${p1 && p1 !== p0 ? `&vsplayer=${encodeURIComponent(p1)}` : ""}${potmYr ? `&year=${encodeURIComponent(potmYr)}` : ""}`,
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                       >
@@ -1151,11 +1154,11 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                   <HubLink
                     to={{
                       kind: "tiers",
-                      ...(rows[0]?.r || potmYr
+                      ...(r0 || potmYr
                         ? {
                             query: new URLSearchParams({
                               ...(potmYr ? { key: `y${potmYr}` } : {}),
-                              ...(rows[0]?.r ? { role: rows[0].r } : {}),
+                              ...(r0 ? { role: r0 } : {}),
                             }).toString(),
                           }
                         : {}),
@@ -1171,7 +1174,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                         ? {
                             query: new URLSearchParams({
                               ...(potmYr ? { year: potmYr } : {}),
-                              ...(rows[0]?.r && (!rows[1]?.r || rows[1].r === rows[0].r) ? { role: rows[0].r } : {}),
+                              ...(r0 && (!r1 || r1 === r0) ? { role: r0 } : {}),
                               ...(p0 ? { q: `${p0}${p1 ? `,${p1}` : ""}` } : {}),
                             }).toString(),
                           }
@@ -1597,7 +1600,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
                         kind: "champions",
                         query: new URLSearchParams({
                           ...(singleLg ? { league: singleLg } : {}),
-                          key: `y${year}`,
+                          year,
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

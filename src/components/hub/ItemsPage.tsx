@@ -12,7 +12,7 @@ import type { HubRoute } from "../../hub/route";
 import { tl, tc } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveChampSlug, resolveItemSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
+import { bare, loadAliases, loadHubIndex, loadHubItem, loadHubItemChamp, loadHubItemYear, loadItemIndex, loadPlayerGames, loadPlayerItems, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveItemSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub, hubShareUrl } from "../../hub/route";
@@ -61,25 +61,30 @@ function scopeText(champ: string, year: string): string | null {
   return null;
 }
 
-/** The address's player, item, champion and year (champion and item as their page names: sion, heartsteel). */
+/** The address's player, item, champion, year and event (champion and item as their page names: sion, heartsteel). */
 interface Picks {
   player: string;
   item: string;
   champ: string;
   year: string;
+  event?: string;
 }
 
 export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Item history"));
   useDDragon();
   const q = new URLSearchParams(query || "");
+  const rawEvent = q.get("event") || "";
+  const canonEvent = rawEvent ? resolveEventSlug(rawEvent) : "";
+  const evYr = canonEvent ? /(?:^|-)(20\d{2})(?:-|$)/.exec(canonEvent)?.[1] || "" : "";
   const picks: Picks = {
     player: resolvePlayerSlug(prettySlug(q.get("player") || "")),
     item: resolveItemSlug(q.get("item") || ""),
     champ: resolveChampSlug(q.get("champ") || ""),
-    year: q.get("year") || "",
+    year: q.get("year") || evYr || "",
+    event: canonEvent || undefined,
   };
-  const { player, item, champ, year } = picks;
+  const { player, item, champ, year, event } = picks;
   const queryWith = (patch: Partial<Record<keyof Picks, string | undefined>>) => {
     const next = new URLSearchParams(query || "");
     for (const [k, v] of Object.entries(patch)) v ? next.set(k, v) : next.delete(k);
@@ -236,7 +241,7 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
               </option>
             ))}
           </select>
-          {(player || item || champ || year) && (
+          {(player || item || champ || year || event) && (
             <span className="flex flex-wrap gap-1.5 items-center">
               {who && (
                 <span className="flex items-center gap-1">
@@ -267,6 +272,16 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
                 <button type="button" onClick={() => set({ year: undefined })} className={chip} title={tl("Clear")}>
                   {year} ✕
                 </button>
+              )}
+              {event && (
+                <span className="flex items-center gap-1">
+                  <button type="button" onClick={() => set({ event: undefined })} className={chip} title={tl("Clear")}>
+                    {event} ✕
+                  </button>
+                  <HubLink to={{ kind: "event", slug: event }} className="text-[11px] text-rw-accent hover:underline" title={event}>
+                    →
+                  </HubLink>
+                </span>
               )}
             </span>
           )}
@@ -304,7 +319,7 @@ const PlayerItemsView: React.FC<{
   itemTitle?: string;
   onItem: (slug: string) => void;
 }> = ({ slug, name, picks, champLabel, scope, itemTitle, onItem }) => {
-  const { item, champ, year } = picks;
+  const { item, champ, year, event } = picks;
   const mine = useLoad(() => loadPlayerItems(slug), [slug]);
   const log = useLoad(() => loadPlayerGames(slug), [slug]);
   const [filter, setFilter] = useState("");
@@ -312,11 +327,14 @@ const PlayerItemsView: React.FC<{
   if (mine.loading || log.loading) return <Loading />;
   if (!mine.data || !log.data) return <p className="text-xs text-rw-sub rw-span">{tl("No item history for this player yet.")}</p>;
   const rows = log.data;
-  const keep = (r: PlayerGameRow) => (!champ || sameChamp(r[2], champ)) && (!year || r[0].startsWith(year));
+  const keep = (r: PlayerGameRow) =>
+    (!champ || sameChamp(r[2], champ)) &&
+    (!year || r[0].startsWith(year)) &&
+    (!event || (r[11] ? matchesPeriodEvent(r[11], r[9], event) : normText(r[9] || "").includes(normText(event))));
   const games = (pos: number[]) => pos.map((i) => rows[i]).filter((r): r is PlayerGameRow => !!r && keep(r));
-  const counted = champ || year ? rows.filter(keep).length : rows.length;
+  const counted = champ || year || event ? rows.filter(keep).length : rows.length;
   const whoBuilt = (label: string) => (
-    <HubLink to={{ kind: "items", query: new URLSearchParams({ item, ...(champ ? { champ } : {}), ...(year ? { year } : {}) }).toString() }} className="text-[11px] text-rw-accent hover:underline">
+    <HubLink to={{ kind: "items", query: new URLSearchParams({ item, ...(champ ? { champ } : {}), ...(year ? { year } : {}), ...(event ? { event } : {}) }).toString() }} className="text-[11px] text-rw-accent hover:underline">
       {champ ? tl("Who built {item} on {champ}", { item: label, champ: champLabel }) : tl("Who built {item} most", { item: label })}
     </HubLink>
   );
@@ -333,7 +351,7 @@ const PlayerItemsView: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `player=${encodeURIComponent(slug)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                query: `player=${encodeURIComponent(slug)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}`,
               }}
               className="hover:text-rw-accent hover:underline"
               title={tl("Game finder")}
@@ -350,7 +368,7 @@ const PlayerItemsView: React.FC<{
         right={
           <span className="flex flex-wrap items-center gap-2">
             <HubLink
-              to={{ kind: "compare", mode: "player", a: slug, ...(year ? { period: `y${year}` } : {}) }}
+              to={{ kind: "compare", mode: "player", a: slug, ...(event ? { period: `e:${event}` } : year ? { period: `y${year}` } : {}) }}
               className="text-[11px] text-rw-accent hover:underline font-semibold"
               data-nocapture="1"
             >
@@ -359,7 +377,7 @@ const PlayerItemsView: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `player=${encodeURIComponent(slug)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                query: `player=${encodeURIComponent(slug)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}`,
               }}
               className="text-[11px] text-rw-accent hover:underline font-semibold"
               data-nocapture="1"
@@ -385,6 +403,7 @@ const PlayerItemsView: React.FC<{
                   q: slug,
                   ...(champ ? { champ: resolveChampSlug(champ) } : g[0]?.[2] ? { champ: resolveChampSlug(g[0][2]) } : {}),
                   ...(year ? { year } : {}),
+                  ...(event ? { event } : {}),
                 }).toString() || undefined,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -397,6 +416,7 @@ const PlayerItemsView: React.FC<{
                 kind: "tiers",
                 query: new URLSearchParams({
                   ...(year ? { key: `y${year}` } : {}),
+                  ...(event ? { event } : {}),
                   ...(champ || g[0]?.[2] ? { q: resolveChampSlug(champ || g[0][2]) } : {}),
                 }).toString() || undefined,
               }}
@@ -407,7 +427,7 @@ const PlayerItemsView: React.FC<{
             </HubLink>
             {g[0]?.[7] && (
               <HubLink
-                to={{ kind: "prep", a: resolveTeamAlias(g[0][7]) || prettySlug(g[0][7]), ...(g[0][8] ? { b: resolveTeamAlias(g[0][8]) || prettySlug(g[0][8]) } : {}), ...(year ? { period: `y${year}` } : {}) }}
+                to={{ kind: "prep", a: resolveTeamAlias(g[0][7]) || prettySlug(g[0][7]), ...(g[0][8] ? { b: resolveTeamAlias(g[0][8]) || prettySlug(g[0][8]) } : {}), ...(event ? { period: `e:${event}` } : year ? { period: `y${year}` } : {}) }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
               >
@@ -420,7 +440,7 @@ const PlayerItemsView: React.FC<{
                 query: new URLSearchParams({
                   ...(g[0]?.[7] ? { teams: `${resolveTeamAlias(g[0][7]) || prettySlug(g[0][7])}${g[0][8] ? `,${resolveTeamAlias(g[0][8]) || prettySlug(g[0][8])}` : ""}` } : {}),
                   ...(champ || g[0]?.[2] ? { champ: resolveChampSlug(champ || g[0][2]) } : {}),
-                  ...(year ? { p: `y${year}` } : {}),
+                  ...(event ? { p: `e:${event}` } : year ? { p: `y${year}` } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -520,7 +540,7 @@ const PlayerItemsView: React.FC<{
               </HubLink>
             )}
             <HubLink
-              to={{ kind: "compare", mode: "player", a: slug, ...(year ? { period: `y${year}` } : {}) }}
+              to={{ kind: "compare", mode: "player", a: slug, ...(event ? { period: `e:${event}` } : year ? { period: `y${year}` } : {}) }}
               className="text-[11px] text-rw-accent hover:underline font-semibold"
               data-nocapture="1"
             >
@@ -529,7 +549,7 @@ const PlayerItemsView: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `player=${encodeURIComponent(slug)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                query: `player=${encodeURIComponent(slug)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}`,
               }}
               className="text-[11px] text-rw-accent hover:underline font-semibold"
               data-nocapture="1"
@@ -543,6 +563,7 @@ const PlayerItemsView: React.FC<{
                   q: slug,
                   ...(champ ? { champ: resolveChampSlug(champ) } : list[0]?.[1]?.[0]?.[2] ? { champ: resolveChampSlug(list[0][1][0][2]) } : {}),
                   ...(year ? { year } : {}),
+                  ...(event ? { event } : {}),
                 }).toString() || undefined,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -555,6 +576,7 @@ const PlayerItemsView: React.FC<{
                 kind: "tiers",
                 query: new URLSearchParams({
                   ...(year ? { key: `y${year}` } : {}),
+                  ...(event ? { event } : {}),
                   ...(champ || list[0]?.[1]?.[0]?.[2] ? { q: resolveChampSlug(champ || list[0][1][0][2]) } : {}),
                 }).toString() || undefined,
               }}
@@ -569,7 +591,7 @@ const PlayerItemsView: React.FC<{
                   kind: "prep",
                   a: resolveTeamAlias(list[0][1][0][7]) || prettySlug(list[0][1][0][7]),
                   ...(list[0][1][0][8] ? { b: resolveTeamAlias(list[0][1][0][8]) || prettySlug(list[0][1][0][8]) } : {}),
-                  ...(year ? { period: `y${year}` } : {}),
+                  ...(event ? { period: `e:${event}` } : year ? { period: `y${year}` } : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
@@ -585,7 +607,7 @@ const PlayerItemsView: React.FC<{
                     ? { teams: `${resolveTeamAlias(list[0][1][0][7]) || prettySlug(list[0][1][0][7])}${list[0][1][0][8] ? `,${resolveTeamAlias(list[0][1][0][8]) || prettySlug(list[0][1][0][8])}` : ""}` }
                     : {}),
                   ...(champ || list[0]?.[1]?.[0]?.[2] ? { champ: resolveChampSlug(champ || list[0][1][0][2]) } : {}),
-                  ...(year ? { p: `y${year}` } : {}),
+                  ...(event ? { p: `e:${event}` } : year ? { p: `y${year}` } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -826,7 +848,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `player=${encodeURIComponent(filteredPlayers[0][1])}`,
+                  query: `player=${encodeURIComponent(filteredPlayers[0][1])}${terms.length > 0 && filteredPlayers[1]?.[1] && filteredPlayers[1][1] !== filteredPlayers[0][1] ? `&vsplayer=${encodeURIComponent(filteredPlayers[1][1])}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1096,7 +1118,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `player=${encodeURIComponent(topA)}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                  query: `player=${encodeURIComponent(topA)}${terms.length > 0 && topB && topB !== topA ? `&vsplayer=${encodeURIComponent(topB)}` : ""}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -1387,7 +1409,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `player=${encodeURIComponent(topA)}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                  query: `player=${encodeURIComponent(topA)}${terms.length > 0 && topB && topB !== topA ? `&vsplayer=${encodeURIComponent(topB)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -2242,6 +2264,7 @@ const CopyItemsPost: React.FC<{
     if (picks.item) qs.set("item", picks.item);
     if (picks.champ) qs.set("champ", picks.champ);
     if (picks.year) qs.set("year", picks.year);
+    if (picks.event) qs.set("event", picks.event);
     lines.push(hubShareUrl({ kind: "items", query: qs.toString() || undefined }));
     navigator.clipboard
       .writeText(lines.join("\n"))

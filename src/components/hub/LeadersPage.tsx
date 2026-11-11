@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadAliases, loadHubEvent, loadLeagues, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import type { EventPlayer, LeagueRow } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { normalizeRole, ROLES } from "../../hub/champAgg";
@@ -32,7 +32,8 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const q = new URLSearchParams(query || "");
   const leagues = useLoad(loadLeagues, []);
   const aliases = useLoad(loadAliases, []);
-  const event = q.get("event") || "";
+  const rawEvent = q.get("event") || "";
+  const event = rawEvent ? resolveEventSlug(rawEvent) : "";
   const ev = useLoad(() => (event ? loadHubEvent(event) : Promise.resolve(null)), [event]);
   const eventLeagueGuess = event ? /^(.*?)-(?:20\d{2})(?:-|$)/.exec(event)?.[1] || "" : "";
   const asked = q.get("league") || (event && (ev.data?.lu || eventLeagueGuess) ? ev.data?.lu || eventLeagueGuess : DEFAULT_LEAGUE);
@@ -412,6 +413,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     player: shownRows[0].u,
                     ...(q.get("champ") ? { champ: resolveChampSlug(q.get("champ")!) } : {}),
                     ...(year ? { year } : {}),
+                    ...(event ? { event } : {}),
                   }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
@@ -423,6 +425,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                   kind: "finder",
                   query: new URLSearchParams({
                     player: shownRows[0].u,
+                    ...(shownRows.length === 2 && shownRows[1]?.u && shownRows[1].u !== shownRows[0].u ? { vsplayer: shownRows[1].u } : {}),
                     ...(league ? { league } : {}),
                     ...(year ? { year } : {}),
                     ...(event ? { event } : {}),
@@ -558,6 +561,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                              player: top2[0].u || resolvePlayerSlug(top2[0].n) || prettySlug(top2[0].n),
                              ...(q.get("champ") ? { champ: resolveChampSlug(q.get("champ")!) } : {}),
                              ...(year ? { year } : {}),
+                             ...(event ? { event } : {}),
                            }).toString(),
                          }}
                          className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
@@ -681,6 +685,9 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(q.get("champ") ? { champ: resolveChampSlug(q.get("champ")!) } : {}),
                       ...((search.trim() || shownRows.length === 1) && shownRows[0]
                         ? { player: shownRows[0].u || resolvePlayerSlug(shownRows[0].n) || prettySlug(shownRows[0].n) }
+                        : {}),
+                      ...(search.trim() && shownRows.length === 2 && shownRows[1]
+                        ? { vsplayer: shownRows[1].u || resolvePlayerSlug(shownRows[1].n) || prettySlug(shownRows[1].n) }
                         : {}),
                     }).toString(),
                   }}
@@ -892,7 +899,11 @@ const LeaderSpotlight: React.FC<{
             <HubLink
               to={{
                 kind: "items",
-                query: `player=${encodeURIComponent(c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n))}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                query: new URLSearchParams({
+                  player: c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n),
+                  ...(year ? { year } : {}),
+                  ...(event ? { event } : {}),
+                }).toString(),
               }}
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline block"
             >
