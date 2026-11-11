@@ -255,7 +255,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                           kind: "prep",
                           a: qTeam,
                           ...(qVs ? { b: qVs } : {}),
-                          ...(qEvent ? { period: `e:${qEvent}` } : year ? { period: `y${year}` } : {}),
+                          ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : year ? { period: `y${year}` } : {}),
                         }}
                         className="text-rw-accent hover:underline font-semibold"
                       >
@@ -267,7 +267,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                           mode: "team",
                           a: qTeam,
                           ...(qVs ? { b: qVs } : {}),
-                          ...(qEvent ? { period: `e:${qEvent}` } : year ? { period: `y${year}` } : {}),
+                          ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : year ? { period: `y${year}` } : {}),
                         }}
                         className="text-rw-accent hover:underline font-semibold"
                       >
@@ -282,7 +282,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                         mode: "player",
                         a: qPlayer,
                         ...(qVsPlayer ? { b: qVsPlayer } : {}),
-                        ...(qEvent ? { period: `e:${qEvent}` } : year ? { period: `y${year}` } : {}),
+                        ...(qEvent ? { period: `e:${qEvent}` } : qPatch ? { period: `p:${qPatch}` } : year ? { period: `y${year}` } : {}),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
@@ -361,8 +361,12 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
                       query: new URLSearchParams({
                         ...(qPlayer ? { player: qPlayer } : {}),
                         ...(qChamp ? { champ: resolveChampSlug(qChamp) } : {}),
+                        ...(qTeam ? { team: qTeam } : {}),
+                        ...(qVs ? { vs: qVs } : {}),
+                        ...(qRole ? { role: qRole } : {}),
                         ...(year ? { year } : {}),
                         ...(qEvent ? { event: qEvent } : {}),
+                        ...(qPatch ? { patch: qPatch } : {}),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -882,7 +886,9 @@ const FinderBody: React.FC<{
               found={found}
               sideCond={sideCond}
               champ={champs[0] || ""}
-              player={q.get("player") || ""}
+              player={playerOption(opts.players, q.get("player")) || q.get("player") || ""}
+              team={teamOption(opts.teams, q.get("team")) || q.get("team") || ""}
+              vs={teamOption(opts.teams, q.get("vs") || q.get("vsteam")) || q.get("vs") || q.get("vsteam") || ""}
               league={q.get("league") || ""}
               year={year || ""}
               event={q.get("event") ? resolveEventSlug(q.get("event")!) : ""}
@@ -954,7 +960,7 @@ const FinderBody: React.FC<{
                       kind: "prep",
                       a: found[0].g[12] || resolveTeamAlias(found[0].g[10]!) || prettySlug(found[0].g[10]!),
                       b: found[0].g[13] || resolveTeamAlias(found[0].g[11]!) || prettySlug(found[0].g[11]!),
-                      period: q.get("event") ? `e:${resolveEventSlug(q.get("event")!)}` : year ? `y${year}` : undefined,
+                      period: q.get("event") ? `e:${resolveEventSlug(q.get("event")!)}` : q.get("patch") ? `p:${q.get("patch")!}` : year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -975,7 +981,7 @@ const FinderBody: React.FC<{
                       mode: "team",
                       a: found[0].g[12] || resolveTeamAlias(found[0].g[10]!) || prettySlug(found[0].g[10]!),
                       b: found[0].g[13] || resolveTeamAlias(found[0].g[11]!) || prettySlug(found[0].g[11]!),
-                      period: q.get("event") ? `e:${resolveEventSlug(q.get("event")!)}` : year ? `y${year}` : undefined,
+                      period: q.get("event") ? `e:${resolveEventSlug(q.get("event")!)}` : q.get("patch") ? `p:${q.get("patch")!}` : year ? `y${year}` : undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -984,7 +990,15 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(q.get("league") && q.get("league") !== "top" ? { query: `league=${encodeURIComponent(resolveLeagueSlug(q.get("league")!))}` } : {}),
+                      query: new URLSearchParams({
+                        ...(q.get("league") && q.get("league") !== "top" ? { league: resolveLeagueSlug(q.get("league")!) } : {}),
+                        q: [
+                          found[0].g[12] || resolveTeamAlias(found[0].g[10]!) || prettySlug(found[0].g[10]!),
+                          found[0].g[13] || resolveTeamAlias(found[0].g[11]!) || prettySlug(found[0].g[11]!),
+                        ]
+                          .filter(Boolean)
+                          .join(","),
+                      }).toString() || undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -1019,6 +1033,12 @@ const FinderBody: React.FC<{
                         ...(q.get("event") ? { event: resolveEventSlug(q.get("event")!) } : {}),
                         ...(q.get("role") ? { role: q.get("role")! } : {}),
                         ...(champs[0] ? { champ: resolveChampSlug(champs[0]) } : {}),
+                        q: [
+                          found[0].g[12] || resolveTeamAlias(found[0].g[10]!) || prettySlug(found[0].g[10]!),
+                          found[0].g[13] || resolveTeamAlias(found[0].g[11]!) || prettySlug(found[0].g[11]!),
+                        ]
+                          .filter(Boolean)
+                          .join(","),
                       }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -1064,7 +1084,10 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(q.get("league") && q.get("league") !== "top" ? { query: `league=${encodeURIComponent(resolveLeagueSlug(q.get("league")!))}` } : {}),
+                      query: new URLSearchParams({
+                        ...(q.get("league") && q.get("league") !== "top" ? { league: resolveLeagueSlug(q.get("league")!) } : {}),
+                        q: [teamOption(opts.teams, q.get("team")) || q.get("team")!, teamOption(opts.teams, q.get("vs")) || q.get("vs")!].filter(Boolean).join(","),
+                      }).toString() || undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -1099,12 +1122,31 @@ const FinderBody: React.FC<{
                         ...(q.get("event") ? { event: resolveEventSlug(q.get("event")!) } : {}),
                         ...(q.get("role") ? { role: q.get("role")! } : {}),
                         ...(champs[0] ? { champ: resolveChampSlug(champs[0]) } : {}),
+                        q: [teamOption(opts.teams, q.get("team")) || q.get("team")!, teamOption(opts.teams, q.get("vs")) || q.get("vs")!].filter(Boolean).join(","),
                       }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
                     {tl("Player leaderboards")} →
                   </HubLink>
+                  {!champs[0] && !q.get("player") && (
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          team: teamOption(opts.teams, q.get("team")) || q.get("team")!,
+                          vs: teamOption(opts.teams, q.get("vs")) || q.get("vs")!,
+                          ...(q.get("role") ? { role: q.get("role")! } : {}),
+                          ...(year ? { year } : {}),
+                          ...(q.get("event") ? { event: resolveEventSlug(q.get("event")!) } : {}),
+                          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+                        }).toString(),
+                      }}
+                      className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                  )}
                 </>
               )}
               {q.get("team") && !q.get("vs") && (
@@ -1142,7 +1184,10 @@ const FinderBody: React.FC<{
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(q.get("league") && q.get("league") !== "top" ? { query: `league=${encodeURIComponent(resolveLeagueSlug(q.get("league")!))}` } : {}),
+                      query: new URLSearchParams({
+                        ...(q.get("league") && q.get("league") !== "top" ? { league: resolveLeagueSlug(q.get("league")!) } : {}),
+                        q: teamOption(opts.teams, q.get("team")) || q.get("team")!,
+                      }).toString() || undefined,
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
@@ -1177,12 +1222,30 @@ const FinderBody: React.FC<{
                         ...(q.get("event") ? { event: resolveEventSlug(q.get("event")!) } : {}),
                         ...(q.get("role") ? { role: q.get("role")! } : {}),
                         ...(champs[0] ? { champ: resolveChampSlug(champs[0]) } : {}),
+                        q: teamOption(opts.teams, q.get("team")) || q.get("team")!,
                       }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
                   >
                     {tl("Player leaderboards")} →
                   </HubLink>
+                  {!champs[0] && !q.get("player") && (
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          team: teamOption(opts.teams, q.get("team")) || q.get("team")!,
+                          ...(q.get("role") ? { role: q.get("role")! } : {}),
+                          ...(year ? { year } : {}),
+                          ...(q.get("event") ? { event: resolveEventSlug(q.get("event")!) } : {}),
+                          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
+                        }).toString(),
+                      }}
+                      className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
+                  )}
                 </>
               )}
               {champs[0] && (
@@ -1227,8 +1290,12 @@ const FinderBody: React.FC<{
                         kind: "items",
                         query: new URLSearchParams({
                           champ: resolveChampSlug(champs[0]),
+                          ...(q.get("team") ? { team: teamOption(opts.teams, q.get("team")) || q.get("team")! } : {}),
+                          ...(q.get("vs") ? { vs: teamOption(opts.teams, q.get("vs")) || q.get("vs")! } : {}),
+                          ...(q.get("role") ? { role: q.get("role")! } : {}),
                           ...(year ? { year } : {}),
                           ...(q.get("event") ? { event: resolveEventSlug(q.get("event")!) } : {}),
+                          ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -1258,8 +1325,12 @@ const FinderBody: React.FC<{
                       query: new URLSearchParams({
                         player: playerOption(opts.players, q.get("player")) || q.get("player")!,
                         ...(champs[0] ? { champ: resolveChampSlug(champs[0]) } : {}),
+                        ...(q.get("team") ? { team: teamOption(opts.teams, q.get("team")) || q.get("team")! } : {}),
+                        ...(q.get("vs") ? { vs: teamOption(opts.teams, q.get("vs")) || q.get("vs")! } : {}),
+                        ...(q.get("role") ? { role: q.get("role")! } : {}),
                         ...(year ? { year } : {}),
                         ...(q.get("event") ? { event: resolveEventSlug(q.get("event")!) } : {}),
+                        ...(q.get("patch") ? { patch: q.get("patch")! } : {}),
                       }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -1275,6 +1346,15 @@ const FinderBody: React.FC<{
                         ...(q.get("event") ? { event: resolveEventSlug(q.get("event")!) } : {}),
                         ...(q.get("role") ? { role: q.get("role")! } : {}),
                         ...(champs[0] ? { champ: resolveChampSlug(champs[0]) } : {}),
+                        q: [
+                          playerOption(opts.players, q.get("player")) || q.get("player")!,
+                          q.get("vsplayer") ? playerOption(opts.players, q.get("vsplayer")) || q.get("vsplayer")! : "",
+                          q.get("team") ? teamOption(opts.teams, q.get("team")) || q.get("team")! : "",
+                          q.get("vs") ? teamOption(opts.teams, q.get("vs")) || q.get("vs")! : "",
+                        ]
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .join(","),
                       }).toString(),
                     }}
                     className="text-[11px] px-2 py-1 rounded border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent"
@@ -1461,6 +1541,8 @@ const Cohort: React.FC<{
   sideCond: boolean;
   champ: string;
   player: string;
+  team?: string;
+  vs?: string;
   league?: string;
   year?: string;
   event?: string;
@@ -1469,7 +1551,7 @@ const Cohort: React.FC<{
   onPick?: (c: string) => void;
   onBan?: (c: string) => void;
   onSide?: (s: "b" | "r") => void;
-}> = ({ found, sideCond, champ, player, league, year, event, patch, role, onPick, onBan, onSide }) => {
+}> = ({ found, sideCond, champ, player, team, vs, league, year, event, patch, role, onPick, onBan, onSide }) => {
   const scopeLg = league && league !== "top" ? resolveLeagueSlug(league) : "";
   const d = useMemo(() => {
     let blueW = 0, kills = 0, kg = 0, kMin = 0, gd = 0, gdn = 0;
@@ -1556,9 +1638,14 @@ const Cohort: React.FC<{
                   to={{
                     kind: "items",
                     query: new URLSearchParams({
+                      ...(player ? { player: resolvePlayerSlug(prettySlug(player)) } : {}),
                       champ: resolveChampSlug(rows[0][0]),
+                      ...(team ? { team: resolveTeamAlias(team) || prettySlug(team) } : {}),
+                      ...(vs ? { vs: resolveTeamAlias(vs) || prettySlug(vs) } : {}),
+                      ...(role ? { role } : {}),
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),
+                      ...(patch ? { patch } : {}),
                     }).toString(),
                   }}
                   className="text-rw-accent hover:underline"
@@ -1589,6 +1676,18 @@ const Cohort: React.FC<{
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
                       champ: resolveChampSlug(rows[0][0]),
+                      ...(player || team
+                        ? {
+                            q: [
+                              player ? resolvePlayerSlug(prettySlug(player)) : "",
+                              team ? resolveTeamAlias(team) || prettySlug(team) : "",
+                              vs ? resolveTeamAlias(vs) || prettySlug(vs) : "",
+                            ]
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .join(","),
+                          }
+                        : {}),
                     }).toString(),
                   }}
                   className="text-rw-accent hover:underline"
@@ -1599,6 +1698,11 @@ const Cohort: React.FC<{
                   to={{
                     kind: "draft",
                     query: new URLSearchParams({
+                      ...(team
+                        ? {
+                            teams: `${resolveTeamAlias(team) || prettySlug(team)}${vs ? `,${resolveTeamAlias(vs) || prettySlug(vs)}` : ""}`,
+                          }
+                        : {}),
                       ...(event ? { p: `e:${event}` } : patch ? { p: `p:${patch}` } : year ? { p: `y${year}` } : {}),
                       champ: resolveChampSlug(rows[0][0]),
                       ...(role ? { role } : {}),
@@ -1611,7 +1715,20 @@ const Cohort: React.FC<{
                 <HubLink
                   to={{
                     kind: "rankings",
-                    ...(scopeLg ? { query: `league=${encodeURIComponent(scopeLg)}` } : {}),
+                    query:
+                      new URLSearchParams({
+                        ...(scopeLg ? { league: scopeLg } : {}),
+                        ...(team
+                          ? {
+                              q: [
+                                resolveTeamAlias(team) || prettySlug(team),
+                                vs ? resolveTeamAlias(vs) || prettySlug(vs) : "",
+                              ]
+                                .filter(Boolean)
+                                .join(","),
+                            }
+                          : {}),
+                      }).toString() || undefined,
                   }}
                   className="text-rw-accent hover:underline"
                 >
