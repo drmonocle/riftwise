@@ -123,6 +123,17 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       ...(p.r ? { role: p.r } : {}),
       ...(champOverride ? { champ: resolveChampSlug(champOverride) } : p.c?.[0] ? { champ: resolveChampSlug(p.c[0]) } : {}),
     }).toString();
+  const pPageQuery = (p: EventPlayer, opts?: { champ?: string; includeDefaultChamp?: boolean }) =>
+    new URLSearchParams({
+      p: `e:${e.u}`,
+      ...(p.r ? { role: p.r } : {}),
+      ...(p.t ? { team: tSlug(p.t, p.tu) } : {}),
+      ...(opts?.champ
+        ? { champ: resolveChampSlug(opts.champ) }
+        : opts?.includeDefaultChamp && p.c?.[0]
+          ? { champ: resolveChampSlug(p.c[0]) }
+          : {}),
+    }).toString();
   const pStatLink = (p: EventPlayer, node: React.ReactNode) =>
     node == null || node === "–" ? (
       "–"
@@ -130,7 +141,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       <HubLink
         to={
           p.u
-            ? { kind: "player", slug: p.u, tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }
+            ? { kind: "player", slug: p.u, tab: "stats", query: pPageQuery(p, { includeDefaultChamp: true }) }
             : { kind: "finder", query: pFinderQuery(p) }
         }
         className="hover:text-rw-accent hover:underline"
@@ -146,10 +157,10 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       value: (p) => p.n.toLowerCase(),
       render: (p) => (
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <HubLink to={{ kind: "player", slug: pSlug(p.n, p.u), query: `p=e:${encodeURIComponent(e.u)}` }} className="shrink-0 hover:opacity-80" title={p.n}>
+          <HubLink to={{ kind: "player", slug: pSlug(p.n, p.u), query: pPageQuery(p) }} className="shrink-0 hover:opacity-80" title={p.n}>
             <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
           </HubLink>
-          <PlayerLink name={p.n} u={p.u} query={`p=e:${encodeURIComponent(e.u)}`} />
+          <PlayerLink name={p.n} u={p.u} query={pPageQuery(p)} />
         </span>
       ),
     },
@@ -219,7 +230,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       render: (p) =>
         p.u ? (
           <HubLink
-            to={{ kind: "player", slug: p.u, tab: "stats", query: `p=e:${encodeURIComponent(e.u)}` }}
+            to={{ kind: "player", slug: p.u, tab: "stats", query: pPageQuery(p, { includeDefaultChamp: true }) }}
             className="inline-flex hover:opacity-85"
             title={tl("Stats")}
           >
@@ -255,7 +266,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                       kind: "player",
                       slug: p.u,
                       tab: "champions",
-                      query: `champ=${encodeURIComponent(resolveChampSlug(c))}${p.r ? `&role=${encodeURIComponent(p.r)}` : ""}&p=e:${encodeURIComponent(e.u)}`,
+                      query: pPageQuery(p, { champ: c }),
                     }
                   : { kind: "finder", query: pFinderQuery(p, c) }
               }
@@ -273,7 +284,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                       kind: "player",
                       slug: p.u,
                       tab: "champions",
-                      query: `${p.r ? `role=${encodeURIComponent(p.r)}&` : ""}p=e:${encodeURIComponent(e.u)}`,
+                      query: pPageQuery(p),
                     }
                   : { kind: "finder", query: pFinderQuery(p) }
               }
@@ -332,6 +343,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
         .filter(Boolean),
     ),
   ).slice(0, 2);
+  const activeRole =
+    role !== "All"
+      ? role
+      : rows.length >= 1 && rows.every((r) => r.r && r.r === rows[0].r)
+        ? rows[0].r
+        : "";
   return (
     <Section
       title={tl("Player stats")}
@@ -375,7 +392,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                     ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                     ...(topTeams[0] ? { team: topTeams[0] } : {}),
                     ...(topTeams[1] ? { vs: topTeams[1] } : {}),
-                    ...(role !== "All" ? { role } : rows[0]?.r ? { role: rows[0].r } : {}),
+                    ...(activeRole ? { role: activeRole } : rows[0]?.r ? { role: rows[0].r } : {}),
                     ...(topChamps[0] ? { champ: topChamps[0] } : {}),
                     ...(topChamps[1] ? { vschamp: topChamps[1] } : {}),
                     ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
@@ -394,7 +411,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                     kind: "counters",
                     query: `champ=${encodeURIComponent(topChamps[0])}${
                       topChamps[1] ? `&vs=${encodeURIComponent(topChamps[1])}` : ""
-                    }${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}&event=${encodeURIComponent(e.u)}${/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? `&patch=y${(e.start || e.end || "").slice(0, 4)}&year=${(e.start || e.end || "").slice(0, 4)}` : ""}`,
+                    }${activeRole ? `&role=${encodeURIComponent(activeRole)}` : ""}&event=${encodeURIComponent(e.u)}${/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? `&patch=y${(e.start || e.end || "").slice(0, 4)}&year=${(e.start || e.end || "").slice(0, 4)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -411,7 +428,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                 ...((e.start || e.end || "").slice(0, 4) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
-                ...(role !== "All" ? { role } : {}),
+                ...(activeRole ? { role: activeRole } : {}),
                 ...(topChamps[0] ? { champ: topChamps[0] } : {}),
                 ...(topPlayers.length || topTeams.length ? { q: [...topPlayers, ...topTeams].filter(Boolean).join(",") } : {}),
               }).toString(),
@@ -428,7 +445,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 ...(e.lu ? { scope: resolveLeagueSlug(e.lu), league: resolveLeagueSlug(e.lu) } : {}),
                 ...((e.start || e.end || "").slice(0, 4) ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
-                ...(role !== "All" ? { role } : {}),
+                ...(activeRole ? { role: activeRole } : {}),
                 ...(topChamps.length ? { q: topChamps.join(",") } : {}),
               }).toString(),
             }}
@@ -444,7 +461,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 ...(e.lu ? { scope: resolveLeagueSlug(e.lu), league: resolveLeagueSlug(e.lu) } : {}),
                 ...((e.start || e.end || "").slice(0, 4) ? { key: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) } : {}),
                 event: e.u,
-                ...(role !== "All" ? { role } : {}),
+                ...(activeRole ? { role: activeRole } : {}),
                 ...(topChamps.length ? { q: topChamps.join(",") } : {}),
               }).toString(),
             }}
@@ -456,7 +473,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
           <HubLink
             to={{
               kind: "draft",
-              query: `${topTeams.length ? `teams=${topTeams.map(encodeURIComponent).join(",")}&` : ""}p=e:${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}${
+              query: `${topTeams.length ? `teams=${topTeams.map(encodeURIComponent).join(",")}&` : ""}p=e:${encodeURIComponent(e.u)}${activeRole ? `&role=${encodeURIComponent(activeRole)}` : ""}${
                 topChamps.length ? `&champ=${encodeURIComponent(topChamps.join(","))}` : ""
               }`,
             }}
@@ -472,7 +489,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 event: e.u,
                 ...(evLg ? { league: evLg } : {}),
                 ...(evYr ? { year: evYr } : {}),
-                ...(role !== "All" ? { role } : rows[0]?.r ? { role: rows[0].r } : {}),
+                ...(activeRole ? { role: activeRole } : rows[0]?.r ? { role: rows[0].r } : {}),
                 ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
                 ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                 ...(topTeams[0] ? { team: topTeams[0] } : {}),
