@@ -1569,8 +1569,25 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
 };
 
 /** A small picker used on champion pages and Match prep: open the finder for a champion. */
-export const CountersLink: React.FC<{ slug: string; role?: string; className?: string }> = ({ slug, role, className }) => (
-  <HubLink to={{ kind: "counters", query: `champ=${slug}${role ? `&role=${role}` : ""}` }} className={className || "text-[11px] text-rw-accent hover:underline font-semibold"}>
+export const CountersLink: React.FC<{ slug: string; role?: string; patch?: string; year?: string; event?: string; className?: string }> = ({
+  slug,
+  role,
+  patch,
+  year,
+  event,
+  className,
+}) => (
+  <HubLink
+    to={{
+      kind: "counters",
+      query: new URLSearchParams({
+        champ: slug,
+        ...(role ? { role } : {}),
+        ...(event ? { event } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
+      }).toString(),
+    }}
+    className={className || "text-[11px] text-rw-accent hover:underline font-semibold"}
+  >
     {tl("Counter-picks")}
   </HubLink>
 );
