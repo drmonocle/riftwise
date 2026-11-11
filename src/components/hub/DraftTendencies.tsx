@@ -200,7 +200,18 @@ const List: React.FC<{
           const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${oppSlug ? `vs=${encodeURIComponent(oppSlug)}&` : ""}${playerParam}${isBan ? "ban" : "champ"}=${encodeURIComponent(resolveChampSlug(c))}${side ? `&side=${side}` : ""}${periodParam}`;
           return (
             <li key={c} className="flex items-center justify-between gap-2 min-w-0">
-              <ChampLink name={c} size={16} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
+              <ChampLink
+                name={c}
+                size={16}
+                query={
+                  [
+                    teamName ? `team=${encodeURIComponent(teamName)}` : "",
+                    period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join("&") || undefined
+                }
+              />
               <span className="inline-flex items-center gap-1.5 text-rw-sub tabular-nums shrink-0">
                 <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
                   <span
@@ -321,9 +332,33 @@ const Pairs: React.FC<{
           return (
             <li key={`${a}-${b}`} className="flex items-center justify-between gap-2 min-w-0">
               <span className="flex items-center gap-1 min-w-0 truncate" title={`${champName(a)} + ${champName(b)}`}>
-                <ChampLink name={a} size={18} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
+                <ChampLink
+                  name={a}
+                  size={18}
+                  query={
+                    [
+                      teamName ? `team=${encodeURIComponent(teamName)}` : "",
+                      b !== a ? `vschamp=${encodeURIComponent(resolveChampSlug(b))}` : "",
+                      period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
+                    ]
+                      .filter(Boolean)
+                      .join("&") || undefined
+                  }
+                />
                 <span className="text-rw-muted">+</span>
-                <ChampLink name={b} size={18} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
+                <ChampLink
+                  name={b}
+                  size={18}
+                  query={
+                    [
+                      teamName ? `team=${encodeURIComponent(teamName)}` : "",
+                      a !== b ? `vschamp=${encodeURIComponent(resolveChampSlug(a))}` : "",
+                      period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
+                    ]
+                      .filter(Boolean)
+                      .join("&") || undefined
+                  }
+                />
               </span>
               <span className="inline-flex items-center gap-1 text-rw-sub tabular-nums shrink-0">
                 <span className="w-7 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
@@ -681,7 +716,19 @@ export const DraftTendencies: React.FC<{
             const roleLabel = `(${roles.map((r) => roleName(ROLES[r])).join(" / ")})`;
             return (
               <span key={c} className="flex items-center gap-1">
-                <ChampLink name={c} size={16} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
+                <ChampLink
+                  name={c}
+                  size={16}
+                  query={
+                    [
+                      resolvedSlug ? `team=${encodeURIComponent(resolvedSlug)}` : "",
+                      ROLES[roles[0]] ? `role=${encodeURIComponent(ROLES[roles[0]])}` : "",
+                      period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
+                    ]
+                      .filter(Boolean)
+                      .join("&") || undefined
+                  }
+                />
                 {resolvedSlug ? (
                   <HubLink
                     to={{

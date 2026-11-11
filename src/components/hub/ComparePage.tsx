@@ -1651,7 +1651,11 @@ export const TeamRows: React.FC<{
                   const good = n > 0 && w / n >= 0.5;
                   return (
                     <li key={c} className="flex items-center justify-between gap-2 min-w-0">
-                      <ChampLink name={c} size={16} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
+                      <ChampLink
+                        name={c}
+                        size={16}
+                        query={`team=${encodeURIComponent(s.u)}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`}
+                      />
                       <span
                         className="inline-flex items-center gap-1.5 text-rw-sub shrink-0 tabular-nums"
                         title={`${tn("{n} game", "{n} games", n)} · ${tl("{pct} win rate", { pct: winRate(w, n) })}`}
@@ -2388,7 +2392,11 @@ const PlayerRows: React.FC<{
                   const good = c.g > 0 && c.w / c.g >= 0.5;
                   return (
                     <li key={c.c} className="flex items-center justify-between gap-2 min-w-0">
-                      <ChampLink name={c.c} size={16} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
+                      <ChampLink
+                        name={c.c}
+                        size={16}
+                        query={`player=${encodeURIComponent(s.u)}${s.p.roles[0] ? `&role=${encodeURIComponent(s.p.roles[0])}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`}
+                      />
                       <span className="inline-flex items-center gap-1.5 text-rw-sub shrink-0 tabular-nums">
                         <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block shrink-0">
                           <span className="block h-full bg-rw-accent/70 rounded-full" style={{ width: `${Math.max(8, Math.round((c.g / maxChampG) * 100))}%` }} />
@@ -2658,7 +2666,11 @@ const PlayerRows: React.FC<{
                     </td>
                     <td className={`${td} text-center`} data-sort={c.c}>
                       <span className="inline-flex flex-col items-center gap-0.5">
-                        <ChampLink name={c.c} size={16} />
+                        <ChampLink
+                          name={c.c}
+                          size={16}
+                          query={`player=${encodeURIComponent(x.u)}${A.roles[0] || x.role || B.roles[0] || y.role ? `&role=${encodeURIComponent((A.roles[0] || x.role || B.roles[0] || y.role)!)}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`}
+                        />
                         {gSum > 0 && (
                           <span className="w-12 h-1 rounded-full bg-rw-raised overflow-hidden flex" aria-hidden="true">
                             <span className="h-full bg-rw-side-a/85" style={{ width: `${aShare}%` }} />
@@ -2842,7 +2854,12 @@ const PlayerHeadToHead: React.FC<{
                         player: sa,
                         vsplayer: sb,
                         ...(topRole ? { role: topRole } : {}),
-                        ...(s.top[0] ? { champ: resolveChampSlug(s.top[0].ca) } : {}),
+                        ...(s.top[0]
+                          ? {
+                              champ: resolveChampSlug(s.top[0].ca),
+                              ...(s.top[0].cb && s.top[0].cb !== s.top[0].ca ? { vschamp: resolveChampSlug(s.top[0].cb) } : {}),
+                            }
+                          : {}),
                         ...(teamA ? { team: teamA } : {}),
                         ...(teamB && teamB !== teamA ? { vs: teamB } : {}),
                         ...(topEv ? { event: topEv } : {}),
@@ -3067,14 +3084,36 @@ const PlayerHeadToHead: React.FC<{
               const aPct = p.g > 0 ? Math.round((p.w / p.g) * 100) : 50;
               return (
                 <li key={p.ca + p.cb} className="flex items-center gap-1.5 min-w-0">
-                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(p.ca) }} className="shrink-0">
+                  <HubLink
+                    to={{
+                      kind: "champ",
+                      slug: resolveChampSlug(p.ca),
+                      query: `player=${encodeURIComponent(sa)}${p.cb !== p.ca ? `&vschamp=${encodeURIComponent(resolveChampSlug(p.cb))}` : ""}${shown[0]?.a[10] ? `&role=${encodeURIComponent(shown[0].a[10])}` : ""}`,
+                    }}
+                    className="shrink-0"
+                  >
                     <ChampIcon name={p.ca} size={18} />
                   </HubLink>
-                  <HubLink to={{ kind: "champ", slug: resolveChampSlug(p.cb) }} className="shrink-0">
+                  <HubLink
+                    to={{
+                      kind: "champ",
+                      slug: resolveChampSlug(p.cb),
+                      query: `player=${encodeURIComponent(sb)}${p.ca !== p.cb ? `&vschamp=${encodeURIComponent(resolveChampSlug(p.ca))}` : ""}${shown[0]?.b[10] ? `&role=${encodeURIComponent(shown[0].b[10])}` : ""}`,
+                    }}
+                    className="shrink-0"
+                  >
                     <ChampIcon name={p.cb} size={18} />
                   </HubLink>
                   <span className="truncate text-rw-sub">
-                    <ChampLink name={p.ca} /> vs <ChampLink name={p.cb} />
+                    <ChampLink
+                      name={p.ca}
+                      query={`player=${encodeURIComponent(sa)}${p.cb !== p.ca ? `&vschamp=${encodeURIComponent(resolveChampSlug(p.cb))}` : ""}${shown[0]?.a[10] ? `&role=${encodeURIComponent(shown[0].a[10])}` : ""}`}
+                    />{" "}
+                    vs{" "}
+                    <ChampLink
+                      name={p.cb}
+                      query={`player=${encodeURIComponent(sb)}${p.ca !== p.cb ? `&vschamp=${encodeURIComponent(resolveChampSlug(p.ca))}` : ""}${shown[0]?.b[10] ? `&role=${encodeURIComponent(shown[0].b[10])}` : ""}`}
+                    />
                   </span>
                   <span className="ml-auto inline-flex items-center gap-1.5 shrink-0">
                     <span className="hidden sm:inline-flex w-8 h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
@@ -3108,7 +3147,13 @@ const PlayerHeadToHead: React.FC<{
               >
                 {m.a[6] ? tc("short result", "W") : tc("short result", "L")}
               </HubLink>
-              <HubLink to={{ kind: "champ", slug: resolveChampSlug(m.a[2]) }}>
+              <HubLink
+                to={{
+                  kind: "champ",
+                  slug: resolveChampSlug(m.a[2]),
+                  query: `player=${encodeURIComponent(sa)}${m.b[2] !== m.a[2] ? `&vschamp=${encodeURIComponent(resolveChampSlug(m.b[2]))}` : ""}${m.a[10] ? `&role=${encodeURIComponent(m.a[10])}` : ""}`,
+                }}
+              >
                 <ChampIcon name={m.a[2]} size={18} />
               </HubLink>
               <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="tabular-nums text-rw-text hover:text-rw-accent hover:underline">
@@ -3124,7 +3169,13 @@ const PlayerHeadToHead: React.FC<{
               >
                 vs
               </HubLink>
-              <HubLink to={{ kind: "champ", slug: resolveChampSlug(m.b[2]) }}>
+              <HubLink
+                to={{
+                  kind: "champ",
+                  slug: resolveChampSlug(m.b[2]),
+                  query: `player=${encodeURIComponent(sb)}${m.a[2] !== m.b[2] ? `&vschamp=${encodeURIComponent(resolveChampSlug(m.a[2]))}` : ""}${m.b[10] ? `&role=${encodeURIComponent(m.b[10])}` : ""}`,
+                }}
+              >
                 <ChampIcon name={m.b[2]} size={18} />
               </HubLink>
               <HubLink to={{ kind: "match", slug: m.a[1], game: m.a[22] || undefined }} className="tabular-nums text-rw-sub hover:text-rw-accent hover:underline">
@@ -3493,6 +3544,11 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                   ...((mode === "team" ? (aggs[0] as TeamAgg | null)?.picks[0]?.[0] : (aggs[0] as PlayerAgg | null)?.champs[0]?.c)
                     ? { champ: resolveChampSlug((mode === "team" ? (aggs[0] as TeamAgg).picks[0][0] : (aggs[0] as PlayerAgg).champs[0].c)) }
                     : {}),
+                  ...(mode === "team" &&
+                  (rows[0]?.info as HubTeam)?.rating?.league &&
+                  rows.every((r) => (r.info as HubTeam).rating?.league === (rows[0].info as HubTeam).rating?.league)
+                    ? { league: resolveLeagueSlug((rows[0].info as HubTeam).rating!.league!) || (rows[0].info as HubTeam).rating!.league! }
+                    : {}),
                   ...(period && period.startsWith("y") && period.length === 5
                     ? { year: period.slice(1) }
                     : period && period.startsWith("e:")
@@ -3513,11 +3569,21 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                     .map((a) => (mode === "team" ? (a as TeamAgg).picks[0]?.[0] : (a as PlayerAgg).champs[0]?.c))
                     .filter((x): x is string => Boolean(x));
                   const qChamps = Array.from(new Set(topChamps.map(resolveChampSlug))).join(",");
-                  const hasParams = qChamps || (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:") || period.startsWith("p:")));
+                  const pRole = mode === "player" ? (aggs[0] as PlayerAgg | null)?.roles[0] : undefined;
+                  const sharedLeague =
+                    mode === "team" &&
+                    (rows[0]?.info as HubTeam)?.rating?.league &&
+                    rows.every((r) => (r.info as HubTeam).rating?.league === (rows[0].info as HubTeam).rating?.league)
+                      ? resolveLeagueSlug((rows[0].info as HubTeam).rating!.league!) || (rows[0].info as HubTeam).rating!.league!
+                      : undefined;
+                  const hasParams =
+                    qChamps || pRole || sharedLeague || (period && ((period.startsWith("y") && period.length === 5) || period.startsWith("e:") || period.startsWith("p:")));
                   return hasParams
                     ? {
                         query: new URLSearchParams({
                           ...(qChamps ? { q: qChamps } : {}),
+                          ...(pRole ? { role: pRole } : {}),
+                          ...(sharedLeague ? { scope: sharedLeague, league: sharedLeague } : {}),
                           ...(period.startsWith("y") && period.length === 5
                             ? { key: period, year: period.slice(1) }
                             : period.startsWith("e:")
@@ -3545,7 +3611,20 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                       : rows
                           .map((r) => (r.info as HubPlayer).clubU || ((r.info as HubPlayer).club ? resolveTeamAlias((r.info as HubPlayer).club!) || prettySlug((r.info as HubPlayer).club!) : ""))
                           .filter(Boolean);
-                  return qSlugs.length ? { query: `q=${qSlugs.map(encodeURIComponent).join(",")}` } : {};
+                  const sharedLeague =
+                    mode === "team" &&
+                    (rows[0]?.info as HubTeam)?.rating?.league &&
+                    rows.every((r) => (r.info as HubTeam).rating?.league === (rows[0].info as HubTeam).rating?.league)
+                      ? resolveLeagueSlug((rows[0].info as HubTeam).rating!.league!) || (rows[0].info as HubTeam).rating!.league!
+                      : undefined;
+                  return qSlugs.length
+                    ? {
+                        query: new URLSearchParams({
+                          q: Array.from(new Set(qSlugs)).join(","),
+                          ...(sharedLeague ? { league: sharedLeague } : {}),
+                        }).toString(),
+                      }
+                    : {};
                 })(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

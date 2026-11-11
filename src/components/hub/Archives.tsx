@@ -1308,7 +1308,15 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     {hide ? "?" : r[6] ? tc("short result", "W") : tc("short result", "L")}
                   </span>
                 )}
-                <HubLink to={{ kind: "champ", slug: resolveChampSlug(r[2]), ...(rowQ ? { query: rowQ } : {}) }} className="hover:opacity-80" title={champName(r[2])}>
+                <HubLink
+                  to={{
+                    kind: "champ",
+                    slug: resolveChampSlug(r[2]),
+                    query: `player=${encodeURIComponent(slug)}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${rowQ ? `&${rowQ}` : ""}`,
+                  }}
+                  className="hover:opacity-80"
+                  title={champName(r[2])}
+                >
                   <ChampIcon name={r[2]} size={18} />
                 </HubLink>
                 <span className="truncate min-w-0">
@@ -1331,7 +1339,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `player=${encodeURIComponent(slug)}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}&vs=${encodeURIComponent(tSlug(r[8]))}${r[2] ? `&champ=${encodeURIComponent(resolveChampSlug(r[2]))}` : champ !== "all" ? `&champ=${encodeURIComponent(resolveChampSlug(champ))}` : ""}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : /^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
+                        query: `player=${encodeURIComponent(slug)}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}&vs=${encodeURIComponent(tSlug(r[8]))}${r[2] ? `&champ=${encodeURIComponent(resolveChampSlug(r[2]))}` : champ !== "all" ? `&champ=${encodeURIComponent(resolveChampSlug(champ))}` : ""}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${r[24] ? `&patch=${encodeURIComponent(r[24])}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : /^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
                       }}
                       className="text-rw-muted hover:text-rw-accent hover:underline"
                       title={tl("Game finder")}
@@ -1346,7 +1354,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                       <>
                         {" · "}
                         <HubLink
-                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}${r[8] ? `&vs=${encodeURIComponent(tSlug(r[8]))}` : ""}${r[2] ? `&champ=${encodeURIComponent(resolveChampSlug(r[2]))}` : ""}&role=${encodeURIComponent(r[10])}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : /^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}` }}
+                          to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}${r[8] ? `&vs=${encodeURIComponent(tSlug(r[8]))}` : ""}${r[2] ? `&champ=${encodeURIComponent(resolveChampSlug(r[2]))}` : ""}&role=${encodeURIComponent(r[10])}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${r[24] ? `&patch=${encodeURIComponent(r[24])}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : /^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}` }}
                           className="hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -1390,7 +1398,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(r[2]))}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${/^\d{4}/.test(r[0]) ? `&patch=y${encodeURIComponent(r[0].slice(0, 4))}&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
+                        query: `champ=${encodeURIComponent(resolveChampSlug(r[2]))}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${r[24] ? `&patch=${encodeURIComponent(r[24])}` : /^\d{4}/.test(r[0]) ? `&patch=y${encodeURIComponent(r[0].slice(0, 4))}` : ""}${/^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Counters")}
@@ -1400,7 +1408,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(resolveChampSlug(r[2]))}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}${r[8] ? `&vs=${encodeURIComponent(tSlug(r[8]))}` : ""}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${/^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
+                        query: `player=${encodeURIComponent(slug)}&champ=${encodeURIComponent(resolveChampSlug(r[2]))}${r[7] ? `&team=${encodeURIComponent(tSlug(r[7]))}` : ""}${r[8] ? `&vs=${encodeURIComponent(tSlug(r[8]))}` : ""}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : ""}${r[24] ? `&patch=${encodeURIComponent(r[24])}` : ""}${/^\d{4}/.test(r[0]) ? `&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Item history")}
@@ -1475,6 +1483,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                         ...(r[8] ? { vs: tSlug(r[8]) } : {}),
                         ...(r[10] ? { role: r[10] } : {}),
                         ...(r[11] ? { event: r[11] } : {}),
+                        ...(r[24] ? { patch: r[24] } : {}),
                         ...(/^\d{4}/.test(r[0]) ? { year: r[0].slice(0, 4) } : {}),
                       }).toString(),
                     }}
