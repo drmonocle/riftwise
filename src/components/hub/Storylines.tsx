@@ -79,9 +79,10 @@ export function notePlainText(nt: Note): string {
   return "";
 }
 
-export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string; team?: string; role?: string }): React.ReactNode {
+export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string; team?: string; opp?: string; role?: string }): React.ReactNode {
   const plain = notePlainText(nt);
   const whoTeamSlug = who?.kind === "player" && who.team ? resolveTeamAlias(who.team) || prettySlug(who.team) : "";
+  const whoOppSlug = who?.opp ? resolveTeamAlias(who.opp) || prettySlug(who.opp) : "";
   const whoTeamQ = whoTeamSlug ? `&team=${encodeURIComponent(whoTeamSlug)}` : "";
   const whoRoleQ = who?.kind === "player" && who.role ? `&role=${encodeURIComponent(who.role)}` : "";
   if ((nt.k === "champ" || nt.k === "crec" || nt.k === "cms") && nt.c) {
@@ -89,6 +90,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     const champPageQ = new URLSearchParams({
       ...(who?.kind === "player" ? { player: who.slug } : {}),
       ...(who?.kind === "team" ? { team: who.slug } : whoTeamSlug ? { team: whoTeamSlug } : {}),
+      ...(whoOppSlug ? { vs: whoOppSlug } : {}),
       ...(who?.role ? { role: who.role } : {}),
       ...(nt.y ? { p: `y${nt.y}` } : {}),
     }).toString();
@@ -216,6 +218,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     const streakQ = new URLSearchParams({
       ...(nt.y ? { p: `y${nt.y}` } : {}),
       ...(whoTeamSlug ? { team: whoTeamSlug } : {}),
+      ...(whoOppSlug ? { q: whoOppSlug } : {}),
       ...(who.role ? { role: who.role } : {}),
     }).toString();
     return (
@@ -241,6 +244,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     const msQ = new URLSearchParams({
       ...(nt.y ? { p: `y${nt.y}` } : {}),
       ...(whoTeamSlug ? { team: whoTeamSlug } : {}),
+      ...(whoOppSlug ? { q: whoOppSlug } : {}),
       ...(who.role ? { role: who.role } : {}),
     }).toString();
     return (
@@ -1101,6 +1105,11 @@ export const HomeStorylines: React.FC = () => {
       }
       lines={rows.map((r, i) => {
         const entitySlug = r.t === "team" ? r.u || resolveTeamAlias(r.name) || prettySlug(r.name) : r.u || resolvePlayerSlug(r.name) || prettySlug(r.name);
+        const cSlug = r.c ? resolveChampSlug(r.c) : "";
+        const whoQuery = new URLSearchParams({
+          ...(r.y ? { p: `y${r.y}` } : r.e ? { p: `e:${resolveEventSlug(r.e)}` } : {}),
+          ...(cSlug ? { champ: cSlug, q: cSlug } : {}),
+        }).toString();
         return {
           key: `${entitySlug}-${i}`,
           who: {
@@ -1108,7 +1117,7 @@ export const HomeStorylines: React.FC = () => {
             to: {
               kind: r.t,
               slug: entitySlug,
-              ...(r.y ? { query: `p=y${encodeURIComponent(r.y)}` } : r.e ? { query: `p=e:${encodeURIComponent(resolveEventSlug(r.e))}` } : {}),
+              ...(whoQuery ? { query: whoQuery } : {}),
             },
           },
           text: noteText(r, { kind: r.t, slug: entitySlug }),

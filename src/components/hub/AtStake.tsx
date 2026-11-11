@@ -41,19 +41,25 @@ function matchLines(
 ): StoryLine[] {
   const lines: StoryLine[] = [];
   const mYr = m.startTimeUtc?.slice(0, 4);
-  for (const [name, code] of [
-    [m.team1Name, m.team1Code],
-    [m.team2Name, m.team2Code],
-  ]) {
-    const u = findHubTeam(index, name, code);
+  const t1u = findHubTeam(index, m.team1Name, m.team1Code);
+  const t2u = findHubTeam(index, m.team2Name, m.team2Code);
+  for (const [u, oppU] of [
+    [t1u, t2u],
+    [t2u, t1u],
+  ] as const) {
     const s = u ? stakes[u] : undefined;
     if (!u || !s) continue;
     s.l.forEach((nt, i) => {
       const yr = nt.y ? String(nt.y) : mYr;
+      const tQuery = new URLSearchParams({
+        ...(yr ? { p: `y${yr}` } : {}),
+        ...(oppU ? { q: oppU } : {}),
+        ...(nt.c ? { champ: resolveChampSlug(nt.c) } : {}),
+      }).toString();
       lines.push({
         key: `${u}-${i}`,
-        who: { name: s.n, team: s.n, to: { kind: "team", slug: u, ...(yr ? { query: `p=y${encodeURIComponent(yr)}` } : {}) } },
-        text: noteText(nt, { kind: "team", slug: u }),
+        who: { name: s.n, team: s.n, to: { kind: "team", slug: u, ...(tQuery ? { query: tQuery } : {}) } },
+        text: noteText(nt, { kind: "team", slug: u, opp: oppU || undefined }),
         plain: notePlainText(nt),
         champ: nt.c,
         asOf: s.a || undefined,
@@ -65,13 +71,14 @@ function matchLines(
         const pQuery = new URLSearchParams({
           ...(yr ? { p: `y${yr}` } : {}),
           team: u,
+          ...(oppU ? { q: oppU } : {}),
           ...(role ? { role } : {}),
           ...(nt.c ? { champ: resolveChampSlug(nt.c) } : {}),
         }).toString();
         lines.push({
           key: `${pu}-${i}`,
           who: { name: pn, team: s.n, to: { kind: "player", slug: pu, ...(pQuery ? { query: pQuery } : {}) } },
-          text: noteText(nt, { kind: "player", slug: pu, team: u, role: role || undefined }),
+          text: noteText(nt, { kind: "player", slug: pu, team: u, opp: oppU || undefined, role: role || undefined }),
           plain: notePlainText(nt),
           champ: nt.c,
           asOf,
