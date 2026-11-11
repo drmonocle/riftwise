@@ -217,7 +217,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => navigateHub({ kind: "champions", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
+                onClick={() => navigateHub({ kind: "champions", query: `scope=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Champions")} →

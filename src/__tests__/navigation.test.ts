@@ -59,9 +59,30 @@ describe("page tabs in the address", () => {
     expect(parseHubPath("/team/t1/series", "")).toEqual({ kind: "team", slug: "t1", tab: "matches" });
     expect(hubPath({ kind: "team", slug: "t1", tab: "tournaments" })).toBe("/team/t1/history");
     expect(parseHubPath("/compare", "?a=t1&b=geng")).toEqual({ kind: "compare", mode: "team", a: "t1", b: "geng" });
+    expect(parseHubPath("/prep", "?teams=t1,geng&p=y2026")).toEqual({ kind: "prep", a: "t1", b: "geng", period: "y2026" });
+    expect(parseHubPath("/champion/ahri", "?role=Mid&item=zhonyas-hourglass&span=12m")).toEqual({
+      kind: "champ",
+      slug: "ahri",
+      query: "role=Mid&span=12m&item=zhonyas-hourglass",
+    });
+    expect(parseHubPath("/tournament/worlds-2024", "?team=t1&player=faker")).toEqual({
+      kind: "event",
+      slug: "worlds-2024",
+      query: "team=t1&player=faker",
+    });
     expect(resolveLeagueSlug("worlds")).toBe("world-championship");
     expect(resolveLeagueSlug("lck")).toBe("lol-champions-korea");
+    expect(resolveLeagueSlug("LCK (League of Legends Champions Korea)")).toBe("lol-champions-korea");
+    expect(resolveLeagueSlug("first_stand")).toBe("first-stand");
+    expect(resolveLeagueSlug("First Stand")).toBe("first-stand");
+    expect(resolveLeagueSlug("lta_north")).toBe("league-of-legends-championship-of-the-americas-north");
+    expect(resolveLeagueSlug("LTA South")).toBe("league-of-legends-championship-of-the-americas-south");
+    expect(resolveLeagueSlug("lcp")).toBe("league-of-legends-championship-pacific");
+    expect(resolveLeagueSlug("cblol-brazil")).toBe("circuit-brazilian-league-of-legends");
+    expect(resolveLeagueSlug("lck_challengers_league")).toBe("lck-challengers-league");
+    expect(resolveLeagueSlug("emea_masters")).toBe("emea-masters");
     expect(resolveEventSlug("world-championship-2016")).toBe("worlds-2016");
+    expect(resolveEventSlug("World Championship 2024")).toBe("worlds-2024");
     expect(resolveEventSlug("lol-world-championship-2013")).toBe("worlds-season-3");
     expect(resolveEventSlug("mid-season-invitational-2024")).toBe("msi-2024");
     expect(resolveChampSlug("k-sante")).toBe("ksante");
@@ -71,8 +92,11 @@ describe("page tabs in the address", () => {
     expect(resolveChampSlug("nunu")).toBe("nunu-and-willump");
     expect(resolveChampSlug("j4")).toBe("jarvan-iv");
     expect(resolvePlayerSlug("show-maker")).toBe("showmaker");
+    expect(resolvePlayerSlug("Show Maker")).toBe("showmaker");
+    expect(resolvePlayerSlug("Hans Sama")).toBe("hans-sama");
     expect(resolvePlayerSlug("the-shy")).toBe("theshy");
     expect(resolvePlayerSlug("thebausffs")).toBe("baus");
+    expect(resolvePlayerSlug("The Baus")).toBe("baus");
   });
 });
 

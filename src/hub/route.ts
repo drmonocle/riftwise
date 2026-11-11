@@ -108,6 +108,10 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   if (parts.length === 0) return HUB_HOME;
   if (parts[0] === "about" && parts.length === 1) return { kind: "aboutme" };
   if (parts[0] === "compare" && parts.length === 1) return { kind: "compare", ...parseCompare(search) };
+  if (parts[0] === "prep" && parts.length === 1) {
+    const c = parseCompare(search);
+    return { kind: "prep", a: c.a, b: c.b, period: c.period };
+  }
   if (parts[0] === "stats") {
     if (parts.length === 1) return HUB_HOME;
     if ((SECTIONS as string[]).includes(parts[1])) {
@@ -132,7 +136,7 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   const kind = PATH_ENTITY[parts[0]];
   const rawQ = new URLSearchParams(search);
   const keptQ = new URLSearchParams();
-  for (const k of ["p", "as", "y", "champ", "role", "q", "vs"]) {
+  for (const k of ["p", "period", "as", "y", "year", "champ", "role", "q", "vs", "team", "player", "event", "patch", "span", "item", "keystone"]) {
     const v = rawQ.get(k);
     if (v) keptQ.set(k, v);
   }

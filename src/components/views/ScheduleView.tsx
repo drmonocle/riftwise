@@ -349,7 +349,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "champions", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    onClick={() => navigateHub({ kind: "champions", query: `scope=${encodeURIComponent(resolveLeagueSlug(league))}` })}
                     className="hidden sm:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Champions")} →

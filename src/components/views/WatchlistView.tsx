@@ -166,7 +166,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         const tSlug = teamSlug(t.name, t.code);
         return qTerms.some((term) => {
           if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
-          if (tSlug && resolveTeamAlias(term) === tSlug) return true;
+          if (tSlug && resolveTeamAlias(term) === resolveTeamAlias(tSlug)) return true;
           const r = resolveRegionFilter(term);
           if (r && (resolveRegionFilter(t.region) === r || resolveRegionFilter(t.league) === r)) return true;
           return false;
@@ -189,16 +189,16 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
     }
     return all
       .filter((p) => {
-        const hay = normText(`${p.name} ${p.teamCode} ${p.teamName} ${p.role} ${roleName(p.role)} ${p.realName || ""}`);
+        const pRole = normalizeRole(p.role);
+        const hay = normText(`${p.name} ${p.teamCode} ${p.teamName} ${p.role} ${roleName(pRole || p.role)} ${p.realName || ""}`);
         const pSlug = playerSlug(p.name);
         const tSlug = teamSlug(p.teamName, p.teamCode);
-        const pRole = normalizeRole(p.role);
         return qTerms.some(
           (term) =>
             hay.includes(term) ||
             (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
             resolvePlayerSlug(term) === pSlug ||
-            (!!tSlug && resolveTeamAlias(term) === tSlug) ||
+            (!!tSlug && resolveTeamAlias(term) === resolveTeamAlias(tSlug)) ||
             (!!pRole && normalizeRole(term) === pRole),
         );
       })
@@ -715,16 +715,22 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       {roster.map((p) => {
                         const isPlayerFollowed = settings.followedPlayers.includes(p.name);
                         const pSlug = playerSlug(p.name);
+                        const pRole = normalizeRole(p.role);
                         return (
                           <div key={`${p.teamSlug || p.teamCode}-${p.name}`} className="flex items-center justify-between text-[11px] py-0.5">
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
-                                onClick={() => navigateHub({ kind: "leaders", query: `role=${encodeURIComponent(p.role)}` })}
+                                onClick={() =>
+                                  navigateHub({
+                                    kind: "leaders",
+                                    query: pRole ? `role=${encodeURIComponent(pRole)}` : `q=${encodeURIComponent(pSlug)}`,
+                                  })
+                                }
                                 className="text-[10px] font-mono px-1.5 rounded bg-rw-deep text-rw-teal hover:text-rw-accent min-w-12 text-center whitespace-nowrap shrink-0"
                                 title={tl("Player leaderboards")}
                               >
-                                {roleName(p.role)}
+                                {roleName(pRole || p.role)}
                               </button>
                               <button
                                 type="button"
@@ -816,7 +822,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      const r = filteredPlayers[0]?.role && filteredPlayers[0].role !== "Sub" ? filteredPlayers[0].role : "";
+                      const r = normalizeRole(filteredPlayers[0]?.role) || "";
                       navigateHub({
                         kind: "leaders",
                         query: `q=${encodeURIComponent(a)}${r ? `&role=${encodeURIComponent(r)}` : ""}`,
@@ -879,12 +885,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      const sameRole =
-                        filteredPlayers[0]?.role &&
-                        filteredPlayers[0].role !== "Sub" &&
-                        filteredPlayers.every((p) => p.role === filteredPlayers[0].role)
-                          ? filteredPlayers[0].role
-                          : "";
+                      const r0 = normalizeRole(filteredPlayers[0]?.role);
+                      const sameRole = r0 && filteredPlayers.every((p) => normalizeRole(p.role) === r0) ? r0 : "";
                       navigateHub({
                         kind: "leaders",
                         query: `q=${encodeURIComponent(`${a},${b}`)}${sameRole ? `&role=${encodeURIComponent(sameRole)}` : ""}`,
@@ -904,6 +906,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               const isFollowed = settings.followedPlayers.includes(player.name);
               const pSlug = playerSlug(player.name);
               const tSlug = teamSlug(player.teamName, player.teamCode);
+              const pRole = normalizeRole(player.role) || player.role;
 
               return (
                 <div
@@ -931,11 +934,11 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSearch((prev) => (prev.toLowerCase() === player.role.toLowerCase() ? "" : player.role));
+                        setSearch((prev) => (prev.toLowerCase() === pRole.toLowerCase() ? "" : pRole));
                       }}
                       className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-rw-deep border border-rw-border text-rw-teal hover:border-rw-accent min-w-14 text-center whitespace-nowrap shrink-0"
                     >
-                      {roleName(player.role)}
+                      {roleName(pRole)}
                     </button>
                     <div>
                       <div className="font-bold text-xs text-rw-text flex items-center gap-1.5">

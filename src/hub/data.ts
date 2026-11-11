@@ -48,15 +48,26 @@ export const loadAliases = () =>
 const LEAGUE_SLUG_ALIASES: Record<string, string> = {
   worlds: "world-championship",
   wc: "world-championship",
+  "lol-world-championship": "world-championship",
   msi: "mid-season-invitational",
+  "lol-mid-season-invitational": "mid-season-invitational",
   fst: "first-stand",
+  first_stand: "first-stand",
+  "first-stand-tournament": "first-stand",
+  ewc: "esports-world-cup",
+  iem: "intel-extreme-masters",
   lck: "lol-champions-korea",
   ogn: "lol-champions-korea",
+  "ogn-champions": "lol-the-champions",
+  "champions-korea": "lol-champions-korea",
   kr: "lol-champions-korea",
   korea: "lol-champions-korea",
   lpl: "tencent-lol-pro-league",
+  "lol-pro-league": "tencent-lol-pro-league",
   cn: "tencent-lol-pro-league",
   china: "tencent-lol-pro-league",
+  "demacia-cup": "demacia-cup",
+  demacia_cup: "demacia-cup",
   lec: "lol-emea-championship",
   "eu-lcs": "lol-emea-championship",
   eulcs: "lol-emea-championship",
@@ -67,19 +78,63 @@ const LEAGUE_SLUG_ALIASES: Record<string, string> = {
   "na-lcs": "league-of-legends-championship-series",
   nalcs: "league-of-legends-championship-series",
   na: "league-of-legends-championship-series",
+  lta: "league-of-legends-championship-of-the-americas",
+  "lta-north": "league-of-legends-championship-of-the-americas-north",
+  lta_north: "league-of-legends-championship-of-the-americas-north",
+  ltan: "league-of-legends-championship-of-the-americas-north",
+  "lta-south": "league-of-legends-championship-of-the-americas-south",
+  lta_south: "league-of-legends-championship-of-the-americas-south",
+  ltas: "league-of-legends-championship-of-the-americas-south",
+  "lta-cross-conference": "league-of-legends-championship-of-the-americas",
+  lcp: "league-of-legends-championship-pacific",
   pcs: "pacific-championship-series",
+  lms: "lol-master-series",
+  gpl: "garena-premier-league",
   vcs: "vietnam-championship-series",
   cblol: "circuit-brazilian-league-of-legends",
+  "cblol-brazil": "circuit-brazilian-league-of-legends",
+  "cblol-academy": "circuit-brazilian-league-of-legends-academy",
+  cblol_academy: "circuit-brazilian-league-of-legends-academy",
   ljl: "lol-japan-league",
+  "ljl-japan": "lol-japan-league",
   lla: "liga-latinoamerica",
   lco: "lol-circuit-oceania",
+  "oceanic-leagues": "lol-circuit-oceania",
+  opl: "oceanic-pro-league",
   tcl: "turkish-championship-league",
+  "turkish-championship-league": "turkish-championship-league",
   lcl: "lol-continental-league",
   lckc: "lck-challengers-league",
   lckcl: "lck-challengers-league",
+  "lck-cl": "lck-challengers-league",
+  "lck-challengers": "lck-challengers-league",
+  lck_challengers_league: "lck-challengers-league",
   ldl: "lol-development-league",
+  nacl: "north-american-challengers-league",
+  "north-american-challengers": "north-american-challengers-league",
+  north_american_challengers_league: "north-american-challengers-league",
+  "emea-masters": "emea-masters",
+  emea_masters: "emea-masters",
+  "european-masters": "emea-masters",
+  em: "emea-masters",
+  lfl: "la-ligue-francaise",
+  nlc: "northern-league-of-legends-championship",
+  "prime-league": "prime-league-pro-division",
+  prm: "prime-league-pro-division",
+  les: "liga-espanola-de-league-of-legends",
+  lvp: "liga-espanola-de-league-of-legends",
+  sl: "liga-espanola-de-league-of-legends",
 };
-export const resolveLeagueSlug = (slug: string): string => LEAGUE_SLUG_ALIASES[slug.toLowerCase()] || slug;
+export function resolveLeagueSlug(slug: string): string {
+  const raw = (slug || "").trim().toLowerCase();
+  if (!raw) return "";
+  if (LEAGUE_SLUG_ALIASES[raw]) return LEAGUE_SLUG_ALIASES[raw];
+  const p = prettySlug(raw);
+  if (LEAGUE_SLUG_ALIASES[p]) return LEAGUE_SLUG_ALIASES[p];
+  const stripped = prettySlug(raw.replace(/\s*\(.*\)\s*$/, ""));
+  if (stripped && LEAGUE_SLUG_ALIASES[stripped]) return LEAGUE_SLUG_ALIASES[stripped];
+  return p || raw;
+}
 
 const REGION_FILTER_ALIASES: Record<string, string> = {
   kr: "korea",
@@ -210,7 +265,8 @@ const withAlias =
           // fall through to alias.json
         }
       }
-      const to = (await loadAliases())[kind][slug.toLowerCase()];
+      const map = (await loadAliases())[kind];
+      const to = map[slug.toLowerCase()] || map[prettySlug(slug)];
       if (to && to !== first && to !== slug) return load<T>(`hub/${kind}/${to}.json`);
       throw err;
     });
@@ -222,11 +278,12 @@ const withAlias =
  */
 const resolvedTeams = new Map<string, Promise<string | null>>();
 export function resolveTeamSlug(slug: string): Promise<string | null> {
-  const s = slug.toLowerCase();
+  const s = prettySlug(slug) || slug.toLowerCase();
   let p = resolvedTeams.get(s);
   if (!p) {
     p = (async () => {
-      const alias = (await loadAliases()).team[s];
+      const teamMap = (await loadAliases()).team;
+      const alias = teamMap[s] || teamMap[slug.toLowerCase()];
       if (alias) return alias;
       const teams = await loadHubIndexQuick()
         .then((i) => i.teams)
@@ -243,8 +300,7 @@ export function resolveTeamSlug(slug: string): Promise<string | null> {
 
 /** A team's file (team, teamgames, teamseries), also under an address the build doesn't have (resolveTeamSlug). */
 async function teamFile<T>(dir: string, slug: string): Promise<T> {
-  const s = slug.toLowerCase();
-  const first = TEAM_SLUG_ALIASES[s] || TEAM_SLUG_ALIASES[prettySlug(s)] || slug;
+  const first = resolveTeamAlias(slug) || slug.toLowerCase();
   try {
     return await load<T>(`hub/${dir}/${first}.json`);
   } catch (err) {
@@ -264,8 +320,10 @@ async function teamFile<T>(dir: string, slug: string): Promise<T> {
 
 const PLAYER_SLUG_ALIASES: Record<string, string> = {
   thebausffs: "baus",
+  "the-bausffs": "baus",
   bausffs: "baus",
   thebaus: "baus",
+  "the-baus": "baus",
   rekky: "rekkles",
   "show-maker": "showmaker",
   "the-shy": "theshy",
@@ -276,7 +334,13 @@ const PLAYER_SLUG_ALIASES: Record<string, string> = {
   bjerg: "bjergsen",
   dl: "doublelift",
 };
-export const resolvePlayerSlug = (slug: string) => PLAYER_SLUG_ALIASES[slug.toLowerCase()] || slug.toLowerCase();
+export function resolvePlayerSlug(slug: string): string {
+  const raw = (slug || "").trim().toLowerCase();
+  if (!raw) return "";
+  if (PLAYER_SLUG_ALIASES[raw]) return PLAYER_SLUG_ALIASES[raw];
+  const p = prettySlug(raw);
+  return PLAYER_SLUG_ALIASES[p] || p || raw;
+}
 
 async function playerFile<T>(dir: string, slug: string): Promise<T> {
   const first = resolvePlayerSlug(slug);
@@ -493,8 +557,7 @@ const EVENT_EARLY_WORLDS: Record<string, string> = {
   "worlds-2013": "worlds-season-3",
 };
 export function resolveEventSlug(slug: string): string {
-  const s = slug
-    .toLowerCase()
+  const s = (prettySlug(slug) || slug.toLowerCase())
     .replace(/^(?:lol-)?world-championship-(\d{4}\b.*)/, "worlds-$1")
     .replace(/^(?:lol-)?mid-season-invitational-(\d{4}\b.*)/, "msi-$1")
     .replace(/^first-stand-tournament-(\d{4}\b.*)/, "first-stand-$1");
@@ -905,7 +968,8 @@ export const loadLeagueSeason = (league: string, year: string): Promise<import("
             // fall through
           }
         }
-        const to = (await loadAliases()).league[league.toLowerCase()];
+        const lgMap = (await loadAliases()).league;
+        const to = lgMap[league.toLowerCase()] || lgMap[prettySlug(league)];
         if (to && to !== first && to !== league) return load<import("./types").LeagueSeason>(`hub/leagueyear/${to}/${year}.json`);
         throw e;
       })
@@ -971,7 +1035,14 @@ export function prefetchHub(r: import("./route").HubRoute): void {
         ...(it ? [loadHubItem(it)] : []),
       ]);
     },
-    best: () => Promise.all([loadBestIndex(), loadBest()]),
+    best: () => {
+      const yr = qp.get("year") || "";
+      const lg = qp.get("league") || "";
+      return Promise.all([
+        loadBestIndex(),
+        loadBest(/^\d{4}$/.test(yr) ? yr : undefined, lg ? resolveLeagueSlug(lg) : undefined),
+      ]);
+    },
     counters: () => {
       const ch = qp.get("champ") || "";
       return Promise.all([loadHubIndexQuick(), ...(ch ? [loadMatchups(ch)] : [])]);
@@ -985,7 +1056,7 @@ export function prefetchHub(r: import("./route").HubRoute): void {
         loadLeagues(),
         loadAliases(),
         ...(ev ? [loadHubEvent(ev)] : []),
-        ...(lg && /^\d{4}$/.test(yr) ? [loadLeagueSeason(lg, yr)] : []),
+        ...(lg && /^\d{4}$/.test(yr) ? [loadLeagueSeason(lg, yr)] : lg ? [loadLeague(lg)] : []),
       ]);
     },
     champions: () => Promise.all([loadChampIndex(), loadAliases()]),
@@ -1075,10 +1146,12 @@ export const loadPlayerGames2y = (slug: string): Promise<import("./types").Playe
 /** a team's last two years of games (only teams whose page says g2y have one) */
 export const loadTeamGames2y = (slug: string) => teamFile<import("./types").TeamGameRow[]>("teamgames2y", slug);
 /** The best-rated games and series: all time, a year, a league, or a league's year. */
-export const loadBest = (year?: string, league?: string) =>
-  load<import("./types").BestFile>(
-    league ? `hub/best/l/${league}${year ? `/${year}` : ""}.json` : year ? `hub/best/${year}.json` : "hub/best/all.json",
+export const loadBest = (year?: string, league?: string) => {
+  const lg = league ? resolveLeagueSlug(league) : "";
+  return load<import("./types").BestFile>(
+    lg ? `hub/best/l/${lg}${year ? `/${year}` : ""}.json` : year ? `hub/best/${year}.json` : "hub/best/all.json",
   );
+};
 const loadRatingsBuilt = () => load<import("./types").HubRatings>("hub/ratings.json");
 /** The power ratings with every result Riot has that the last build doesn't (src/hub/liveRatings.ts), asked again every
  *  two minutes so a game that just ended counts. */
