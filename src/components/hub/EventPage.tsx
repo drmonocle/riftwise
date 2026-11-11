@@ -150,7 +150,16 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
             )}
             {e.league &&
               (e.lu ? (
-                <HubLink to={{ kind: "league", slug: e.lu }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                <HubLink
+                  to={{
+                    kind: "league",
+                    slug: e.lu,
+                    ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                      ? { year: (e.start || e.end || "").slice(0, 4) }
+                      : {}),
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
                   {e.league}
                 </HubLink>
               ) : (
@@ -247,8 +256,10 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                     to={{
                       kind: "tiers",
                       query: new URLSearchParams({
-                        ...(e.lu ? { league: e.lu } : {}),
-                        ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                        ...(e.lu ? { league: e.lu, scope: e.lu } : {}),
+                        ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                          ? { year: (e.start || e.end || "").slice(0, 4), key: `y${(e.start || e.end || "").slice(0, 4)}` }
+                          : {}),
                         ...(e.u ? { event: e.u } : {}),
                       }).toString() || undefined,
                     }}
@@ -268,7 +279,10 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `event=${encodeURIComponent(e.u)}`,
+                      query: new URLSearchParams({
+                        ...(e.lu ? { league: e.lu } : {}),
+                        event: e.u,
+                      }).toString(),
                     }}
                     className={heroBtn()}
                   >
@@ -311,6 +325,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       query:
                         new URLSearchParams({
                           ...(e.lu ? { league: e.lu } : {}),
+                          ...(e.u ? { event: e.u } : {}),
                           ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
                             ? { year: (e.start || e.end || "").slice(0, 4) }
                             : {}),
@@ -442,8 +457,10 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
-                      ...(e.lu ? { league: e.lu } : {}),
-                      ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                      ...(e.lu ? { league: e.lu, scope: e.lu } : {}),
+                      ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                        ? { year: (e.start || e.end || "").slice(0, 4), key: `y${(e.start || e.end || "").slice(0, 4)}` }
+                        : {}),
                       event: e.u,
                     }).toString() || undefined,
                   }}
@@ -521,10 +538,10 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       </td>
                       <td className={td} data-sort={r.t}>
                         <span className="inline-flex items-center gap-1.5 min-w-0">
-                          <HubLink to={{ kind: "team", slug: tSlug(r.t, r.u) }} title={r.t}>
+                          <HubLink to={{ kind: "team", slug: tSlug(r.t, r.u), query: `p=e:${encodeURIComponent(e.u)}` }} title={r.t}>
                             <TeamLogo name={r.t} size={16} />
                           </HubLink>
-                          <TeamLink name={r.t} u={r.u} />
+                          <TeamLink name={r.t} u={r.u} query={`p=e:${encodeURIComponent(e.u)}`} />
                         </span>
                       </td>
                       <td className={`${td} text-right text-rw-muted`} data-sort={r.usd || 0}>
@@ -594,7 +611,13 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
               <HubLink
                 to={{
                   kind: "tournaments",
-                  ...(e.start || e.end ? { query: `year=${encodeURIComponent((e.start || e.end || "").slice(0, 4))}` } : {}),
+                  query:
+                    new URLSearchParams({
+                      ...(e.lu ? { league: e.lu } : {}),
+                      ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                        ? { year: (e.start || e.end || "").slice(0, 4) }
+                        : {}),
+                    }).toString() || undefined,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -641,15 +664,27 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                 to={{
                   kind: "tiers",
                   query: new URLSearchParams({
-                    ...(e.lu ? { league: e.lu } : {}),
-                    ...(e.start || e.end ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                    ...(e.lu ? { league: e.lu, scope: e.lu } : {}),
+                    ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
+                      ? { year: (e.start || e.end || "").slice(0, 4), key: `y${(e.start || e.end || "").slice(0, 4)}` }
+                      : {}),
+                    event: e.u,
                   }).toString() || undefined,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Pro tier list")} →
               </HubLink>
-              <HubLink to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }} className="text-rw-sub hover:text-rw-accent hover:underline">
+              <HubLink
+                to={{
+                  kind: "finder",
+                  query: new URLSearchParams({
+                    ...(e.lu ? { league: e.lu } : {}),
+                    event: e.u,
+                  }).toString(),
+                }}
+                className="text-rw-sub hover:text-rw-accent hover:underline"
+              >
                 {tl("Game finder")} →
               </HubLink>
               <HubLink
@@ -699,7 +734,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
             </div>
           )}
           {/* the stats cards (records, objectives, the draft...) from every game's scoreboard */}
-          {e.ln && !resultsHidden ? <EventStatsSection slug={e.u} name={eventTitle(e.n)} end={e.end} /> : null}
+          {e.ln && !resultsHidden ? <EventStatsSection slug={e.u} name={eventTitle(e.n)} end={e.end} leagueSlug={e.lu} year={(e.start || e.end || "").slice(0, 4)} /> : null}
         </div>
       )}
       {on("stats") && !!e.regions?.length && !resultsHidden && (

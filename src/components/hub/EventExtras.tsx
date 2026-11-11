@@ -202,7 +202,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(normLg ? { league: normLg } : {}),
                       ...(yr ? { year: yr } : {}),
                       event: slug,
                       ...(featGame?.a ? { q: [tSlug(featGame.a), featGame.b ? tSlug(featGame.b) : ""].filter(Boolean).join(",") } : {}),
@@ -232,7 +232,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                     kind: "rankings",
                     query:
                       new URLSearchParams({
-                        ...(leagueSlug ? { league: leagueSlug } : {}),
+                        ...(normLg ? { league: normLg } : {}),
                         ...(featGame?.a
                           ? {
                               q: [tSlug(featGame.a), featGame.b ? tSlug(featGame.b) : ""]
@@ -558,7 +558,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                     to={{
                       kind: "leaders",
                       query: new URLSearchParams({
-                        ...(leagueSlug ? { league: leagueSlug } : {}),
+                        ...(normLg ? { league: normLg } : {}),
                         ...(yr ? { year: yr } : {}),
                         event: slug,
                         ...(o.pentas[0]?.c ? { champ: resolveChampSlug(o.pentas[0].c) } : {}),
@@ -609,7 +609,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   query:
                     new URLSearchParams({
                       ...(normLg ? { scope: normLg, league: normLg } : {}),
-                      ...(yr ? { key: `y${yr}` } : {}),
+                      ...(yr ? { key: `y${yr}`, year: yr } : {}),
                       ...(slug ? { event: slug } : {}),
                       ...(o.pentas[0]?.c ? { q: resolveChampSlug(o.pentas[0].c) } : {}),
                     }).toString() || undefined,
@@ -623,7 +623,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   kind: "rankings",
                   query:
                     new URLSearchParams({
-                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(normLg ? { league: normLg } : {}),
                       ...(featGame?.a
                         ? {
                             q: [tSlug(featGame.a), featGame.b ? tSlug(featGame.b) : ""]
@@ -712,7 +712,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   kind: "leaders",
                   query:
                     new URLSearchParams({
-                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(normLg ? { league: normLg } : {}),
                       ...(yr ? { year: yr } : {}),
                       ...(slug ? { event: slug } : {}),
                       ...(o.mvp[0] ? { q: [pSlug(o.mvp[0].n, o.mvp[0].u), o.mvp[1] ? pSlug(o.mvp[1].n, o.mvp[1].u) : ""].filter(Boolean).join(",") } : {}),
@@ -738,7 +738,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   kind: "rankings",
                   query:
                     new URLSearchParams({
-                      ...(leagueSlug ? { league: leagueSlug } : {}),
+                      ...(normLg ? { league: normLg } : {}),
                       ...(featGame?.a
                         ? {
                             q: [tSlug(featGame.a), featGame.b ? tSlug(featGame.b) : ""]
@@ -1155,6 +1155,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
               query:
                 new URLSearchParams({
                   ...(lgSlug ? { league: lgSlug } : {}),
+                  ...(e.u ? { event: e.u } : {}),
                   ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                 }).toString() || undefined,
             }}
@@ -1164,7 +1165,13 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
             {tl("Best games")} →
           </HubLink>
           <HubLink
-            to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}` }}
+            to={{
+              kind: "finder",
+              query: new URLSearchParams({
+                ...(lgSlug ? { league: lgSlug } : {}),
+                event: e.u,
+              }).toString(),
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >
