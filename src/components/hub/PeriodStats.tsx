@@ -891,14 +891,29 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
   );
   const detail = agg.csm != null;
   const maxChampG = Math.max(1, ...agg.champs.map((c) => c.g));
+  const clubSlug = useMemo(
+    () => (who?.club ? teamSlug(who.club) : sel.map((r) => (r[7] ? teamSlug(r[7]) : "")).find(Boolean) || ""),
+    [who?.club, sel],
+  );
   const pQuery = period !== "all" ? `p=${encodeURIComponent(period)}` : undefined;
-  const champTabQuery = (c: string) => `champ=${encodeURIComponent(resolveChampSlug(c))}${pQuery ? `&${pQuery}` : ""}`;
+  const champLinkQuery = useMemo(
+    () =>
+      new URLSearchParams({
+        player: slug,
+        ...(clubSlug ? { team: clubSlug } : {}),
+        ...(agg.roles[0] ? { role: agg.roles[0] } : {}),
+        ...(period !== "all" ? { p: period } : {}),
+      }).toString(),
+    [slug, clubSlug, agg.roles, period],
+  );
+  const champTabQuery = (c: string) =>
+    `champ=${encodeURIComponent(resolveChampSlug(c))}${agg.roles[0] ? `&role=${encodeURIComponent(agg.roles[0])}` : ""}${pQuery ? `&${pQuery}` : ""}`;
   const cols: Column<(typeof agg.champs)[number]>[] = [
     {
       key: "c",
       label: tl("Champion"),
       value: (c) => champName(c.c),
-      render: (c) => <ChampLink name={c.c} size={18} query={pQuery} />,
+      render: (c) => <ChampLink name={c.c} size={18} query={champLinkQuery} />,
     },
     {
       key: "g",
@@ -1059,10 +1074,6 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
     .join(",");
   const tableChamps = topFilteredChamps;
   const singleFilteredChamp = filteredChamps.length === 1 ? filteredChamps[0] : agg.champs.length === 1 ? agg.champs[0] : undefined;
-  const clubSlug = useMemo(
-    () => (who?.club ? teamSlug(who.club) : sel.map((r) => (r[7] ? teamSlug(r[7]) : "")).find(Boolean) || ""),
-    [who?.club, sel],
-  );
   const topPlayerOppSlug = useMemo(() => {
     const counts = new Map<string, number>();
     for (const r of sel) {
@@ -1560,7 +1571,17 @@ const ChampCounts: React.FC<{ title: string; list: [string, number][]; tone?: "b
       <ul className="text-xs space-y-1">
         {list.map(([c, n]) => (
           <li key={c} className="flex items-center justify-between gap-2 min-w-0">
-            <ChampLink name={c} size={16} query={period && period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
+            <ChampLink
+              name={c}
+              size={16}
+              query={
+                slug || (period && period !== "all")
+                  ? `${slug ? `team=${encodeURIComponent(slug)}` : ""}${
+                      period && period !== "all" ? `${slug ? "&" : ""}p=${encodeURIComponent(period)}` : ""
+                    }`
+                  : undefined
+              }
+            />
             <span className="inline-flex items-center gap-1.5 shrink-0 tabular-nums">
               <span className="w-10 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block">
                 <span
@@ -1651,6 +1672,8 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
   const teamFinderTo: import("../../hub/route").HubRoute = {
     kind: "finder",
     query: `team=${encodeURIComponent(slug)}${topTeamOppSlug ? `&vs=${encodeURIComponent(topTeamOppSlug)}` : ""}${
+      only === "b" || only === "r" ? `&side=${only}` : ""
+    }${
       topRosterSlugs[0] ? `&player=${encodeURIComponent(topRosterSlugs[0])}` : ""
     }${topRosterSlugs[1] ? `&vsplayer=${encodeURIComponent(topRosterSlugs[1])}` : ""}${
       firstPickSlug ? `&champ=${encodeURIComponent(firstPickSlug)}` : ""
@@ -1948,7 +1971,11 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
                               key={c}
                               className="flex items-center justify-between gap-2 min-w-0"
                             >
-                              <ChampLink name={c} size={16} query={period !== "all" ? `p=${encodeURIComponent(period)}` : undefined} />
+                              <ChampLink
+                                name={c}
+                                size={16}
+                                query={`team=${encodeURIComponent(slug)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`}
+                              />
                               <span className="inline-flex items-center gap-1.5 text-rw-sub tabular-nums shrink-0">
                                 <span className="w-8 h-1.5 bg-rw-bg rounded-full overflow-hidden hidden sm:inline-block">
                                   <span
@@ -1996,6 +2023,7 @@ const TeamPeriodView: React.FC<{ slug: string; rows: TeamGameRow[]; who?: TeamWh
             rows={sel}
             cardSub={periodText}
             period={period}
+            rosterSlugs={topRosterSlugs}
           />
           {t.sg < t.g && (
             <p className="text-[10px] text-rw-muted">
