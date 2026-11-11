@@ -111,7 +111,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       <HubLink
         to={{
           kind: "finder",
-          query: `champ=${encodeURIComponent(rawChamp)}&vschamp=${encodeURIComponent(opp)}${rStr ? `&role=${encodeURIComponent(rStr)}` : ""}`,
+          query: `champ=${encodeURIComponent(resolveChampSlug(rawChamp))}&vschamp=${encodeURIComponent(resolveChampSlug(opp))}${rStr ? `&role=${encodeURIComponent(rStr)}` : ""}`,
         }}
         className="hover:text-rw-accent hover:underline"
         title={tl("Game finder")}
@@ -174,7 +174,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
           <span className="inline-flex flex-col gap-0.5 min-w-[3rem]">
             <button
               type="button"
-              onClick={() => set({ vs: x.c })}
+              onClick={() => set({ vs: resolveChampSlug(x.c) })}
               className={`text-left hover:underline ${cls}`}
               title={`${cName} ${tl("vs")} ${champName(x.c)}`}
             >
@@ -199,7 +199,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
         ) : (
           <button
             type="button"
-            onClick={() => set({ vs: x.c })}
+            onClick={() => set({ vs: resolveChampSlug(x.c) })}
             className={`hover:underline ${x.gd > 150 ? "text-rw-teal" : x.gd < -150 ? "text-rw-red" : ""}`}
             title={`${cName} ${tl("vs")} ${champName(x.c)}`}
           >
@@ -222,7 +222,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               ) : (
                 <button
                   type="button"
-                  onClick={() => set({ vs: x.c })}
+                  onClick={() => set({ vs: resolveChampSlug(x.c) })}
                   className={`hover:underline ${x.csd >= 3 ? "text-rw-teal" : x.csd <= -3 ? "text-rw-red" : "hover:text-rw-accent"}`}
                 >
                   {x.csd > 0 ? "+" : ""}
@@ -315,7 +315,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
           {slug && vsParam ? (
             <button
               type="button"
-              onClick={() => set({ champ: resolveChampSlug(vsMatch?.oppCanon || vsParam), vs: rawChamp || slug })}
+              onClick={() => set({ champ: resolveChampSlug(vsMatch?.oppCanon || vsParam), vs: resolveChampSlug(rawChamp || slug) })}
               className="px-1.5 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 font-semibold"
               title={`⇄ ${champName(vsMatch?.oppCanon || vsParam)} ${tl("vs")} ${cName || slug}`}
             >
@@ -337,17 +337,17 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 return;
               }
               const exact = exactChamp(v);
-              if (exact) set({ vs: exact[0] });
+              if (exact) set({ vs: champSlug(exact) });
             }}
             onBlur={() => {
               if (!vsInput.trim()) return;
               const hit = matchChamp(vsInput);
-              if (hit && hit[0] !== vsParam) set({ vs: hit[0] });
+              if (hit && champSlug(hit) !== vsParam) set({ vs: champSlug(hit) });
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 const hit = matchChamp(vsInput);
-                if (hit) set({ vs: hit[0] });
+                if (hit) set({ vs: champSlug(hit) });
               }
             }}
             className={`${sel} w-44`}
@@ -399,7 +399,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               </HubLink>
               {vsMatch && (
                 <HubLink
-                  to={{ kind: "champ", slug: prettySlug(vsMatch.oppCanon) }}
+                  to={{ kind: "champ", slug: resolveChampSlug(vsMatch.oppCanon) }}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
                 >
                   <ChampIcon name={vsMatch.oppCanon} size={16} />
@@ -410,7 +410,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 to={{
                   kind: "champions",
                   query: new URLSearchParams({
-                    q: rawChamp || cName,
+                    q: slug,
                     ...(role ? { role } : {}),
                   }).toString(),
                 }}
@@ -422,7 +422,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 to={{
                   kind: "draft",
                   query: new URLSearchParams({
-                    champ: rawChamp || cName,
+                    champ: slug,
                     ...(role ? { role } : {}),
                   }).toString(),
                 }}
@@ -440,7 +440,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 to={{
                   kind: "tiers",
                   query: new URLSearchParams({
-                    q: vsMatch ? `${rawChamp || cName},${vsMatch.oppCanon}` : rawChamp || cName,
+                    q: vsMatch ? `${slug},${resolveChampSlug(vsMatch.oppCanon)}` : slug,
                     ...(role ? { role } : {}),
                   }).toString(),
                 }}
@@ -452,7 +452,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 to={{
                   kind: "leaders",
                   query: new URLSearchParams({
-                    champ: rawChamp || cName,
+                    champ: slug,
                     ...(role ? { role } : {}),
                   }).toString(),
                 }}
@@ -463,7 +463,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `champ=${encodeURIComponent(rawChamp || cName)}${vsMatch ? `&vschamp=${encodeURIComponent(vsMatch.oppCanon)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                  query: `champ=${encodeURIComponent(slug)}${vsMatch ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsMatch.oppCanon))}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
                 }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
               >
@@ -498,7 +498,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(topC || role
                             ? {
                                 query: new URLSearchParams({
-                                  ...(topC ? { q: topC[0] } : {}),
+                                  ...(topC ? { q: champSlug(topC) } : {}),
                                   ...(role ? { role } : {}),
                                 }).toString(),
                               }
@@ -514,7 +514,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(topC || role
                             ? {
                                 query: new URLSearchParams({
-                                  ...(topC ? { q: topC[0] } : {}),
+                                  ...(topC ? { q: champSlug(topC) } : {}),
                                   ...(role ? { role } : {}),
                                 }).toString(),
                               }
@@ -530,7 +530,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(topC || role
                             ? {
                                 query: new URLSearchParams({
-                                  ...(topC ? { champ: topC[0] } : {}),
+                                  ...(topC ? { champ: champSlug(topC) } : {}),
                                   ...(role ? { role } : {}),
                                 }).toString(),
                               }
@@ -555,7 +555,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(topC || role
                             ? {
                                 query: new URLSearchParams({
-                                  ...(topC ? { champ: topC[0] } : {}),
+                                  ...(topC ? { champ: champSlug(topC) } : {}),
                                   ...(role ? { role } : {}),
                                 }).toString(),
                               }
@@ -574,7 +574,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(topC || role
                             ? {
                                 query: new URLSearchParams({
-                                  ...(topC ? { champ: topC[0] } : {}),
+                                  ...(topC ? { champ: champSlug(topC) } : {}),
                                   ...(role ? { role } : {}),
                                 }).toString(),
                               }
@@ -616,7 +616,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 right={
                   <div className="flex flex-wrap items-center gap-2">
                     <HubLink
-                      to={{ kind: "finder", query: `champ=${encodeURIComponent(rawChamp)}&vschamp=${encodeURIComponent(vsMatch.oppCanon)}` }}
+                      to={{ kind: "finder", query: `champ=${encodeURIComponent(slug)}&vschamp=${encodeURIComponent(resolveChampSlug(vsMatch.oppCanon))}` }}
                       className="px-2 py-0.5 rounded border border-rw-accent/50 bg-rw-accent/10 text-[11px] font-semibold text-rw-accent hover:bg-rw-accent/20"
                     >
                       {tl("Game finder")} →
@@ -631,7 +631,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          q: `${rawChamp || cName},${vsMatch.oppCanon}`,
+                          q: `${slug},${resolveChampSlug(vsMatch.oppCanon)}`,
                           ...(role ? { role } : {}),
                         }).toString(),
                       }}
@@ -643,7 +643,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "draft",
                         query: new URLSearchParams({
-                          champ: rawChamp || cName,
+                          champ: slug,
                           ...(role ? { role } : {}),
                         }).toString(),
                       }}
@@ -655,7 +655,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "leaders",
                         query: new URLSearchParams({
-                          champ: rawChamp || cName,
+                          champ: slug,
                           ...(role ? { role } : {}),
                         }).toString(),
                       }}
@@ -671,7 +671,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     </HubLink>
                     <button
                       type="button"
-                      onClick={() => set({ champ: resolveChampSlug(vsMatch.oppCanon), vs: rawChamp })}
+                      onClick={() => set({ champ: resolveChampSlug(vsMatch.oppCanon), vs: slug })}
                       className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                     >
                       ⇄ {champName(vsMatch.oppCanon)} {tl("vs")} {cName}
@@ -722,7 +722,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           {cName}
                         </HubLink>{" "}
                         <span className="text-rw-muted font-normal">{tl("vs")}</span>{" "}
-                        <HubLink to={{ kind: "champ", slug: prettySlug(vsMatch.oppCanon) }} className="hover:text-rw-accent hover:underline">
+                        <HubLink to={{ kind: "champ", slug: resolveChampSlug(vsMatch.oppCanon) }} className="hover:text-rw-accent hover:underline">
                           {champName(vsMatch.oppCanon)}
                         </HubLink>
                       </div>
@@ -756,7 +756,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         </div>
                       )}
                     </div>
-                    <HubLink to={{ kind: "champ", slug: prettySlug(vsMatch.oppCanon) }} title={champName(vsMatch.oppCanon)}>
+                    <HubLink to={{ kind: "champ", slug: resolveChampSlug(vsMatch.oppCanon) }} title={champName(vsMatch.oppCanon)}>
                       <ChampIcon name={vsMatch.oppCanon} size={36} />
                     </HubLink>
                   </div>
@@ -784,7 +784,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               <HubLink
                                 to={{
                                   kind: "finder",
-                                  query: `champ=${encodeURIComponent(rawChamp)}&vschamp=${encodeURIComponent(vsMatch.oppCanon)}${rStr ? `&role=${encodeURIComponent(rStr)}` : ""}`,
+                                  query: `champ=${encodeURIComponent(slug)}&vschamp=${encodeURIComponent(resolveChampSlug(vsMatch.oppCanon))}${rStr ? `&role=${encodeURIComponent(rStr)}` : ""}`,
                                 }}
                                 className="hover:underline"
                                 title={tl("Game finder")}
@@ -825,7 +825,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "counters",
-                            query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(good[0].c)}${good[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[good[0].role])}` : role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                            query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(resolveChampSlug(good[0].c))}${good[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[good[0].role])}` : role ? `&role=${encodeURIComponent(role)}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline font-semibold"
                         >
@@ -834,7 +834,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(good[0].c)}${good[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[good[0].role])}` : ""}`,
+                            query: `champ=${encodeURIComponent(slug)}&vschamp=${encodeURIComponent(resolveChampSlug(good[0].c))}${good[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[good[0].role])}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -852,7 +852,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          q: good[0] ? `${rawChamp || cName},${good[0].c}` : rawChamp || cName,
+                          q: good[0] ? `${slug},${resolveChampSlug(good[0].c)}` : slug,
                           ...(role ? { role } : {}),
                         }).toString(),
                       }}
@@ -864,7 +864,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "draft",
                         query: new URLSearchParams({
-                          champ: rawChamp || cName,
+                          champ: slug,
                           ...(role ? { role } : {}),
                         }).toString(),
                       }}
@@ -876,7 +876,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "leaders",
                         query: new URLSearchParams({
-                          champ: rawChamp || cName,
+                          champ: slug,
                           ...(role ? { role } : {}),
                         }).toString(),
                       }}
@@ -929,7 +929,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <span className="tabular-nums text-rw-teal font-semibold shrink-0">
                             <button
                               type="button"
-                              onClick={() => set({ vs: x.c })}
+                              onClick={() => set({ vs: resolveChampSlug(x.c) })}
                               className="hover:underline"
                               title={`${cName} ${tl("vs")} ${champName(x.c)}`}
                             >
@@ -940,7 +940,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 ·{" "}
                                 <button
                                   type="button"
-                                  onClick={() => set({ vs: x.c })}
+                                  onClick={() => set({ vs: resolveChampSlug(x.c) })}
                                   className="hover:text-rw-accent hover:underline"
                                   title={`${cName} ${tl("vs")} ${champName(x.c)}`}
                                 >
@@ -969,7 +969,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "counters",
-                            query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(bad[0].c)}${bad[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[bad[0].role])}` : role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                            query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(resolveChampSlug(bad[0].c))}${bad[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[bad[0].role])}` : role ? `&role=${encodeURIComponent(role)}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline font-semibold"
                         >
@@ -978,7 +978,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         <HubLink
                           to={{
                             kind: "finder",
-                            query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(bad[0].c)}${bad[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[bad[0].role])}` : ""}`,
+                            query: `champ=${encodeURIComponent(slug)}&vschamp=${encodeURIComponent(resolveChampSlug(bad[0].c))}${bad[0].role >= 0 ? `&role=${encodeURIComponent(ROLES[bad[0].role])}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -996,7 +996,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
-                          q: bad[0] ? `${rawChamp || cName},${bad[0].c}` : rawChamp || cName,
+                          q: bad[0] ? `${slug},${resolveChampSlug(bad[0].c)}` : slug,
                           ...(role ? { role } : {}),
                         }).toString(),
                       }}
@@ -1008,7 +1008,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "draft",
                         query: new URLSearchParams({
-                          champ: rawChamp || cName,
+                          champ: slug,
                           ...(role ? { role } : {}),
                         }).toString(),
                       }}
@@ -1020,7 +1020,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "leaders",
                         query: new URLSearchParams({
-                          champ: rawChamp || cName,
+                          champ: slug,
                           ...(role ? { role } : {}),
                         }).toString(),
                       }}
@@ -1073,7 +1073,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <span className="tabular-nums text-rw-red font-semibold shrink-0">
                             <button
                               type="button"
-                              onClick={() => set({ vs: x.c })}
+                              onClick={() => set({ vs: resolveChampSlug(x.c) })}
                               className="hover:underline"
                               title={`${cName} ${tl("vs")} ${champName(x.c)}`}
                             >
@@ -1084,7 +1084,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 ·{" "}
                                 <button
                                   type="button"
-                                  onClick={() => set({ vs: x.c })}
+                                  onClick={() => set({ vs: resolveChampSlug(x.c) })}
                                   className="hover:text-rw-accent hover:underline"
                                   title={`${cName} ${tl("vs")} ${champName(x.c)}`}
                                 >
@@ -1125,7 +1125,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(filteredRows[0].c)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                          query: `champ=${encodeURIComponent(slug)}&vs=${encodeURIComponent(resolveChampSlug(filteredRows[0].c))}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
                         }}
                         className="text-[11px] text-rw-accent hover:underline font-semibold"
                       >
@@ -1134,7 +1134,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <HubLink
                         to={{
                           kind: "finder",
-                          query: `champ=${encodeURIComponent(rawChamp || cName)}&vschamp=${encodeURIComponent(filteredRows[0].c)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                          query: `champ=${encodeURIComponent(slug)}&vschamp=${encodeURIComponent(resolveChampSlug(filteredRows[0].c))}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
                         }}
                         className="text-[11px] text-rw-accent hover:underline font-semibold"
                       >
@@ -1152,7 +1152,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     to={{
                       kind: "tiers",
                       query: new URLSearchParams({
-                        q: [rawChamp || cName, filteredRows[0]?.c].filter(Boolean).join(","),
+                        q: [slug, filteredRows[0]?.c ? resolveChampSlug(filteredRows[0].c) : ""].filter(Boolean).join(","),
                         ...(role ? { role } : {}),
                       }).toString(),
                     }}
@@ -1164,7 +1164,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     to={{
                       kind: "draft",
                       query: new URLSearchParams({
-                        champ: rawChamp || cName,
+                        champ: slug,
                         ...(role ? { role } : {}),
                       }).toString(),
                     }}
@@ -1176,7 +1176,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     to={{
                       kind: "leaders",
                       query: new URLSearchParams({
-                        champ: rawChamp || cName,
+                        champ: slug,
                         ...(role ? { role } : {}),
                       }).toString(),
                     }}
@@ -1220,7 +1220,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `champ=${encodeURIComponent(rawChamp || cName)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
+                    query: `champ=${encodeURIComponent(slug)}${role ? `&role=${encodeURIComponent(role)}` : ""}`,
                   }}
                   className="hover:text-rw-accent hover:underline"
                   title={tl("Game finder")}
@@ -1264,7 +1264,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <HubLink
                             to={{
                               kind: "finder",
-                              query: `champ=${encodeURIComponent(`${rawChamp || cName},${topDuo[0]}`)}`,
+                              query: `champ=${encodeURIComponent(`${slug},${resolveChampSlug(topDuo[0])}`)}`,
                             }}
                             className="text-[11px] text-rw-accent hover:underline"
                           >
@@ -1273,7 +1273,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <HubLink
                             to={{
                               kind: "counters",
-                              query: `champ=${encodeURIComponent(prettySlug(topDuo[0]))}`,
+                              query: `champ=${encodeURIComponent(resolveChampSlug(topDuo[0]))}`,
                             }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
@@ -1282,7 +1282,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <HubLink
                             to={{
                               kind: "tiers",
-                              query: `role=Bot&q=${encodeURIComponent(`${rawChamp || cName},${topDuo[0]}`)}`,
+                              query: `role=Bot&q=${encodeURIComponent(`${slug},${resolveChampSlug(topDuo[0])}`)}`,
                             }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
@@ -1291,7 +1291,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           <HubLink
                             to={{
                               kind: "draft",
-                              query: `role=Bot&champ=${encodeURIComponent(`${rawChamp || cName},${topDuo[0]}`)}`,
+                              query: `role=Bot&champ=${encodeURIComponent(`${slug},${resolveChampSlug(topDuo[0])}`)}`,
                             }}
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                           >
@@ -1309,7 +1309,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "leaders",
-                        query: `role=Bot&champ=${encodeURIComponent(rawChamp || cName)}`,
+                        query: `role=Bot&champ=${encodeURIComponent(slug)}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1364,14 +1364,14 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             <ChampLink name={pc} size={20} />
                             <div className="text-right shrink-0">
                               <HubLink
-                                to={{ kind: "counters", query: `champ=${prettySlug(pc)}` }}
+                                to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(pc))}` }}
                                 className={`font-mono font-bold tabular-nums hover:underline ${wr >= 50 ? "text-rw-teal" : "text-rw-red"}`}
                                 title={tl("Counter-pick finder")}
                               >
                                 {wr}%
                               </HubLink>
                               <HubLink
-                                to={{ kind: "finder", query: `champ=${encodeURIComponent(`${rawChamp || cName},${pc}`)}` }}
+                                to={{ kind: "finder", query: `champ=${encodeURIComponent(`${slug},${resolveChampSlug(pc)}`)}` }}
                                 className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"
                                 title={tl("Game finder")}
                               >

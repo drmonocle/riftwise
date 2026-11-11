@@ -321,7 +321,7 @@ const PlayerItemsView: React.FC<{
     </HubLink>
   );
   if (item) {
-    const hit = mine.data.find(([it]) => prettySlug(it) === item || prettySlug(it).replace(/-/g, "") === item.replace(/-/g, ""));
+    const hit = mine.data.find(([it]) => resolveItemSlug(it) === item || prettySlug(it) === item || prettySlug(it).replace(/-/g, "") === item.replace(/-/g, ""));
     const label = itemName(hit?.[0] || itemTitle || item);
     const g = hit ? games(hit[1]) : [];
     if (!g.length)
@@ -397,7 +397,7 @@ const PlayerItemsView: React.FC<{
                 kind: "tiers",
                 query: new URLSearchParams({
                   ...(year ? { key: `y${year}` } : {}),
-                  ...(champ || g[0]?.[2] ? { q: champ || g[0][2] } : {}),
+                  ...(champ || g[0]?.[2] ? { q: resolveChampSlug(champ || g[0][2]) } : {}),
                 }).toString() || undefined,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -419,7 +419,7 @@ const PlayerItemsView: React.FC<{
                 kind: "draft",
                 query: new URLSearchParams({
                   ...(g[0]?.[7] ? { teams: `${resolveTeamAlias(g[0][7]) || prettySlug(g[0][7])}${g[0][8] ? `,${resolveTeamAlias(g[0][8]) || prettySlug(g[0][8])}` : ""}` } : {}),
-                  ...(champ || g[0]?.[2] ? { champ: champ || g[0][2] } : {}),
+                  ...(champ || g[0]?.[2] ? { champ: resolveChampSlug(champ || g[0][2]) } : {}),
                   ...(year ? { p: `y${year}` } : {}),
                 }).toString(),
               }}
@@ -555,7 +555,7 @@ const PlayerItemsView: React.FC<{
                 kind: "tiers",
                 query: new URLSearchParams({
                   ...(year ? { key: `y${year}` } : {}),
-                  ...(champ || list[0]?.[1]?.[0]?.[2] ? { q: champ || list[0][1][0][2] } : {}),
+                  ...(champ || list[0]?.[1]?.[0]?.[2] ? { q: resolveChampSlug(champ || list[0][1][0][2]) } : {}),
                 }).toString() || undefined,
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -584,7 +584,7 @@ const PlayerItemsView: React.FC<{
                   ...(list[0]?.[1]?.[0]?.[7]
                     ? { teams: `${resolveTeamAlias(list[0][1][0][7]) || prettySlug(list[0][1][0][7])}${list[0][1][0][8] ? `,${resolveTeamAlias(list[0][1][0][8]) || prettySlug(list[0][1][0][8])}` : ""}` }
                     : {}),
-                  ...(champ || list[0]?.[1]?.[0]?.[2] ? { champ: champ || list[0][1][0][2] } : {}),
+                  ...(champ || list[0]?.[1]?.[0]?.[2] ? { champ: resolveChampSlug(champ || list[0][1][0][2]) } : {}),
                   ...(year ? { p: `y${year}` } : {}),
                 }).toString(),
               }}
@@ -675,13 +675,13 @@ const PlayerItemsView: React.FC<{
               return (
                 <tr key={it} className="border-t border-rw-border">
                   <td className={`${td} max-w-[14rem]`} data-sort={itemName(it)}>
-                    <button type="button" onClick={() => onItem(prettySlug(it))} className="flex items-center gap-1.5 min-w-0 text-left hover:text-rw-accent" title={tl("Show the games")}>
+                    <button type="button" onClick={() => onItem(resolveItemSlug(it))} className="flex items-center gap-1.5 min-w-0 text-left hover:text-rw-accent" title={tl("Show the games")}>
                       <ItemIcon name={it} size={18} />
                       <span className="truncate">{itemName(it)}</span>
                     </button>
                   </td>
                   <td className={`${td} tabular-nums text-rw-sub w-24`} data-sort={g.length}>
-                    <button type="button" onClick={() => onItem(prettySlug(it))} className="hover:text-rw-accent hover:underline" title={tl("Show the games")}>
+                    <button type="button" onClick={() => onItem(resolveItemSlug(it))} className="hover:text-rw-accent hover:underline" title={tl("Show the games")}>
                       {fmtNum(g.length)}
                     </button>
                     <span className="block h-1 mt-0.5 rounded-sm bg-rw-accent/55" style={{ width: `${Math.max(4, Math.round((g.length / maxG) * 100))}%` }} aria-hidden="true" />
@@ -689,7 +689,7 @@ const PlayerItemsView: React.FC<{
                   <td className={`${td} tabular-nums ${wrTone}`} data-sort={wr}>
                     <div className="min-w-[3.25rem] space-y-0.5">
                       <div>
-                        <button type="button" onClick={() => onItem(prettySlug(it))} className="hover:underline" title={tl("Show the games")}>
+                        <button type="button" onClick={() => onItem(resolveItemSlug(it))} className="hover:underline" title={tl("Show the games")}>
                           {winRate(won, g.length)}
                         </button>
                       </div>
@@ -858,7 +858,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
               <HubLink
                 to={{
                   kind: "tiers",
-                  ...(it.c?.[0] ? { query: `q=${encodeURIComponent(it.c[0][0])}` } : {}),
+                  ...(it.c?.[0] ? { query: `q=${encodeURIComponent(resolveChampSlug(it.c[0][0]))}` } : {}),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -893,7 +893,7 @@ const ItemPlayersView: React.FC<{ slug: string; players?: SearchPlayerRow[]; onP
                           return { teams: `${ta}${tb && tb !== ta ? `,${tb}` : ""}` };
                         })()
                       : {}),
-                    ...(it.c?.[0] ? { champ: it.c[0][0] } : {}),
+                    ...(it.c?.[0] ? { champ: resolveChampSlug(it.c[0][0]) } : {}),
                   }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1217,7 +1217,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                 rows={() =>
                   filteredRows.slice(0, 12).map((r, i) => ({
                     rank: i + 1,
-                    champ: head.data?.c?.find(([c]) => prettySlug(c) === champ)?.[0] || champLabel || champ,
+                    champ: head.data?.c?.find(([c]) => sameChamp(c, champ))?.[0] || champLabel || champ,
                     team: players?.[r.k]?.[2] || undefined,
                     label: players?.[r.k]?.[0] || "–",
                     sub: yearSpan(r.ys),
@@ -1409,7 +1409,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                   kind: "champions",
                   query: new URLSearchParams({
                     ...(year ? { year } : {}),
-                    ...(y?.c?.[0] ? { q: y.c[0][0] } : {}),
+                    ...(y?.c?.[0] ? { q: resolveChampSlug(y.c[0][0]) } : {}),
                   }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1434,7 +1434,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                   kind: "tiers",
                   query: new URLSearchParams({
                     ...(year ? { key: `y${year}` } : {}),
-                    ...(y?.c?.[0] ? { q: y.c[0][0] } : {}),
+                    ...(y?.c?.[0] ? { q: resolveChampSlug(y.c[0][0]) } : {}),
                   }).toString() || undefined,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1471,7 +1471,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                           return { teams: `${ta}${tb && tb !== ta ? `,${tb}` : ""}` };
                         })()
                       : {}),
-                    ...(y?.c?.[0] ? { champ: y.c[0][0] } : {}),
+                    ...(y?.c?.[0] ? { champ: resolveChampSlug(y.c[0][0]) } : {}),
                     ...(year ? { p: `y${year}` } : {}),
                   }).toString(),
                 }}
@@ -1634,7 +1634,7 @@ const ItemStats: React.FC<{
     : baseList;
   const max = Math.max(1, ...list.map((r) => r[2]));
   const shown = all || terms.length ? list : list.slice(0, 60);
-  const activeChamp = champ || shown[0]?.[5]?.[0] || "";
+  const activeChamp = champ ? resolveChampSlug(champ) : shown[0]?.[5]?.[0] ? resolveChampSlug(shown[0][5][0]) : "";
   return (
     <Section
       title={tl("Item stats")}
@@ -2079,7 +2079,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
               <HubLink
                 to={{
                   kind: "finder",
-                  query: `team=${encodeURIComponent(tSlug(filteredGames[0][7]))}&vs=${encodeURIComponent(tSlug(filteredGames[0][8]))}${filteredGames[0][2] ? `&champ=${encodeURIComponent(filteredGames[0][2])}` : ""}`,
+                  query: `team=${encodeURIComponent(tSlug(filteredGames[0][7]))}&vs=${encodeURIComponent(tSlug(filteredGames[0][8]))}${filteredGames[0][2] ? `&champ=${encodeURIComponent(resolveChampSlug(filteredGames[0][2]))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -2193,7 +2193,7 @@ const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string }> = ({ ga
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(tSlug(r[7]))}&vs=${encodeURIComponent(tSlug(r[8]))}${r[2] ? `&champ=${encodeURIComponent(r[2])}` : ""}${/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? `&year=${encodeURIComponent((r[0] || "").slice(0, 4))}` : ""}`,
+                        query: `team=${encodeURIComponent(tSlug(r[7]))}&vs=${encodeURIComponent(tSlug(r[8]))}${r[2] ? `&champ=${encodeURIComponent(resolveChampSlug(r[2]))}` : ""}${/^\d{4}$/.test((r[0] || "").slice(0, 4)) ? `&year=${encodeURIComponent((r[0] || "").slice(0, 4))}` : ""}`,
                       }}
                       className="hidden sm:inline text-[10px] hover:text-rw-accent hover:underline"
                     >
