@@ -212,6 +212,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 year,
                 ...(qRole ? { role: qRole } : {}),
                 ...(topChampsList[0] ? { champ: topChampsList[0] } : {}),
+                ...(topChampsList[1] ? { vschamp: topChampsList[1] } : {}),
                 ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
                 ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                 ...(topTeams[0] ? { team: topTeams[0] } : {}),
@@ -419,7 +420,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                         <HubLink
                           to={{
                             kind: "items",
-                            query: `player=${encodeURIComponent(spP0)}${spP1 ? `&vsplayer=${encodeURIComponent(spP1)}` : ""}${spTeam0 ? `&team=${encodeURIComponent(spTeam0)}` : ""}${spTeam1 ? `&vs=${encodeURIComponent(spTeam1)}` : ""}&league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}${spChampsList[0] ? `&champ=${encodeURIComponent(spChampsList[0])}` : ""}`,
+                            query: `player=${encodeURIComponent(spP0)}${spP1 ? `&vsplayer=${encodeURIComponent(spP1)}` : ""}${spTeam0 ? `&team=${encodeURIComponent(spTeam0)}` : ""}${spTeam1 ? `&vs=${encodeURIComponent(spTeam1)}` : ""}&league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}${spChampsList[0] ? `&champ=${encodeURIComponent(spChampsList[0])}` : ""}${spChampsList[1] ? `&vschamp=${encodeURIComponent(spChampsList[1])}` : ""}`,
                           }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
@@ -582,7 +583,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                                 <HubLink
                                   to={{
                                     kind: "finder",
-                                    query: `league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(pSlug(p.n, p.u))}`,
+                                    query: `league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}&player=${encodeURIComponent(pSlug(p.n, p.u))}${p.t ? `&team=${encodeURIComponent(tSlug(p.t, p.tu))}` : ""}${p.r ? `&role=${encodeURIComponent(p.r)}` : ""}${p.c?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(p.c[0]))}` : ""}`,
                                   }}
                                   className="hover:text-rw-accent hover:underline"
                                 >

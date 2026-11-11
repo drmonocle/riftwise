@@ -104,6 +104,20 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               </HubLink>
               <HubLink
                 to={{
+                  kind: "items",
+                  query: new URLSearchParams({
+                    team: t.u,
+                    vs: first.opp,
+                    ...(firstYr ? { year: firstYr } : {}),
+                    ...(firstLg ? { league: firstLg } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Item history")} →
+              </HubLink>
+              <HubLink
+                to={{
                   kind: "finder",
                   query: new URLSearchParams({
                     team: t.u,
@@ -241,6 +255,20 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                         className="text-[11px] font-medium text-rw-accent hover:underline"
                       >
                         {tl("Compare")}
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "items",
+                          query: new URLSearchParams({
+                            team: t.u,
+                            vs: c.opp,
+                            ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
+                            ...(c.m.leagueSlug || c.m.leagueName ? { league: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName) } : {}),
+                          }).toString(),
+                        }}
+                        className="text-[11px] font-medium text-rw-accent hover:underline"
+                      >
+                        {tl("Item history")}
                       </HubLink>
                       <HubLink
                         to={{
@@ -486,10 +514,28 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             </HubLink>
             <HubLink
               to={{
+                kind: "items",
+                query: new URLSearchParams({
+                  team: t.u,
+                  vs: c.opp,
+                  ...(lanePairs[0]?.a?.u ? { player: lanePairs[0].a.u } : {}),
+                  ...(lanePairs[0]?.b?.u ? { vsplayer: lanePairs[0].b.u } : {}),
+                  ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
+                  ...(lg ? { league: lg } : {}),
+                }).toString(),
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+            >
+              {tl("Item history")}
+            </HubLink>
+            <HubLink
+              to={{
                 kind: "finder",
                 query: new URLSearchParams({
                   team: t.u,
                   vs: c.opp,
+                  ...(lanePairs[0]?.a?.u ? { player: lanePairs[0].a.u } : {}),
+                  ...(lanePairs[0]?.b?.u ? { vsplayer: lanePairs[0].b.u } : {}),
                   ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
                   ...(lg ? { league: lg } : {}),
                 }).toString(),
@@ -534,7 +580,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             query: new URLSearchParams({
               ...(lg ? { league: lg } : {}),
               ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
-              q: [t.u, c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name)].filter(Boolean).join(","),
+              q: [lanePairs[0]?.a?.u, lanePairs[0]?.b?.u, t.u, c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name)].filter(Boolean).join(","),
             }).toString(),
           }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"

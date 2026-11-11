@@ -326,7 +326,7 @@ const RegionTrend: React.FC<{
                 league: intlLeague,
                 ...(tA ? { team: tA, ...(tB && tB !== tA ? { vs: tB } : {}) } : {}),
                 ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
-                ...(cA ? { champ: cA } : {}),
+                ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -677,7 +677,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                       }
                     : {}),
                   ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
-                  ...(cA ? { champ: cA } : {}),
+                  ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1052,7 +1052,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                         }
                       : {}),
                     ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
-                    ...(cA ? { champ: cA } : {}),
+                    ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

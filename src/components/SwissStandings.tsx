@@ -141,6 +141,19 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
                 type="button"
                 onClick={() => {
                   navigateHub({
+                    kind: "items",
+                    query: `team=${encodeURIComponent(d.rows[0].u)}&vs=${encodeURIComponent(d.rows[1].u)}&league=world-championship&year=${encodeURIComponent(wy)}`,
+                  });
+                  onOpen();
+                }}
+                className="text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Item history")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigateHub({
                     kind: "finder",
                     query: `team=${encodeURIComponent(d.rows[0].u)}&vs=${encodeURIComponent(d.rows[1].u)}&league=world-championship&year=${encodeURIComponent(wy)}`,
                   });

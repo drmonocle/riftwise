@@ -120,8 +120,30 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                 <HubLink
                   data-nocapture="1"
                   to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      event: e.u,
+                      ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
+                      ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                      ...(filteredRows[0] ? { team: filteredRows[0].u } : {}),
+                      ...(filteredRows[1] ? { vs: filteredRows[1].u } : {}),
+                    }).toString(),
+                  }}
+                  className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  data-nocapture="1"
+                  to={{
                     kind: "finder",
-                    query: `event=${encodeURIComponent(e.u)}${(terms.length > 0 || filteredRows.length <= 2) ? `&team=${encodeURIComponent(filteredRows[0].u)}${filteredRows[1] ? `&vs=${encodeURIComponent(filteredRows[1].u)}` : ""}` : ""}`,
+                    query: new URLSearchParams({
+                      event: e.u,
+                      ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
+                      ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                      ...(filteredRows[0] ? { team: filteredRows[0].u } : {}),
+                      ...(filteredRows[1] ? { vs: filteredRows[1].u } : {}),
+                    }).toString(),
                   }}
                   className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >

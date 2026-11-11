@@ -174,6 +174,26 @@ export const UpNextTable: React.FC<{
                   ...(yr ? { year: yr } : {}),
                 }).toString()
               : "";
+            navigateHub({ kind: "items", ...(q ? { query: q } : {}) });
+          }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Item history")}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const rawYr = matches[0]?.startTimeUtc?.slice(0, 4);
+            const yr = rawYr && /^\d{4}$/.test(rawYr) ? rawYr : "";
+            const lg = matches[0] ? resolveLeagueSlug(matches[0].leagueSlug || matches[0].leagueName) : "";
+            const q = matches[0]
+              ? new URLSearchParams({
+                  team: teamSlug(matches[0].team1Name, matches[0].team1Code),
+                  vs: teamSlug(matches[0].team2Name, matches[0].team2Code),
+                  ...(lg ? { league: lg } : {}),
+                  ...(yr ? { year: yr } : {}),
+                }).toString()
+              : "";
             navigateHub({ kind: "finder", ...(q ? { query: q } : {}) });
           }}
           className="text-rw-sub hover:text-rw-accent hover:underline"

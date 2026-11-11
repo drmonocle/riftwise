@@ -850,7 +850,7 @@ export const PlayerRanks: React.FC<{
                     <HubLink
                       to={{
                         kind: "items",
-                        query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${topSeasonChampSlug ? `&champ=${encodeURIComponent(topSeasonChampSlug)}` : ""}${secSeasonChampSlug ? `&vschamp=${encodeURIComponent(secSeasonChampSlug)}` : ""}${me?.r ? `&role=${encodeURIComponent(me.r)}` : ""}${meTeam ? `&team=${encodeURIComponent(meTeam)}` : ""}${peerTeam && peerTeam !== meTeam ? `&vs=${encodeURIComponent(peerTeam)}` : ""}${topPeer?.u ? `&vsplayer=${encodeURIComponent(topPeer.u)}` : ""}`,
+                        query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${lu ? `&league=${encodeURIComponent(lu)}` : ""}${topSeasonChampSlug ? `&champ=${encodeURIComponent(topSeasonChampSlug)}` : ""}${secSeasonChampSlug ? `&vschamp=${encodeURIComponent(secSeasonChampSlug)}` : ""}${me?.r ? `&role=${encodeURIComponent(me.r)}` : ""}${meTeam ? `&team=${encodeURIComponent(meTeam)}` : ""}${peerTeam && peerTeam !== meTeam ? `&vs=${encodeURIComponent(peerTeam)}` : ""}${topPeer?.u ? `&vsplayer=${encodeURIComponent(topPeer.u)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -1167,39 +1167,38 @@ export const TeamRanks: React.FC<{
                       {tl("Pro tier list")} →
                     </HubLink>
                     {topPick && (
-                      <>
-                        <HubLink
-                          to={{
-                            kind: "counters",
-                            query: new URLSearchParams({
-                              champ: topPick,
-                              ...(secPick ? { vs: secPick } : {}),
-                              ...(year ? { patch: `y${year}`, year } : {}),
-                            }).toString(),
-                          }}
-                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                        >
-                          {tl("Counters")} →
-                        </HubLink>
-                        <HubLink
-                          to={{
-                            kind: "items",
-                            query: new URLSearchParams({
-                              champ: topPick,
-                              ...(secPick ? { vschamp: secPick } : {}),
-                              team: slug,
-                              ...(topTeam?.u ? { vs: topTeam.u } : {}),
-                              ...(mePlayer ? { player: mePlayer } : {}),
-                              ...(peerPlayer ? { vsplayer: peerPlayer } : {}),
-                              ...(year ? { year } : {}),
-                            }).toString(),
-                          }}
-                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                        >
-                          {tl("Item history")} →
-                        </HubLink>
-                      </>
+                      <HubLink
+                        to={{
+                          kind: "counters",
+                          query: new URLSearchParams({
+                            champ: topPick,
+                            ...(secPick ? { vs: secPick } : {}),
+                            ...(year ? { patch: `y${year}`, year } : {}),
+                          }).toString(),
+                        }}
+                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Counters")} →
+                      </HubLink>
                     )}
+                    <HubLink
+                      to={{
+                        kind: "items",
+                        query: new URLSearchParams({
+                          ...(topPick ? { champ: topPick } : {}),
+                          ...(secPick ? { vschamp: secPick } : {}),
+                          team: slug,
+                          ...(topTeam?.u ? { vs: topTeam.u } : {}),
+                          ...(mePlayer ? { player: mePlayer } : {}),
+                          ...(peerPlayer ? { vsplayer: peerPlayer } : {}),
+                          ...(lu ? { league: lu } : {}),
+                          ...(year ? { year } : {}),
+                        }).toString(),
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                    >
+                      {tl("Item history")} →
+                    </HubLink>
                     <HubLink
                       to={{
                         kind: "finder",

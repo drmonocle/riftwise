@@ -121,13 +121,6 @@ export const PickemBoard: React.FC<{
               </HubLink>
             </>
           )}
-          <HubLink
-            to={{ kind: "finder", query: `event=${encodeURIComponent(event)}` }}
-            className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-            data-nocapture="1"
-          >
-            {tl("Game finder")} →
-          </HubLink>
           {(() => {
             const evYr = /\b(20\d{2})\b/.exec(event)?.[1];
             const evLg = event.startsWith("msi-")
@@ -139,6 +132,38 @@ export const PickemBoard: React.FC<{
                   : undefined;
             return (
               <>
+                <HubLink
+                  to={{
+                    kind: "items",
+                    query: new URLSearchParams({
+                      event,
+                      ...(evLg ? { league: evLg } : {}),
+                      ...(evYr ? { year: evYr } : {}),
+                      ...(teams[0]?.u ? { team: teams[0].u } : {}),
+                      ...(teams[1]?.u ? { vs: teams[1].u } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Item history")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "finder",
+                    query: new URLSearchParams({
+                      event,
+                      ...(evLg ? { league: evLg } : {}),
+                      ...(evYr ? { year: evYr } : {}),
+                      ...(teams[0]?.u ? { team: teams[0].u } : {}),
+                      ...(teams[1]?.u ? { vs: teams[1].u } : {}),
+                    }).toString(),
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Game finder")} →
+                </HubLink>
                 <HubLink
                   to={{
                     kind: "rankings",
@@ -168,6 +193,7 @@ export const PickemBoard: React.FC<{
                         ...(evLg ? { league: evLg } : {}),
                         ...(evYr ? { year: evYr } : {}),
                         event,
+                        ...(teams.length >= 1 ? { q: `${teams[0].u}${teams[1] ? `,${teams[1].u}` : ""}` } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -197,7 +223,7 @@ export const PickemBoard: React.FC<{
                       new URLSearchParams({
                         ...(evLg ? { scope: evLg, league: evLg } : {}),
                         ...(event ? { event } : {}),
-                        ...(evYr ? { key: `y${evYr}` } : {}),
+                        ...(evYr ? { key: `y${evYr}`, year: evYr } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
