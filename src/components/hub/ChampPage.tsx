@@ -1105,7 +1105,16 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 <ul className="space-y-1 text-xs">
                   {list.map(([oc, g, w, , gd]) => (
                     <li key={oc} className="flex items-center justify-between gap-2 min-w-0">
-                      <ChampLink name={oc} size={18} />
+                      <ChampLink
+                        name={oc}
+                        size={18}
+                        query={new URLSearchParams({
+                          vs: cSlug,
+                          ...(muRole ? { role: muRole } : {}),
+                          ...(muRecent ? { span: "12m" } : {}),
+                          ...(qEvent ? { event: qEvent, p: `e:${qEvent}` } : qPatch ? { patch: qPatch, p: `p:${qPatch}` } : qYear ? { year: qYear, p: `y${qYear}` } : {}),
+                        }).toString()}
+                      />
                       <HubLink
                         to={{
                           kind: "counters",
@@ -1171,7 +1180,16 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 return shownMu.map(([oc, g, w, tn, gd, cs, xp, ahead]) => (
                   <tr key={oc} className="border-t border-rw-border">
                     <td className={`${td} max-w-[10rem]`} data-sort={champName(oc)}>
-                      <ChampLink name={oc} size={16} />
+                      <ChampLink
+                        name={oc}
+                        size={16}
+                        query={new URLSearchParams({
+                          vs: cSlug,
+                          ...(muRole ? { role: muRole } : {}),
+                          ...(muRecent ? { span: "12m" } : {}),
+                          ...(qEvent ? { event: qEvent, p: `e:${qEvent}` } : qPatch ? { patch: qPatch, p: `p:${qPatch}` } : qYear ? { year: qYear, p: `y${qYear}` } : {}),
+                        }).toString()}
+                      />
                     </td>
                     <td className={`${td} text-rw-sub`} data-sort={g}>
                       <span className="inline-flex items-center gap-1.5 tabular-nums">
@@ -1482,7 +1500,15 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                 return duos.map(([pc, g, w]) => (
                   <tr key={pc} className="border-t border-rw-border">
                     <td className={`${td} max-w-[10rem]`} data-sort={champName(pc)}>
-                      <ChampLink name={pc} size={16} />
+                      <ChampLink
+                        name={pc}
+                        size={16}
+                        query={
+                          new URLSearchParams({
+                            ...(qEvent ? { event: qEvent, p: `e:${qEvent}` } : qPatch ? { patch: qPatch, p: `p:${qPatch}` } : qYear ? { year: qYear, p: `y${qYear}` } : {}),
+                          }).toString() || undefined
+                        }
+                      />
                     </td>
                     <td className={`${td} text-rw-sub`} data-sort={g}>
                       <span className="inline-flex items-center gap-1.5 tabular-nums">
@@ -1769,22 +1795,22 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               const maxPG = Math.max(1, ...pList.map((x) => x.g));
               return pList.map((p) => {
                 const pTeam = teamByPlayer.get(p.u || p.n);
-                const pTabQuery = `champ=${encodeURIComponent(cSlug)}${
-                  playersRecent
-                    ? "&p=12m"
-                    : qEvent
-                      ? `&p=e:${encodeURIComponent(qEvent)}`
-                      : qPatch
-                        ? `&p=p:${encodeURIComponent(qPatch)}`
-                        : qYear
-                          ? `&p=y${encodeURIComponent(qYear)}`
-                          : ""
-                }`;
+                const pTeamSlugVal = pTeam ? teamSlug(pTeam) : "";
+                const pPeriodQ = playersRecent
+                  ? "p=12m"
+                  : qEvent
+                    ? `p=e:${encodeURIComponent(qEvent)}`
+                    : qPatch
+                      ? `p=p:${encodeURIComponent(qPatch)}`
+                      : qYear
+                        ? `p=y${encodeURIComponent(qYear)}`
+                        : "";
+                const pTabQuery = `champ=${encodeURIComponent(cSlug)}${pTeamSlugVal ? `&team=${encodeURIComponent(pTeamSlugVal)}` : ""}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}${pPeriodQ ? `&${pPeriodQ}` : ""}`;
                 const pRowTo = p.u
                   ? ({ kind: "player", slug: p.u, tab: "champions", query: pTabQuery } as const)
                   : ({
                       kind: "finder",
-                      query: `player=${encodeURIComponent(resolvePlayerSlug(p.n))}${pTeam ? `&team=${encodeURIComponent(teamSlug(pTeam))}` : ""}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}&champ=${encodeURIComponent(cSlug)}${!playersRecent ? heroPeriodQuery : ""}`,
+                      query: `player=${encodeURIComponent(resolvePlayerSlug(p.n))}${pTeamSlugVal ? `&team=${encodeURIComponent(pTeamSlugVal)}` : ""}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}&champ=${encodeURIComponent(cSlug)}${!playersRecent ? heroPeriodQuery : ""}`,
                     } as const);
                 return (
                 <tr key={p.n + p.u} className="border-t border-rw-border">
@@ -1794,7 +1820,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         to={{
                           kind: "player",
                           slug: p.u || resolvePlayerSlug(p.n),
-                          ...(playersRecent ? { query: "p=12m" } : qYear ? { query: `p=y${qYear}` } : {}),
+                          query: pTabQuery,
                         }}
                         className="shrink-0 hover:opacity-80"
                         title={p.n}
@@ -1805,8 +1831,8 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         <HubLink
                           to={{
                             kind: "team",
-                            slug: teamSlug(pTeam),
-                            ...(playersRecent ? { query: "p=12m" } : qYear ? { query: `p=y${qYear}` } : {}),
+                            slug: pTeamSlugVal,
+                            query: `champ=${encodeURIComponent(cSlug)}${pPeriodQ ? `&${pPeriodQ}` : ""}`,
                           }}
                           className="shrink-0 hover:opacity-80"
                           title={pTeam}
@@ -1814,7 +1840,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           <TeamLogo name={pTeam} size={13} />
                         </HubLink>
                       )}
-                      <PlayerLink name={p.n} u={p.u} query={playersRecent ? "p=12m" : qYear ? `p=y${qYear}` : undefined} />
+                      <PlayerLink name={p.n} u={p.u} query={pTabQuery} />
                     </span>
                   </td>
                   <td className={`${td} text-rw-sub`} data-sort={p.g}>
@@ -2116,7 +2142,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       to={{
                         kind: "player",
                         slug: r.u || resolvePlayerSlug(r.n),
-                        ...(/^\d{4}$/.test((r.date || "").slice(0, 4)) ? { query: `p=y${(r.date || "").slice(0, 4)}` } : {}),
+                        query: `champ=${encodeURIComponent(cSlug)}${r.team ? `&team=${encodeURIComponent(teamSlug(r.team))}` : ""}${r.r ? `&role=${encodeURIComponent(r.r)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
                       }}
                       className="shrink-0 hover:opacity-80"
                       title={r.n}
@@ -2128,7 +2154,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         to={{
                           kind: "team",
                           slug: teamSlug(r.team),
-                          ...(/^\d{4}$/.test((r.date || "").slice(0, 4)) ? { query: `p=y${(r.date || "").slice(0, 4)}` } : {}),
+                          query: `champ=${encodeURIComponent(cSlug)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
                         }}
                         className="shrink-0 hover:opacity-80"
                         title={r.team}
@@ -2139,7 +2165,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <PlayerLink
                       name={r.n}
                       u={r.u}
-                      query={/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `p=y${(r.date || "").slice(0, 4)}` : undefined}
+                      query={`champ=${encodeURIComponent(cSlug)}${r.team ? `&team=${encodeURIComponent(teamSlug(r.team))}` : ""}${r.r ? `&role=${encodeURIComponent(r.r)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`}
                     />
                     {r.g ? (
                       <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums shrink-0">
@@ -2169,7 +2195,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       to={{
                         kind: "team",
                         slug: teamSlug(r.opp),
-                        ...(/^\d{4}$/.test((r.date || "").slice(0, 4)) ? { query: `p=y${(r.date || "").slice(0, 4)}` } : {}),
+                        query: `champ=${encodeURIComponent(cSlug)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
                       }}
                       className="shrink-0 hover:opacity-80"
                       title={r.opp}
@@ -2178,7 +2204,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     </HubLink>
                     <TeamLink
                       name={r.opp}
-                      query={/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `p=y${(r.date || "").slice(0, 4)}` : undefined}
+                      query={`champ=${encodeURIComponent(cSlug)}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`}
                       className="truncate"
                     />
                   </span>
