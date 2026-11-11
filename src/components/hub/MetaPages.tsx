@@ -2,7 +2,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Crown, ClipboardCopy } from "lucide-react";
 import { tl, tn, regionName } from "../../i18n";
-import { loadLeague, loadLeagues, loadPatches, matchesChampSearch, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { loadLeague, loadLeagues, loadPatches, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+import { matchesPeriodEvent } from "../../hub/period";
 import type { HubLeague, LeagueRow, LeagueStep, PatchMove, PatchRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import {
@@ -1170,7 +1171,14 @@ const LeagueEventsSection: React.FC<{
     return events.filter((e) => {
       const hay = normText(`${e.n} ${e.u} ${e.w || ""} ${e.wu || ""} ${e.y || ""}`);
       const hayBare = bare(hay);
-      return terms.some((t) => hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t))));
+      const winCanon = e.wu || e.w ? resolveTeamAlias(e.wu || e.w || "") : "";
+      return terms.some(
+        (t) =>
+          hay.includes(t) ||
+          (t.length >= 2 && hayBare.includes(bare(t))) ||
+          Boolean(winCanon && resolveTeamAlias(t) === winCanon) ||
+          matchesPeriodEvent(e.u, e.n, t),
+      );
     });
   }, [events, evSearch]);
   const singleEvSlug = evSearch.trim() && shownEvents.length === 1 ? shownEvents[0].u : "";
@@ -1305,7 +1313,7 @@ const LeagueEventsSection: React.FC<{
             >
               {tl("Best games")} →
             </HubLink>
-            {events.length > 10 && (
+            {(events.length > 10 || Boolean(evSearch.trim())) && (
               <input
                 value={evSearch}
                 onChange={(e) => setEvSearch(e.target.value)}

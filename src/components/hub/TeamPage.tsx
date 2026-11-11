@@ -7,14 +7,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Trophy } from "lucide-react";
 import { tl, tk, roleName, regionName, eventTitle, tc, tn, fmtDec } from "../../i18n";
 import { winRate } from "../../stats";
-import { bare, loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, sameChamp } from "../../hub/data";
+import { bare, loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias, sameChamp } from "../../hub/data";
 import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import { PageTabs, type PageTab } from "./PageTabs";
 import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { TeamSeriesArchive } from "./Archives";
 import { PeriodPicker, QuickPeriods, TeamPeriodStats, playstyleTags } from "./PeriodStats";
-import { PeriodKey, inPeriod, periodOptions, teamAgg, teamRowRef } from "../../hub/period";
+import { PeriodKey, inPeriod, matchesPeriodEvent, periodOptions, teamAgg, teamRowRef } from "../../hub/period";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, fmtUsdShort, HubLink, isFresh, Loading, Page, PlayerLink, PlayerPhoto, ratingTextClass, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
@@ -96,7 +96,14 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
     ? t.events.filter((x) => {
         const hay = `${normText(x.en)} ${normText(x.e || "")} ${normText(x.as || "")} ${x.date || ""}`;
         const hayBare = bare(hay);
-        return eventTerms.some((term) => hay.includes(term) || (bare(term).length >= 2 && hayBare.includes(bare(term))));
+        const canonAs = resolveTeamAlias(x.as || t.u);
+        return eventTerms.some(
+          (term) =>
+            hay.includes(term) ||
+            (bare(term).length >= 2 && hayBare.includes(bare(term))) ||
+            (canonAs ? resolveTeamAlias(term) === canonAs : false) ||
+            matchesPeriodEvent(x.e || "", x.en || "", term),
+        );
       })
     : t.events;
   const events = allEvents || eventTerms.length ? filteredEvents : filteredEvents.slice(0, 15);
@@ -1075,7 +1082,7 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           title={tl("Tournaments")}
           right={
             <span className="flex flex-wrap items-center gap-2">
-              {t.events.length > 8 && (
+              {(t.events.length > 8 || Boolean(eventSearch.trim())) && (
                 <input
                   type="search"
                   value={eventSearch}

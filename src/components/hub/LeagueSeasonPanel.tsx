@@ -3,11 +3,12 @@
  * players on the main stats (the top three of each, among players with 30% of the most games), and links to the
  * full leaderboard, the season's champion picks and the tier list.
  */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { bare, loadLeagueSeason, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadLeagueSeason, matchesChampSearch, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
+import { normalizeRole } from "../../hub/champAgg";
 import type { EventPlayer } from "../../hub/types";
-import { hubShareUrl } from "../../hub/route";
+import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { HubLink, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 import { PLAYER_METRICS } from "./Ranks";
@@ -16,7 +17,17 @@ const STANDOUT = ["kda", "dpm", "g15", "csm", "vsm", "kp"];
 
 export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: string }> = ({ league, year, name }) => {
   const state = useLoad(() => loadLeagueSeason(league, year), [league, year]);
-  const [search, setSearch] = useState("");
+  const nowRoute = currentHubRoute();
+  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
+  const [search, setSearch] = useState(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return p.get("q") || p.get("team") || p.get("player") || p.get("role") || "";
+  });
+  useEffect(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    const next = p.get("q") || p.get("team") || p.get("player") || p.get("role") || "";
+    if (next) setSearch(next);
+  }, [routeQuery]);
   const s = state.data;
   if (!s || (!s.players.length && !s.teamStats.length)) return null;
   const maxG = Math.max(1, ...s.players.map((p) => p.g));
@@ -30,12 +41,18 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
     ? allRegular.filter((p) => {
         const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""} ${p.r || ""}`);
         const hayBare = bare(hay);
-        return terms.some(
-          (term) =>
+        const canonTeam = resolveTeamAlias(p.tu || p.t || "");
+        return terms.some((term) => {
+          const canonRole = normalizeRole(term);
+          return (
             hay.includes(term) ||
             (term.length >= 2 && hayBare.includes(bare(term))) ||
-            (p.u ? resolvePlayerSlug(term) === p.u : false),
-        );
+            (p.u ? resolvePlayerSlug(term) === p.u : false) ||
+            (canonTeam ? resolveTeamAlias(term) === canonTeam : false) ||
+            (canonRole && p.r ? p.r === canonRole : false) ||
+            (p.c || []).some((c) => matchesChampSearch(c, term))
+          );
+        });
       })
     : allRegular;
   const allTeams = [...s.teamStats].sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g);
@@ -43,7 +60,13 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
     ? allTeams.filter((t) => {
         const hay = normText(`${t.t} ${t.u || ""}`);
         const hayBare = bare(hay);
-        return terms.some((term) => hay.includes(term) || (term.length >= 2 && hayBare.includes(bare(term))));
+        const canonTeam = resolveTeamAlias(t.u || t.t);
+        return terms.some(
+          (term) =>
+            hay.includes(term) ||
+            (term.length >= 2 && hayBare.includes(bare(term))) ||
+            (canonTeam ? resolveTeamAlias(term) === canonTeam : false),
+        );
       })
     : allTeams;
   const headerTeams = teams.length >= 1 ? teams : allTeams;
@@ -52,7 +75,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
       title={tl("{name} {year} at a glance", { name, year })}
       right={
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold">
-          {(allTeams.length > 6 || allRegular.length > 10) && (
+          {(allTeams.length > 6 || allRegular.length > 10 || Boolean(search.trim())) && (
             <input
               type="search"
               value={search}

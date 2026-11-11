@@ -8,10 +8,10 @@ import { Trophy, ExternalLink, Package } from "lucide-react";
 import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { bare, loadHubChamp, loadHubPlayer, loadPlayerGames, matchesChampSearch, normText, prettySlug, sameChamp } from "../../hub/data";
+import { bare, loadHubChamp, loadHubPlayer, loadPlayerGames, matchesChampSearch, normText, prettySlug, resolveTeamAlias, sameChamp } from "../../hub/data";
 import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
-import { type PeriodKey, inPeriod, periodOptions, playerAgg, playerRowRef } from "../../hub/period";
+import { type PeriodKey, inPeriod, matchesPeriodEvent, periodOptions, playerAgg, playerRowRef } from "../../hub/period";
 import { PageTabs, type PageTab } from "./PageTabs";
 import { useDDragon } from "../../hub/ddragon";
 import { PlayerChampGames, PlayerGamesArchive } from "./Archives";
@@ -167,10 +167,13 @@ const PlayerView: React.FC<{
     ? p.events.filter((x) => {
         const hay = `${normText(x.en)} ${normText(x.e || "")} ${normText(x.t || "")} ${x.date || ""} ${(x.c || []).map((c) => `${normText(champName(c))} ${normText(c)}`).join(" ")}`;
         const hayBare = bare(hay);
+        const canonTeam = resolveTeamAlias(x.tu || x.t || "");
         return eventTerms.some(
           (term) =>
             hay.includes(term) ||
             (bare(term).length >= 2 && hayBare.includes(bare(term))) ||
+            (canonTeam ? resolveTeamAlias(term) === canonTeam : false) ||
+            matchesPeriodEvent(x.e || "", x.en || "", term) ||
             (x.c || []).some((c) => matchesChampSearch(c, term)),
         );
       })
@@ -427,7 +430,7 @@ const PlayerView: React.FC<{
           title={tl("Tournaments")}
           right={
             <span className="flex flex-wrap items-center gap-2">
-              {p.events.length > 8 && (
+              {(p.events.length > 8 || Boolean(eventSearch.trim())) && (
                 <input
                   type="search"
                   value={eventSearch}

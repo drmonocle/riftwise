@@ -89,16 +89,18 @@ const TEAM_SLUG_ALIASES: Record<string, string> = {
   "damwon-gaming": "dplus-kia",
   "dwg-kia": "dplus-kia",
   dk: "dplus-kia",
-  geng: "gen-g",
-  ssg: "gen-g",
-  ssw: "gen-g",
-  ssb: "gen-g",
-  samsung: "gen-g",
-  "samsung-galaxy": "gen-g",
-  "samsung-white": "gen-g",
-  "samsung-blue": "gen-g",
-  ksv: "gen-g",
-  "ksv-esports": "gen-g",
+  geng: "geng",
+  "gen-g": "geng",
+  gen: "geng",
+  ssg: "geng",
+  ssw: "geng",
+  ssb: "geng",
+  samsung: "geng",
+  "samsung-galaxy": "geng",
+  "samsung-white": "geng",
+  "samsung-blue": "geng",
+  ksv: "geng",
+  "ksv-esports": "geng",
   hle: "hanwha-life-esports",
   rox: "hanwha-life-esports",
   "rox-tigers": "hanwha-life-esports",
@@ -208,12 +210,21 @@ export function resolveTeamSlug(slug: string): Promise<string | null> {
 
 /** A team's file (team, teamgames, teamseries), also under an address the build doesn't have (resolveTeamSlug). */
 async function teamFile<T>(dir: string, slug: string): Promise<T> {
+  const s = slug.toLowerCase();
+  const first = TEAM_SLUG_ALIASES[s] || TEAM_SLUG_ALIASES[prettySlug(s)] || slug;
   try {
-    return await load<T>(`hub/${dir}/${slug}.json`);
+    return await load<T>(`hub/${dir}/${first}.json`);
   } catch (err) {
     if (!(err instanceof MissingFile)) throw err;
+    if (first !== slug) {
+      try {
+        return await load<T>(`hub/${dir}/${slug}.json`);
+      } catch (e2) {
+        if (!(e2 instanceof MissingFile)) throw e2;
+      }
+    }
     const to = await resolveTeamSlug(slug);
-    if (to && to !== slug) return load<T>(`hub/${dir}/${to}.json`);
+    if (to && to !== first && to !== slug) return load<T>(`hub/${dir}/${to}.json`);
     throw err;
   }
 }

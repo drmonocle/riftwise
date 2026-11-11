@@ -237,7 +237,8 @@ describe("search shortcuts", () => {
     expect(normalizeRole("jg")).toBe("Jungle");
     expect(resolveTeamAlias("dwg")).toBe("dplus-kia");
     expect(resolveTeamAlias("skt")).toBe("t1");
-    expect(resolveTeamAlias("ssg")).toBe("gen-g");
+    expect(resolveTeamAlias("ssg")).toBe("geng");
+    expect(resolveTeamAlias("gen-g")).toBe("geng");
     expect(resolveLeagueSlug("kr")).toBe("lol-champions-korea");
     expect(resolveLeagueSlug("cn")).toBe("tencent-lol-pro-league");
     expect(resolveLeagueSlug("eu")).toBe("lol-emea-championship");
