@@ -54,7 +54,14 @@ const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> 
 };
 
 /** "Full history and stats": opens the team's page in the stats hub. */
-const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; year?: string; onDone: () => void }> = ({ name, code, league, year, onDone }) => {
+const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; year?: string; topPlayers?: string[]; onDone: () => void }> = ({
+  name,
+  code,
+  league,
+  year,
+  topPlayers,
+  onDone,
+}) => {
   const [busy, setBusy] = useState(false);
   const [missing, setMissing] = useState(false);
   if (missing) return null;
@@ -116,6 +123,8 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; yea
               kind: "finder",
               query: new URLSearchParams({
                 team: slug,
+                ...(topPlayers?.[0] ? { player: topPlayers[0] } : {}),
+                ...(topPlayers?.[1] ? { vsplayer: topPlayers[1] } : {}),
                 ...(lg ? { league: lg } : {}),
                 ...(year ? { year } : {}),
               }).toString(),
@@ -125,6 +134,27 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; yea
         className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
       >
         {tl("Game finder")}
+      </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() =>
+          openRoute((slug) =>
+            navigateHub({
+              kind: "items",
+              query: new URLSearchParams({
+                team: slug,
+                ...(topPlayers?.[0] ? { player: topPlayers[0] } : {}),
+                ...(topPlayers?.[1] ? { vsplayer: topPlayers[1] } : {}),
+                ...(lg ? { league: lg } : {}),
+                ...(year ? { year } : {}),
+              }).toString(),
+            }),
+          )
+        }
+        className="flex items-center gap-1 text-[11px] text-rw-sub hover:text-rw-accent hover:underline disabled:opacity-60"
+      >
+        {tl("Item history")}
       </button>
       <button
         type="button"
@@ -174,7 +204,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; league?: string; yea
             navigateHub({
               kind: "leaders",
               query: new URLSearchParams({
-                q: slug,
+                q: [slug, ...(topPlayers || [])].filter(Boolean).join(","),
                 ...(lg ? { league: lg } : {}),
                 ...(year ? { year } : {}),
               }).toString(),
@@ -363,6 +393,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 code={upperCode}
                 league={catalogTeam?.league}
                 year={modalYr}
+                topPlayers={players.slice(0, 2).map((p) => playerSlug(p.name))}
                 onDone={onClose}
               />
             </div>
@@ -424,8 +455,11 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       onClick={() => {
                         const yr = (upcomingMatches[0]?.startTimeUtc || completedMatches[0]?.startTimeUtc)?.slice(0, 4);
                         const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
+                        const r0 = normalizeRole(players[0].role) || players[0].role;
                         const q = new URLSearchParams({
                           player: playerSlug(players[0].name),
+                          ...(players[1] ? { vsplayer: playerSlug(players[1].name) } : {}),
+                          ...(r0 && r0 !== "Sub" ? { role: r0 } : {}),
                           team: teamSlug(displayName, upperCode),
                           ...(lg ? { league: lg } : {}),
                           ...(yr ? { year: yr } : {}),
@@ -442,8 +476,11 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       onClick={() => {
                         const yr = (upcomingMatches[0]?.startTimeUtc || completedMatches[0]?.startTimeUtc)?.slice(0, 4);
                         const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
+                        const r0 = normalizeRole(players[0].role) || players[0].role;
                         const q = new URLSearchParams({
                           player: playerSlug(players[0].name),
+                          ...(players[1] ? { vsplayer: playerSlug(players[1].name) } : {}),
+                          ...(r0 && r0 !== "Sub" ? { role: r0 } : {}),
                           team: teamSlug(displayName, upperCode),
                           ...(lg ? { league: lg } : {}),
                           ...(yr ? { year: yr } : {}),
@@ -461,10 +498,10 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                         const yr = (upcomingMatches[0]?.startTimeUtc || completedMatches[0]?.startTimeUtc)?.slice(0, 4);
                         const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
                         const q = new URLSearchParams({
-                          q: players
-                            .slice(0, 5)
-                            .map((p) => playerSlug(p.name))
-                            .join(","),
+                          q: [
+                            teamSlug(displayName, upperCode),
+                            ...players.slice(0, 5).map((p) => playerSlug(p.name)),
+                          ].join(","),
                           ...(lg ? { league: lg } : {}),
                           ...(yr ? { year: yr } : {}),
                         }).toString();
@@ -611,6 +648,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               const q = new URLSearchParams({
                                 player: playerSlug(p.name),
                                 team: teamSlug(displayName, upperCode),
+                                ...(rRole && rRole !== "Sub" ? { role: rRole } : {}),
                                 ...(lg ? { league: lg } : {}),
                                 ...(yr ? { year: yr } : {}),
                               }).toString();

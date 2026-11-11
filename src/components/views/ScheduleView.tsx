@@ -307,6 +307,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           >
             {tl("Game finder")} →
           </button>
+          <button
+            type="button"
+            onClick={() => navigateHub({ kind: "items", ...(league ? { query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` } : {}) })}
+            className="hidden md:inline text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Item history")} →
+          </button>
         </div>
       </div>
 
@@ -408,6 +415,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   </button>
                   <button
                     type="button"
+                    onClick={() => navigateHub({ kind: "items", query: `league=${encodeURIComponent(resolveLeagueSlug(league))}` })}
+                    className="hidden xl:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                  >
+                    {tl("Item history")} →
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       setLeague(null);
                       countSecondPage();
@@ -502,6 +516,22 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         type="button"
                         onClick={() =>
                           navigateHub({
+                            kind: "items",
+                            query: new URLSearchParams({
+                              team: sSlug,
+                              ...(sLg ? { league: sLg } : {}),
+                              ...(sYr ? { year: sYr } : {}),
+                            }).toString(),
+                          })
+                        }
+                        className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                      >
+                        {tl("Item history")} →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigateHub({
                             kind: "rankings",
                             query: new URLSearchParams({
                               ...(sLg ? { league: sLg } : {}),
@@ -590,6 +620,23 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                     >
                       {tl("Game finder")} →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigateHub({
+                          kind: "items",
+                          query: new URLSearchParams({
+                            team: a,
+                            vs: b,
+                            ...(pLg ? { league: pLg } : {}),
+                            ...(pYr ? { year: pYr } : {}),
+                          }).toString(),
+                        })
+                      }
+                      className="text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                    >
+                      {tl("Item history")} →
                     </button>
                     <button
                       type="button"

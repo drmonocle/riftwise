@@ -558,7 +558,28 @@ const PrepButton: React.FC<{
           {tl("Game finder")}
         </button>
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+        <button
+          type="button"
+          disabled={state === "busy"}
+          onClick={() =>
+            openRoute((a, b) =>
+              navigateHub({
+                kind: "items",
+                query: new URLSearchParams({
+                  team: a,
+                  vs: b,
+                  ...(lg ? { league: lg } : {}),
+                  ...(event ? { event } : {}),
+                  ...(year ? { year } : {}),
+                }).toString(),
+              }),
+            )
+          }
+          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/40 text-xs font-semibold disabled:opacity-60"
+        >
+          {tl("Item history")}
+        </button>
         <button
           type="button"
           disabled={state === "busy"}

@@ -720,6 +720,25 @@ const LiveMatchBlock: React.FC<{
                 <button
                   type="button"
                   onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
+                    const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
+                    navigateHub({
+                      kind: "items",
+                      query: new URLSearchParams({
+                        team: teamSlug(m.team1Name, m.team1Code),
+                        vs: teamSlug(m.team2Name, m.team2Code),
+                        ...(lg ? { league: lg } : {}),
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
+                    });
+                  }}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Item history")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
                     navigateHub({
                       kind: "rankings",
@@ -1146,6 +1165,25 @@ const NextMatchCard: React.FC<{
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Game finder")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const yr = m.startTimeUtc?.slice(0, 4);
+                    const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
+                    navigateHub({
+                      kind: "items",
+                      query: new URLSearchParams({
+                        team: teamSlug(m.team1Name, m.team1Code),
+                        vs: teamSlug(m.team2Name, m.team2Code),
+                        ...(lg ? { league: lg } : {}),
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
+                    });
+                  }}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+                >
+                  {tl("Item history")}
                 </button>
                 <button
                   type="button"
