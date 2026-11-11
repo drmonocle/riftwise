@@ -253,6 +253,7 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
                       query: new URLSearchParams({
                         ...(lg ? { scope: lg, league: lg } : {}),
                         ...(period ? { key: period } : {}),
+                        ...(yr ? { year: yr } : {}),
                       }).toString(),
                     }
                   : {}),
