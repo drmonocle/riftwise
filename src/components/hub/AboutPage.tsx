@@ -94,22 +94,53 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           <Term t={`${tl("DMG%")} · ${tl("Gold%")} · ${tl("VS%")}`}>{tl("A player's share of the team's damage to champions, gold and vision score.")}</Term>
           <Term t={tl("GD/m")}>{tl("The team's gold lead at the end of the game, per minute played.")}</Term>
           <Term t="GD@15 · CSD@15 · XPD@15">
-            {tl("Gold, CS and experience lead at 15 minutes: a player against the opponent in the same role, a team against the other team. Also shown at 10 and 20 minutes.")}
+            {tl("Gold, CS and experience lead at 15 minutes: a player against the opponent in the same role, a team against the other team. Also shown at 10 and 20 minutes.")}{" "}
+            <HubLink to={{ kind: "counters" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Counters")} →
+            </HubLink>
           </Term>
-          <Term t={tl("Ahead at 15")}>{tl("How often a team was ahead in gold at 15 minutes, and its win rate when ahead or behind then.")}</Term>
+          <Term t={tl("Ahead at 15")}>
+            {tl("How often a team was ahead in gold at 15 minutes, and its win rate when ahead or behind then.")}{" "}
+            <HubLink to={{ kind: "finder" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Game finder")} →
+            </HubLink>
+          </Term>
           <Term t={`${tl("FB%")} · ${tl("FT%")}`}>
             {tl("First blood and first tower: how often a team got it. For a player: how often they had the kill or an assist on first blood.")}
           </Term>
           <Term t={tl("DMG% − Gold%")}>{tl("Damage share minus gold share. Above zero: more damage than the gold they got would suggest.")}</Term>
           <Term t="CKPM">{tl("Kills per minute by both teams together: how bloody a team's games are.")}</Term>
           <Term t={`${tl("DRA%")} · ${tl("Baron%")}`}>{tl("The share of all dragons (or barons) in a team's games that the team took.")}</Term>
-          <Term t={tl("Presence")}>{tl("The share of games where a champion was picked or banned.")}</Term>
-          <Term t={tl("Blind%")}>{tl("How often a champion was picked before the enemy laner was known (games where the draft order is known).")}</Term>
-          <Term t="B1">{tl("The first pick of the draft (blue side).")}</Term>
+          <Term t={tl("Presence")}>
+            {tl("The share of games where a champion was picked or banned.")}{" "}
+            <HubLink to={{ kind: "champions" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Champions")} →
+            </HubLink>{" "}
+            ·{" "}
+            <HubLink to={{ kind: "tiers" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Pro tier list")} →
+            </HubLink>
+          </Term>
+          <Term t={tl("Blind%")}>
+            {tl("How often a champion was picked before the enemy laner was known (games where the draft order is known).")}{" "}
+            <HubLink to={{ kind: "draft" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Draft board")} →
+            </HubLink>
+          </Term>
+          <Term t="B1">
+            {tl("The first pick of the draft (blue side).")}{" "}
+            <HubLink to={{ kind: "draft" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Draft board")} →
+            </HubLink>
+          </Term>
           <Term t={tl("League ranks")}>
             {tl("A player against the same role in the same league and year (all splits and playoffs) with at least 30% of the most games played; a team against the league's teams.")}{" "}
             <HubLink to={{ kind: "leaders" }} className="text-rw-accent hover:underline font-semibold">
               {tl("Leaderboards")} →
+            </HubLink>{" "}
+            ·{" "}
+            <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Power rankings")} →
             </HubLink>
           </Term>
           <Term t={tl("Averages")}>
@@ -140,7 +171,15 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
         <p className="text-rw-sub mt-2">
           {tl("Tiers: S 90+, A 80+, B 70+, C 55+, D below. Only about 1 game in 2,000 reaches S.")} {tl("A series counts its best game most, then its best three games and all of them; a 3-2 gets a little more, a sweep a little less.")}{" "}
           <HubLink to={{ kind: "best" }} className="text-rw-accent hover:underline font-semibold">
-            {tl("Best games")}
+            {tl("Best games")} →
+          </HubLink>{" "}
+          ·{" "}
+          <HubLink to={{ kind: "records" }} className="text-rw-accent hover:underline font-semibold">
+            {tl("Records")} →
+          </HubLink>{" "}
+          ·{" "}
+          <HubLink to={{ kind: "finder" }} className="text-rw-accent hover:underline font-semibold">
+            {tl("Game finder")} →
           </HubLink>
         </p>
       </Section>
@@ -161,6 +200,14 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           {tl("The game's top rated player is starred on its match page; the best averages are the Players of the week and of the month.")}{" "}
           <HubLink to={{ kind: "weekly" }} className="text-rw-accent hover:underline font-semibold">
             {tl("The week in pro League")} →
+          </HubLink>{" "}
+          ·{" "}
+          <HubLink to={{ kind: "leaders" }} className="text-rw-accent hover:underline font-semibold">
+            {tl("Player leaderboards")} →
+          </HubLink>{" "}
+          ·{" "}
+          <HubLink to={{ kind: "items" }} className="text-rw-accent hover:underline font-semibold">
+            {tl("Item history")} →
           </HubLink>
         </p>
       </Section>

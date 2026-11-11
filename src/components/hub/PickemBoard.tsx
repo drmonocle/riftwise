@@ -93,35 +93,20 @@ export const PickemBoard: React.FC<{
       id="leaderboard"
       right={
         <span className="flex flex-wrap items-center gap-1.5">
-          {teams.length >= 1 && (
-            <>
-              <HubLink
-                to={{ kind: "prep", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `e:${event}` }}
-                className="text-[11px] font-semibold text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Match prep")} →
-              </HubLink>
-              <HubLink
-                to={{
-                  kind: "draft",
-                  query: `teams=${encodeURIComponent(teams[0].u)}${teams[1] ? `,${encodeURIComponent(teams[1].u)}` : ""}&p=e:${encodeURIComponent(event)}`,
-                }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Draft board")} →
-              </HubLink>
-              <HubLink
-                to={{ kind: "compare", mode: "team", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `e:${event}` }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                data-nocapture="1"
-              >
-                {tl("Compare")} →
-              </HubLink>
-            </>
-          )}
           {(() => {
+            const pickSlugs = Array.from(
+              new Set(
+                [
+                  ...picks
+                    .slice()
+                    .reverse()
+                    .flatMap((p) => [p.w, p.a, p.b]),
+                  ...teams.map((t) => t.u),
+                ].filter(Boolean),
+              ),
+            );
+            const t0 = pickSlugs[0];
+            const t1 = pickSlugs.find((u) => u && u !== t0);
             const evYr = /\b(20\d{2})\b/.exec(event)?.[1];
             const evLg = event.startsWith("msi-")
               ? "mid-season-invitational"
@@ -134,13 +119,52 @@ export const PickemBoard: React.FC<{
               <>
                 <HubLink
                   to={{
+                    kind: "event",
+                    slug: event,
+                    ...(t0 ? { query: `q=${encodeURIComponent([t0, t1].filter(Boolean).join(","))}` } : {}),
+                  }}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Tournament")} →
+                </HubLink>
+                {t0 && (
+                  <>
+                    <HubLink
+                      to={{ kind: "prep", a: t0, ...(t1 ? { b: t1 } : {}), period: `e:${event}` }}
+                      className="text-[11px] font-semibold text-rw-accent hover:underline"
+                      data-nocapture="1"
+                    >
+                      {tl("Match prep")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "draft",
+                        query: `teams=${encodeURIComponent(t0)}${t1 ? `,${encodeURIComponent(t1)}` : ""}&p=e:${encodeURIComponent(event)}`,
+                      }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      data-nocapture="1"
+                    >
+                      {tl("Draft board")} →
+                    </HubLink>
+                    <HubLink
+                      to={{ kind: "compare", mode: "team", a: t0, ...(t1 ? { b: t1 } : {}), period: `e:${event}` }}
+                      className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      data-nocapture="1"
+                    >
+                      {tl("Compare")} →
+                    </HubLink>
+                  </>
+                )}
+                <HubLink
+                  to={{
                     kind: "items",
                     query: new URLSearchParams({
                       event,
                       ...(evLg ? { league: evLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
-                      ...(teams[0]?.u ? { team: teams[0].u } : {}),
-                      ...(teams[1]?.u ? { vs: teams[1].u } : {}),
+                      ...(t0 ? { team: t0 } : {}),
+                      ...(t1 ? { vs: t1 } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -155,8 +179,8 @@ export const PickemBoard: React.FC<{
                       event,
                       ...(evLg ? { league: evLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
-                      ...(teams[0]?.u ? { team: teams[0].u } : {}),
-                      ...(teams[1]?.u ? { vs: teams[1].u } : {}),
+                      ...(t0 ? { team: t0 } : {}),
+                      ...(t1 ? { vs: t1 } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -170,7 +194,7 @@ export const PickemBoard: React.FC<{
                     query:
                       new URLSearchParams({
                         ...(evLg ? { league: evLg } : {}),
-                        ...(teams.length >= 1 ? { q: `${teams[0].u}${teams[1] ? `,${teams[1].u}` : ""}` } : {}),
+                        ...(t0 ? { q: `${t0}${t1 ? `,${t1}` : ""}` } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -179,7 +203,17 @@ export const PickemBoard: React.FC<{
                   {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "tournaments", ...(evYr ? { query: `year=${encodeURIComponent(evYr)}` } : {}) }}
+                  to={{
+                    kind: "tournaments",
+                    ...(evYr || evLg
+                      ? {
+                          query: new URLSearchParams({
+                            ...(evLg ? { league: evLg } : {}),
+                            ...(evYr ? { year: evYr } : {}),
+                          }).toString(),
+                        }
+                      : {}),
+                  }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
@@ -193,7 +227,7 @@ export const PickemBoard: React.FC<{
                         ...(evLg ? { league: evLg } : {}),
                         ...(evYr ? { year: evYr } : {}),
                         event,
-                        ...(teams.length >= 1 ? { q: `${teams[0].u}${teams[1] ? `,${teams[1].u}` : ""}` } : {}),
+                        ...(t0 ? { q: `${t0}${t1 ? `,${t1}` : ""}` } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -208,13 +242,28 @@ export const PickemBoard: React.FC<{
                       ...(evLg ? { league: evLg } : {}),
                       ...(evYr ? { year: evYr } : {}),
                       event,
-                      ...(teams.length >= 1 ? { q: `${teams[0].u || teams[0].n}${teams[1] ? `,${teams[1].u || teams[1].n}` : ""}` } : {}),
+                      ...(t0 ? { q: `${t0}${t1 ? `,${t1}` : ""}` } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
                 >
                   {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "champions",
+                    query:
+                      new URLSearchParams({
+                        ...(evLg ? { scope: evLg, league: evLg } : {}),
+                        ...(event ? { event } : {}),
+                        ...(evYr ? { key: `y${evYr}`, year: evYr } : {}),
+                      }).toString() || undefined,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                  data-nocapture="1"
+                >
+                  {tl("Champions")} →
                 </HubLink>
                 <HubLink
                   to={{

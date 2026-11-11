@@ -201,7 +201,7 @@ const List: React.FC<{
           const firstSlug = list[0]?.[0] ? resolveChampSlug(list[0][0]) : undefined;
           const secSlug = list[1]?.[0] ? resolveChampSlug(list[1][0]) : undefined;
           const vsC = cSlug === firstSlug ? secSlug : firstSlug;
-          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${oppSlug ? `vs=${encodeURIComponent(oppSlug)}&` : ""}${playerParam}${isBan ? "ban" : "champ"}=${encodeURIComponent(cSlug)}${side ? `&side=${side}` : ""}${periodParam}`;
+          const finderQuery = `${teamName ? `team=${encodeURIComponent(teamName)}&` : ""}${oppSlug ? `vs=${encodeURIComponent(oppSlug)}&` : ""}${playerParam}${isBan ? "ban" : "champ"}=${encodeURIComponent(cSlug)}${!isBan && vsC && vsC !== cSlug ? `&vschamp=${encodeURIComponent(vsC)}` : ""}${side ? `&side=${side}` : ""}${periodParam}`;
           return (
             <li key={c} className="flex items-center justify-between gap-2 min-w-0">
               <ChampLink
@@ -212,6 +212,7 @@ const List: React.FC<{
                     teamName ? `team=${encodeURIComponent(teamName)}` : "",
                     oppSlug ? `vs=${encodeURIComponent(oppSlug)}` : "",
                     rosterSlugs?.[0] ? `player=${encodeURIComponent(rosterSlugs[0])}` : "",
+                    rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? `vsplayer=${encodeURIComponent(rosterSlugs[1])}` : "",
                     vsC && vsC !== cSlug ? `vschamp=${encodeURIComponent(vsC)}` : "",
                     side ? `side=${side}` : "",
                     period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
@@ -250,7 +251,7 @@ const List: React.FC<{
   );
 };
 
-const RoleLine: React.FC<{ title: string; shares: [number, number][]; teamSlug?: string; oppSlug?: string; period?: string }> = ({ title, shares, teamSlug, oppSlug, period }) =>
+const RoleLine: React.FC<{ title: string; shares: [number, number][]; teamSlug?: string; oppSlug?: string; rosterSlugs?: string[]; period?: string }> = ({ title, shares, teamSlug, oppSlug, rosterSlugs, period }) =>
   shares.length ? (
     <>
       <dt className="text-[10px] font-semibold text-rw-muted self-center">{title}</dt>
@@ -260,6 +261,7 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][]; teamSlug?:
           const roleQuery = new URLSearchParams({
             ...(period && period !== "all" ? { p: period } : {}),
             ...(oppSlug ? { q: oppSlug } : {}),
+            ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
             ...(ROLES[r] ? { role: ROLES[r] } : {}),
           }).toString();
           return (
@@ -349,6 +351,7 @@ const Pairs: React.FC<{
                       teamName ? `team=${encodeURIComponent(teamName)}` : "",
                       oppSlug ? `vs=${encodeURIComponent(oppSlug)}` : "",
                       rosterSlugs?.[0] ? `player=${encodeURIComponent(rosterSlugs[0])}` : "",
+                      rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? `vsplayer=${encodeURIComponent(rosterSlugs[1])}` : "",
                       b !== a ? `vschamp=${encodeURIComponent(resolveChampSlug(b))}` : "",
                       role ? `role=${encodeURIComponent(role)}` : "",
                       side ? `side=${side}` : "",
@@ -367,6 +370,7 @@ const Pairs: React.FC<{
                       teamName ? `team=${encodeURIComponent(teamName)}` : "",
                       oppSlug ? `vs=${encodeURIComponent(oppSlug)}` : "",
                       rosterSlugs?.[0] ? `player=${encodeURIComponent(rosterSlugs[0])}` : "",
+                      rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? `vsplayer=${encodeURIComponent(rosterSlugs[1])}` : "",
                       a !== b ? `vschamp=${encodeURIComponent(resolveChampSlug(a))}` : "",
                       role ? `role=${encodeURIComponent(role)}` : "",
                       side ? `side=${side}` : "",
@@ -685,12 +689,12 @@ export const DraftTendencies: React.FC<{
         <List title={tl("Bans, phase 2")} hint={tl("Their last two bans")} list={d.bans2} teamName={resolvedSlug || teamName} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} isBan />
       </div>
       <dl className="grid grid-cols-1 @md:grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-        <RoleLine title={tl("First role locked in")} shares={d.firstRole} teamSlug={resolvedSlug} oppSlug={oppSlug} period={period} />
-        <RoleLine title={tl("Role kept for last")} shares={d.lastRole} teamSlug={resolvedSlug} oppSlug={oppSlug} period={period} />
-        <RoleLine title={tl("Phase 1 picks")} shares={d.phase1} teamSlug={resolvedSlug} oppSlug={oppSlug} period={period} />
-        <RoleLine title={tl("Phase 2 picks")} shares={d.phase2} teamSlug={resolvedSlug} oppSlug={oppSlug} period={period} />
-        <RoleLine title={tl("Last pick on red (R5)")} shares={d.r5} teamSlug={resolvedSlug} oppSlug={oppSlug} period={period} />
-        <RoleLine title={tl("Last picks on blue (B4-B5)")} shares={d.b45} teamSlug={resolvedSlug} oppSlug={oppSlug} period={period} />
+        <RoleLine title={tl("First role locked in")} shares={d.firstRole} teamSlug={resolvedSlug} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} />
+        <RoleLine title={tl("Role kept for last")} shares={d.lastRole} teamSlug={resolvedSlug} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} />
+        <RoleLine title={tl("Phase 1 picks")} shares={d.phase1} teamSlug={resolvedSlug} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} />
+        <RoleLine title={tl("Phase 2 picks")} shares={d.phase2} teamSlug={resolvedSlug} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} />
+        <RoleLine title={tl("Last pick on red (R5)")} shares={d.r5} teamSlug={resolvedSlug} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} />
+        <RoleLine title={tl("Last picks on blue (B4-B5)")} shares={d.b45} teamSlug={resolvedSlug} oppSlug={oppSlug} rosterSlugs={rosterSlugs} period={period} />
       </dl>
       {(d.botDuos.length > 0 || d.midJungle.length > 0 || d.r12pairs.length > 0) && (
         <div className="grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3 gap-x-6 gap-y-3">
@@ -722,6 +726,7 @@ export const DraftTendencies: React.FC<{
                   query: new URLSearchParams({
                     ...(period && period !== "all" ? { p: period } : {}),
                     ...(oppSlug ? { q: oppSlug } : {}),
+                    ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
                     ...(ROLES[i] ? { role: ROLES[i] } : {}),
                   }).toString(),
                 }}
@@ -754,6 +759,7 @@ export const DraftTendencies: React.FC<{
                       resolvedSlug ? `team=${encodeURIComponent(resolvedSlug)}` : "",
                       oppSlug ? `vs=${encodeURIComponent(oppSlug)}` : "",
                       rosterSlugs?.[0] ? `player=${encodeURIComponent(rosterSlugs[0])}` : "",
+                      rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? `vsplayer=${encodeURIComponent(rosterSlugs[1])}` : "",
                       vsFlex && vsFlex !== cSlug ? `vschamp=${encodeURIComponent(vsFlex)}` : "",
                       ROLES[roles[0]] ? `role=${encodeURIComponent(ROLES[roles[0]])}` : "",
                       period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
@@ -768,7 +774,7 @@ export const DraftTendencies: React.FC<{
                       kind: "team",
                       slug: resolvedSlug,
                       tab: "champions",
-                      query: `champ=${encodeURIComponent(cSlug)}${oppSlug ? `&q=${encodeURIComponent(oppSlug)}` : ""}${ROLES[roles[0]] ? `&role=${encodeURIComponent(ROLES[roles[0]])}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      query: `champ=${encodeURIComponent(cSlug)}${oppSlug ? `&q=${encodeURIComponent(oppSlug)}` : ""}${rosterSlugs?.[0] ? `&player=${encodeURIComponent(rosterSlugs[0])}` : ""}${ROLES[roles[0]] ? `&role=${encodeURIComponent(ROLES[roles[0]])}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                     }}
                     className="text-rw-muted hover:text-rw-accent hover:underline"
                   >

@@ -709,10 +709,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {settings.followedTeams.map((t) => {
                 const team = catalog ? pickTeamByCode(catalog.teams, t) : undefined;
                 const teamName = team?.name || t;
+                const thisSlug = teamSlug(team?.name, t);
+                const otherTeamSlug = settings.followedTeams
+                  .map((ot) => teamSlug(catalog ? pickTeamByCode(catalog.teams, ot)?.name : undefined, ot))
+                  .find((s) => Boolean(s) && s !== thisSlug);
+                const firstPlayerSlug = settings.followedPlayers[0] ? resolvePlayerSlug(settings.followedPlayers[0]) : "";
+                const teamQ = [otherTeamSlug, firstPlayerSlug].filter(Boolean).join(",");
                 return (
                   <HubLink
                     key={`t-${t}`}
-                    to={{ kind: "team", slug: teamSlug(team?.name, t) }}
+                    to={{ kind: "team", slug: thisSlug, ...(teamQ ? { query: `q=${encodeURIComponent(teamQ)}` } : {}) }}
                     title={teamName}
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-semibold text-rw-text hover:text-rw-accent"
                   >
@@ -723,10 +729,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               })}
               {settings.followedPlayers.map((p) => {
                 const pSlug = resolvePlayerSlug(p);
+                const catPlayer = catalog?.players.find((cp) => cp.name.toLowerCase() === p.toLowerCase());
+                const pTeamSlug = catPlayer?.teamCode
+                  ? teamSlug(catalog ? pickTeamByCode(catalog.teams, catPlayer.teamCode)?.name : undefined, catPlayer.teamCode)
+                  : settings.followedTeams[0]
+                    ? teamSlug(catalog ? pickTeamByCode(catalog.teams, settings.followedTeams[0])?.name : undefined, settings.followedTeams[0])
+                    : "";
+                const otherPSlug = settings.followedPlayers.map((op) => resolvePlayerSlug(op)).find((s) => Boolean(s) && s !== pSlug);
+                const pQuery = new URLSearchParams({
+                  ...(pTeamSlug ? { team: pTeamSlug } : {}),
+                  ...(otherPSlug ? { q: otherPSlug } : {}),
+                }).toString();
                 return (
                   <HubLink
                     key={`p-${p}`}
-                    to={{ kind: "player", slug: pSlug }}
+                    to={{ kind: "player", slug: pSlug, ...(pQuery ? { query: pQuery } : {}) }}
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-teal/60 text-[11px] font-semibold text-rw-teal hover:underline"
                   >
                     <PlayerPhoto name={p} slug={pSlug} size={13} linkFallback={false} />
@@ -734,15 +751,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </HubLink>
                 );
               })}
-              {settings.followedLeagues.map((l) => (
-                <HubLink
-                  key={`l-${l}`}
-                  to={{ kind: "league", slug: resolveLeagueSlug(l) }}
-                  className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-sub hover:text-rw-accent"
-                >
-                  {l}
-                </HubLink>
-              ))}
+              {settings.followedLeagues.map((l) => {
+                const lgQ = [
+                  ...settings.followedTeams.slice(0, 4).map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t)),
+                  ...settings.followedPlayers.slice(0, 4).map((p) => resolvePlayerSlug(p)),
+                ]
+                  .filter(Boolean)
+                  .join(",");
+                return (
+                  <HubLink
+                    key={`l-${l}`}
+                    to={{ kind: "league", slug: resolveLeagueSlug(l), ...(lgQ ? { query: `q=${encodeURIComponent(lgQ)}` } : {}) }}
+                    className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-sub hover:text-rw-accent"
+                  >
+                    {l}
+                  </HubLink>
+                );
+              })}
               {settings.followedTeams.length > 0 && (() => {
                 const tSlugs = settings.followedTeams
                   .slice(0, 6)
@@ -878,6 +903,43 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
                   >
                     {tl("Item history")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "best",
+                      query: new URLSearchParams({
+                        ...(settings.followedLeagues.length === 1 ? { league: resolveLeagueSlug(settings.followedLeagues[0]) } : {}),
+                        q: [
+                          ...settings.followedTeams
+                            .slice(0, 6)
+                            .map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t)),
+                          ...settings.followedPlayers.slice(0, 6).map((p) => resolvePlayerSlug(p)),
+                        ]
+                          .filter((v, idx, arr) => Boolean(v) && arr.indexOf(v) === idx)
+                          .join(","),
+                      }).toString(),
+                    }}
+                    className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                  >
+                    {tl("Best games")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "records",
+                      query: `q=${encodeURIComponent(
+                        [
+                          ...settings.followedTeams
+                            .slice(0, 4)
+                            .map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t)),
+                          ...settings.followedPlayers.slice(0, 4).map((p) => resolvePlayerSlug(p)),
+                        ]
+                          .filter((v, idx, arr) => Boolean(v) && arr.indexOf(v) === idx)
+                          .join(","),
+                      )}`,
+                    }}
+                    className="inline-flex items-center px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-medium text-rw-accent hover:underline"
+                  >
+                    {tl("Records")} →
                   </HubLink>
                 </>
               )}
