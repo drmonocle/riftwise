@@ -9,7 +9,7 @@ import { winRate } from "../../stats";
 import type { TeamGameRow } from "../../hub/types";
 import { ROLES } from "../../hub/champAgg";
 import { champName } from "../../champions";
-import { prettySlug } from "../../hub/data";
+import { prettySlug, resolveTeamAlias } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { ChampLink, HubLink } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -340,7 +340,7 @@ export const DraftTendencies: React.FC<{
 }> = ({ rows, teamName, teamSlug, period, periodLabel }) => {
   const d = useMemo(() => draftTendencies(rows), [rows]);
   if (d.games < 3) return null;
-  const resolvedSlug = teamSlug || undefined;
+  const resolvedSlug = teamSlug || (teamName ? resolveTeamAlias(teamName) || prettySlug(teamName) : undefined);
   const periodParam =
     period?.startsWith("y") && period.length === 5
       ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -464,7 +464,7 @@ export const DraftTendencies: React.FC<{
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      ...(teamName ? { q: teamName } : {}),
+                      ...(resolvedSlug || teamName ? { q: resolvedSlug || teamName! } : {}),
                       ...((d.b1[0] || d.r12[0]) ? { champ: (d.b1[0] || d.r12[0])[0] } : {}),
                       ...(period?.startsWith("y") && period.length === 5 ? { year: period.slice(1) } : {}),
                       ...(period?.startsWith("e:") ? { event: period.slice(2) } : {}),

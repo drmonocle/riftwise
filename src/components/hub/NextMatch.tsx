@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 import type { Match } from "../../types";
 import type { HubTeam, TeamSeriesRow } from "../../hub/types";
 import { tl, tc, roleName } from "../../i18n";
-import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries, prettySlug, resolveLeagueSlug, teamStarter } from "../../hub/data";
+import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries, prettySlug, resolveLeagueSlug, resolveTeamAlias, teamStarter } from "../../hub/data";
 import { recentSchedule, RIOT_PREFIX } from "../../hub/riotMatch";
 import { useMatchRatings } from "../../hub/matchRatings";
 import { formatMatchTime } from "../../matchTime";
@@ -150,7 +150,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   query: new URLSearchParams({
                     ...(firstLg ? { league: firstLg } : {}),
                     ...(firstYr ? { year: firstYr } : {}),
-                    q: [t.u, first.opp || prettySlug(sides(first)[1].name)].filter(Boolean).join(","),
+                    q: [t.u, first.opp || resolveTeamAlias(sides(first)[1].name) || resolveTeamAlias(sides(first)[1].code) || prettySlug(sides(first)[1].name)].filter(Boolean).join(","),
                   }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
@@ -200,7 +200,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   ) : (
                     <span className="text-rw-sub">{tl("vs")}</span>
                   )}
-                  <HubLink to={{ kind: "team", slug: c.opp || prettySlug(them.name) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                  <HubLink to={{ kind: "team", slug: c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                     <TeamLogo name={them.name} code={them.code} src={them.img} size={15} className="shrink-0" />
                   </HubLink>
                   <TeamLink name={them.name} u={c.opp} className="truncate hover:text-rw-accent" />
@@ -355,7 +355,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
           <span className="text-rw-sub text-xs shrink-0">{tl("vs")}</span>
         )}
         <span className="flex items-center gap-2 min-w-0 flex-1">
-          <HubLink to={{ kind: "team", slug: c.opp || prettySlug(them.name) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+          <HubLink to={{ kind: "team", slug: c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
             <TeamLogo name={them.name} code={them.code} src={them.img} size={32} className="shrink-0" />
           </HubLink>
           <span className="font-bold text-sm truncate min-w-0 max-sm:hidden">
@@ -503,7 +503,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             query: new URLSearchParams({
               ...(lg ? { league: lg } : {}),
               ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
-              q: [t.u, c.opp || prettySlug(them.name)].filter(Boolean).join(","),
+              q: [t.u, c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name)].filter(Boolean).join(","),
             }).toString(),
           }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"

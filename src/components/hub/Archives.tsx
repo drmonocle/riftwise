@@ -15,6 +15,8 @@ import { ChampIcon, EventLink, Failed, fmtDate, HubLink, isFresh, ItemIcon, Load
 const PAGE = 50;
 const select = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1 text-xs text-rw-text";
 
+const tSlug = (name: string) => resolveTeamAlias(name) || prettySlug(name);
+
 // ── Team: every series ────────────────────────────────────────────────────
 
 const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?: string; spoilerKey: string; showOpp?: boolean }> = ({
@@ -59,7 +61,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                         to={{
                           kind: "compare",
                           mode: "team",
-                          a: teamSlug || prettySlug(teamName),
+                          a: teamSlug || tSlug(teamName),
                           b: r[2],
                           period: /^\d{4}/.test(r[0]) ? `y${r[0].slice(0, 4)}` : undefined,
                         }}
@@ -72,7 +74,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                       "vs"
                     )}{" "}
                     <span className="inline-flex items-center gap-1 align-baseline">
-                      <HubLink to={{ kind: "team", slug: r[2] || prettySlug(r[1]) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                      <HubLink to={{ kind: "team", slug: r[2] || tSlug(r[1]) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                         <TeamLogo name={r[1]} size={13} />
                       </HubLink>
                       <TeamLink name={r[1]} u={r[2]} />
@@ -140,7 +142,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                     <HubLink
                       to={{
                         kind: "prep",
-                        a: teamSlug || prettySlug(teamName),
+                        a: teamSlug || tSlug(teamName),
                         b: r[2],
                         period: /^\d{4}/.test(r[0]) ? `y${r[0].slice(0, 4)}` : undefined,
                       }}
@@ -152,7 +154,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(teamSlug || prettySlug(teamName))},${encodeURIComponent(r[2])}${/^\d{4}/.test(r[0]) ? `&p=y${r[0].slice(0, 4)}` : ""}`,
+                        query: `teams=${encodeURIComponent(teamSlug || tSlug(teamName))},${encodeURIComponent(r[2])}${/^\d{4}/.test(r[0]) ? `&p=y${r[0].slice(0, 4)}` : ""}`,
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Draft board")}
@@ -162,7 +164,7 @@ const SeriesList: React.FC<{ rows: TeamSeriesRow[]; teamName: string; teamSlug?:
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `team=${encodeURIComponent(teamSlug || prettySlug(teamName))}&vs=${encodeURIComponent(r[2])}${/^\d{4}/.test(r[0]) ? `&year=${r[0].slice(0, 4)}` : ""}`,
+                        query: `team=${encodeURIComponent(teamSlug || tSlug(teamName))}&vs=${encodeURIComponent(r[2])}${/^\d{4}/.test(r[0]) ? `&year=${r[0].slice(0, 4)}` : ""}`,
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Game finder")}
@@ -325,7 +327,7 @@ const TeamSeriesBody: React.FC<{ slug: string; teamName: string; initialQ?: stri
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      q: `${teamName},${shown[0][1]}`,
+                      q: `${slug},${shown[0][2] || tSlug(shown[0][1])}`,
                       ...(year !== "all" ? { year } : {}),
                     }).toString(),
                   }}
@@ -497,7 +499,7 @@ export const HeadToHeadSeries: React.FC<{ a: string; b: string; aName: string; b
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: `${aName},${bName}`,
+                  q: `${a},${b}`,
                   ...(event !== "all" ? { event } : year !== "all" ? { year } : {}),
                 }).toString(),
               }}
@@ -818,7 +820,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
         <HubLink
           to={{
             kind: "finder",
-            query: `player=${encodeURIComponent(slug)}${champ !== "all" ? `&champ=${encodeURIComponent(champ)}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}${opp !== "all" ? `&vs=${encodeURIComponent(prettySlug(opp))}` : ""}`,
+            query: `player=${encodeURIComponent(slug)}${champ !== "all" ? `&champ=${encodeURIComponent(champ)}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}${opp !== "all" ? `&vs=${encodeURIComponent(tSlug(opp))}` : ""}`,
           }}
           className="inline-flex flex-wrap items-center gap-2 text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
           title={!hidden && rows.length > 0 ? tl("KDA {n}", { n: fmtDec((k + a) / Math.max(d, 1), 2) }) : tl("Game finder")}
@@ -869,8 +871,8 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                 <HubLink
                   to={{
                     kind: "prep",
-                    a: prettySlug(shown[0][7]),
-                    b: prettySlug(shown[0][8]),
+                    a: tSlug(shown[0][7]),
+                    b: tSlug(shown[0][8]),
                     ...(year !== "all" ? { period: `y${year}` } : {}),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -881,7 +883,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                   to={{
                     kind: "draft",
                     query: new URLSearchParams({
-                      teams: `${prettySlug(shown[0][7])},${prettySlug(shown[0][8])}`,
+                      teams: `${tSlug(shown[0][7])},${tSlug(shown[0][8])}`,
                       ...(year !== "all" ? { p: `y${year}` } : {}),
                       ...(champ !== "all" ? { champ } : shown[0]?.[2] ? { champ: shown[0][2] } : {}),
                       ...(shown[0]?.[10] ? { role: shown[0][10] } : {}),
@@ -897,7 +899,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
               to={{
                 kind: "leaders",
                 query: new URLSearchParams({
-                  q: opp !== "all" ? `${displayName},${opp}` : displayName,
+                  q: opp !== "all" ? `${slug},${tSlug(opp)}` : slug,
                   ...(year !== "all" ? { year } : {}),
                   ...(champ !== "all" ? { champ } : {}),
                   ...(shown[0]?.[10] ? { role: shown[0][10] } : {}),
@@ -929,7 +931,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                 kind: "rankings",
                 ...(shown[0]?.[7]
                   ? {
-                      query: `q=${encodeURIComponent(prettySlug(shown[0][7]))}${shown[0]?.[8] && prettySlug(shown[0][8]) !== prettySlug(shown[0][7]) ? `,${encodeURIComponent(prettySlug(shown[0][8]))}` : ""}`,
+                      query: `q=${encodeURIComponent(tSlug(shown[0][7]))}${shown[0]?.[8] && tSlug(shown[0][8]) !== tSlug(shown[0][7]) ? `,${encodeURIComponent(tSlug(shown[0][8]))}` : ""}`,
                     }
                   : {}),
               }}
@@ -1010,21 +1012,21 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                   )}{" "}
                   <span className="text-rw-sub inline-flex items-center gap-1 align-baseline">
                     {r[7] && (
-                      <HubLink to={{ kind: "team", slug: prettySlug(r[7]) }} title={r[7]} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                      <HubLink to={{ kind: "team", slug: tSlug(r[7]) }} title={r[7]} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                         <TeamLogo name={r[7]} size={13} />
                       </HubLink>
                     )}
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(prettySlug(r[8]))}${champ !== "all" ? `&champ=${encodeURIComponent(champ)}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
+                        query: `player=${encodeURIComponent(slug)}&vs=${encodeURIComponent(tSlug(r[8]))}${champ !== "all" ? `&champ=${encodeURIComponent(champ)}` : ""}${year !== "all" ? `&year=${encodeURIComponent(year)}` : ""}`,
                       }}
                       className="text-rw-muted hover:text-rw-accent hover:underline"
                       title={tl("Game finder")}
                     >
                       vs
                     </HubLink>
-                    <HubLink to={{ kind: "team", slug: prettySlug(r[8]) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
+                    <HubLink to={{ kind: "team", slug: tSlug(r[8]) }} className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent">
                       <TeamLogo name={r[8]} size={13} />
                     </HubLink>
                     <TeamLink name={r[8]} />
@@ -1100,8 +1102,8 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <HubLink
                       to={{
                         kind: "prep",
-                        a: prettySlug(r[7]),
-                        b: prettySlug(r[8]),
+                        a: tSlug(r[7]),
+                        b: tSlug(r[8]),
                         ...(/^\d{4}/.test(r[0]) ? { period: `y${r[0].slice(0, 4)}` } : {}),
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
@@ -1113,7 +1115,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                       to={{
                         kind: "draft",
                         query: new URLSearchParams({
-                          teams: `${prettySlug(r[7])},${prettySlug(r[8])}`,
+                          teams: `${tSlug(r[7])},${tSlug(r[8])}`,
                           ...(/^\d{4}/.test(r[0]) ? { p: `y${r[0].slice(0, 4)}` } : {}),
                           ...(r[2] ? { champ: r[2] } : {}),
                           ...(r[10] ? { role: r[10] } : {}),
@@ -1128,8 +1130,8 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                       to={{
                         kind: "compare",
                         mode: "team",
-                        a: prettySlug(r[7]),
-                        b: prettySlug(r[8]),
+                        a: tSlug(r[7]),
+                        b: tSlug(r[8]),
                         ...(/^\d{4}/.test(r[0]) ? { period: `y${r[0].slice(0, 4)}` } : {}),
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"

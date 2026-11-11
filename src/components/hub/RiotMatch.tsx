@@ -12,7 +12,7 @@ import { MatchPrepButton } from "../MatchPrepButton";
 import { riotMatchById, riotMatchFor } from "../../hub/riotMatch";
 import { findSeriesSlug } from "../../hub/seriesLookup";
 import { navigateHub } from "../../hub/route";
-import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
 import type { HubSeries } from "../../hub/types";
 import { card, fmtDate, HubLink, hubShareUrl, Loading, RevealButton, TeamLogo, useHidden, useLoad, usePageTitle } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -122,8 +122,8 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
   }, [m?.state, m?.matchId]); // eslint-disable-line react-hooks/exhaustive-deps
   if (m === undefined) return <Loading />;
   if (!m) return <p className="text-xs text-rw-sub py-6 text-center">{tl("This match isn't in the current schedule window.")}</p>;
-  const t1Slug = (index.data && findHubTeam(index.data, m.team1Name, m.team1Code)) || prettySlug(m.team1Name);
-  const t2Slug = (index.data && findHubTeam(index.data, m.team2Name, m.team2Code)) || prettySlug(m.team2Name);
+  const t1Slug = (index.data && findHubTeam(index.data, m.team1Name, m.team1Code)) || resolveTeamAlias(m.team1Name) || resolveTeamAlias(m.team1Code) || prettySlug(m.team1Name);
+  const t2Slug = (index.data && findHubTeam(index.data, m.team2Name, m.team2Code)) || resolveTeamAlias(m.team2Name) || resolveTeamAlias(m.team2Code) || prettySlug(m.team2Name);
   const live = m.state === "inProgress";
   const yr = m.startTimeUtc && /^\d{4}$/.test(m.startTimeUtc.slice(0, 4)) ? m.startTimeUtc.slice(0, 4) : "";
   const period = yr ? `y${yr}` : undefined;

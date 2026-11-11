@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tk, roleName, fmtDec } from "../../i18n";
-import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { EventPlayer, EventTeamStats, LeagueRow, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { hubShareUrl, type HubRoute } from "../../hub/route";
@@ -803,7 +803,7 @@ export const PlayerRanks: React.FC<{
                     league: lu,
                     year,
                     ...(me?.r ? { role: me.r } : {}),
-                    q: name || me?.n || slug,
+                    q: slug,
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -821,7 +821,7 @@ export const PlayerRanks: React.FC<{
                   to={{
                     kind: "draft",
                     query: new URLSearchParams({
-                      ...(me?.t ? { teams: prettySlug(me.t) } : {}),
+                      ...(me?.t ? { teams: me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) } : {}),
                       ...(year ? { p: `y${year}` } : {}),
                       ...(me?.r ? { role: me.r } : {}),
                       ...(games?.[0]?.[2] ? { champ: games[0][2] } : {}),
@@ -875,7 +875,7 @@ export const PlayerRanks: React.FC<{
                     ? {
                         query: new URLSearchParams({
                           ...(lu ? { league: lu } : {}),
-                          ...(me?.t ? { q: prettySlug(me.t) } : {}),
+                          ...(me?.t ? { q: me.tu || resolveTeamAlias(me.t) || prettySlug(me.t) } : {}),
                         }).toString(),
                       }
                     : {}),
@@ -1052,7 +1052,7 @@ export const TeamRanks: React.FC<{
                   query: new URLSearchParams({
                     league: lu,
                     year,
-                    q: name || me?.t || slug,
+                    q: slug,
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1095,7 +1095,7 @@ export const TeamRanks: React.FC<{
                   query: new URLSearchParams({
                     ...(lu ? { league: lu } : {}),
                     ...(year ? { year } : {}),
-                    q: name || me?.t || slug,
+                    q: slug,
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

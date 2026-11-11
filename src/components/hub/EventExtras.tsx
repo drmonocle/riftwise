@@ -36,6 +36,8 @@ const mmss = (m: number) => {
   const s = Math.round(m * 60);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
+const tSlug = (name: string, u?: string | null) => u || resolveTeamAlias(name) || prettySlug(name);
+const pSlug = (name: string, u?: string | null) => u || resolvePlayerSlug(name) || prettySlug(name);
 const DRAKE: Record<string, string> = {
   infernal: tk("Infernal"),
   mountain: tk("Mountain"),
@@ -80,18 +82,18 @@ const GameLine: React.FC<{
           </HubLink>
         ) : (
           <span className="text-rw-text inline-flex items-center gap-1">
-            <HubLink to={{ kind: "team", slug: prettySlug(r.a) }} className="shrink-0 hover:opacity-80" title={r.a}>
+            <HubLink to={{ kind: "team", slug: tSlug(r.a) }} className="shrink-0 hover:opacity-80" title={r.a}>
               <TeamLogo name={r.a} size={13} />
             </HubLink>
             <TeamLink name={r.a} />
             <HubLink
-              to={{ kind: "compare", mode: "team", a: prettySlug(r.a), b: prettySlug(r.b) }}
+              to={{ kind: "compare", mode: "team", a: tSlug(r.a), b: tSlug(r.b) }}
               className="text-rw-muted hover:text-rw-accent hover:underline"
               title={tl("Compare")}
             >
               vs
             </HubLink>
-            <HubLink to={{ kind: "team", slug: prettySlug(r.b) }} className="shrink-0 hover:opacity-80" title={r.b}>
+            <HubLink to={{ kind: "team", slug: tSlug(r.b) }} className="shrink-0 hover:opacity-80" title={r.b}>
               <TeamLogo name={r.b} size={13} />
             </HubLink>
             <TeamLink name={r.b} />
@@ -135,8 +137,8 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                 <HubLink
                   to={{
                     kind: "prep",
-                    a: prettySlug(featGame.a),
-                    b: prettySlug(featGame.b),
+                    a: tSlug(featGame.a),
+                    b: tSlug(featGame.b),
                     ...(slug ? { period: `e:${slug}` } : {}),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -147,7 +149,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(featGame.a))},${encodeURIComponent(prettySlug(featGame.b))}${slug ? `&p=e:${encodeURIComponent(slug)}` : ""}`,
+                    query: `teams=${encodeURIComponent(tSlug(featGame.a))},${encodeURIComponent(tSlug(featGame.b))}${slug ? `&p=e:${encodeURIComponent(slug)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -158,8 +160,8 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   to={{
                     kind: "compare",
                     mode: "team",
-                    a: prettySlug(featGame.a),
-                    b: prettySlug(featGame.b),
+                    a: tSlug(featGame.a),
+                    b: tSlug(featGame.b),
                     ...(slug ? { period: `e:${slug}` } : {}),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -192,7 +194,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                       ...(leagueSlug ? { league: leagueSlug } : {}),
                       ...(yr ? { year: yr } : {}),
                       event: slug,
-                      ...(featGame?.a ? { q: [prettySlug(featGame.a), featGame.b ? prettySlug(featGame.b) : ""].filter(Boolean).join(",") } : {}),
+                      ...(featGame?.a ? { q: [tSlug(featGame.a), featGame.b ? tSlug(featGame.b) : ""].filter(Boolean).join(",") } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -222,7 +224,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                         ...(leagueSlug ? { league: leagueSlug } : {}),
                         ...(featGame?.a
                           ? {
-                              q: [prettySlug(featGame.a), featGame.b ? prettySlug(featGame.b) : ""]
+                              q: [tSlug(featGame.a), featGame.b ? tSlug(featGame.b) : ""]
                                 .filter(Boolean)
                                 .join(","),
                             }
@@ -237,7 +239,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `event=${encodeURIComponent(slug)}${featGame?.a ? `&team=${encodeURIComponent(prettySlug(featGame.a))}${featGame.b ? `&vs=${encodeURIComponent(prettySlug(featGame.b))}` : ""}` : ""}`,
+                    query: `event=${encodeURIComponent(slug)}${featGame?.a ? `&team=${encodeURIComponent(tSlug(featGame.a))}${featGame.b ? `&vs=${encodeURIComponent(tSlug(featGame.b))}` : ""}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -349,18 +351,18 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   </HubLink>
                 ) : (
                   <span className="text-rw-text inline-flex items-center gap-1">
-                    <HubLink to={{ kind: "team", slug: prettySlug(o.best.a) }} className="shrink-0 hover:opacity-80" title={o.best.a}>
+                    <HubLink to={{ kind: "team", slug: tSlug(o.best.a) }} className="shrink-0 hover:opacity-80" title={o.best.a}>
                       <TeamLogo name={o.best.a} size={13} />
                     </HubLink>
                     <TeamLink name={o.best.a} />
                     <HubLink
-                      to={{ kind: "compare", mode: "team", a: prettySlug(o.best.a), b: prettySlug(o.best.b) }}
+                      to={{ kind: "compare", mode: "team", a: tSlug(o.best.a), b: tSlug(o.best.b) }}
                       className="text-rw-muted hover:text-rw-accent hover:underline"
                       title={tl("Compare")}
                     >
                       vs
                     </HubLink>
-                    <HubLink to={{ kind: "team", slug: prettySlug(o.best.b) }} className="shrink-0 hover:opacity-80" title={o.best.b}>
+                    <HubLink to={{ kind: "team", slug: tSlug(o.best.b) }} className="shrink-0 hover:opacity-80" title={o.best.b}>
                       <TeamLogo name={o.best.b} size={13} />
                     </HubLink>
                     <TeamLink name={o.best.b} />

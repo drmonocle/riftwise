@@ -93,12 +93,12 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 league,
                 year,
                 ...(terms.length > 0 && regular.length === 1
-                  ? { q: regular[0].n }
+                  ? { q: regular[0].u || resolvePlayerSlug(regular[0].n) || regular[0].n }
                   : headerTeams.length >= 1
                     ? {
                         q: headerTeams
                           .slice(0, 2)
-                          .map((t) => t.t)
+                          .map((t) => t.u || resolveTeamAlias(t.t) || prettySlug(t.t))
                           .join(","),
                       }
                     : {}),
@@ -123,7 +123,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                   ? {
                       q: headerTeams
                         .slice(0, 2)
-                        .map((t) => t.u || prettySlug(t.t))
+                        .map((t) => t.u || resolveTeamAlias(t.t) || prettySlug(t.t))
                         .join(","),
                     }
                   : {}),
@@ -143,7 +143,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                   ? {
                       q: headerTeams
                         .slice(0, 2)
-                        .map((t) => t.t)
+                        .map((t) => t.u || resolveTeamAlias(t.t) || prettySlug(t.t))
                         .join(","),
                     }
                   : {}),
@@ -372,8 +372,8 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                             ? {
                                 q:
                                   regular.length === 1
-                                    ? regular[0].n
-                                    : `${regular[0].n}${regular[1] ? `,${regular[1].n}` : ""}`,
+                                    ? regular[0].u || resolvePlayerSlug(regular[0].n) || regular[0].n
+                                    : `${regular[0].u || resolvePlayerSlug(regular[0].n) || regular[0].n}${regular[1] ? `,${regular[1].u || resolvePlayerSlug(regular[1].n) || regular[1].n}` : ""}`,
                               }
                             : {}),
                         }).toString(),

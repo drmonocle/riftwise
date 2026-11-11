@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from "react";
 import { tl } from "../../i18n";
 import { bare, loadRatings, normText, resolveTeamAlias } from "../../hub/data";
+import { searchAlias } from "../../searchAliases";
 import { hubShareUrl } from "../../hub/route";
 import type { HubEvent } from "../../hub/types";
 import { playoffOdds } from "../../hub/playoffOdds";
@@ -33,7 +34,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
   const terms = search
     .trim()
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-    .map((s) => normText(s.trim()))
+    .map((s) => normText(searchAlias(s.trim())))
     .filter(Boolean);
   const filteredRows = terms.length
     ? rows.filter((r) => {
@@ -151,7 +152,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                       ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                       event: e.u,
                       ...(filteredRows[0]
-                        ? { q: `${filteredRows[0].name}${filteredRows[1] ? `,${filteredRows[1].name}` : ""}` }
+                        ? { q: `${filteredRows[0].u}${filteredRows[1] ? `,${filteredRows[1].u}` : ""}` }
                         : {}),
                     }).toString(),
                   }}

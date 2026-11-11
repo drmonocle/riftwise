@@ -26,10 +26,13 @@ import {
 } from "../../platform";
 import { tl, locale, LANGUAGES, TRANSLATION_EMAIL, TRANSLATION_MAILTO, detectLanguage } from "../../i18n";
 import { langAddress } from "../../hub/route";
-import { prettySlug, resolveLeagueSlug, resolvePlayerSlug } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { HubLink, PlayerPhoto, TeamLogo } from "../hub/ui";
 import { PushAlertsCard } from "../PushAlerts";
 import { SyncPanel } from "../SyncPanel";
+
+const teamSlug = (name: string | undefined, code: string) =>
+  (name && resolveTeamAlias(name)) || resolveTeamAlias(code) || prettySlug(name || code);
 
 interface SettingsViewProps {
   settings: AppSettings;
@@ -709,7 +712,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 return (
                   <HubLink
                     key={`t-${t}`}
-                    to={{ kind: "team", slug: prettySlug(teamName) }}
+                    to={{ kind: "team", slug: teamSlug(team?.name, t) }}
                     title={teamName}
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-semibold text-rw-text hover:text-rw-accent"
                   >
@@ -747,7 +750,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     query: `q=${encodeURIComponent(
                       settings.followedTeams
                         .slice(0, 6)
-                        .map((t) => prettySlug((catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined) || t))
+                        .map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t))
                         .join(","),
                     )}`,
                   }}
@@ -765,7 +768,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         ? settings.followedPlayers.slice(0, 6).map((p) => resolvePlayerSlug(p))
                         : settings.followedTeams
                             .slice(0, 6)
-                            .map((t) => prettySlug((catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined) || t))
+                            .map((t) => teamSlug(catalog ? pickTeamByCode(catalog.teams, t)?.name : undefined, t))
                       ).join(","),
                     )}`,
                   }}

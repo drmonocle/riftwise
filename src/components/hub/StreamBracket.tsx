@@ -336,7 +336,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
                   query: `q=${encodeURIComponent(
                     ev.standings[0].rows
                       .slice(0, 2)
-                      .map((r) => prettySlug(r.t))
+                      .map((r) => resolveTeamAlias(r.t) || prettySlug(r.t))
                       .filter(Boolean)
                       .join(","),
                   )}`,
