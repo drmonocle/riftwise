@@ -494,7 +494,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA ? `&champ=${encodeURIComponent(resolveChampSlug(topChampA))}` : ""}${vsChamp && vsChamp !== topChampA ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${
+                    query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA ? `&champ=${encodeURIComponent(resolveChampSlug(topChampA))}` : ""}${vsChamp && vsChamp !== topChampA ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${sharedLeague ? `&league=${encodeURIComponent(sharedLeague)}` : ""}${
                       period && period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period?.startsWith("e:")
@@ -511,7 +511,7 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${vsChamp && vsChamp !== (topChampA || topChampB) ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${
+                    query: `team=${encodeURIComponent(a.u)}&vs=${encodeURIComponent(b.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${vsChamp && vsChamp !== (topChampA || topChampB) ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${sharedLeague ? `&league=${encodeURIComponent(sharedLeague)}` : ""}${
                       period && period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period?.startsWith("e:")
@@ -1173,7 +1173,7 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${vsChamp && vsChamp !== (topChampA || topChampB) ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${
+                    query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${vsChamp && vsChamp !== (topChampA || topChampB) ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}` : ""}${
                       period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period.startsWith("e:")
@@ -1190,7 +1190,7 @@ const Calculated: React.FC<{ a: Side; b: Side; ra: TeamGameRow[]; rb: TeamGameRo
                 <HubLink
                   to={{
                     kind: "finder",
-                    query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${vsChamp && vsChamp !== (topChampA || topChampB) ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${
+                    query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${vsChamp && vsChamp !== (topChampA || topChampB) ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}` : ""}${
                       period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period.startsWith("e:")
@@ -1629,6 +1629,10 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
                 }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
                   vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
                 }${
+                  a.team.rating?.league && a.team.rating.league === b.team.rating?.league
+                    ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}`
+                    : ""
+                }${
                   period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
                     : period.startsWith("e:")
@@ -1662,6 +1666,10 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
                   pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""
                 }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
                   vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
+                }${
+                  a.team.rating?.league && a.team.rating.league === b.team.rating?.league
+                    ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}`
+                    : ""
                 }${
                   period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -1878,6 +1886,8 @@ const Tendencies: React.FC<{ side: Side; other?: Side; rows: TeamGameRow[]; peri
               query: `team=${encodeURIComponent(side.team.u)}${other ? `&vs=${encodeURIComponent(other.team.u)}` : ""}${p0Slug ? `&player=${encodeURIComponent(p0Slug)}${p1Slug && p1Slug !== p0Slug ? `&vsplayer=${encodeURIComponent(p1Slug)}` : ""}` : ""}${
                 topPick ? `&champ=${encodeURIComponent(resolveChampSlug(topPick))}` : ""
               }${oppPick && oppPick !== topPick ? `&vschamp=${encodeURIComponent(resolveChampSlug(oppPick))}` : ""}${
+                side.team.rating?.league ? `&league=${encodeURIComponent(resolveLeagueSlug(side.team.rating.league) || side.team.rating.league)}` : ""
+              }${
                 period.startsWith("y") && period.length === 5
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
@@ -1923,6 +1933,8 @@ const Tendencies: React.FC<{ side: Side; other?: Side; rows: TeamGameRow[]; peri
             to={{
               kind: "finder",
               query: `team=${encodeURIComponent(side.team.u)}${other ? `&vs=${encodeURIComponent(other.team.u)}` : ""}${p0Slug ? `&player=${encodeURIComponent(p0Slug)}${p1Slug && p1Slug !== p0Slug ? `&vsplayer=${encodeURIComponent(p1Slug)}` : ""}` : ""}${topPick ? `&champ=${encodeURIComponent(resolveChampSlug(topPick))}` : ""}${oppPick && oppPick !== topPick ? `&vschamp=${encodeURIComponent(resolveChampSlug(oppPick))}` : ""}${
+                side.team.rating?.league ? `&league=${encodeURIComponent(resolveLeagueSlug(side.team.rating.league) || side.team.rating.league)}` : ""
+              }${
                 period.startsWith("y") && period.length === 5
                   ? `&year=${encodeURIComponent(period.slice(1))}`
                   : period.startsWith("e:")
@@ -2181,7 +2193,7 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
                   pAForm ? `&player=${encodeURIComponent(pAForm)}${pBForm && pBForm !== pAForm ? `&vsplayer=${encodeURIComponent(pBForm)}` : ""}` : ""
                 }${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${
                   vsChampForm ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChampForm))}` : ""
-                }${
+                }${sharedLeague ? `&league=${encodeURIComponent(sharedLeague)}` : ""}${
                   period && period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
                     : period?.startsWith("e:")
@@ -2253,7 +2265,7 @@ const Form: React.FC<{ a: Side; b: Side; period?: PeriodKey }> = ({ a, b, period
                   pAForm ? `&player=${encodeURIComponent(pAForm)}${pBForm && pBForm !== pAForm ? `&vsplayer=${encodeURIComponent(pBForm)}` : ""}` : ""
                 }${topChampA || topChampB ? `&champ=${encodeURIComponent(resolveChampSlug((topChampA || topChampB)!))}` : ""}${
                   vsChampForm ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsChampForm))}` : ""
-                }${
+                }${sharedLeague ? `&league=${encodeURIComponent(sharedLeague)}` : ""}${
                   period && period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
                     : period?.startsWith("e:")
@@ -2474,7 +2486,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
   if (!pools.enough) return null;
   const minDeep = pools.minDeep;
   const line = (x: (typeof pools.a)[number]): PoolLine | null => (x ? { name: x.name, list: x.list.map(([c, [g]]) => [c, g]), deep: x.deep } : null);
-  const cell = (x: (typeof pools.a)[number], right: boolean, teamName: string) =>
+  const cell = (x: (typeof pools.a)[number], right: boolean, teamName: string, role: string) =>
     !x ? (
       <span className="text-rw-muted">–</span>
     ) : (
@@ -2491,7 +2503,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
                   kind: "player",
                   slug: x.slug,
                   tab: "champions",
-                  ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                  query: `role=${encodeURIComponent(role)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                 }}
                 className="hover:text-rw-accent hover:underline"
               >
@@ -2522,7 +2534,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
                   kind: "player",
                   slug: x.slug,
                   tab: "champions",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(c))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(c))}&role=${encodeURIComponent(role)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                 }}
                 className={`flex items-center gap-0.5 text-[10px] hover:text-rw-accent hover:underline ${toneCls}`}
                 title={`${champName(c)} · ${g} · ${winRate(w, g)}`}
@@ -2539,7 +2551,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
                   kind: "player",
                   slug: x.slug,
                   tab: "champions",
-                  ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+                  query: `role=${encodeURIComponent(role)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                 }}
                 className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline self-center"
               >
@@ -2642,6 +2654,10 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
                 }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
                   vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
                 }${
+                  a.team.rating?.league && a.team.rating.league === b.team.rating?.league
+                    ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}`
+                    : ""
+                }${
                   period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
                     : period.startsWith("e:")
@@ -2676,6 +2692,10 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
                   pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""
                 }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
                   vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
+                }${
+                  a.team.rating?.league && a.team.rating.league === b.team.rating?.league
+                    ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}`
+                    : ""
                 }${
                   period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -2786,7 +2806,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
       <ul className="divide-y divide-rw-border">
         {ROLES.map((r, i) => (
           <li key={r} className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 py-2">
-            {cell(pools.a[i], false, a.team.name)}
+            {cell(pools.a[i], false, a.team.name, r)}
             <span className="text-[10px] uppercase tracking-wider font-bold text-rw-accent text-center min-w-14 px-1 whitespace-nowrap pt-0.5">
               {pools.a[i]?.slug && pools.b[i]?.slug ? (
                 <HubLink
@@ -2800,7 +2820,7 @@ export const FearlessDepth: React.FC<{ a: Side; b: Side; period: PeriodKey; peri
                 roleName(r)
               )}
             </span>
-            {cell(pools.b[i], true, b.team.name)}
+            {cell(pools.b[i], true, b.team.name, r)}
           </li>
         ))}
       </ul>
@@ -2858,7 +2878,7 @@ const Lanes: React.FC<{
                   kind: "player",
                   slug,
                   tab: "champions",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}&role=${encodeURIComponent(r)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                 }}
                 className="flex items-center gap-0.5 text-[10px] text-rw-sub hover:text-rw-accent hover:underline"
                 title={`${champName(c.c)} · ${c.g} · ${winRate(c.w, c.g)}`}
@@ -2960,7 +2980,7 @@ const Lanes: React.FC<{
                           : sb?.champs[1]?.c && sb.champs[1].c !== topC
                             ? sb.champs[1].c
                             : "";
-                    return `player=${encodeURIComponent(pa.p.u)}${pb.p.u !== pa.p.u ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : ""}&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&role=${encodeURIComponent(r)}${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`;
+                    return `player=${encodeURIComponent(pa.p.u)}${pb.p.u !== pa.p.u ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : ""}&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&role=${encodeURIComponent(r)}${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""}${a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}` : ""}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`;
                   })(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -2999,7 +3019,7 @@ const Lanes: React.FC<{
                           : sb?.champs[1]?.c && sb.champs[1].c !== topC
                             ? sb.champs[1].c
                             : "";
-                    return `player=${encodeURIComponent(pa.p.u)}${pb.p.u !== pa.p.u ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : ""}&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&role=${encodeURIComponent(r)}${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""}${
+                    return `player=${encodeURIComponent(pa.p.u)}${pb.p.u !== pa.p.u ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : ""}&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&role=${encodeURIComponent(r)}${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""}${a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}` : ""}${
                       period.startsWith("y") && period.length === 5
                         ? `&year=${encodeURIComponent(period.slice(1))}`
                         : period.startsWith("e:")
@@ -3146,6 +3166,10 @@ const Lanes: React.FC<{
                             ? `&vschamp=${encodeURIComponent(resolveChampSlug(sb.champs[0].c))}`
                             : ""
                         }${
+                          a.team.rating?.league && a.team.rating.league === b.team.rating?.league
+                            ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}`
+                            : ""
+                        }${
                           period.startsWith("y") && period.length === 5
                             ? `&year=${encodeURIComponent(period.slice(1))}`
                             : period.startsWith("e:")
@@ -3239,7 +3263,12 @@ const Lanes: React.FC<{
             <span className={`${val} text-right text-rw-sub`}>
               {pa?.p.u && sa?.champs.length ? (
                 <HubLink
-                  to={{ kind: "player", slug: pa.p.u, tab: "champions", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                  to={{
+                    kind: "player",
+                    slug: pa.p.u,
+                    tab: "champions",
+                    query: `role=${encodeURIComponent(r)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                  }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {pool(sa)}
@@ -3254,7 +3283,12 @@ const Lanes: React.FC<{
             <span className={`${val} text-rw-sub`}>
               {pb?.p.u && sb?.champs.length ? (
                 <HubLink
-                  to={{ kind: "player", slug: pb.p.u, tab: "champions", ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}) }}
+                  to={{
+                    kind: "player",
+                    slug: pb.p.u,
+                    tab: "champions",
+                    query: `role=${encodeURIComponent(r)}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                  }}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {pool(sb)}
@@ -3341,6 +3375,10 @@ const Lanes: React.FC<{
                 }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
                   vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
                 }${
+                  a.team.rating?.league && a.team.rating.league === b.team.rating?.league
+                    ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}`
+                    : ""
+                }${
                   period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
                     : period.startsWith("e:")
@@ -3419,6 +3457,10 @@ const Lanes: React.FC<{
                   pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""
                 }${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${
                   vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""
+                }${
+                  a.team.rating?.league && a.team.rating.league === b.team.rating?.league
+                    ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}`
+                    : ""
                 }${
                   period.startsWith("y") && period.length === 5
                     ? `&year=${encodeURIComponent(period.slice(1))}`
@@ -3686,7 +3728,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
             to={{
               kind: "champ",
               slug: resolveChampSlug(x.c),
-              ...(period !== "all" ? { query: `p=${encodeURIComponent(period)}` } : {}),
+              query: `team=${encodeURIComponent(teamSlug)}${x.role != null ? `&role=${encodeURIComponent(ROLES[x.role])}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
             }}
             className="inline-flex items-center gap-1 hover:text-rw-accent hover:underline"
           >
@@ -3719,7 +3761,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
                 kind: "team",
                 slug: teamSlug,
                 tab: "champions",
-                query: `champ=${encodeURIComponent(resolveChampSlug(x.c))}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                query: `champ=${encodeURIComponent(resolveChampSlug(x.c))}${x.role != null ? `&role=${encodeURIComponent(ROLES[x.role])}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
               }}
               className="text-[10px] text-rw-sub tabular-nums hover:text-rw-accent hover:underline"
             >
@@ -3825,7 +3867,7 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
                     kind: "items",
                     query: `team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}&champ=${encodeURIComponent(resolveChampSlug(cA))}${cB && cB !== cA ? `&vschamp=${encodeURIComponent(resolveChampSlug(cB))}` : ""}${
                       roleStr ? `&role=${encodeURIComponent(roleStr)}` : ""
-                    }${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period && period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period && period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
+                    }${a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}` : ""}${period && period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period && period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period && period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -3930,6 +3972,10 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
                     ? `&champ=${encodeURIComponent(resolveChampSlug(topObj.c))}${cB && cB !== cA ? `&vschamp=${encodeURIComponent(resolveChampSlug(cB))}` : ""}${
                         topObj.role != null ? `&role=${encodeURIComponent(ROLES[topObj.role])}` : ""
                       }`
+                    : ""
+                }${
+                  a.team.rating?.league && a.team.rating.league === b.team.rating?.league
+                    ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}`
                     : ""
                 }${
                   period && period.startsWith("y") && period.length === 5
