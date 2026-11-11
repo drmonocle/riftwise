@@ -974,6 +974,23 @@ export const FactCard: React.FC<{
                 ...(r.team ? { team: r.team } : cardTeams[0] ? { team: cardTeams[0] } : {}),
                 ...(vsChampSlug ? { vschamp: vsChampSlug } : {}),
               }).toString() || undefined;
+            const playerRowQ =
+              r.player
+                ? new URLSearchParams({
+                    ...(eventSlug ? { p: `e:${eventSlug}` } : evYr ? { p: `y${evYr}` } : {}),
+                    ...(r.team ? { team: r.team } : {}),
+                    ...(rChampSlug ? { champ: rChampSlug } : {}),
+                  }).toString() || undefined
+                : evQ;
+            const vsTeamSlug = r.team ? cardTeams.find((t) => t !== r.team) : undefined;
+            const teamRowQ =
+              r.team
+                ? new URLSearchParams({
+                    ...(eventSlug ? { p: `e:${eventSlug}` } : evYr ? { p: `y${evYr}` } : {}),
+                    ...(r.player ? { q: r.player } : vsTeamSlug ? { q: vsTeamSlug } : {}),
+                    ...(rChampSlug ? { champ: rChampSlug } : {}),
+                  }).toString() || undefined
+                : evQ;
             return (
               <li key={i} className="relative overflow-hidden rounded px-1.5 py-0.5 flex items-start gap-2 min-w-0">
                 {barPct > 0 && (
@@ -988,7 +1005,7 @@ export const FactCard: React.FC<{
                     <ChampIcon name={r.champ} size={18} />
                   </HubLink>
                 ) : r.player ? (
-                  <HubLink to={{ kind: "player", slug: r.player, ...(evQ ? { query: evQ } : {}) }} className="relative shrink-0">
+                  <HubLink to={{ kind: "player", slug: r.player, ...(playerRowQ ? { query: playerRowQ } : {}) }} className="relative shrink-0">
                     <PlayerPhoto
                       name={r.team && /^[A-Z0-9]{2,6}\s+\S/.test(r.label) ? r.label.replace(/^[A-Z0-9]{2,6}\s+/, "") : r.label}
                       team={r.team ?? undefined}
@@ -997,15 +1014,15 @@ export const FactCard: React.FC<{
                     />
                   </HubLink>
                 ) : r.team ? (
-                  <HubLink to={{ kind: "team", slug: r.team, ...(evQ ? { query: evQ } : {}) }} className="relative shrink-0">
+                  <HubLink to={{ kind: "team", slug: r.team, ...(teamRowQ ? { query: teamRowQ } : {}) }} className="relative shrink-0">
                     <TeamLogo name={r.team} code={r.label.length <= 5 && !/\s/.test(r.label) ? r.label : undefined} size={16} />
                   </HubLink>
                 ) : null}
                 <span className="relative min-w-0 flex-1">
                   {r.player ? (
-                    <PlayerLink name={r.label} u={r.player} query={evQ} />
+                    <PlayerLink name={r.label} u={r.player} query={playerRowQ} />
                   ) : r.team ? (
-                    <TeamLink name={r.label} u={r.team} query={evQ} />
+                    <TeamLink name={r.label} u={r.team} query={teamRowQ} />
                   ) : r.champ ? (
                     <HubLink to={{ kind: "champ", slug: resolveChampSlug(r.champ), ...(champRowQ ? { query: champRowQ } : {}) }} className="hover:text-rw-accent hover:underline">
                       {r.label}
@@ -1032,7 +1049,7 @@ export const FactCard: React.FC<{
                       kind: "player",
                       slug: r.player,
                       tab: "stats",
-                      ...(evQ ? { query: evQ } : {}),
+                      ...(playerRowQ ? { query: playerRowQ } : {}),
                     }}
                     className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums"
                   >
@@ -1044,7 +1061,7 @@ export const FactCard: React.FC<{
                       kind: "team",
                       slug: r.team,
                       tab: "stats",
-                      ...(evQ ? { query: evQ } : {}),
+                      ...(teamRowQ ? { query: teamRowQ } : {}),
                     }}
                     className="relative font-bold text-rw-accent hover:underline shrink-0 tabular-nums"
                   >

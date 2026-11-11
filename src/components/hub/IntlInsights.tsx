@@ -1444,61 +1444,72 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
               {fin.repeats.map((l, i) => {
                 const wSlug = l[0].winnerU || teamSlug(l[0].winner);
                 const lSlug = l[0].loserU || teamSlug(l[0].loser);
+                const lastYr = yearOnly(l[0].year);
+                const wQ =
+                  new URLSearchParams({
+                    ...(lastYr ? { p: `y${lastYr}` } : {}),
+                    ...(lSlug && lSlug !== wSlug ? { q: lSlug } : {}),
+                  }).toString() || undefined;
+                const lQ =
+                  new URLSearchParams({
+                    ...(lastYr ? { p: `y${lastYr}` } : {}),
+                    ...(wSlug && wSlug !== lSlug ? { q: wSlug } : {}),
+                  }).toString() || undefined;
                 return (
                   <Item
                     key={i}
                     left={
                       <span className="inline-flex items-center gap-1 min-w-0">
-                        <HubLink to={{ kind: "team", slug: wSlug }} className="shrink-0">
+                        <HubLink to={{ kind: "team", slug: wSlug, ...(wQ ? { query: wQ } : {}) }} className="shrink-0">
                           <TeamLogo name={l[0].winner} size={14} />
                         </HubLink>
-                        <TeamLink name={l[0].winner} u={l[0].winnerU} className="text-rw-text hover:text-rw-accent hover:underline" />
+                        <TeamLink name={l[0].winner} u={l[0].winnerU} query={wQ} className="text-rw-text hover:text-rw-accent hover:underline" />
                         <HubLink
-                          to={{ kind: "compare", mode: "team", a: wSlug, b: lSlug }}
+                          to={{ kind: "compare", mode: "team", a: wSlug, b: lSlug, ...(lastYr ? { period: `y${lastYr}` } : {}) }}
                           className="text-rw-muted hover:text-rw-accent hover:underline"
                           title={tl("Compare")}
                         >
                           vs
                         </HubLink>
-                        <HubLink to={{ kind: "team", slug: lSlug }} className="shrink-0">
+                        <HubLink to={{ kind: "team", slug: lSlug, ...(lQ ? { query: lQ } : {}) }} className="shrink-0">
                           <TeamLogo name={l[0].loser} size={14} />
                         </HubLink>
-                        <TeamLink name={l[0].loser} u={l[0].loserU} className="text-rw-text hover:text-rw-accent hover:underline" />
+                        <TeamLink name={l[0].loser} u={l[0].loserU} query={lQ} className="text-rw-text hover:text-rw-accent hover:underline" />
                       </span>
                     }
                     sub={l.map((f) => `${yearOnly(f.year)}: ${f.winner} ${f.score}`).join(" · ")}
                     right={
                       <span className="inline-flex items-center gap-2">
                         <HubLink
-                          to={{ kind: "prep", a: wSlug, b: lSlug }}
+                          to={{ kind: "prep", a: wSlug, b: lSlug, ...(lastYr ? { period: `y${lastYr}` } : {}) }}
                           className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                           title={tl("Match prep")}
                         >
                           {tl("Match prep")}
                         </HubLink>
                         <HubLink
-                          to={{ kind: "draft", query: `teams=${encodeURIComponent(wSlug)},${encodeURIComponent(lSlug)}` }}
+                          to={{ kind: "draft", query: `teams=${encodeURIComponent(wSlug)},${encodeURIComponent(lSlug)}${lastYr ? `&p=y${encodeURIComponent(lastYr)}` : ""}` }}
                           className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                           title={tl("Draft board")}
                         >
                           {tl("Draft board")}
                         </HubLink>
                         <HubLink
-                          to={{ kind: "items", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(wSlug)}&vs=${encodeURIComponent(lSlug)}` }}
+                          to={{ kind: "items", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(wSlug)}&vs=${encodeURIComponent(lSlug)}${lastYr ? `&year=${encodeURIComponent(lastYr)}` : ""}` }}
                           className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                           title={tl("Item history")}
                         >
                           {tl("Item history")}
                         </HubLink>
                         <HubLink
-                          to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(wSlug)}&vs=${encodeURIComponent(lSlug)}` }}
+                          to={{ kind: "finder", query: `league=${encodeURIComponent(intlLeague)}&team=${encodeURIComponent(wSlug)}&vs=${encodeURIComponent(lSlug)}${lastYr ? `&year=${encodeURIComponent(lastYr)}` : ""}` }}
                           className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
                           {tl("Game finder")}
                         </HubLink>
                         <HubLink
-                          to={{ kind: "compare", mode: "team", a: wSlug, b: lSlug }}
+                          to={{ kind: "compare", mode: "team", a: wSlug, b: lSlug, ...(lastYr ? { period: `y${lastYr}` } : {}) }}
                           className="hover:underline"
                           title={tl("Compare")}
                         >
@@ -1683,52 +1694,60 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
         <List>
           {(() => {
             const maxTitles = Math.max(1, ...titles.map((p) => p.titles.length));
-            return titles.map((p) => (
-              <Item
-                key={p.u || p.name}
-                left={
-                  <span className="inline-flex items-center gap-1.5 min-w-0">
-                    {p.u ? (
-                      <HubLink to={{ kind: "player", slug: p.u }} className="shrink-0">
-                        <PlayerPhoto name={p.name} team={p.team} slug={p.u} size={18} />
-                      </HubLink>
-                    ) : (
-                      <PlayerPhoto name={p.name} team={p.team} slug={undefined} size={18} />
-                    )}
-                    <PlayerLink name={p.name} u={p.u} className="text-rw-text hover:text-rw-accent truncate" />
-                  </span>
-                }
-                sub={
-                  <HubLink
-                    to={{
-                      kind: "finder",
-                      query: new URLSearchParams({
-                        league: intlLeague,
-                        player: p.u || prettySlug(p.name),
-                        ...(p.team ? { team: teamSlug(p.team) } : {}),
-                      }).toString(),
-                    }}
-                    className="hover:text-rw-accent hover:underline"
-                  >
-                    {`${p.titles.map(yearOnly).sort().join(", ")} · ${tl("{n} finals", { n: p.finals })}`}
-                  </HubLink>
-                }
-                right={
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
-                      <span className="h-full bg-rw-accent/85 rounded-full" style={{ width: `${Math.round((p.titles.length / maxTitles) * 100)}%` }} />
+            return titles.map((p) => {
+              const pLatestYr = p.titles.length ? yearOnly([...p.titles].sort().pop()!) : undefined;
+              const pQ =
+                new URLSearchParams({
+                  ...(pLatestYr ? { p: `y${pLatestYr}` } : {}),
+                  ...(p.team ? { team: teamSlug(p.team) } : {}),
+                }).toString() || undefined;
+              return (
+                <Item
+                  key={p.u || p.name}
+                  left={
+                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                      {p.u ? (
+                        <HubLink to={{ kind: "player", slug: p.u, ...(pQ ? { query: pQ } : {}) }} className="shrink-0">
+                          <PlayerPhoto name={p.name} team={p.team} slug={p.u} size={18} />
+                        </HubLink>
+                      ) : (
+                        <PlayerPhoto name={p.name} team={p.team} slug={undefined} size={18} />
+                      )}
+                      <PlayerLink name={p.name} u={p.u} query={pQ} className="text-rw-text hover:text-rw-accent truncate" />
                     </span>
-                    {p.u ? (
-                      <HubLink to={{ kind: "player", slug: p.u, tab: "career" }} className="hover:underline">
-                        {p.titles.length}
-                      </HubLink>
-                    ) : (
-                      <span>{p.titles.length}</span>
-                    )}
-                  </span>
-                }
-              />
-            ));
+                  }
+                  sub={
+                    <HubLink
+                      to={{
+                        kind: "finder",
+                        query: new URLSearchParams({
+                          league: intlLeague,
+                          player: p.u || prettySlug(p.name),
+                          ...(p.team ? { team: teamSlug(p.team) } : {}),
+                        }).toString(),
+                      }}
+                      className="hover:text-rw-accent hover:underline"
+                    >
+                      {`${p.titles.map(yearOnly).sort().join(", ")} · ${tl("{n} finals", { n: p.finals })}`}
+                    </HubLink>
+                  }
+                  right={
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-10 h-1.5 rounded-full bg-rw-border/60 overflow-hidden inline-flex shrink-0">
+                        <span className="h-full bg-rw-accent/85 rounded-full" style={{ width: `${Math.round((p.titles.length / maxTitles) * 100)}%` }} />
+                      </span>
+                      {p.u ? (
+                        <HubLink to={{ kind: "player", slug: p.u, tab: "career", ...(pQ ? { query: pQ } : {}) }} className="hover:underline">
+                          {p.titles.length}
+                        </HubLink>
+                      ) : (
+                        <span>{p.titles.length}</span>
+                      )}
+                    </span>
+                  }
+                />
+              );
+            });
           })()}
         </List>
       </Section>,
@@ -2212,7 +2231,16 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       <td className="px-2 py-1" data-sort={y.top ? y.top[1] : -1}>
                         {y.top ? (
                           <HubLink
-                            to={{ kind: "champ", slug: resolveChampSlug(y.top[0]), query: `p=y${encodeURIComponent(yearOnly(y.year))}` }}
+                            to={{
+                              kind: "champ",
+                              slug: resolveChampSlug(y.top[0]),
+                              query: new URLSearchParams({
+                                p: `y${yearOnly(y.year)}`,
+                                ...(y.best && resolveChampSlug(y.best[0]) !== resolveChampSlug(y.top[0])
+                                  ? { vschamp: resolveChampSlug(y.best[0]) }
+                                  : {}),
+                              }).toString(),
+                            }}
                             className="flex items-center gap-1 hover:text-rw-accent"
                           >
                             <ChampIcon name={y.top[0]} size={16} />
@@ -2225,7 +2253,16 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                       <td className="px-2 py-1" data-sort={y.best && y.best[1] ? y.best[2] / y.best[1] : -1}>
                         {y.best ? (
                           <HubLink
-                            to={{ kind: "champ", slug: resolveChampSlug(y.best[0]), query: `p=y${encodeURIComponent(yearOnly(y.year))}` }}
+                            to={{
+                              kind: "champ",
+                              slug: resolveChampSlug(y.best[0]),
+                              query: new URLSearchParams({
+                                p: `y${yearOnly(y.year)}`,
+                                ...(y.top && resolveChampSlug(y.top[0]) !== resolveChampSlug(y.best[0])
+                                  ? { vschamp: resolveChampSlug(y.top[0]) }
+                                  : {}),
+                              }).toString(),
+                            }}
                             className="flex items-center gap-1 hover:text-rw-accent"
                           >
                             <ChampIcon name={y.best[0]} size={16} />
