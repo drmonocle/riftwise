@@ -411,7 +411,7 @@ const TopTeams: React.FC<{ onSelectTab: (tab: "stats") => void }> = ({ onSelectT
           <button
             type="button"
             onClick={() => {
-              const bq = [top[0]?.[1] || top[0]?.[0], top[1]?.[1] || top[1]?.[0]].filter(Boolean).join(",");
+              const bq = [top[0]?.[0] || top[0]?.[1], top[1]?.[0] || top[1]?.[1]].filter(Boolean).join(",");
               navigateHub({ kind: "best", ...(bq ? { query: `q=${encodeURIComponent(bq)}` } : {}) });
               onSelectTab("stats");
             }}

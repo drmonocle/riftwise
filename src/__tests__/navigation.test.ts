@@ -190,6 +190,18 @@ describe("search shortcuts", () => {
       kind: "finder",
       query: "player=faker&vsplayer=chovy",
     });
+    expect(siblingSectionRoute({ kind: "compare", mode: "player", a: "faker", b: "chovy" }, "leaders")).toEqual({
+      kind: "leaders",
+      query: "q=faker%2Cchovy",
+    });
+    expect(siblingSectionRoute({ kind: "prep", a: "t1", b: "geng", period: "y2025" }, "rankings")).toEqual({
+      kind: "rankings",
+      query: "q=t1%2Cgeng",
+    });
+    expect(siblingSectionRoute({ kind: "prep", a: "t1", b: "geng", period: "y2025" }, "best")).toEqual({
+      kind: "best",
+      query: "year=2025&q=t1%2Cgeng",
+    });
     expect(siblingSectionRoute({ kind: "champions", query: "scope=lck&key=y2025&role=Mid&q=azir" }, "tiers")).toEqual({
       kind: "tiers",
       query: "scope=lck&key=y2025&role=Mid&q=azir",

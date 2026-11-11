@@ -259,7 +259,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
                     ...(evSlug ? { event: evSlug } : {}),
                     ...(role ? { role } : {}),
-                    ...(topChamp ? { champ: topChamp.c } : {}),
+                    ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -283,7 +283,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                     ...(evSlug ? { event: evSlug } : {}),
                     ...(role ? { role } : {}),
-                    ...(champFilter.trim() && topChamp ? { champ: topChamp.c } : {}),
+                    ...(champFilter.trim() && topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -500,7 +500,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                         kind: "leaders",
                         query: new URLSearchParams({
                           role: r,
-                          champ: byRole.get(r)![0].c,
+                          champ: resolveChampSlug(byRole.get(r)![0].c),
                           ...(isLeague ? { league: rawScope } : {}),
                           ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
                           ...(evSlug ? { event: evSlug } : {}),
@@ -514,7 +514,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                       to={{
                         kind: "finder",
                         query: new URLSearchParams({
-                          champ: byRole.get(r)![0].c,
+                          champ: resolveChampSlug(byRole.get(r)![0].c),
                           role: r,
                           ...(isLeague ? { league: rawScope } : {}),
                           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
@@ -579,7 +579,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                   to={{
                                     kind: "finder",
                                     query: new URLSearchParams({
-                                      champ: c.c,
+                                      champ: resolveChampSlug(c.c),
                                       role: r,
                                       ...(isLeague ? { league: rawScope } : {}),
                                       ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
@@ -616,7 +616,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                     to={{
                                       kind: "finder",
                                       query: new URLSearchParams({
-                                        champ: c.c,
+                                        champ: resolveChampSlug(c.c),
                                         role: r,
                                         ...(isLeague ? { league: rawScope } : {}),
                                         ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),

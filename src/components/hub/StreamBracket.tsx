@@ -366,7 +366,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
             kind: "best",
             query: new URLSearchParams({
               ...(which.year ? { year: which.year } : {}),
-              q: ev.n,
+              q: ev.u,
             }).toString(),
           }}
           className="text-rw-accent hover:underline"

@@ -154,8 +154,8 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),
-                      player: p.u || p.n,
-                      champ: c,
+                      player: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n),
+                      champ: resolveChampSlug(c),
                     }).toString(),
                   }}
                   title={`${p.n} · ${champName(c)}`}
@@ -197,7 +197,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                 ...(league ? { league } : {}),
                 ...(year ? { year } : {}),
                 ...(event ? { event } : {}),
-                player: p.u || p.n,
+                player: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n),
               }).toString(),
             }}
             className="w-5 text-right hover:text-rw-accent hover:underline"
@@ -235,7 +235,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     ...(league ? { league } : {}),
                     ...(year ? { year } : {}),
                     ...(event ? { event } : {}),
-                    player: p.u || p.n,
+                    player: p.u || resolvePlayerSlug(p.n) || prettySlug(p.n),
                   }).toString(),
                 }}
                 className="inline-flex items-center gap-1.5 tabular-nums hover:opacity-90"
@@ -427,7 +427,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     ...(year ? { year } : {}),
                     ...(event ? { event } : {}),
                     ...(role ? { role } : {}),
-                    ...(q.get("champ") ? { champ: q.get("champ")! } : {}),
+                    ...(q.get("champ") ? { champ: resolveChampSlug(q.get("champ")!) } : {}),
                   }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
@@ -442,7 +442,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                     ...(year ? { key: `y${year}` } : {}),
                     ...(event ? { event } : {}),
                     ...(role ? { role } : {}),
-                    ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: q.get("champ") || shownRows[0].c![0] } : {}),
+                    ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -496,7 +496,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           teams: `${aTeam}${bTeam ? `,${bTeam}` : ""}`,
                           p: event ? `e:${event}` : `y${year}`,
-                          ...(activeChamp ? { champ: activeChamp } : {}),
+                          ...(activeChamp ? { champ: resolveChampSlug(activeChamp) } : {}),
                           ...(role ? { role } : {}),
                         }).toString(),
                       }}
@@ -613,7 +613,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
-                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: q.get("champ") || shownRows[0].c![0] } : {}),
+                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
                     }).toString(),
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
@@ -628,7 +628,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(year ? { key: `y${year}` } : {}),
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
-                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: q.get("champ") || shownRows[0].c![0] } : {}),
+                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { q: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
                     }).toString(),
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
@@ -650,7 +650,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                           }
                         : {}),
                       p: event ? `e:${event}` : `y${year}`,
-                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: q.get("champ") || shownRows[0].c![0] } : {}),
+                      ...(q.get("champ") || shownRows[0]?.c?.[0] ? { champ: resolveChampSlug(q.get("champ") || shownRows[0].c![0]) } : {}),
                       ...(role ? { role } : {}),
                     }).toString(),
                   }}
@@ -678,8 +678,10 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),
                       ...(role ? { role } : {}),
-                      ...(q.get("champ") ? { champ: q.get("champ")! } : {}),
-                      ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { player: shownRows[0].u || shownRows[0].n } : {}),
+                      ...(q.get("champ") ? { champ: resolveChampSlug(q.get("champ")!) } : {}),
+                      ...((search.trim() || shownRows.length === 1) && shownRows[0]
+                        ? { player: shownRows[0].u || resolvePlayerSlug(shownRows[0].n) || prettySlug(shownRows[0].n) }
+                        : {}),
                     }).toString(),
                   }}
                   className="text-xs text-rw-sub hover:text-rw-accent hover:underline"
@@ -879,7 +881,7 @@ const LeaderSpotlight: React.FC<{
                   ...(league ? { league } : {}),
                   ...(year ? { year } : {}),
                   ...(event ? { event } : {}),
-                  player: c.top.u || c.top.n,
+                  player: c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n),
                 }).toString(),
               }}
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono block"
@@ -890,7 +892,7 @@ const LeaderSpotlight: React.FC<{
             <HubLink
               to={{
                 kind: "items",
-                query: `player=${encodeURIComponent(c.top.u || c.top.n)}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                query: `player=${encodeURIComponent(c.top.u || resolvePlayerSlug(c.top.n) || prettySlug(c.top.n))}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
               }}
               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline block"
             >

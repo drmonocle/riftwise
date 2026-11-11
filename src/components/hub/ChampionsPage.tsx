@@ -412,7 +412,7 @@ const LeagueTable: React.FC<{
       value: (c) => c.presence,
       render: (c) => {
         const fq = new URLSearchParams({
-          ...(c.p > 0 ? { champ: c.c } : { ban: c.c }),
+          ...(c.p > 0 ? { champ: resolveChampSlug(c.c) } : { ban: resolveChampSlug(c.c) }),
           league,
           ...(year ? { year } : {}),
           ...(eventSlug ? { event: eventSlug } : {}),
@@ -430,7 +430,7 @@ const LeagueTable: React.FC<{
       value: (c) => c.p,
       render: (c) => {
         const fq = new URLSearchParams({
-          champ: c.c,
+          champ: resolveChampSlug(c.c),
           league,
           ...(year ? { year } : {}),
           ...(eventSlug ? { event: eventSlug } : {}),
@@ -460,7 +460,7 @@ const LeagueTable: React.FC<{
       value: (c) => c.b,
       render: (c) => {
         const fq = new URLSearchParams({
-          ban: c.c,
+          ban: resolveChampSlug(c.c),
           league,
           ...(year ? { year } : {}),
           ...(eventSlug ? { event: eventSlug } : {}),
@@ -488,7 +488,7 @@ const LeagueTable: React.FC<{
       value: (c) => (c.p >= 3 ? c.wr : null),
       render: (c) => {
         const fq = new URLSearchParams({
-          champ: c.c,
+          champ: resolveChampSlug(c.c),
           league,
           ...(year ? { year } : {}),
           ...(eventSlug ? { event: eventSlug } : {}),
@@ -540,7 +540,7 @@ const LeagueTable: React.FC<{
             to={{
               kind: "finder",
               query: new URLSearchParams({
-                champ: c.c,
+                champ: resolveChampSlug(c.c),
                 league,
                 side: "b",
                 ...(year ? { year } : {}),
@@ -738,7 +738,7 @@ const LeagueTable: React.FC<{
                   ...(patchQ ? { patch: patchQ } : {}),
                   ...(side ? { side } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
-                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: shownRows[0].c } : {}),
+                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -753,7 +753,7 @@ const LeagueTable: React.FC<{
                   ...(year ? { year } : {}),
                   ...(eventSlug ? { event: eventSlug } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
-                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: shownRows[0].c } : {}),
+                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -888,7 +888,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       value: (c) => c.presence,
       render: (c) => {
         const fq = new URLSearchParams({
-          ...(c.p > 0 ? { champ: c.c } : { ban: c.c }),
+          ...(c.p > 0 ? { champ: resolveChampSlug(c.c) } : { ban: resolveChampSlug(c.c) }),
           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
           ...(c.p > 0 && roleQ ? { role: roleQ } : {}),
         }).toString();
@@ -902,7 +902,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       value: (c) => c.p,
       render: (c) => {
         const fq = new URLSearchParams({
-          champ: c.c,
+          champ: resolveChampSlug(c.c),
           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
           ...(roleQ ? { role: roleQ } : {}),
         }).toString();
@@ -928,7 +928,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       value: (c) => c.b,
       render: (c) => {
         const fq = new URLSearchParams({
-          ban: c.c,
+          ban: resolveChampSlug(c.c),
           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
         }).toString();
         return (
@@ -953,7 +953,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       value: (c) => (c.p >= 10 ? c.wr : null),
       render: (c) => {
         const fq = new URLSearchParams({
-          champ: c.c,
+          champ: resolveChampSlug(c.c),
           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
           ...(roleQ ? { role: roleQ } : {}),
         }).toString();
@@ -1095,7 +1095,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 query: new URLSearchParams({
                   ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
-                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: shownRows[0].c } : {}),
+                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -1108,7 +1108,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
                 query: new URLSearchParams({
                   ...(key.startsWith("y") ? { year: key.slice(1) } : {}),
                   ...(roleQ ? { role: roleQ } : {}),
-                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: shownRows[0].c } : {}),
+                  ...((search.trim() || shownRows.length === 1) && shownRows[0] ? { champ: resolveChampSlug(shownRows[0].c) } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -1250,7 +1250,7 @@ const MetaSpotlight: React.FC<{
                   to={{
                     kind: "finder",
                     query: new URLSearchParams({
-                      champ: item.c,
+                      champ: resolveChampSlug(item.c),
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),
@@ -1296,7 +1296,7 @@ const MetaSpotlight: React.FC<{
                   to={{
                     kind: "leaders",
                     query: new URLSearchParams({
-                      champ: item.c,
+                      champ: resolveChampSlug(item.c),
                       ...(league ? { league } : {}),
                       ...(year ? { year } : {}),
                       ...(event ? { event } : {}),

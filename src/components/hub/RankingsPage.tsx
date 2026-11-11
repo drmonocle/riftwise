@@ -378,7 +378,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 query: new URLSearchParams({
                   ...(x.r[4] ? { league: x.r[4] } : {}),
                   ...(asOfYr ? { year: asOfYr } : {}),
-                  team: x.r[0] || x.r[1],
+                  team: x.r[0] || resolveTeamAlias(x.r[1], aliases.data?.team) || prettySlug(x.r[1]),
                 }).toString(),
               }}
               className="hover:text-rw-accent hover:underline"

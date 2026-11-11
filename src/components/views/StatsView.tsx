@@ -246,7 +246,8 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
   if (targetKind === "teams") {
     const next = new URLSearchParams();
     if (region) next.set("region", region);
-    if (q) next.set("q", q);
+    const tq = q || [teamA, teamB].filter(Boolean).join(",");
+    if (tq) next.set("q", tq);
     const qs = next.toString();
     return { kind: "teams", ...(qs ? { query: qs } : {}) };
   }
@@ -254,14 +255,16 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     const next = new URLSearchParams();
     if (region) next.set("region", region);
     if (league) next.set("league", league);
-    if (q) next.set("q", q);
+    const tq = q || [teamA, teamB].filter(Boolean).join(",");
+    if (tq) next.set("q", tq);
     const qs = next.toString();
     return { kind: "rankings", ...(qs ? { query: qs } : {}) };
   }
   if (targetKind === "players") {
     const next = new URLSearchParams();
     if (role) next.set("role", role);
-    if (q) next.set("q", q);
+    const pq = q || [playerA, playerB, teamA, teamB].filter(Boolean).join(",");
+    if (pq) next.set("q", pq);
     const qs = next.toString();
     return { kind: "players", ...(qs ? { query: qs } : {}) };
   }
@@ -271,7 +274,9 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     if (league) next.set("league", league);
     if (year) next.set("year", year);
     if (event) next.set("event", event);
-    if (q) next.set("q", q);
+    if (champ) next.set("champ", champ);
+    const lq = q || [playerA, playerB, teamA, teamB].filter(Boolean).join(",");
+    if (lq) next.set("q", lq);
     const qs = next.toString();
     return { kind: "leaders", ...(qs ? { query: qs } : {}) };
   }
@@ -290,7 +295,8 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     if (year) next.set("year", year);
     if (league) next.set("league", league);
     if (event) next.set("event", event);
-    if (q) next.set("q", q);
+    const bq = q || [teamA, teamB].filter(Boolean).join(",");
+    if (bq) next.set("q", bq);
     const qs = next.toString();
     return { kind: "best", ...(qs ? { query: qs } : {}) };
   }
