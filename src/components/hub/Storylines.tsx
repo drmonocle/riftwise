@@ -662,7 +662,24 @@ export const HomeStorylines: React.FC = () => {
                   >
                     {tl("Best games")} →
                   </HubLink>
-                  <HubLink to={{ kind: "finder" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      ...(topTeams[0] || topPlayers[0] || topChamps[0]
+                        ? {
+                            query: new URLSearchParams({
+                              ...(topTeams[0]
+                                ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) }
+                                : topPlayers[0]
+                                  ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) }
+                                  : {}),
+                              ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
+                            }).toString(),
+                          }
+                        : {}),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
                     {tl("Game finder")} →
                   </HubLink>
                 </>
@@ -792,6 +809,7 @@ export const HomeStorylines: React.FC = () => {
                         kind: "finder",
                         query: new URLSearchParams({
                           player: playerSlugs[0],
+                          ...(playerSlugs[1] ? { vsplayer: playerSlugs[1] } : {}),
                           ...(filteredYr ? { year: String(filteredYr) } : {}),
                           ...(filteredEv ? { event: filteredEv } : {}),
                           ...(filteredChamp ? { champ: resolveChampSlug(filteredChamp) } : {}),

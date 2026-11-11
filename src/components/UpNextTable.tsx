@@ -155,6 +155,23 @@ export const UpNextTable: React.FC<{
         >
           {tl("Player leaderboards")}
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            const yr = matches[0]?.startTimeUtc?.slice(0, 4);
+            const q = matches[0]
+              ? new URLSearchParams({
+                  team: teamSlug(matches[0].team1Name, matches[0].team1Code),
+                  vs: teamSlug(matches[0].team2Name, matches[0].team2Code),
+                  ...(yr ? { year: yr } : {}),
+                }).toString()
+              : "";
+            navigateHub({ kind: "finder", ...(q ? { query: q } : {}) });
+          }}
+          className="text-rw-sub hover:text-rw-accent hover:underline"
+        >
+          {tl("Game finder")}
+        </button>
         {matches.length > 0 && (
           <SectionCard
             section={tl("Up Next")}

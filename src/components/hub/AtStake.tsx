@@ -261,7 +261,15 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               <HubLink
                 to={{
                   kind: "finder",
-                  ...(blocks[0]?.m.startTimeUtc ? { query: `year=${encodeURIComponent(blocks[0].m.startTimeUtc.slice(0, 4))}` } : {}),
+                  ...(blocks[0]?.m
+                    ? {
+                        query: new URLSearchParams({
+                          team: teamSlug(data.index, blocks[0].m.team1Name, blocks[0].m.team1Code),
+                          vs: teamSlug(data.index, blocks[0].m.team2Name, blocks[0].m.team2Code),
+                          ...(blocks[0].m.startTimeUtc ? { year: blocks[0].m.startTimeUtc.slice(0, 4) } : {}),
+                        }).toString(),
+                      }
+                    : {}),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
