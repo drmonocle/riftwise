@@ -168,7 +168,7 @@ describe("search shortcuts", () => {
   it("opens a player's or team's champion pool for player/team + champion queries", () => {
     const p = champPairShortcuts(INDEX, "faker azir");
     expect(p.shortcuts).toHaveLength(1);
-    expect(hubPath(p.shortcuts[0].route)).toBe("/player/faker/champions?champ=Azir");
+    expect(hubPath(p.shortcuts[0].route)).toBe("/player/faker/champions?champ=azir");
   });
   it("compares two players and links to head-to-head game finder and leaderboards", () => {
     const s = matchupShortcuts(INDEX, "Faker v Chovy");
@@ -260,7 +260,7 @@ describe("search shortcuts", () => {
     expect(searchHub(idx, "thebausffs").player.map((h) => h.slug)).toContain("baus");
     const pair = champPairShortcuts(idx, "faker lb");
     expect(pair.shortcuts).toHaveLength(1);
-    expect(hubPath(pair.shortcuts[0].route)).toBe("/player/faker/champions?champ=LeBlanc");
+    expect(hubPath(pair.shortcuts[0].route)).toBe("/player/faker/champions?champ=leblanc");
   });
   it("matches whole-event parent slugs across multi-stage champgames files", () => {
     const events: [string, string][] = [

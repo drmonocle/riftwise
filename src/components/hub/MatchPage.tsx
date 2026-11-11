@@ -1328,7 +1328,7 @@ const PlayerBars: React.FC<{
                 to={{
                   kind: "tiers",
                   ...(() => {
-                    const qChamps = [blue[0]?.c, red[0]?.c && red[0]?.c !== blue[0]?.c ? red[0].c : ""].filter(Boolean).join(",");
+                    const qChamps = [blue[0]?.c, red[0]?.c && red[0]?.c !== blue[0]?.c ? red[0].c : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",");
                     const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
                     return qChamps || key
                       ? {
@@ -1566,7 +1566,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                     to={{
                       kind: "tiers",
                       ...(() => {
-                        const qChamps = [blue[0]?.c, red[0]?.c && red[0]?.c !== blue[0]?.c ? red[0].c : ""].filter(Boolean).join(",");
+                        const qChamps = [blue[0]?.c, red[0]?.c && red[0]?.c !== blue[0]?.c ? red[0].c : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",");
                         const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
                         return qChamps || key
                           ? {
@@ -1695,7 +1695,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                     to={{
                       kind: "tiers",
                       ...(() => {
-                        const qChamps = [lanes[0]?.b?.c, lanes[0]?.o?.c && lanes[0]?.o?.c !== lanes[0]?.b?.c ? lanes[0].o.c : ""].filter(Boolean).join(",");
+                        const qChamps = [lanes[0]?.b?.c, lanes[0]?.o?.c && lanes[0]?.o?.c !== lanes[0]?.b?.c ? lanes[0].o.c : ""].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",");
                         const key = g.patch ? `p${g.patch}` : period && /^y\d{4}$/.test(period) ? period : "";
                         return qChamps || key
                           ? {
@@ -1901,7 +1901,7 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
             key={i}
             to={
               teamSlug
-                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
+                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
                 : { kind: "champ", slug: resolveChampSlug(c) }
             }
             className={`opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-opacity ${i === 3 ? "ml-2" : ""}`}
@@ -1930,7 +1930,7 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
             key={i}
             to={
               teamSlug
-                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
+                ? { kind: "team", slug: teamSlug, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}${period ? `&p=${encodeURIComponent(period)}` : ""}` }
                 : { kind: "champ", slug: resolveChampSlug(c) }
             }
             className={`flex flex-col items-center hover:opacity-85 ${i === 3 ? "ml-2" : ""}`}
@@ -2049,7 +2049,7 @@ const Scoreboard: React.FC<{
                 ...(() => {
                   const qChamps = players
                     .slice(0, 2)
-                    .map((p) => p.c)
+                    .map((p) => (p.c ? resolveChampSlug(p.c) : ""))
                     .filter((x): x is string => Boolean(x))
                     .join(",");
                   const key = period && /^y\d{4}$/.test(period) ? period : "";
@@ -2151,7 +2151,7 @@ const PlayerRow: React.FC<{
             {p.c ? (
               p.u ? (
                 <HubLink
-                  to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(p.c)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                  to={{ kind: "player", slug: p.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(p.c))}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
                   className="hover:text-rw-accent hover:underline"
                   title={`${p.n} · ${champName(p.c)}`}
                 >
@@ -2174,7 +2174,7 @@ const PlayerRow: React.FC<{
                   kind: "finder",
                   query: new URLSearchParams({
                     ...(p.u ? { player: p.u } : {}),
-                    ...(p.c ? { champ: p.c } : {}),
+                    ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
                     ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
                   }).toString(),
                 }}

@@ -10,7 +10,7 @@ import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
 import { winRate } from "../../stats";
-import { bare, downloadEventCsv, downloadStagesCsv, loadAliases, loadHubEvent, matchesChampSearch, normText, prettySlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, downloadEventCsv, downloadStagesCsv, loadAliases, loadHubEvent, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
@@ -511,7 +511,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                     <tr key={i} className="border-t border-rw-border first:border-0">
                       <td className={`${td} w-12 font-bold ${r.p === "1" ? "text-rw-accent" : "text-rw-sub"}`} data-sort={Number(r.p.replace(/\D.*$/, "")) || i + 1}>
                         <HubLink
-                          to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(r.u || r.t)}` }}
+                          to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&team=${encodeURIComponent(tSlug(r.t, r.u))}` }}
                           className="hover:text-rw-accent hover:underline"
                           title={tl("Game finder")}
                         >
@@ -724,8 +724,17 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                   const hay = normText(`${t.t} ${t.u || ""}`);
                   const tSlug = resolveTeamAlias(aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || t.t) || prettySlug(t.t);
                   return tTerms.some((term) => {
-                    if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
-                    const canonTeam = resolveTeamAlias(aliases.data?.team[term] || term) || prettySlug(term);
+                    const qAlias = searchAlias(term);
+                    if (
+                      hay.includes(term) ||
+                      (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
+                      (qAlias && (hay.includes(qAlias) || (bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias)))))
+                    )
+                      return true;
+                    const canonTeam =
+                      resolveTeamAlias(aliases.data?.team[term] || term) ||
+                      (qAlias ? resolveTeamAlias(aliases.data?.team[qAlias] || qAlias) : "") ||
+                      prettySlug(qAlias || term);
                     return Boolean(canonTeam && canonTeam === tSlug);
                   });
                 })
@@ -1329,9 +1338,18 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
     if (!terms.length) return base;
     const matchSide = (name: string, slug: string | null | undefined, term: string) => {
       const hay = normText(`${name} ${slug || ""}`);
-      if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
+      const qAlias = searchAlias(term);
+      if (
+        hay.includes(term) ||
+        (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
+        (qAlias && (hay.includes(qAlias) || (bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias)))))
+      )
+        return true;
       const sideSlug = resolveTeamAlias(aliases.data?.team[(slug || name).toLowerCase()] || slug || name) || prettySlug(name);
-      const canonTerm = resolveTeamAlias(aliases.data?.team[term] || term) || prettySlug(term);
+      const canonTerm =
+        resolveTeamAlias(aliases.data?.team[term] || term) ||
+        (qAlias ? resolveTeamAlias(aliases.data?.team[qAlias] || qAlias) : "") ||
+        prettySlug(qAlias || term);
       return Boolean(canonTerm && canonTerm === sideSlug);
     };
     if (isVsMatchup && terms.length >= 2) {
@@ -2040,7 +2058,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(prettySlug(rows[0].c))}${rows[1] ? `&vs=${encodeURIComponent(prettySlug(rows[1].c))}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}${rows[1] ? `&vs=${encodeURIComponent(resolveChampSlug(rows[1].c))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -2049,7 +2067,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
               <HubLink
                 to={{
                   kind: "items",
-                  query: `champ=${encodeURIComponent(prettySlug(rows[0].c))}${/^\d{4}$/.test(year) ? `&year=${year}` : ""}`,
+                  query: `champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}${/^\d{4}$/.test(year) ? `&year=${year}` : ""}`,
                 }}
                 className="text-[11px] text-rw-accent hover:underline"
               >
@@ -2064,7 +2082,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
                 ...(e.lu ? { league: e.lu } : {}),
                 ...(year ? { year } : {}),
                 event: e.u,
-                ...(rows[0]?.c ? { q: [rows[0].c, rows[1]?.c].filter(Boolean).join(",") } : {}),
+                ...(rows[0]?.c ? { q: [resolveChampSlug(rows[0].c), rows[1]?.c ? resolveChampSlug(rows[1].c) : ""].filter(Boolean).join(",") } : {}),
               }).toString() || undefined,
             }}
             className="text-[11px] text-rw-accent hover:underline"
@@ -2074,7 +2092,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
           <HubLink
             to={{
               kind: "draft",
-              query: `p=e:${encodeURIComponent(e.u)}${rows[0]?.c ? `&champ=${encodeURIComponent(rows[0].c)}` : ""}`,
+              query: `p=e:${encodeURIComponent(e.u)}${rows[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}` : ""}`,
             }}
             className="text-[11px] text-rw-accent hover:underline"
           >
@@ -2083,7 +2101,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
           <HubLink
             to={{
               kind: "finder",
-              query: `event=${encodeURIComponent(e.u)}${(search.trim() && rows.length >= 1) || rows.length === 1 ? `&champ=${encodeURIComponent(rows[0].c)}` : ""}`,
+              query: `event=${encodeURIComponent(e.u)}${(search.trim() && rows.length >= 1) || rows.length === 1 ? `&champ=${encodeURIComponent(resolveChampSlug(rows[0].c))}` : ""}`,
             }}
             className="text-[11px] text-rw-accent hover:underline"
           >
@@ -2096,7 +2114,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
                 ...(e.lu ? { league: e.lu } : {}),
                 ...(year ? { year } : {}),
                 event: e.u,
-                ...((search.trim() && rows.length >= 1) || rows.length === 1 ? { champ: rows[0].c } : {}),
+                ...((search.trim() && rows.length >= 1) || rows.length === 1 ? { champ: resolveChampSlug(rows[0].c) } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-accent hover:underline"
@@ -2178,7 +2196,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `event=${encodeURIComponent(e.u)}&${c.p > 0 ? "champ" : "ban"}=${encodeURIComponent(c.c)}`,
+                        query: `event=${encodeURIComponent(e.u)}&${c.p > 0 ? "champ" : "ban"}=${encodeURIComponent(resolveChampSlug(c.c))}`,
                       }}
                       className="inline-flex flex-col gap-0.5 min-w-[3.25rem] hover:text-rw-accent hover:underline"
                       title={`${tl("Picks")}: ${c.p} · ${tl("Bans")}: ${c.b}`}
@@ -2196,7 +2214,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
                 <td className={`${td} text-rw-sub`} data-sort={c.p}>
                   {c.p > 0 ? (
                     <HubLink
-                      to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&champ=${encodeURIComponent(c.c)}` }}
+                      to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&champ=${encodeURIComponent(resolveChampSlug(c.c))}` }}
                       className="hover:text-rw-accent hover:underline"
                     >
                       {c.p}
@@ -2208,7 +2226,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
                 <td className={`${td} text-rw-sub`} data-sort={c.b}>
                   {c.b > 0 ? (
                     <HubLink
-                      to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&ban=${encodeURIComponent(c.c)}` }}
+                      to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&ban=${encodeURIComponent(resolveChampSlug(c.c))}` }}
                       className="hover:text-rw-accent hover:underline"
                     >
                       {c.b}
@@ -2220,7 +2238,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
                 <td className={`${td} text-rw-sub`} data-sort={c.p ? c.w / c.p : -1}>
                   {c.p ? (
                     <HubLink
-                      to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&champ=${encodeURIComponent(c.c)}` }}
+                      to={{ kind: "finder", query: `event=${encodeURIComponent(e.u)}&champ=${encodeURIComponent(resolveChampSlug(c.c))}` }}
                       className="hover:opacity-90"
                       title={tl("Game finder")}
                     >

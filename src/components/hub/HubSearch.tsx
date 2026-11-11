@@ -9,7 +9,7 @@ import { tl, tk, roleName, fmtN } from "../../i18n";
 import { champName } from "../../champions";
 import { isNonLatin } from "../../searchAliases";
 import { winRate } from "../../stats";
-import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubChamp, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, prettySlug, resolvePlayerSlug, sameChamp, searchHub } from "../../hub/data";
+import { groupRank, HubHit, HubIndex, HubSearchKind, loadHubChamp, loadHubIndex, loadHubIndexQuick, loadHubPlayer, loadHubTeam, loadItemIndex, normText, prefetchHub, prettySlug, resolveChampSlug, resolvePlayerSlug, sameChamp, searchHub } from "../../hub/data";
 import type { ItemIndexRow } from "../../hub/types";
 import { itemName } from "../../hub/ddragon";
 import { HubRoute, navigateHub } from "../../hub/route";
@@ -78,14 +78,14 @@ export function matchupShortcuts(index: HubIndex, q: string): Shortcut[] {
     return [
       {
         key: "counters",
-        route: { kind: "counters", query: `champ=${encodeURIComponent(ca.slug)}&vs=${encodeURIComponent(cb.name)}` },
+        route: { kind: "counters", query: `champ=${encodeURIComponent(ca.slug)}&vs=${encodeURIComponent(cb.slug)}` },
         label: `${champName(ca.name)} vs ${champName(cb.name)} · ${tl("Matchups")}`,
         sub: tl("Every pro lane matchup, by champion"),
         icon: <Swords className="w-3.5 h-3.5" />,
       },
       {
         key: "finder",
-        route: { kind: "finder", query: `champ=${encodeURIComponent(ca.name)}&vschamp=${encodeURIComponent(cb.name)}` },
+        route: { kind: "finder", query: `champ=${encodeURIComponent(ca.slug)}&vschamp=${encodeURIComponent(cb.slug)}` },
         label: `${tl("Game finder")}: ${champName(ca.name)} vs ${champName(cb.name)}`,
         sub: tl("Any game by team, champion, player"),
         icon: <Compass className="w-3.5 h-3.5" />,
@@ -226,7 +226,7 @@ export function champPairShortcuts(
           pairs.push({ kind: "player", slug: pl.slug, champ: ch.name, key });
           out.push({
             key: `cp-${key}`,
-            route: { kind: "player", slug: pl.slug, tab: "champions", query: `champ=${encodeURIComponent(ch.name)}` },
+            route: { kind: "player", slug: pl.slug, tab: "champions", query: `champ=${encodeURIComponent(ch.slug)}` },
             label: `${pl.name} · ${champName(ch.name)}`,
             sub: pairStats?.[key] ?? tl("Champion pool"),
             icon: <ChampIcon name={ch.name} size={16} />,
@@ -239,7 +239,7 @@ export function champPairShortcuts(
           pairs.push({ kind: "team", slug: tm.slug, champ: ch.name, key });
           const qParts = [
             tm.matched ? `as=${encodeURIComponent(tm.matched)}` : "",
-            `champ=${encodeURIComponent(ch.name)}`,
+            `champ=${encodeURIComponent(ch.slug)}`,
           ].filter(Boolean);
           out.push({
             key: `cp-${key}`,
@@ -490,7 +490,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               const pSlug = p.u || resolvePlayerSlug(p.n) || prettySlug(p.n);
               return {
                 key: `top-c-${c.u}-${pSlug}`,
-                route: { kind: "player" as const, slug: pSlug, tab: "champions" as const, query: `champ=${encodeURIComponent(c.name)}` },
+                route: { kind: "player" as const, slug: pSlug, tab: "champions" as const, query: `champ=${encodeURIComponent(c.u)}` },
                 label: `${p.n} · ${champName(c.name)}`,
                 sub: `${p.g}G · ${p.w}W-${p.g - p.w}L (${winRate(p.w, p.g)}) · KDA ${fmtN(p.kda)}`,
                 icon: <ChampIcon name={c.name} size={16} />,
@@ -526,7 +526,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
             },
             {
               key: `top-c-finder-${c.u}`,
-              route: { kind: "finder", query: `champ=${encodeURIComponent(c.name)}` },
+              route: { kind: "finder", query: `champ=${encodeURIComponent(c.u)}` },
               label: `${champName(c.name)} · ${tl("Game finder")}`,
               sub: tl("Any game by team, champion, player"),
               icon: <Compass className="w-3.5 h-3.5" />,
@@ -542,7 +542,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
           const top: Shortcut[] = [
             ...p.champs.slice(0, 4).map((c) => ({
               key: `top-p-${p.u}-${c.c}`,
-              route: { kind: "player" as const, slug: p.u, tab: "champions" as const, query: `champ=${encodeURIComponent(c.c)}` },
+              route: { kind: "player" as const, slug: p.u, tab: "champions" as const, query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}` },
               label: `${p.name} · ${champName(c.c)}`,
               sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)}) · KDA ${fmtN(c.kda)}`,
               icon: <ChampIcon name={c.c} size={16} />,
@@ -588,7 +588,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
             ...t.champs.slice(0, 4).map((c) => {
               const qParts = [
                 filledEntity.matched ? `as=${encodeURIComponent(filledEntity.matched)}` : "",
-                `champ=${encodeURIComponent(c.c)}`,
+                `champ=${encodeURIComponent(resolveChampSlug(c.c))}`,
               ].filter(Boolean);
               return {
                 key: `top-t-${t.u}-${c.c}`,

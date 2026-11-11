@@ -68,7 +68,7 @@ describe("stats search", () => {
       kind: "team",
       slug: "g2-esports",
       tab: "champions",
-      query: "champ=Ahri",
+      query: "champ=ahri",
     });
     expect(teamPair.shortcuts[0].fillText).toBe("G2 Esports Ahri");
 
@@ -77,7 +77,7 @@ describe("stats search", () => {
       kind: "player",
       slug: "faker",
       tab: "champions",
-      query: "champ=Ahri",
+      query: "champ=ahri",
     });
     expect(playerPair.shortcuts[0].fillText).toBe("Faker Ahri");
 
@@ -87,15 +87,15 @@ describe("stats search", () => {
       kind: "team",
       slug: "g2-esports",
       tab: "champions",
-      query: "champ=Ahri",
+      query: "champ=ahri",
     });
   });
 
   it("links champion vs champion searches to Counter-pick finder and Game finder", () => {
     const cvc = matchupShortcuts(index, "Ahri vs Azir");
     expect(cvc.map((s) => s.route)).toEqual([
-      { kind: "counters", query: "champ=ahri&vs=Azir" },
-      { kind: "finder", query: "champ=Ahri&vschamp=Azir" },
+      { kind: "counters", query: "champ=ahri&vs=azir" },
+      { kind: "finder", query: "champ=ahri&vschamp=azir" },
     ]);
   });
 

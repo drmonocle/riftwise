@@ -59,7 +59,7 @@ const tileHead = "font-head text-lg font-bold text-rw-text flex items-center gap
 /** Searches to try, one of each kind the box understands, each going straight to its page. */
 const TRY: { label: string; to: HubRoute; icon: React.ReactNode }[] = [
   { label: "T1 vs Gen.G", to: { kind: "prep", a: "t1", b: "gen-g" }, icon: <Swords className="w-3 h-3" /> },
-  { label: "Faker Azir", to: { kind: "player", slug: "faker", tab: "champions", query: "champ=Azir" }, icon: <User className="w-3 h-3" /> },
+  { label: "Faker Azir", to: { kind: "player", slug: "faker", tab: "champions", query: "champ=azir" }, icon: <User className="w-3 h-3" /> },
   { label: "Heartsteel", to: { kind: "items", query: "item=heartsteel" }, icon: <Package className="w-3 h-3" /> },
   { label: `Worlds ${new Date().getFullYear()}`, to: { kind: "worlds" }, icon: <Trophy className="w-3 h-3" /> },
   { label: `LCK ${new Date().getFullYear()}`, to: { kind: "league", slug: "lol-champions-korea" }, icon: <Flag className="w-3 h-3" /> },
@@ -981,7 +981,7 @@ const PatchMovers: React.FC = () => {
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: p ? `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(c)}` : `champ=${encodeURIComponent(c)}`,
+                      query: p ? `patch=${encodeURIComponent(p.p)}&champ=${encodeURIComponent(resolveChampSlug(c))}` : `champ=${encodeURIComponent(resolveChampSlug(c))}`,
                     }}
                     className={`${wrTone} hover:underline`}
                     title={tl("Game finder")}

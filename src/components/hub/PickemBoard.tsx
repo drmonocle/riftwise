@@ -8,7 +8,7 @@ import React, { useEffect, useState } from "react";
 import { EyeOff, LogIn, Trophy, UserMinus, Upload } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { pickemBoard, submitPickem, leavePickem, hidePickem, syncAccount, SYNC_EVENT, SyncError, type PickemBoard as Board, type PickemPick, type PickemRow, type PickemTeam } from "../../sync";
-import { normText } from "../../hub/data";
+import { normText, searchAlias } from "../../hub/data";
 import { Section, HubLink } from "./ui";
 import { BroadcastCardButton, listCard } from "./BroadcastCard";
 import { OPEN_TAB_EVENT } from "../../a11y";
@@ -77,7 +77,7 @@ export const PickemBoard: React.FC<{
   const [search, setSearch] = useState("");
   const rows = board?.rows || [];
   const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
-  const q = normText(search.trim());
+  const q = normText(searchAlias(search.trim()));
   const qBare = bare(q);
   const filteredRows = q
     ? rows.filter((r) => {
