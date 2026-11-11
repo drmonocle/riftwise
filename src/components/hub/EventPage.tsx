@@ -10,7 +10,7 @@ import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
 import { winRate } from "../../stats";
-import { bare, downloadEventCsv, downloadStagesCsv, loadHubEvent, matchesChampSearch, normText, prettySlug } from "../../hub/data";
+import { bare, downloadEventCsv, downloadStagesCsv, loadAliases, loadHubEvent, matchesChampSearch, normText, prettySlug } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
@@ -94,6 +94,7 @@ const INTL_PAGE: Record<string, "worlds" | "msi" | "first-stand"> = {
 
 const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) => void }> = ({ e, tab: asked, onOpenUrl }) => {
   const [resultsHidden, revealResults] = useHidden(`event:${e.u}`, e.end);
+  const aliases = useLoad(loadAliases, []);
   const nowRoute = currentHubRoute();
   const routeQuery = nowRoute.kind === "event" && nowRoute.slug === e.u ? nowRoute.query : undefined;
   const urlParams = useMemo(
@@ -721,7 +722,12 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
             const filteredTeams = tTerms.length
               ? e.teams.filter((t) => {
                   const hay = normText(`${t.t} ${t.u || ""}`);
-                  return tTerms.some((term) => hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term))));
+                  const tSlug = aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || prettySlug(t.t);
+                  return tTerms.some((term) => {
+                    if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
+                    const canonTeam = aliases.data?.team[term] || prettySlug(term);
+                    return Boolean(canonTeam && canonTeam === tSlug);
+                  });
                 })
               : e.teams;
             return (
@@ -729,7 +735,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                 title={tl("Teams")}
                 right={
                   <span className="flex flex-wrap items-center gap-2">
-                    {e.teams.length > 8 && (
+                    {(e.teams.length > 8 || Boolean(teamSearch.trim())) && (
                       <input
                         type="search"
                         value={teamSearch}
@@ -1283,6 +1289,7 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
   const [i, setI] = useState(stages.length - 1);
   const [byRating, setByRating] = useState(false);
   const [search, setSearch] = useState(initialSearch);
+  const aliases = useLoad(loadAliases, []);
   useEffect(() => {
     setSearch(initialSearch);
   }, [initialSearch]);
@@ -1310,27 +1317,23 @@ const StageLists: React.FC<{ stages: Stage[]; eventSlug?: string; leagueSlug?: s
   const shown = useMemo(() => {
     const base = byRating ? rated : terms.length > 0 ? stages.flatMap((s) => s.series) : st.series;
     if (!terms.length) return base;
+    const matchSide = (name: string, slug: string | null | undefined, term: string) => {
+      const hay = normText(`${name} ${slug || ""}`);
+      if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
+      const sideSlug = aliases.data?.team[(slug || name).toLowerCase()] || slug || prettySlug(name);
+      const canonTerm = aliases.data?.team[term] || prettySlug(term);
+      return Boolean(canonTerm && canonTerm === sideSlug);
+    };
     if (isVsMatchup && terms.length >= 2) {
       const [ta, tb] = terms;
-      return base.filter((r) => {
-        const a = normText(`${r.a} ${r.au || ""}`);
-        const b = normText(`${r.b} ${r.bu || ""}`);
-        const matchSide = (hay: string, term: string) =>
-          hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)));
-        return (matchSide(a, ta) && matchSide(b, tb)) || (matchSide(a, tb) && matchSide(b, ta));
-      });
-    }
-    return base.filter((r) => {
-      const a = normText(`${r.a} ${r.au || ""}`);
-      const b = normText(`${r.b} ${r.bu || ""}`);
-      return terms.some(
-        (t) =>
-          a.includes(t) ||
-          b.includes(t) ||
-          (bare(t).length >= 2 && (bare(a).includes(bare(t)) || bare(b).includes(bare(t)))),
+      return base.filter(
+        (r) =>
+          (matchSide(r.a, r.au, ta) && matchSide(r.b, r.bu, tb)) ||
+          (matchSide(r.a, r.au, tb) && matchSide(r.b, r.bu, ta)),
       );
-    });
-  }, [byRating, rated, terms, isVsMatchup, stages, st.series]);
+    }
+    return base.filter((r) => terms.some((t) => matchSide(r.a, r.au, t) || matchSide(r.b, r.bu, t)));
+  }, [byRating, rated, terms, isVsMatchup, stages, st.series, aliases.data]);
   return (
     <Section
       title={tl("Matches")}

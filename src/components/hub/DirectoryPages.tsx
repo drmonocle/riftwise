@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, roleName, regionName } from "../../i18n";
-import { bare, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { navigateHub, hubShareUrl, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
 import { SortTable, type Column } from "./SortTable";
@@ -81,9 +81,25 @@ export const TeamsDirectory: React.FC<{ query?: string }> = ({ query }) => {
   return <Page state={state}>{(index) => <TeamsTable rows={index.teams} query={query} />}</Page>;
 };
 
+const REGION_ALIASES: Record<string, string[]> = {
+  kr: ["korea"],
+  lck: ["korea"],
+  cn: ["china"],
+  lpl: ["china"],
+  eu: ["emea", "europe"],
+  lec: ["emea", "europe"],
+  emea: ["emea", "europe"],
+  na: ["americas", "north america"],
+  lcs: ["americas", "north america"],
+  lta: ["americas", "north america"],
+  apac: ["apac", "pcs", "asia-pacific"],
+  lcp: ["apac", "pcs", "asia-pacific"],
+};
+
 const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows, query }) => {
   const { q, set } = useFilters("teams", query);
-  const region = q.get("region") || "";
+  const aliases = useLoad(loadAliases, []);
+  const rawRegion = q.get("region") || "";
   const words = q.get("q") || "";
   const since = q.get("since") || (words.trim() ? "all" : THIS_YEAR);
   const shown = Number(q.get("n")) || STEP;
@@ -92,6 +108,13 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
     for (const t of rows) if (t[6]) n.set(t[6], (n.get(t[6]) || 0) + 1);
     return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([r]) => r);
   }, [rows]);
+  const region = useMemo(() => {
+    if (!rawRegion) return "";
+    if (regions.includes(rawRegion)) return rawRegion;
+    const low = rawRegion.toLowerCase();
+    const cands = [low, ...(REGION_ALIASES[low] || [])];
+    return regions.find((r) => cands.includes(r.toLowerCase())) || rawRegion;
+  }, [rawRegion, regions]);
   const years = useMemo(() => yearChoices(rows.map((t) => t[3])), [rows]);
   const list = useMemo(() => {
     const terms = words
@@ -102,11 +125,16 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       if (region && t[6] !== region) return false;
       if (since !== "all" && (t[3] || "") < since) return false;
       if (!terms.length) return true;
+      const u = (t[1] || prettySlug(t[0])).toLowerCase();
       const hay = normText(`${t[0]} | ${t[1] || ""} | ${t[4]} | ${t[5]}`);
       const hayBare = bare(hay);
-      return terms.some((term) => hay.includes(term) || (term.length >= 2 && hayBare.includes(bare(term))));
+      return terms.some((term) => {
+        if (hay.includes(term) || (term.length >= 2 && hayBare.includes(bare(term)))) return true;
+        const canonTeam = aliases.data?.team[term] || prettySlug(term);
+        return Boolean(canonTeam && canonTeam === u);
+      });
     });
-  }, [rows, region, since, words]);
+  }, [rows, region, since, words, aliases.data]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((t) => t[2] || 0)), [list]);
   const columns: Column<SearchTeamRow>[] = [
     {
@@ -453,6 +481,25 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
 
 /** in the address in English (?role=Mid, like the Champions page), shown in the reader's language */
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
+const ROLE_ALIASES: Record<string, string> = {
+  top: "Top",
+  t: "Top",
+  jungle: "Jungle",
+  jg: "Jungle",
+  jng: "Jungle",
+  j: "Jungle",
+  mid: "Mid",
+  middle: "Mid",
+  m: "Mid",
+  bot: "Bot",
+  bottom: "Bot",
+  adc: "Bot",
+  b: "Bot",
+  support: "Support",
+  sup: "Support",
+  supp: "Support",
+  s: "Support",
+};
 
 export const PlayersDirectory: React.FC<{ query?: string }> = ({ query }) => {
   usePageTitle(tl("Every player"));
@@ -462,7 +509,9 @@ export const PlayersDirectory: React.FC<{ query?: string }> = ({ query }) => {
 
 const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ rows, query }) => {
   const { q, set } = useFilters("players", query);
-  const role = q.get("role") || "";
+  const aliases = useLoad(loadAliases, []);
+  const rawRole = q.get("role") || "";
+  const role = ROLE_ALIASES[rawRole.toLowerCase()] || rawRole;
   const words = q.get("q") || "";
   const since = q.get("since") || (words.trim() ? "all" : THIS_YEAR);
   const shown = Number(q.get("n")) || STEP;
@@ -477,11 +526,18 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       if (since !== "all" && (p[4] || "") < since) return false;
       if (!terms.length) return true;
       const u = p[1] || prettySlug(p[0]);
+      const pTeamSlug = p[2] ? aliases.data?.team[p[2].toLowerCase()] || prettySlug(p[2]) : "";
       const hay = normText(`${p[0]} | ${u} | ${p[2]} | ${p[6]}`);
       const hayBare = bare(hay);
-      return terms.some((term) => hay.includes(term) || resolvePlayerSlug(term) === u || (term.length >= 2 && hayBare.includes(bare(term))));
+      return terms.some(
+        (term) =>
+          hay.includes(term) ||
+          resolvePlayerSlug(term) === u ||
+          (pTeamSlug && (aliases.data?.team[term] || prettySlug(term)) === pTeamSlug) ||
+          (term.length >= 2 && hayBare.includes(bare(term))),
+      );
     });
-  }, [rows, role, since, words]);
+  }, [rows, role, since, words, aliases.data]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((p) => p[3] || 0)), [list]);
   const columns: Column<SearchPlayerRow>[] = [
     {

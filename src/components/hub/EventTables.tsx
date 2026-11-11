@@ -1,16 +1,35 @@
 /** gol.gg-style stat tables for one tournament: every player and every team, sortable by any column. */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { bare, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, matchesChampSearch, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
-import { ChampIcon, HubLink, OeCredit, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, fmtNum } from "./ui";
+import { ChampIcon, HubLink, OeCredit, PlayerLink, PlayerPhoto, Section, TeamLink, TeamLogo, fmtNum, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
 import { Column, SortTable, per } from "./SortTable";
 import { WinBar, KdaBar } from "./OpponentChart";
 
 const ROLES = ["Top", "Jungle", "Mid", "Bot", "Support"];
+const ROLE_ALIASES: Record<string, string> = {
+  top: "Top",
+  t: "Top",
+  jungle: "Jungle",
+  jg: "Jungle",
+  jng: "Jungle",
+  j: "Jungle",
+  mid: "Mid",
+  middle: "Mid",
+  m: "Mid",
+  bot: "Bot",
+  bottom: "Bot",
+  adc: "Bot",
+  b: "Bot",
+  support: "Support",
+  sup: "Support",
+  supp: "Support",
+  s: "Support",
+};
 const pct = (n: number | null) => (n === null ? "–" : `${Math.round(n * 100)}%`);
 const signed = (v: number | null) => (v == null ? "–" : <span className={v >= 0 ? "text-rw-teal" : "text-rw-red"}>{`${v > 0 ? "+" : ""}${fmtNum(v)}`}</span>);
 const shareTone = (v: number | null, hi = 0.52, lo = 0.48) => {
@@ -42,8 +61,10 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
   initialRole,
 }) => {
   const players = hidden ? [] : e.players || [];
-  const validRole = initialRole && ROLES.some((r) => r.toLowerCase() === initialRole.toLowerCase())
-    ? ROLES.find((r) => r.toLowerCase() === initialRole.toLowerCase())!
+  const aliases = useLoad(loadAliases, []);
+  const normInitRole = initialRole ? ROLE_ALIASES[initialRole.toLowerCase()] || initialRole : "";
+  const validRole = normInitRole && ROLES.some((r) => r.toLowerCase() === normInitRole.toLowerCase())
+    ? ROLES.find((r) => r.toLowerCase() === normInitRole.toLowerCase())!
     : "All";
   const [role, setRole] = useState(validRole);
   const [search, setSearch] = useState(initialSearch);
@@ -68,15 +89,18 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
         (!terms.length ||
           terms.some((term) => {
             const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""}`);
+            const pTeamSlug = p.t ? aliases.data?.team[(p.tu || p.t).toLowerCase()] || p.tu || prettySlug(p.t) : "";
+            const canonTerm = aliases.data?.team[term] || prettySlug(term);
             return (
               hay.includes(term) ||
               (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
               resolvePlayerSlug(term) === (p.u || prettySlug(p.n)) ||
+              Boolean(pTeamSlug && canonTerm && canonTerm === pTeamSlug) ||
               (p.c || []).some((c) => matchesChampSearch(c, term))
             );
           })),
     );
-  }, [players, role, regular, minG, maxG, search]);
+  }, [players, role, regular, minG, maxG, search, aliases.data]);
   if (players.length === 0) return null;
   const pStatLink = (p: EventPlayer, node: React.ReactNode) =>
     node == null || node === "–" ? (
@@ -542,6 +566,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
 
 export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; initialSearch?: string }> = ({ e, hidden, initialSearch = "" }) => {
   const teams = e.teamStats || [];
+  const aliases = useLoad(loadAliases, []);
   const [search, setSearch] = useState(initialSearch);
   useEffect(() => {
     setSearch(initialSearch);
@@ -555,9 +580,14 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
       ? teams
       : teams.filter((t) => {
           const hay = normText(`${t.t} ${t.u || ""}`);
-          return terms.some((term) => hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term))));
+          const tSlug = aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || prettySlug(t.t);
+          return terms.some((term) => {
+            if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
+            const canonTerm = aliases.data?.team[term] || prettySlug(term);
+            return Boolean(canonTerm && canonTerm === tSlug);
+          });
         });
-  }, [teams, search]);
+  }, [teams, search, aliases.data]);
   if (teams.length === 0 || hidden) return null;
   const maxTeamG = Math.max(1, ...teams.map((t) => t.g));
   const tStatLink = (t: EventTeamStats, node: React.ReactNode) =>

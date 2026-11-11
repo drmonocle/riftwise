@@ -8,7 +8,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy, Check } from "lucide-react";
 import { tl, tn, locale, roleName } from "../../i18n";
 import { champName } from "../../champions";
-import { bare, loadWeekly, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, loadAliases, loadWeekly, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { matchesPeriodEvent } from "../../hub/period";
 import { navigateHub, useHubRoute } from "../../hub/route";
 import type { HubWeekly } from "../../hub/types";
 import { card, ChampIcon, ChampLink, EventLink, fmtDate, HubLink, hubShareUrl, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
@@ -174,6 +175,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
   const range = `${fmtDate(w.from, false)} – ${fmtDate(w.to)}`;
   const wy = /^\d{4}/.test(w.to || "") ? w.to.slice(0, 4) : /^\d{4}/.test(w.from || "") ? w.from.slice(0, 4) : "";
   const pct = (p: number) => `${Math.round(p * 100)}%`;
+  const aliases = useLoad(loadAliases, []);
   const rTerms = resultFilter
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((s) => normText(s.trim()))
@@ -182,7 +184,16 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
     ? w.results.filter((r) => {
         const hay = normText(`${r.a} ${r.au || ""} ${r.b} ${r.bu || ""} ${r.t} ${r.e || ""}`);
         const hayBare = bare(hay);
-        return rTerms.some((t) => hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t))));
+        const rowTeams = [r.au, r.a, r.bu, r.b]
+          .filter((tn): tn is string => Boolean(tn))
+          .map((tn) => aliases.data?.team[tn.toLowerCase()] || prettySlug(tn));
+        return rTerms.some((t) => {
+          if (hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t)))) return true;
+          const canonTeam = aliases.data?.team[t] || prettySlug(t);
+          if (canonTeam && rowTeams.includes(canonTeam)) return true;
+          if (matchesPeriodEvent(r.e || "", r.t || "", t)) return true;
+          return false;
+        });
       })
     : w.results;
   return (
@@ -1456,7 +1467,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         </HubLink>
                       </>
                     )}
-                    {w.results.length > 8 && (
+                    {(w.results.length > 8 || Boolean(resultFilter.trim())) && (
                       <input
                         type="search"
                         value={resultFilter}

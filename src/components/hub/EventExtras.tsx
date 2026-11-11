@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
-import { bare, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
+import { bare, loadAliases, normText, prettySlug, resolvePlayerSlug } from "../../hub/data";
 import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type {
@@ -24,6 +24,7 @@ import {
   RatingBadge,
   td,
   th,
+  useLoad,
 } from "./ui";
 import { RegionFlag } from "./RegionStats";
 import { CountryFlag, localCountry } from "./CountryFlag";
@@ -769,6 +770,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
 }) => {
   const [open, setOpen] = useState(rosters.length <= 4);
   const [search, setSearch] = useState(initialSearch);
+  const aliases = useLoad(loadAliases, []);
   useEffect(() => {
     setSearch(initialSearch);
   }, [initialSearch]);
@@ -779,21 +781,22 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
     const terms = q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean);
     return rosters.filter((t) => {
       const hay = normText(`${t.t} ${t.u || ""} ${t.r || ""} ${t.r ? regionName(t.r, t.r) : ""} ${t.p.map(([n, u, r]) => `${n} ${u || ""} ${r || ""}`).join(" ")}`);
-      return terms.some(
-        (term) =>
-          hay.includes(term) ||
-          (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
-          t.p.some(([n, u]) => resolvePlayerSlug(term) === (u || prettySlug(n))),
-      );
+      const tSlug = aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || prettySlug(t.t);
+      return terms.some((term) => {
+        if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
+        const canonTerm = aliases.data?.team[term] || prettySlug(term);
+        if (canonTerm && canonTerm === tSlug) return true;
+        return t.p.some(([n, u]) => resolvePlayerSlug(term) === (u || prettySlug(n)));
+      });
     });
-  }, [rosters, q]);
+  }, [rosters, q, aliases.data]);
   const shownRosters = open || q ? filteredRosters : filteredRosters.slice(0, 4);
   return (
     <Section
       title={tl("Team rosters")}
       right={
         <span className="flex flex-wrap items-center gap-2">
-          {rosters.length > 4 && (
+          {(rosters.length > 4 || Boolean(search.trim())) && (
             <input
               type="search"
               value={search}
