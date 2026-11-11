@@ -5,7 +5,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { tl, roleName, regionName } from "../../i18n";
-import { bare, loadAliases, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadAliases, loadHubIndex, loadHubIndexQuick, normText, prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { normalizeRole } from "../../hub/champAgg";
 import { navigateHub, hubShareUrl, type HubSection } from "../../hub/route";
 import type { SearchPlayerRow, SearchTeamRow } from "../../hub/types";
@@ -341,7 +341,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             kind: "rankings",
             query:
               new URLSearchParams({
-                ...(region ? { league: region } : {}),
+                ...(region ? { league: resolveLeagueSlug(region) || region } : {}),
                 ...(list[0]
                   ? {
                       q: `${teamRowSlug(list[0])}${
@@ -356,13 +356,37 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
           {tl("Power rankings")} →
         </HubLink>
         <HubLink
-          to={{ kind: "tiers", ...(since !== "all" ? { query: `key=y${encodeURIComponent(since)}` } : {}) }}
+          to={{
+            kind: "tiers",
+            ...((since !== "all" || region)
+              ? {
+                  query: new URLSearchParams({
+                    ...(region ? { scope: resolveLeagueSlug(region) || region } : {}),
+                    ...(since !== "all" ? { key: `y${since}` } : {}),
+                  }).toString(),
+                }
+              : {}),
+          }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Pro tier list")} →
         </HubLink>
         <HubLink
-          to={{ kind: "tournaments", ...(since !== "all" ? { query: `year=${encodeURIComponent(since)}` } : {}) }}
+          to={{
+            kind: "tournaments",
+            ...((since !== "all" || region || (words.trim() && list.length === 1))
+              ? {
+                  query: new URLSearchParams({
+                    ...(since !== "all" ? { year: since } : {}),
+                    ...(words.trim() && list.length === 1
+                      ? { q: teamRowSlug(list[0]) }
+                      : region
+                        ? { q: region }
+                        : {}),
+                  }).toString(),
+                }
+              : {}),
+          }}
           className="text-rw-sub hover:text-rw-accent hover:underline"
         >
           {tl("Tournaments")} →
@@ -387,6 +411,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
             kind: "leaders",
             query:
               new URLSearchParams({
+                ...(region ? { league: resolveLeagueSlug(region) || region } : {}),
                 ...(since !== "all" ? { year: since } : {}),
                 ...(list[0]
                   ? {
@@ -416,6 +441,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                     : list[0]
                       ? { team: teamRowSlug(list[0]) }
                       : {}),
+                ...(region ? { league: resolveLeagueSlug(region) || region } : {}),
                 ...(since !== "all" ? { year: since } : {}),
               }).toString() || undefined,
           }}

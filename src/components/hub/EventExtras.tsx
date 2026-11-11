@@ -525,7 +525,12 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                   <HubLink
                     to={{
                       kind: "items",
-                      query: `player=${encodeURIComponent(pSlug(o.pentas[0].n, o.pentas[0].u))}${o.pentas[0].c ? `&champ=${encodeURIComponent(resolveChampSlug(o.pentas[0].c))}` : ""}${yr ? `&year=${yr}` : ""}`,
+                      query: new URLSearchParams({
+                        player: pSlug(o.pentas[0].n, o.pentas[0].u),
+                        ...(o.pentas[0].c ? { champ: resolveChampSlug(o.pentas[0].c) } : {}),
+                        ...(yr ? { year: yr } : {}),
+                        ...(slug ? { event: slug } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -674,7 +679,14 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                     {tl("Compare")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "items", query: `player=${encodeURIComponent(pSlug(o.mvp[0].n, o.mvp[0].u))}${yr ? `&year=${yr}` : ""}` }}
+                    to={{
+                      kind: "items",
+                      query: new URLSearchParams({
+                        player: pSlug(o.mvp[0].n, o.mvp[0].u),
+                        ...(yr ? { year: yr } : {}),
+                        ...(slug ? { event: slug } : {}),
+                      }).toString(),
+                    }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Item history")} →
@@ -1138,6 +1150,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
                 new URLSearchParams({
                   ...(e.lu ? { league: e.lu } : {}),
                   ...((e.start || e.end) && /^\d{4}/.test(e.start || e.end || "") ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                  event: e.u,
                 }).toString() || undefined,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"

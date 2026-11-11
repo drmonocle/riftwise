@@ -171,7 +171,11 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0]))}${evYr ? `&year=${evYr}` : ""}`,
+                    query: new URLSearchParams({
+                      champ: resolveChampSlug(topChamps[0]),
+                      ...(evYr ? { year: evYr } : {}),
+                      ...(eventSlug ? { event: eventSlug } : {}),
+                    }).toString(),
                   }}
                   className="text-rw-accent hover:underline"
                 >
@@ -263,7 +267,9 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
                   new URLSearchParams({
                     ...(evYr ? { year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
-                    ...(terms.length > 0 && topPlayers[0] ? { player: topPlayers[0] } : {}),
+                    ...(terms.length > 0 && topPlayers[0]
+                      ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) }
+                      : {}),
                     ...(terms.length > 0 && !topPlayers[0] && topTeams[0]
                       ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) }
                       : {}),
@@ -274,7 +280,21 @@ export const FactGroups: React.FC<{ facts: Fact[]; link: string; shareId: (f: Fa
             >
               {tl("Game finder")} →
             </HubLink>
-            <HubLink to={{ kind: "best", ...(evYr ? { query: `year=${evYr}` } : {}) }} className="text-rw-accent hover:underline">
+            <HubLink
+              to={{
+                kind: "best",
+                query:
+                  new URLSearchParams({
+                    ...(evYr ? { year: evYr } : {}),
+                    ...(terms.length > 0 && topTeams.length >= 1
+                      ? { q: topTeams.join(",") }
+                      : eventSlug
+                        ? { q: eventSlug }
+                        : {}),
+                  }).toString() || undefined,
+              }}
+              className="text-rw-accent hover:underline"
+            >
               {tl("Best games")} →
             </HubLink>
           </span>

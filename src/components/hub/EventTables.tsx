@@ -322,7 +322,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
               <HubLink
                 to={{
                   kind: "items",
-                  query: `player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}${rows[0].c?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(rows[0].c[0]))}` : ""}${/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? `&year=${(e.start || e.end || "").slice(0, 4)}` : ""}`,
+                  query: new URLSearchParams({
+                    player: pSlug(rows[0].n, rows[0].u),
+                    ...(rows[0].c?.[0] ? { champ: resolveChampSlug(rows[0].c[0]) } : {}),
+                    ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
+                    event: e.u,
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
@@ -407,7 +412,15 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
           <HubLink
             to={{
               kind: "finder",
-              query: `event=${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}${(search.trim() && rows.length >= 1) || rows.length === 1 ? `&player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}` : ""}`,
+              query: `event=${encodeURIComponent(e.u)}${role !== "All" ? `&role=${encodeURIComponent(role)}` : ""}${
+                (search.trim() && rows.length >= 1) || rows.length === 1
+                  ? `&player=${encodeURIComponent(pSlug(rows[0].n, rows[0].u))}${
+                      search.trim() && rows[1] && pSlug(rows[1].n, rows[1].u) !== pSlug(rows[0].n, rows[0].u)
+                        ? `&vsplayer=${encodeURIComponent(pSlug(rows[1].n, rows[1].u))}`
+                        : ""
+                    }`
+                  : ""
+              }`,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
@@ -443,7 +456,16 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
               .sort((a, b) => (per(b.k + b.a, Math.max(b.d, 1), 2) || 0) - (per(a.k + a.a, Math.max(a.d, 1), 2) || 0))
               .slice(0, 6)
               .map((p, idx) => `#${idx + 1} ${p.n} (${p.t}, ${roleName(p.r)}): ${per(p.k + p.a, Math.max(p.d, 1), 2) ?? "–"} KDA · ${pct(per(p.w, p.g, 3))}`)}
-            url={hubShareUrl({ kind: "event", slug: e.u, tab: "stats" })}
+            url={hubShareUrl({
+              kind: "event",
+              slug: e.u,
+              tab: "stats",
+              query:
+                new URLSearchParams({
+                  ...(role !== "All" ? { role } : {}),
+                  ...(search.trim() ? { q: search.trim() } : {}),
+                }).toString() || undefined,
+            })}
           />
           <SectionCard
             section={tl("Player stats")}
@@ -886,7 +908,12 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               .sort((a, b) => (per(b.w, b.g, 3) || 0) - (per(a.w, a.g, 3) || 0))
               .slice(0, 6)
               .map((t, idx) => `#${idx + 1} ${t.t}: ${t.w}-${t.g - t.w} (${pct(per(t.w, t.g, 3))}) · ${per(t.min, t.g) ?? "–"}m`)}
-            url={hubShareUrl({ kind: "event", slug: e.u, tab: "stats" })}
+            url={hubShareUrl({
+              kind: "event",
+              slug: e.u,
+              tab: "stats",
+              ...(search.trim() ? { query: `q=${encodeURIComponent(search.trim())}` } : {}),
+            })}
           />
           <SectionCard
             section={tl("Team stats")}
