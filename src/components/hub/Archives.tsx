@@ -486,9 +486,11 @@ export const TeamSeriesArchive: React.FC<{ slug: string; teamName: string; initi
                 ? { year: initialYear }
                 : period && /^y\d{4}$/.test(period)
                   ? { year: period.slice(1) }
-                  : period?.startsWith("e:")
-                    ? { event: resolveEventSlug(period.slice(2)) }
-                    : {}),
+                  : period?.startsWith("p:")
+                    ? { patch: period.slice(2) }
+                    : period?.startsWith("e:")
+                      ? { event: resolveEventSlug(period.slice(2)) }
+                      : {}),
             }).toString(),
           }}
           className="text-rw-accent hover:underline"
@@ -986,7 +988,18 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(champ !== "all" ? champ : champs[0][0]))}${champ === "all" && champs[1] ? `&vs=${encodeURIComponent(resolveChampSlug(champs[1][0]))}` : ""}`,
+                  query: new URLSearchParams({
+                    champ: resolveChampSlug(champ !== "all" ? champ : champs[0][0]),
+                    ...(champ === "all" && champs[1] ? { vs: resolveChampSlug(champs[1][0]) } : {}),
+                    ...(shown[0]?.[10] ? { role: normalizeRole(shown[0][10]) || shown[0][10] } : {}),
+                    ...(evSlug
+                      ? { event: evSlug }
+                      : year !== "all"
+                        ? { patch: `y${year}`, year }
+                        : period?.startsWith("p:")
+                          ? { patch: period.slice(2) }
+                          : {}),
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -1040,11 +1053,11 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
             <HubLink
               to={{
                 kind: "tiers",
-                ...(evSlug || year !== "all" || champ !== "all" || shown[0]?.[2] || shown[0]?.[10]
+                ...(evSlug || year !== "all" || period?.startsWith("p:") || champ !== "all" || shown[0]?.[2] || shown[0]?.[10]
                   ? {
                       query: new URLSearchParams({
                         ...(evSlug ? { event: evSlug } : {}),
-                        ...(year !== "all" ? { key: `y${year}`, year } : {}),
+                        ...(year !== "all" ? { key: `y${year}`, year } : period?.startsWith("p:") ? { key: `p${period.slice(2)}`, patch: period.slice(2) } : {}),
                         ...(champ !== "all" ? { q: resolveChampSlug(champ) } : shown[0]?.[2] ? { q: resolveChampSlug(shown[0][2]) } : {}),
                         ...(shown[0]?.[10] ? { role: normalizeRole(shown[0][10]) || shown[0][10] } : {}),
                       }).toString(),
@@ -1209,7 +1222,7 @@ const PlayerGamesBody: React.FC<{ slug: string; playerName?: string; champ?: str
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(r[2]))}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}`,
+                        query: `champ=${encodeURIComponent(resolveChampSlug(r[2]))}${r[10] ? `&role=${encodeURIComponent(r[10])}` : ""}${r[11] ? `&event=${encodeURIComponent(r[11])}` : /^\d{4}/.test(r[0]) ? `&patch=y${encodeURIComponent(r[0].slice(0, 4))}&year=${encodeURIComponent(r[0].slice(0, 4))}` : ""}`,
                       }}
                       className="hidden sm:inline text-rw-sub hover:text-rw-accent hover:underline"
                       title={tl("Counters")}
@@ -1368,7 +1381,22 @@ export const PlayerGamesArchive: React.FC<{
         <HubLink
           to={{
             kind: "counters",
-            ...(initialChamp ? { query: `champ=${encodeURIComponent(resolveChampSlug(initialChamp))}` } : {}),
+            ...((initialChamp || initialYear || (period && period !== "all"))
+              ? {
+                  query: new URLSearchParams({
+                    ...(initialChamp ? { champ: resolveChampSlug(initialChamp) } : {}),
+                    ...(initialYear
+                      ? { patch: `y${initialYear}`, year: initialYear }
+                      : period && /^y\d{4}$/.test(period)
+                        ? { patch: period, year: period.slice(1) }
+                        : period?.startsWith("p:")
+                          ? { patch: period.slice(2) }
+                          : period?.startsWith("e:")
+                            ? { event: resolveEventSlug(period.slice(2)) }
+                            : {}),
+                  }).toString(),
+                }
+              : {}),
           }}
           className="text-rw-accent hover:underline"
         >
@@ -1427,9 +1455,11 @@ export const PlayerGamesArchive: React.FC<{
                 ? { year: initialYear }
                 : period && /^y\d{4}$/.test(period)
                   ? { year: period.slice(1) }
-                  : period?.startsWith("e:")
-                    ? { event: resolveEventSlug(period.slice(2)) }
-                    : {}),
+                  : period?.startsWith("p:")
+                    ? { patch: period.slice(2) }
+                    : period?.startsWith("e:")
+                      ? { event: resolveEventSlug(period.slice(2)) }
+                      : {}),
             }).toString(),
           }}
           className="text-rw-accent hover:underline"
@@ -1470,7 +1500,24 @@ export const PlayerChampGames: React.FC<{ slug: string; playerName?: string; cha
         >
           {tl("Compare")} →
         </HubLink>
-        <HubLink to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(champ))}` }} className="text-rw-accent hover:underline">
+        <HubLink
+          to={{
+            kind: "counters",
+            query: new URLSearchParams({
+              champ: resolveChampSlug(champ),
+              ...(year
+                ? { patch: `y${year}`, year }
+                : period && /^y\d{4}$/.test(period)
+                  ? { patch: period, year: period.slice(1) }
+                  : period?.startsWith("p:")
+                    ? { patch: period.slice(2) }
+                    : period?.startsWith("e:")
+                      ? { event: resolveEventSlug(period.slice(2)) }
+                      : {}),
+            }).toString(),
+          }}
+          className="text-rw-accent hover:underline"
+        >
           {tl("Counters")} →
         </HubLink>
         <HubLink

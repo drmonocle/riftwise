@@ -135,7 +135,7 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                     ? {
                         query: new URLSearchParams({
                           ...(firstLg ? { scope: firstLg, league: firstLg } : {}),
-                          ...(firstYr ? { key: `y${firstYr}` } : {}),
+                          ...(firstYr ? { key: `y${firstYr}`, year: firstYr } : {}),
                         }).toString(),
                       }
                     : {}),
@@ -519,7 +519,7 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
               ? {
                   query: new URLSearchParams({
                     ...(lg ? { scope: lg, league: lg } : {}),
-                    ...(period ? { key: period } : {}),
+                    ...(period ? { key: period, ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}) } : {}),
                   }).toString(),
                 }
               : {}),

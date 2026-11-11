@@ -363,7 +363,7 @@ export const OwnStorylines: React.FC<{
                     {tl("Draft board")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "compare", mode: "team", a: who.slug, ...(noteYr ? { period: `y${noteYr}` } : {}) }}
+                    to={{ kind: "compare", mode: "team", a: who.slug, ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}) }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Compare")} →
@@ -371,7 +371,13 @@ export const OwnStorylines: React.FC<{
                   {noteChamp && (
                     <>
                       <HubLink
-                        to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(noteChamp))}` }}
+                        to={{
+                          kind: "counters",
+                          query: new URLSearchParams({
+                            champ: resolveChampSlug(noteChamp),
+                            ...(noteYr ? { patch: `y${noteYr}`, year: String(noteYr) } : noteEv ? { event: noteEv } : {}),
+                          }).toString(),
+                        }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Counters")} →
@@ -450,7 +456,7 @@ export const OwnStorylines: React.FC<{
                     return (
                       <>
                         <HubLink
-                          to={{ kind: "prep", a: whoTeamSlug, ...(noteYr ? { period: `y${noteYr}` } : {}) }}
+                          to={{ kind: "prep", a: whoTeamSlug, ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}) }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Match prep")} →
@@ -472,14 +478,20 @@ export const OwnStorylines: React.FC<{
                     );
                   })()}
                   <HubLink
-                    to={{ kind: "compare", mode: "player", a: who.slug, ...(noteYr ? { period: `y${noteYr}` } : {}) }}
+                    to={{ kind: "compare", mode: "player", a: who.slug, ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}) }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Compare")} →
                   </HubLink>
                   {noteChamp && (
                     <HubLink
-                      to={{ kind: "counters", query: `champ=${encodeURIComponent(resolveChampSlug(noteChamp))}` }}
+                      to={{
+                        kind: "counters",
+                        query: new URLSearchParams({
+                          champ: resolveChampSlug(noteChamp),
+                          ...(noteYr ? { patch: `y${noteYr}`, year: String(noteYr) } : noteEv ? { event: noteEv } : {}),
+                        }).toString(),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Counters")} →
@@ -723,7 +735,15 @@ export const HomeStorylines: React.FC = () => {
                 const b = teamSlugs[1];
                 return (
                   <>
-                    <HubLink to={{ kind: "prep", a, ...(b ? { b } : {}), ...(filteredYr ? { period: `y${filteredYr}` } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                    <HubLink
+                      to={{
+                        kind: "prep",
+                        a,
+                        ...(b ? { b } : {}),
+                        ...(filteredYr ? { period: `y${filteredYr}` } : filteredEv ? { period: `e:${filteredEv}` } : {}),
+                      }}
+                      className="text-rw-sub hover:text-rw-accent hover:underline"
+                    >
                       {tl("Match prep")} →
                     </HubLink>
                     <HubLink
@@ -740,7 +760,13 @@ export const HomeStorylines: React.FC = () => {
                       {tl("Draft board")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "compare", mode: "team", a, ...(b ? { b } : {}), ...(filteredYr ? { period: `y${filteredYr}` } : {}) }}
+                      to={{
+                        kind: "compare",
+                        mode: "team",
+                        a,
+                        ...(b ? { b } : {}),
+                        ...(filteredYr ? { period: `y${filteredYr}` } : filteredEv ? { period: `e:${filteredEv}` } : {}),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Compare")} →
@@ -812,7 +838,7 @@ export const HomeStorylines: React.FC = () => {
                         mode: "player",
                         a: playerSlugs[0],
                         ...(playerSlugs[1] ? { b: playerSlugs[1] } : {}),
-                        ...(filteredYr ? { period: `y${filteredYr}` } : {}),
+                        ...(filteredYr ? { period: `y${filteredYr}` } : filteredEv ? { period: `e:${filteredEv}` } : {}),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >

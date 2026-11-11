@@ -881,11 +881,12 @@ export const PlayerRanks: React.FC<{
               <HubLink
                 to={{
                   kind: "counters",
-                  ...((games?.[0]?.[2] || me?.r)
+                  ...((games?.[0]?.[2] || me?.r || year)
                     ? {
                         query: new URLSearchParams({
                           ...(games?.[0]?.[2] ? { champ: resolveChampSlug(games[0][2]) } : {}),
                           ...(me?.r ? { role: me.r } : {}),
+                          ...(year ? { patch: `y${year}`, year } : {}),
                         }).toString(),
                       }
                     : {}),

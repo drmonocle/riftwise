@@ -413,7 +413,18 @@ export const DraftTendencies: React.FC<{
                       <HubLink
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(topOpeners[0]))}${topOpeners[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topOpeners[1]))}` : ""}${d.firstRole[0] ? `&role=${encodeURIComponent(ROLES[d.firstRole[0][0]])}` : ""}`,
+                          query: new URLSearchParams({
+                            champ: resolveChampSlug(topOpeners[0]),
+                            ...(topOpeners[1] ? { vs: resolveChampSlug(topOpeners[1]) } : {}),
+                            ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
+                            ...(period?.startsWith("y") && period.length === 5
+                              ? { patch: period, year: period.slice(1) }
+                              : period?.startsWith("p:")
+                                ? { patch: period.slice(2) }
+                                : period?.startsWith("e:")
+                                  ? { event: resolveEventSlug(period.slice(2)) }
+                                  : {}),
+                          }).toString(),
                         }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                         data-nocapture="1"
