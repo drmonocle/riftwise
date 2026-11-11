@@ -264,6 +264,19 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
               {tl("Compare")}
             </HubLink>
             <HubLink
+              to={{
+                kind: "items",
+                query: new URLSearchParams({
+                  team: u,
+                  ...(yr ? { year: yr } : {}),
+                  ...(t[6] ? { league: resolveLeagueSlug(t[6]) || t[6] } : {}),
+                }).toString(),
+              }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Item history")}
+            </HubLink>
+            <HubLink
               to={{ kind: "finder", query: `team=${encodeURIComponent(u)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -333,6 +346,22 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Compare")} →
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "items",
+                query: new URLSearchParams({
+                  team: teamRowSlug(list[0]),
+                  ...(words.trim() && list[1] && teamRowSlug(list[1]) !== teamRowSlug(list[0])
+                    ? { vs: teamRowSlug(list[1]) }
+                    : {}),
+                  ...(region ? { league: resolveLeagueSlug(region) || region } : {}),
+                  ...(since !== "all" ? { year: since } : {}),
+                }).toString(),
+              }}
+              className="text-rw-sub hover:text-rw-accent hover:underline"
+            >
+              {tl("Item history")} →
             </HubLink>
           </>
         )}
@@ -652,7 +681,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
           <HubLink
             to={{
               kind: "finder",
-              query: `player=${encodeURIComponent(playerRowSlug(p))}${since !== "all" ? `&year=${encodeURIComponent(since)}` : ""}`,
+              query: `player=${encodeURIComponent(playerRowSlug(p))}${ROLE_OF[p[5]] ? `&role=${encodeURIComponent(ROLE_OF[p[5]])}` : ""}${since !== "all" ? `&year=${encodeURIComponent(since)}` : ""}`,
             }}
             className="tabular-nums text-rw-text hover:text-rw-accent hover:underline block"
             title={tl("Game finder")}
@@ -697,7 +726,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                   {tl("Match prep")}
                 </HubLink>
                 <HubLink
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}` }}
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)}${ROLE_OF[p[5]] ? `&role=${encodeURIComponent(ROLE_OF[p[5]])}` : ""}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}` }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Draft board")}
@@ -705,13 +734,13 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
               </>
             )}
             <HubLink
-              to={{ kind: "finder", query: `player=${encodeURIComponent(u)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
+              to={{ kind: "finder", query: `player=${encodeURIComponent(u)}${ROLE_OF[p[5]] ? `&role=${encodeURIComponent(ROLE_OF[p[5]])}` : ""}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Game finder")}
             </HubLink>
             <HubLink
-              to={{ kind: "items", query: `player=${encodeURIComponent(u)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
+              to={{ kind: "items", query: `player=${encodeURIComponent(u)}${ROLE_OF[p[5]] ? `&role=${encodeURIComponent(ROLE_OF[p[5]])}` : ""}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
               {tl("Item history")}
@@ -765,7 +794,14 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             <HubLink
               to={{
                 kind: "items",
-                query: `player=${encodeURIComponent(playerRowSlug(list[0]))}${since !== "all" ? `&year=${encodeURIComponent(since)}` : ""}`,
+                query: new URLSearchParams({
+                  player: playerRowSlug(list[0]),
+                  ...(words.trim() && list[1] && playerRowSlug(list[1]) !== playerRowSlug(list[0])
+                    ? { vsplayer: playerRowSlug(list[1]) }
+                    : {}),
+                  ...((role || ROLE_OF[list[0][5]]) ? { role: role || ROLE_OF[list[0][5]] } : {}),
+                  ...(since !== "all" ? { year: since } : {}),
+                }).toString(),
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -791,7 +827,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                       list[0][2] && list[1]?.[2] && teamSlugOf(list[0][2]) !== teamSlugOf(list[1][2])
                         ? `,${encodeURIComponent(teamSlugOf(list[1][2]))}`
                         : ""
-                    }${since !== "all" ? `&p=y${encodeURIComponent(since)}` : ""}`,
+                    }${(role || ROLE_OF[list[0][5]]) ? `&role=${encodeURIComponent(role || ROLE_OF[list[0][5]])}` : ""}${since !== "all" ? `&p=y${encodeURIComponent(since)}` : ""}`,
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -806,7 +842,9 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             kind: "leaders",
             query:
               new URLSearchParams({
-                ...(role ? { role } : {}),
+                ...((role || (list[0] && ROLE_OF[list[0][5]] && (!list[1] || ROLE_OF[list[1][5]] === ROLE_OF[list[0][5]])))
+                  ? { role: role || ROLE_OF[list[0][5]] }
+                  : {}),
                 ...(since !== "all" ? { year: since } : {}),
                 ...(list[0]
                   ? {
@@ -826,7 +864,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             kind: "tiers",
             query:
               new URLSearchParams({
-                ...(role ? { role } : {}),
+                ...((role || (list[0] && ROLE_OF[list[0][5]])) ? { role: role || ROLE_OF[list[0][5]] } : {}),
                 ...(since !== "all" ? { key: `y${since}`, year: since } : {}),
               }).toString() || undefined,
           }}
@@ -839,7 +877,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             kind: "counters",
             query:
               new URLSearchParams({
-                ...(role ? { role } : {}),
+                ...((role || (list[0] && ROLE_OF[list[0][5]])) ? { role: role || ROLE_OF[list[0][5]] } : {}),
                 ...(since !== "all" ? { patch: `y${since}`, year: since } : {}),
               }).toString() || undefined,
           }}
@@ -867,7 +905,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             kind: "finder",
             query:
               new URLSearchParams({
-                ...(role ? { role } : {}),
+                ...((role || (list[0] && ROLE_OF[list[0][5]])) ? { role: role || ROLE_OF[list[0][5]] } : {}),
                 ...(list[0]
                   ? {
                       player: playerRowSlug(list[0]),

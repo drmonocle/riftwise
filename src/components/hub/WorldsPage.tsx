@@ -497,19 +497,19 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                   {ko.final?.a && ko.final?.b && (
                     <>
                       <HubLink
-                        to={{ kind: "prep", a: ko.final.a, b: ko.final.b, period: `y${d.year}` }}
+                        to={{ kind: "prep", a: ko.final.a, b: ko.final.b, period: `e:${main.u}` }}
                         className="text-[11px] font-semibold text-rw-accent hover:underline"
                       >
                         {tl("Match prep")} →
                       </HubLink>
                       <HubLink
-                        to={{ kind: "draft", query: `teams=${encodeURIComponent(ko.final.a)},${encodeURIComponent(ko.final.b)}&p=y${d.year}` }}
+                        to={{ kind: "draft", query: `teams=${encodeURIComponent(ko.final.a)},${encodeURIComponent(ko.final.b)}&p=e:${encodeURIComponent(main.u)}` }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Draft board")} →
                       </HubLink>
                       <HubLink
-                        to={{ kind: "compare", mode: "team", a: ko.final.a, b: ko.final.b, period: `y${d.year}` }}
+                        to={{ kind: "compare", mode: "team", a: ko.final.a, b: ko.final.b, period: `e:${main.u}` }}
                         className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Compare")} →
@@ -974,19 +974,19 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
                 return topM ? (
                   <>
                     <HubLink
-                      to={{ kind: "prep", a: topM.a, b: topM.b, period: `y${d.year}` }}
+                      to={{ kind: "prep", a: topM.a, b: topM.b, period: `e:${main.u}` }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
                     >
                       {tl("Match prep")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(topM.a)},${encodeURIComponent(topM.b)}&p=y${d.year}` }}
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(topM.a)},${encodeURIComponent(topM.b)}&p=e:${encodeURIComponent(main.u)}` }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "compare", mode: "team", a: topM.a, b: topM.b, period: `y${d.year}` }}
+                      to={{ kind: "compare", mode: "team", a: topM.a, b: topM.b, period: `e:${main.u}` }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Compare")} →
@@ -1469,6 +1469,13 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
                         · {tl("Draft board")}
                       </HubLink>
                       <HubLink
+                        to={{ kind: "items", query: `league=${encodeURIComponent(INTL[kind].league)}&team=${encodeURIComponent(x.u || runnerSlug(x.as))}&vs=${encodeURIComponent(runnerSlug(x.l))}${x.e ? `&event=${encodeURIComponent(x.e)}` : ""}&year=${encodeURIComponent(x.y)}` }}
+                        className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
+                        title={tl("Item history")}
+                      >
+                        · {tl("Item history")}
+                      </HubLink>
+                      <HubLink
                         to={{ kind: "finder", query: `league=${encodeURIComponent(INTL[kind].league)}&team=${encodeURIComponent(x.u || runnerSlug(x.as))}&vs=${encodeURIComponent(runnerSlug(x.l))}${x.e ? `&event=${encodeURIComponent(x.e)}` : ""}&year=${encodeURIComponent(x.y)}` }}
                         className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                         title={tl("Game finder")}
@@ -1648,16 +1655,16 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
               <span className="flex flex-wrap items-center gap-2">
                 {teams.length >= 1 && (
                   <>
-                    <HubLink to={{ kind: "prep", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "prep", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `e:${main.u}` }} className="text-[11px] text-rw-accent hover:underline">
                       {tl("Match prep")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(teams[0].u)}${teams[1] ? `,${encodeURIComponent(teams[1].u)}` : ""}&p=y${encodeURIComponent(year)}` }}
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(teams[0].u)}${teams[1] ? `,${encodeURIComponent(teams[1].u)}` : ""}&p=e:${encodeURIComponent(main.u)}` }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
                     </HubLink>
-                    <HubLink to={{ kind: "compare", mode: "team", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "compare", mode: "team", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `e:${main.u}` }} className="text-[11px] text-rw-accent hover:underline">
                       {tl("Compare")} →
                     </HubLink>
                     <HubLink
@@ -1738,16 +1745,16 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
             <span className="flex flex-wrap items-center gap-2">
               {teams.length >= 2 && (
                 <>
-                  <HubLink to={{ kind: "prep", a: teams[0].u, b: teams[1].u, period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                  <HubLink to={{ kind: "prep", a: teams[0].u, b: teams[1].u, period: `e:${main.u}` }} className="text-[11px] text-rw-accent hover:underline">
                     {tl("Match prep")} →
                   </HubLink>
                   <HubLink
-                    to={{ kind: "draft", query: `teams=${encodeURIComponent(teams[0].u)},${encodeURIComponent(teams[1].u)}&p=y${encodeURIComponent(year)}` }}
+                    to={{ kind: "draft", query: `teams=${encodeURIComponent(teams[0].u)},${encodeURIComponent(teams[1].u)}&p=e:${encodeURIComponent(main.u)}` }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
                     {tl("Draft board")} →
                   </HubLink>
-                  <HubLink to={{ kind: "compare", mode: "team", a: teams[0].u, b: teams[1].u, period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                  <HubLink to={{ kind: "compare", mode: "team", a: teams[0].u, b: teams[1].u, period: `e:${main.u}` }} className="text-[11px] text-rw-accent hover:underline">
                     {tl("Compare")} →
                   </HubLink>
                   <HubLink
@@ -1843,16 +1850,16 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                   .slice(0, 2);
                 return top2.length >= 1 ? (
                   <>
-                    <HubLink to={{ kind: "prep", a: top2[0].u, ...(top2[1] ? { b: top2[1].u } : {}), period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "prep", a: top2[0].u, ...(top2[1] ? { b: top2[1].u } : {}), period: `e:${main.u}` }} className="text-[11px] text-rw-accent hover:underline">
                       {tl("Match prep")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(top2[0].u)}${top2[1] ? `,${encodeURIComponent(top2[1].u)}` : ""}&p=y${year}` }}
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(top2[0].u)}${top2[1] ? `,${encodeURIComponent(top2[1].u)}` : ""}&p=e:${encodeURIComponent(main.u)}` }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
                     </HubLink>
-                    <HubLink to={{ kind: "compare", mode: "team", a: top2[0].u, ...(top2[1] ? { b: top2[1].u } : {}), period: `y${year}` }} className="text-[11px] text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "compare", mode: "team", a: top2[0].u, ...(top2[1] ? { b: top2[1].u } : {}), period: `e:${main.u}` }} className="text-[11px] text-rw-accent hover:underline">
                       {tl("Compare")} →
                     </HubLink>
                     <HubLink
@@ -2004,6 +2011,17 @@ const MatchBox: React.FC<{ m: WMatch; byU: Map<string, WTeam>; onPick: (u: strin
                 title={tl("Draft board")}
               >
                 {tl("Draft board")}
+              </HubLink>
+              <span aria-hidden="true">·</span>
+              <HubLink
+                to={{
+                  kind: "items",
+                  query: `team=${encodeURIComponent(m.a)}&vs=${encodeURIComponent(m.b)}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${leagueSlug ? `&league=${encodeURIComponent(leagueSlug)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                }}
+                className="hover:text-rw-accent hover:underline"
+                title={tl("Item history")}
+              >
+                {tl("Item history")}
               </HubLink>
               <span aria-hidden="true">·</span>
               <HubLink
@@ -2296,16 +2314,16 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
           <span className="flex flex-wrap items-center gap-2">
             {teams.length >= 1 && (
               <>
-                <HubLink to={{ kind: "prep", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `y${d.year}` }} className="text-[11px] text-rw-accent hover:underline">
+                <HubLink to={{ kind: "prep", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `e:${main.u}` }} className="text-[11px] text-rw-accent hover:underline">
                   {tl("Match prep")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(teams[0].u)}${teams[1] ? `,${encodeURIComponent(teams[1].u)}` : ""}&p=y${encodeURIComponent(String(d.year))}` }}
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent(teams[0].u)}${teams[1] ? `,${encodeURIComponent(teams[1].u)}` : ""}&p=e:${encodeURIComponent(main.u)}` }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Draft board")} →
                 </HubLink>
-                <HubLink to={{ kind: "compare", mode: "team", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `y${d.year}` }} className="text-[11px] text-rw-accent hover:underline">
+                <HubLink to={{ kind: "compare", mode: "team", a: teams[0].u, ...(teams[1] ? { b: teams[1].u } : {}), period: `e:${main.u}` }} className="text-[11px] text-rw-accent hover:underline">
                   {tl("Compare")} →
                 </HubLink>
                 <HubLink
@@ -2420,16 +2438,16 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                   .slice(0, 2);
                 return top2.length >= 1 ? (
                   <>
-                    <HubLink to={{ kind: "prep", a: top2[0].u, ...(top2[1] ? { b: top2[1].u } : {}), period: `y${d.year}` }} className="text-[11px] text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "prep", a: top2[0].u, ...(top2[1] ? { b: top2[1].u } : {}), period: `e:${main.u}` }} className="text-[11px] text-rw-accent hover:underline">
                       {tl("Match prep")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "draft", query: `teams=${encodeURIComponent(top2[0].u)}${top2[1] ? `,${encodeURIComponent(top2[1].u)}` : ""}&p=y${d.year}` }}
+                      to={{ kind: "draft", query: `teams=${encodeURIComponent(top2[0].u)}${top2[1] ? `,${encodeURIComponent(top2[1].u)}` : ""}&p=e:${encodeURIComponent(main.u)}` }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
                       {tl("Draft board")} →
                     </HubLink>
-                    <HubLink to={{ kind: "compare", mode: "team", a: top2[0].u, ...(top2[1] ? { b: top2[1].u } : {}), period: `y${d.year}` }} className="text-[11px] text-rw-accent hover:underline">
+                    <HubLink to={{ kind: "compare", mode: "team", a: top2[0].u, ...(top2[1] ? { b: top2[1].u } : {}), period: `e:${main.u}` }} className="text-[11px] text-rw-accent hover:underline">
                       {tl("Compare")} →
                     </HubLink>
                     <HubLink
