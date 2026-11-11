@@ -365,9 +365,15 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
             type="button"
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
+              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
               navigateHub({
                 kind: "finder",
-                query: `team=${encodeURIComponent(teamSlug(left.name, left.code))}&vs=${encodeURIComponent(teamSlug(right.name, right.code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                query: new URLSearchParams({
+                  team: teamSlug(left.name, left.code),
+                  vs: teamSlug(right.name, right.code),
+                  ...(lg ? { league: lg } : {}),
+                  ...(yr ? { year: yr } : {}),
+                }).toString(),
               });
             }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
@@ -1262,9 +1268,15 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
             type="button"
             onClick={() => {
               const yr = match.startTimeUtc?.slice(0, 4);
+              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
               navigateHub({
                 kind: "finder",
-                query: `team=${encodeURIComponent(teamSlug(left.name, left.code))}&vs=${encodeURIComponent(teamSlug(right.name, right.code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                query: new URLSearchParams({
+                  team: teamSlug(left.name, left.code),
+                  vs: teamSlug(right.name, right.code),
+                  ...(lg ? { league: lg } : {}),
+                  ...(yr ? { year: yr } : {}),
+                }).toString(),
               });
             }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
@@ -1284,6 +1296,26 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
           >
             {tl("Power rankings")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const yr = match.startTimeUtc?.slice(0, 4);
+              const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
+              const patchKey = win.gameMetadata.patchVersion
+                ? `p${win.gameMetadata.patchVersion.split(".").slice(0, 2).join(".")}`
+                : yr
+                  ? `y${yr}`
+                  : "";
+              const q = new URLSearchParams({
+                ...(lg ? { scope: lg } : {}),
+                ...(patchKey ? { key: patchKey } : {}),
+              }).toString();
+              navigateHub({ kind: "tiers", ...(q ? { query: q } : {}) });
+            }}
+            className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+          >
+            {tl("Pro tier list")}
           </button>
           <button
             type="button"

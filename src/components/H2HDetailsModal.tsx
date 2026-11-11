@@ -420,6 +420,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                                     query: new URLSearchParams({
                                       team: teamSlug(t1.name, c1),
                                       vs: teamSlug(t2.name, c2),
+                                      ...(m.tournament ? { event: resolveEventSlug(m.tournament) } : {}),
                                       ...(m.date.length >= 4 ? { year: m.date.slice(0, 4) } : {}),
                                     }).toString(),
                                   });
@@ -476,7 +477,7 @@ const PrepButton: React.FC<{
 }> = ({ t1, t2, year, onDone }) => {
   const [state, setState] = useState<"" | "busy" | "missing">("");
   if (state === "missing") return null;
-  const lg = t1.league && t1.league === t2.league ? t1.league : undefined;
+  const lg = t1.league && t1.league === t2.league ? resolveLeagueSlug(t1.league) : undefined;
   const openRoute = (dest: (a: string, b: string) => void) => {
     setState("busy");
     loadHubIndexQuick()
@@ -533,7 +534,12 @@ const PrepButton: React.FC<{
             openRoute((a, b) =>
               navigateHub({
                 kind: "finder",
-                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${year ? `&year=${encodeURIComponent(year)}` : ""}`,
+                query: new URLSearchParams({
+                  team: a,
+                  vs: b,
+                  ...(lg ? { league: lg } : {}),
+                  ...(year ? { year } : {}),
+                }).toString(),
               }),
             )
           }

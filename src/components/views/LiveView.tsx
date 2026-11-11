@@ -699,9 +699,15 @@ const LiveMatchBlock: React.FC<{
                   type="button"
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
+                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
                     navigateHub({
                       kind: "finder",
-                      query: `team=${encodeURIComponent(teamSlug(m.team1Name, m.team1Code))}&vs=${encodeURIComponent(teamSlug(m.team2Name, m.team2Code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                      query: new URLSearchParams({
+                        team: teamSlug(m.team1Name, m.team1Code),
+                        vs: teamSlug(m.team2Name, m.team2Code),
+                        ...(lg ? { league: lg } : {}),
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
                     });
                   }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -710,12 +716,16 @@ const LiveMatchBlock: React.FC<{
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
                     navigateHub({
                       kind: "rankings",
-                      query: `q=${encodeURIComponent(teamSlug(m.team1Name, m.team1Code))},${encodeURIComponent(teamSlug(m.team2Name, m.team2Code))}`,
-                    })
-                  }
+                      query: new URLSearchParams({
+                        ...(lg ? { league: lg } : {}),
+                        q: `${teamSlug(m.team1Name, m.team1Code)},${teamSlug(m.team2Name, m.team2Code)}`,
+                      }).toString(),
+                    });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Power rankings")}
@@ -1113,9 +1123,15 @@ const NextMatchCard: React.FC<{
                   type="button"
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
+                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
                     navigateHub({
                       kind: "finder",
-                      query: `team=${encodeURIComponent(teamSlug(m.team1Name, m.team1Code))}&vs=${encodeURIComponent(teamSlug(m.team2Name, m.team2Code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                      query: new URLSearchParams({
+                        team: teamSlug(m.team1Name, m.team1Code),
+                        vs: teamSlug(m.team2Name, m.team2Code),
+                        ...(lg ? { league: lg } : {}),
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
                     });
                   }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -1124,12 +1140,16 @@ const NextMatchCard: React.FC<{
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
                     navigateHub({
                       kind: "rankings",
-                      query: `q=${encodeURIComponent(teamSlug(m.team1Name, m.team1Code))},${encodeURIComponent(teamSlug(m.team2Name, m.team2Code))}`,
-                    })
-                  }
+                      query: new URLSearchParams({
+                        ...(lg ? { league: lg } : {}),
+                        q: `${teamSlug(m.team1Name, m.team1Code)},${teamSlug(m.team2Name, m.team2Code)}`,
+                      }).toString(),
+                    });
+                  }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
                 >
                   {tl("Power rankings")}
@@ -1196,7 +1216,7 @@ const IntlBanner: React.FC<{ schedule: Match[]; onSelectTab: (tab: "stats") => v
     <button
       type="button"
       onClick={() => {
-        navigateHub({ kind: ev.kind });
+        navigateHub({ kind: ev.kind, ...(year ? { year } : {}) });
         onSelectTab("stats");
       }}
       className="w-full text-left rounded-xl border border-rw-border border-l-[3px] border-l-rw-accent bg-rw-panel rw-lit hover:bg-rw-raised px-4 py-3 flex flex-wrap items-center justify-between gap-2"

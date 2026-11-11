@@ -370,9 +370,14 @@ export const LiveNextGamePreview: React.FC<{
             <HubLink
               to={{
                 kind: "finder",
-                query: `team=${encodeURIComponent(draftIntel.slugA)}&vs=${encodeURIComponent(draftIntel.slugB)}${
-                  draftIntel.period.startsWith("y") ? `&year=${encodeURIComponent(draftIntel.period.slice(1))}` : ""
-                }`,
+                query: new URLSearchParams({
+                  team: draftIntel.slugA,
+                  vs: draftIntel.slugB,
+                  ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
+                  ...(draftIntel.period.startsWith("y") ? { year: draftIntel.period.slice(1) } : {}),
+                  ...(draftIntel.period.startsWith("e:") ? { event: draftIntel.period.slice(2) } : {}),
+                  ...(draftIntel.period.startsWith("p:") ? { patch: draftIntel.period.slice(2) } : {}),
+                }).toString(),
               }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
             >
@@ -396,7 +401,13 @@ export const LiveNextGamePreview: React.FC<{
                 query:
                   new URLSearchParams({
                     ...(match.leagueSlug ? { scope: resolveLeagueSlug(match.leagueSlug) } : {}),
-                    ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5 ? { key: draftIntel.period } : {}),
+                    ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5
+                      ? { key: draftIntel.period }
+                      : draftIntel.period.startsWith("e:")
+                        ? { event: draftIntel.period.slice(2) }
+                        : draftIntel.period.startsWith("p:")
+                          ? { key: `p${draftIntel.period.slice(2)}` }
+                          : {}),
                     ...(draftIntel.rolesA[0]?.open[0]?.c || draftIntel.rolesB[0]?.open[0]?.c
                       ? { q: [draftIntel.rolesA[0]?.open[0]?.c, draftIntel.rolesB[0]?.open[0]?.c].filter(Boolean).map((c) => resolveChampSlug(c!)).join(",") }
                       : {}),
@@ -412,7 +423,11 @@ export const LiveNextGamePreview: React.FC<{
                 query:
                   new URLSearchParams({
                     ...(match.leagueSlug ? { league: resolveLeagueSlug(match.leagueSlug) } : {}),
-                    ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5 ? { year: draftIntel.period.slice(1) } : {}),
+                    ...(draftIntel.period.startsWith("y") && draftIntel.period.length === 5
+                      ? { year: draftIntel.period.slice(1) }
+                      : draftIntel.period.startsWith("e:")
+                        ? { event: draftIntel.period.slice(2) }
+                        : {}),
                     q: `${draftIntel.slugA},${draftIntel.slugB}`,
                   }).toString() || undefined,
               }}

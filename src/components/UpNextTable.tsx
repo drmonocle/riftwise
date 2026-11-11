@@ -159,10 +159,12 @@ export const UpNextTable: React.FC<{
           type="button"
           onClick={() => {
             const yr = matches[0]?.startTimeUtc?.slice(0, 4);
+            const lg = matches[0]?.leagueSlug ? resolveLeagueSlug(matches[0].leagueSlug) : "";
             const q = matches[0]
               ? new URLSearchParams({
                   team: teamSlug(matches[0].team1Name, matches[0].team1Code),
                   vs: teamSlug(matches[0].team2Name, matches[0].team2Code),
+                  ...(lg ? { league: lg } : {}),
                   ...(yr ? { year: yr } : {}),
                 }).toString()
               : "";

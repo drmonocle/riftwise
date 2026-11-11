@@ -758,9 +758,15 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                                 type="button"
                                 onClick={() => {
                                   const y = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
+                                  const lg = streamEventLeague(e);
                                   navigateHub({
                                     kind: "finder",
-                                    query: `team=${encodeURIComponent(teamSlug(e.team1!))}&vs=${encodeURIComponent(teamSlug(e.team2!))}${y ? `&year=${y}` : ""}`,
+                                    query: new URLSearchParams({
+                                      team: teamSlug(e.team1!),
+                                      vs: teamSlug(e.team2!),
+                                      ...(lg ? { league: lg } : {}),
+                                      ...(y ? { year: y } : {}),
+                                    }).toString(),
                                   });
                                 }}
                                 className="hidden lg:inline text-[10px] text-rw-sub hover:text-rw-accent hover:underline"

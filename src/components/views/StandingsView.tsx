@@ -206,59 +206,103 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
               </span>
             )
           )}
-          {activeLeague && (
-            <span className="flex flex-wrap items-center gap-2 text-[11px]">
-              <button
-                type="button"
-                onClick={() => navigateHub({ kind: "league", slug: resolveLeagueSlug(activeLeague) })}
-                className="font-semibold text-rw-accent hover:underline"
-              >
-                {tl("Full history and stats")} →
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateHub({ kind: "champions", query: `scope=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
-                className="text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Champions")} →
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
-                className="text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Pro tier list")} →
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateHub({ kind: "leaders", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
-                className="text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Player leaderboards")} →
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateHub({ kind: "rankings", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
-                className="text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Power rankings")} →
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateHub({ kind: "best", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
-                className="text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Best games")} →
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateHub({ kind: "finder", query: `league=${encodeURIComponent(resolveLeagueSlug(activeLeague))}` })}
-                className="text-rw-sub hover:text-rw-accent hover:underline"
-              >
-                {tl("Game finder")} →
-              </button>
-            </span>
-          )}
+          {activeLeague && (() => {
+            const lg = resolveLeagueSlug(activeLeague);
+            const yr = tournamentInfo?.startDate?.slice(0, 4);
+            return (
+              <span className="flex flex-wrap items-center gap-2 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => navigateHub({ kind: "league", slug: lg })}
+                  className="font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Full history and stats")} →
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "champions",
+                      query: new URLSearchParams({
+                        scope: lg,
+                        ...(yr ? { key: `y${yr}` } : {}),
+                      }).toString(),
+                    })
+                  }
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Champions")} →
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "tiers",
+                      query: new URLSearchParams({
+                        scope: lg,
+                        ...(yr ? { key: `y${yr}` } : {}),
+                      }).toString(),
+                    })
+                  }
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Pro tier list")} →
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "leaders",
+                      query: new URLSearchParams({
+                        league: lg,
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
+                    })
+                  }
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Player leaderboards")} →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateHub({ kind: "rankings", query: `league=${encodeURIComponent(lg)}` })}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Power rankings")} →
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "best",
+                      query: new URLSearchParams({
+                        league: lg,
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
+                    })
+                  }
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Best games")} →
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateHub({
+                      kind: "finder",
+                      query: new URLSearchParams({
+                        league: lg,
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
+                    })
+                  }
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Game finder")} →
+                </button>
+              </span>
+            );
+          })()}
           {standings && standings.stages.length > 1 && (
             <div className="flex items-center gap-1 bg-rw-deep p-1 rounded-lg border border-rw-border ml-auto overflow-x-auto max-w-full">
               {standings.stages.map((st, i) => (
@@ -380,7 +424,16 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             </button>
                             <button
                               type="button"
-                              onClick={() => navigateHub({ kind: "finder", query: `team=${encodeURIComponent(a)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}` })}
+                              onClick={() =>
+                                navigateHub({
+                                  kind: "finder",
+                                  query: new URLSearchParams({
+                                    team: a,
+                                    ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                    ...(yr ? { year: yr } : {}),
+                                  }).toString(),
+                                })
+                              }
                               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                             >
                               {tl("Game finder")} →
@@ -453,7 +506,12 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                             onClick={() =>
                               navigateHub({
                                 kind: "finder",
-                                query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                                query: new URLSearchParams({
+                                  team: a,
+                                  vs: b,
+                                  ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                  ...(yr ? { year: yr } : {}),
+                                }).toString(),
                               })
                             }
                             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -689,7 +747,12 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 onClick={() =>
                                   navigateHub({
                                     kind: "finder",
-                                    query: `team=${encodeURIComponent(a)}&vs=${encodeURIComponent(b)}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                                    query: new URLSearchParams({
+                                      team: a,
+                                      vs: b,
+                                      ...(activeLeague ? { league: resolveLeagueSlug(activeLeague) } : {}),
+                                      ...(yr ? { year: yr } : {}),
+                                    }).toString(),
                                   })
                                 }
                                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -785,7 +848,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                           key: m.id,
                           teams: m.teams.map((t) => t.code),
                           winner: shown ? m.teams.find((t) => t.outcome === "win")?.code ?? null : null,
-                          node: <MatchCard match={m} hideResults={hideResults} onSelectTeam={onSelectTeam} year={tournamentInfo?.startDate?.slice(0, 4)} />,
+                          node: <MatchCard match={m} hideResults={hideResults} onSelectTeam={onSelectTeam} year={tournamentInfo?.startDate?.slice(0, 4)} league={activeLeague ? resolveLeagueSlug(activeLeague) : undefined} />,
                         };
                       }),
                     }))}
@@ -883,11 +946,12 @@ const TeamLogo: React.FC<{ code: string; name?: string; image?: string; onClick?
   );
 };
 
-const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectTeam: (code: string, name?: string) => void; year?: string }> = ({
+const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectTeam: (code: string, name?: string) => void; year?: string; league?: string }> = ({
   match,
   hideResults,
   onSelectTeam,
   year,
+  league,
 }) => {
   const masked = hideResults && match.state !== "unstarted";
   return (
@@ -925,7 +989,12 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
             onClick={() =>
               navigateHub({
                 kind: "finder",
-                query: `team=${encodeURIComponent(teamSlug(match.teams[0].name, match.teams[0].code))}&vs=${encodeURIComponent(teamSlug(match.teams[1].name, match.teams[1].code))}${year ? `&year=${year}` : ""}`,
+                query: new URLSearchParams({
+                  team: teamSlug(match.teams[0].name, match.teams[0].code),
+                  vs: teamSlug(match.teams[1].name, match.teams[1].code),
+                  ...(league ? { league } : {}),
+                  ...(year ? { year } : {}),
+                }).toString(),
               })
             }
             className="hover:text-rw-accent hover:underline"

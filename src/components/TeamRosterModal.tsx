@@ -409,7 +409,10 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       onClick={() => {
                         const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
                         const q = new URLSearchParams({
-                          q: teamSlug(displayName, upperCode),
+                          q: players
+                            .slice(0, 5)
+                            .map((p) => playerSlug(p.name))
+                            .join(","),
                           ...(lg ? { league: lg } : {}),
                         }).toString();
                         navigateHub({ kind: "leaders", query: q });
@@ -419,6 +422,21 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     >
                       {tl("Player leaderboards")} →
                     </button>
+                    {catalogTeam?.league && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigateHub({
+                            kind: "tiers",
+                            query: `scope=${encodeURIComponent(resolveLeagueSlug(catalogTeam.league))}`,
+                          });
+                          onClose();
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Pro tier list")} →
+                      </button>
+                    )}
                   </>
                 )}
                 {players.length > 0 && (
