@@ -13,7 +13,10 @@ import { tl, locale, clockOptions, tc } from "../../i18n";
 import { searchAlias } from "../../searchAliases";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { findSeriesSlug } from "../../hub/seriesLookup";
-import { bare, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, normText, prettySlug, resolveLeagueSlug, resolveRegionFilter, resolveTeamAlias } from "../../hub/data";
+
+const teamSlug = (name?: string, code?: string) =>
+  (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
 import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route";
 import { riotImg } from "../../riotImage";
@@ -158,7 +161,19 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     if (searchQuery.trim()) {
       const raw = searchQuery.trim();
       const text = normText(`${m.team1Code} ${m.team1Name} ${m.team2Code} ${m.team2Name} ${m.leagueName} ${m.blockName || ""}`);
-      const matchTerm = (q: string) => text.includes(q) || (bare(q).length >= 2 && bare(text).includes(bare(q)));
+      const t1Slug = teamSlug(m.team1Name, m.team1Code);
+      const t2Slug = teamSlug(m.team2Name, m.team2Code);
+      const lgSlug = resolveLeagueSlug(m.leagueSlug || m.leagueName);
+      const catLg = catalog?.leagues?.find((l) => l.slug.toLowerCase() === (m.leagueSlug || "").toLowerCase());
+      const matchTerm = (q: string) => {
+        if (text.includes(q) || (bare(q).length >= 2 && bare(text).includes(bare(q)))) return true;
+        const tq = resolveTeamAlias(q);
+        if (tq && (tq === t1Slug || tq === t2Slug)) return true;
+        if (resolveLeagueSlug(q) === lgSlug) return true;
+        const rq = resolveRegionFilter(q);
+        if (rq && ((catLg?.region && resolveRegionFilter(catLg.region) === rq) || resolveRegionFilter(m.leagueSlug || m.leagueName) === rq)) return true;
+        return false;
+      };
       if (/\s+vs\.?\s+|\s+v\s+/i.test(raw)) {
         const parts = raw
           .split(/\s+vs\.?\s+|\s+v\s+/i)
@@ -421,11 +436,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     (m) => (m.team1Code && m.team1Code !== "TBD") || (m.team2Code && m.team2Code !== "TBD"),
                   );
                   if (!singleMatch) return null;
-                  const sSlug = prettySlug(
+                  const sSlug =
                     singleMatch.team1Code && singleMatch.team1Code !== "TBD"
-                      ? singleMatch.team1Name || singleMatch.team1Code
-                      : singleMatch.team2Name || singleMatch.team2Code,
-                  );
+                      ? teamSlug(singleMatch.team1Name, singleMatch.team1Code)
+                      : teamSlug(singleMatch.team2Name, singleMatch.team2Code);
                   const sYr = singleMatch.startTimeUtc?.slice(0, 4);
                   return (
                     <div className="flex items-center gap-2 text-[11px]">
@@ -474,8 +488,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                     </div>
                   );
                 }
-                const a = prettySlug(topPair.team1Name || topPair.team1Code);
-                const b = prettySlug(topPair.team2Name || topPair.team2Code);
+                const a = teamSlug(topPair.team1Name, topPair.team1Code);
+                const b = teamSlug(topPair.team2Name, topPair.team2Code);
                 const pYr = topPair.startTimeUtc?.slice(0, 4);
                 return (
                   <div className="flex items-center gap-2 text-[11px]">
@@ -709,8 +723,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                                 navigateHub({
                                   kind: "compare",
                                   mode: "team",
-                                  a: prettySlug(m.team1Name || m.team1Code),
-                                  b: prettySlug(m.team2Name || m.team2Code),
+                                  a: teamSlug(m.team1Name, m.team1Code),
+                                  b: teamSlug(m.team2Name, m.team2Code),
                                   period: yr ? `y${yr}` : undefined,
                                 });
                               }}
@@ -730,8 +744,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                               const yr = m.startTimeUtc?.slice(0, 4);
                               navigateHub({
                                 kind: "prep",
-                                a: prettySlug(m.team1Name || m.team1Code),
-                                b: prettySlug(m.team2Name || m.team2Code),
+                                a: teamSlug(m.team1Name, m.team1Code),
+                                b: teamSlug(m.team2Name, m.team2Code),
                                 period: yr ? `y${yr}` : undefined,
                               });
                             }}
@@ -802,8 +816,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             const yr = m.startTimeUtc?.slice(0, 4);
                             navigateHub({
                               kind: "prep",
-                              a: prettySlug(m.team1Name || m.team1Code),
-                              b: prettySlug(m.team2Name || m.team2Code),
+                              a: teamSlug(m.team1Name, m.team1Code),
+                              b: teamSlug(m.team2Name, m.team2Code),
                               period: yr ? `y${yr}` : undefined,
                             });
                           }}
@@ -839,8 +853,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             const yr = m.startTimeUtc?.slice(0, 4);
                             navigateHub({
                               kind: "prep",
-                              a: prettySlug(m.team1Name || m.team1Code),
-                              b: prettySlug(m.team2Name || m.team2Code),
+                              a: teamSlug(m.team1Name, m.team1Code),
+                              b: teamSlug(m.team2Name, m.team2Code),
                               period: yr ? `y${yr}` : undefined,
                             });
                           }}

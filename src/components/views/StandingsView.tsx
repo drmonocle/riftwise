@@ -17,7 +17,10 @@ import { tl, tc, locale, regionName } from "../../i18n";
 import { STable } from "../STable";
 import { riotImg } from "../../riotImage";
 import { navigateHub } from "../../hub/route";
-import { bare, normText, prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { bare, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+
+const teamSlug = (name?: string, code?: string) =>
+  (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
 import { searchAlias } from "../../searchAliases";
 import { SectionCard } from "../hub/BroadcastCard";
 import { useTeamLogo } from "../hub/ui";
@@ -318,8 +321,12 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                 groupTerms.length > 0
                   ? allGroupTeams.filter(({ team }) => {
                       const hay = normText(`${team.name || ""} ${team.code || ""}`);
+                      const tSlug = teamSlug(team.name, team.code);
                       return groupTerms.some(
-                        (q) => hay.includes(q) || (bare(q).length >= 2 && bare(hay).includes(bare(q))),
+                        (q) =>
+                          hay.includes(q) ||
+                          (bare(q).length >= 2 && bare(hay).includes(bare(q))) ||
+                          (!!tSlug && resolveTeamAlias(q) === tSlug),
                       );
                     })
                   : allGroupTeams;
@@ -342,7 +349,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                     {(() => {
                       const yr = tournamentInfo?.startDate?.slice(0, 4);
                       if (groupTeams.length === 1 && groupTerms.length > 0) {
-                        const a = prettySlug(groupTeams[0].name || groupTeams[0].code);
+                        const a = teamSlug(groupTeams[0].name, groupTeams[0].code);
                         return (
                           <>
                             <button
@@ -411,8 +418,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                         );
                       }
                       if (groupTeams.length < 2) return null;
-                      const a = prettySlug(groupTeams[0].name || groupTeams[0].code);
-                      const b = prettySlug(groupTeams[1].name || groupTeams[1].code);
+                      const a = teamSlug(groupTeams[0].name, groupTeams[0].code);
+                      const b = teamSlug(groupTeams[1].name, groupTeams[1].code);
                       return (
                         <>
                           <button
@@ -568,7 +575,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                 )}
                                 <button
                                   type="button"
-                                  onClick={() => navigateHub({ kind: "team", slug: prettySlug(team.name || team.code) })}
+                                  onClick={() => navigateHub({ kind: "team", slug: teamSlug(team.name, team.code) })}
                                   className="hidden sm:inline text-[11px] font-mono text-rw-sub hover:text-rw-accent hover:underline"
                                 >
                                   {team.code}
@@ -581,7 +588,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => navigateHub({ kind: "team", slug: prettySlug(team.name || team.code), tab: "matches" })}
+                                  onClick={() => navigateHub({ kind: "team", slug: teamSlug(team.name, team.code), tab: "matches" })}
                                   className="inline-flex flex-col items-center gap-0.5 hover:opacity-80"
                                   title={tl("Full history and stats")}
                                 >
@@ -616,7 +623,7 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                                   </span>
                                   <button
                                     type="button"
-                                    onClick={() => navigateHub({ kind: "team", slug: prettySlug(team.name || team.code), tab: "stats" })}
+                                    onClick={() => navigateHub({ kind: "team", slug: teamSlug(team.name, team.code), tab: "stats" })}
                                     className="hover:text-rw-accent hover:underline"
                                     title={tl("Stats")}
                                   >
@@ -645,8 +652,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({
                         round.matches.filter((m) => m.teams.length === 2 && m.teams.every((t) => t.code && t.code !== "TBD")),
                       );
                       const featured = bracketMatches[bracketMatches.length - 1] ?? bracketMatches[0];
-                      const a = featured ? prettySlug(featured.teams[0].name || featured.teams[0].code) : "";
-                      const b = featured ? prettySlug(featured.teams[1].name || featured.teams[1].code) : "";
+                      const a = featured ? teamSlug(featured.teams[0].name, featured.teams[0].code) : "";
+                      const b = featured ? teamSlug(featured.teams[1].name, featured.teams[1].code) : "";
                       return (
                         <>
                           {a && b && (
@@ -918,7 +925,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
             onClick={() =>
               navigateHub({
                 kind: "finder",
-                query: `team=${encodeURIComponent(prettySlug(match.teams[0].name || match.teams[0].code))}&vs=${encodeURIComponent(prettySlug(match.teams[1].name || match.teams[1].code))}${year ? `&year=${year}` : ""}`,
+                query: `team=${encodeURIComponent(teamSlug(match.teams[0].name, match.teams[0].code))}&vs=${encodeURIComponent(teamSlug(match.teams[1].name, match.teams[1].code))}${year ? `&year=${year}` : ""}`,
               })
             }
             className="hover:text-rw-accent hover:underline"
@@ -938,8 +945,8 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
                 onClick={() =>
                   navigateHub({
                     kind: "prep",
-                    a: prettySlug(match.teams[0].name || match.teams[0].code),
-                    b: prettySlug(match.teams[1].name || match.teams[1].code),
+                    a: teamSlug(match.teams[0].name, match.teams[0].code),
+                    b: teamSlug(match.teams[1].name, match.teams[1].code),
                     period: year ? `y${year}` : undefined,
                   })
                 }
@@ -953,7 +960,7 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
                 onClick={() =>
                   navigateHub({
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(match.teams[0].name || match.teams[0].code))},${encodeURIComponent(prettySlug(match.teams[1].name || match.teams[1].code))}${year ? `&p=y${year}` : ""}`,
+                    query: `teams=${encodeURIComponent(teamSlug(match.teams[0].name, match.teams[0].code))},${encodeURIComponent(teamSlug(match.teams[1].name, match.teams[1].code))}${year ? `&p=y${year}` : ""}`,
                   })
                 }
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -967,8 +974,8 @@ const MatchCard: React.FC<{ match: BracketMatch; hideResults: boolean; onSelectT
                   navigateHub({
                     kind: "compare",
                     mode: "team",
-                    a: prettySlug(match.teams[0].name || match.teams[0].code),
-                    b: prettySlug(match.teams[1].name || match.teams[1].code),
+                    a: teamSlug(match.teams[0].name, match.teams[0].code),
+                    b: teamSlug(match.teams[1].name, match.teams[1].code),
                     period: year ? `y${year}` : undefined,
                   })
                 }

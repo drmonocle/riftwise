@@ -6,7 +6,7 @@ import { tl, tn, locale, stageName } from "../../i18n";
 import { lazyPart } from "../../lazyPart";
 import { PartBoundary } from "../PartBoundary";
 import { navigateHub, type HubRoute } from "../../hub/route";
-import { prettySlug } from "../../hub/data";
+import { prettySlug, resolveTeamAlias } from "../../hub/data";
 import { useTeamLogo } from "../hub/ui";
 import { SectionCard } from "../hub/BroadcastCard";
 // Loaded with the stats hub code, only when the 24/7 tab is opened
@@ -26,7 +26,7 @@ function streamEventRoute(e: StreamEvent): HubRoute | null {
 function streamEventLeague(e?: StreamEvent | null): string | undefined {
   if (!e) return undefined;
   if (e.event === "Worlds") return "world-championship";
-  if (e.event === "MSI") return "msi";
+  if (e.event === "MSI") return "mid-season-invitational";
   if (e.event === "First Stand") return "first-stand";
   return undefined;
 }
@@ -102,7 +102,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
     const norm = normalizeTeamCode(code);
     const mapped = STREAM_CODE[norm] || STREAM_CODE[code.toUpperCase()] || code;
     const found = catalog?.teams ? pickTeamByCode(catalog.teams, mapped) || pickTeamByCode(catalog.teams, code) : undefined;
-    return prettySlug(found?.name || mapped);
+    return (found?.name && resolveTeamAlias(found.name)) || resolveTeamAlias(mapped) || resolveTeamAlias(code) || prettySlug(found?.name || mapped);
   };
 
   const EventTitleLink: React.FC<{ e: StreamEvent; className?: string }> = ({ e, className }) => {

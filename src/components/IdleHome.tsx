@@ -9,7 +9,10 @@ import { Match, AppSettings } from "../types";
 import { tl, tc, locale } from "../i18n";
 import { isRevealed, setRevealed } from "../revealed";
 import { navigateHub } from "../hub/route";
-import { loadRatings, prettySlug, resolveLeagueSlug } from "../hub/data";
+import { loadRatings, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../hub/data";
+
+const teamSlug = (name?: string, code?: string) =>
+  (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
 import { findSeriesSlug } from "../hub/seriesLookup";
 import { RIOT_PREFIX } from "../hub/riotMatch";
 import { TeamLogo, useLoad } from "./hub/ui";
@@ -71,8 +74,8 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                   const yr = done[0].startTimeUtc?.slice(0, 4);
                   navigateHub({
                     kind: "prep",
-                    a: prettySlug(done[0].team1Name || done[0].team1Code),
-                    b: prettySlug(done[0].team2Name || done[0].team2Code),
+                    a: teamSlug(done[0].team1Name, done[0].team1Code),
+                    b: teamSlug(done[0].team2Name, done[0].team2Code),
                     ...(yr ? { period: `y${yr}` } : {}),
                   });
                 }}
@@ -86,7 +89,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                   const yr = done[0].startTimeUtc?.slice(0, 4);
                   navigateHub({
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(prettySlug(done[0].team1Name || done[0].team1Code))},${encodeURIComponent(prettySlug(done[0].team2Name || done[0].team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
+                    query: `teams=${encodeURIComponent(teamSlug(done[0].team1Name, done[0].team1Code))},${encodeURIComponent(teamSlug(done[0].team2Name, done[0].team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
                   });
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline text-[11px] font-medium"
@@ -100,8 +103,8 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                   navigateHub({
                     kind: "compare",
                     mode: "team",
-                    a: prettySlug(done[0].team1Name || done[0].team1Code),
-                    b: prettySlug(done[0].team2Name || done[0].team2Code),
+                    a: teamSlug(done[0].team1Name, done[0].team1Code),
+                    b: teamSlug(done[0].team2Name, done[0].team2Code),
                     ...(yr ? { period: `y${yr}` } : {}),
                   });
                 }}
@@ -119,7 +122,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
                 ...(lg ? { league: lg } : {}),
                 ...(done[0]
                   ? {
-                      q: `${prettySlug(done[0].team1Name || done[0].team1Code)},${prettySlug(done[0].team2Name || done[0].team2Code)}`,
+                      q: `${teamSlug(done[0].team1Name, done[0].team1Code)},${teamSlug(done[0].team2Name, done[0].team2Code)}`,
                     }
                   : {}),
               }).toString();
@@ -172,8 +175,8 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               const q = new URLSearchParams({
                 ...(done[0]
                   ? {
-                      team: prettySlug(done[0].team1Name || done[0].team1Code),
-                      vs: prettySlug(done[0].team2Name || done[0].team2Code),
+                      team: teamSlug(done[0].team1Name, done[0].team1Code),
+                      vs: teamSlug(done[0].team2Name, done[0].team2Code),
                     }
                   : {}),
                 ...(lg ? { league: lg } : {}),
@@ -256,7 +259,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               )}
               <button
                 type="button"
-                onClick={() => navigateHub({ kind: "team", slug: prettySlug(m.team1Name || m.team1Code) })}
+                onClick={() => navigateHub({ kind: "team", slug: teamSlug(m.team1Name, m.team1Code) })}
                 className={`flex-1 min-w-0 inline-flex items-center justify-end gap-2 text-right truncate hover:text-rw-accent hover:underline transition-colors ${w1 ? "font-bold text-rw-text" : "text-rw-sub"}`}
               >
                 <span className="truncate">{m.team1Name}</span>
@@ -300,7 +303,7 @@ export const LatestResults: React.FC<{ schedule: Match[]; settings: AppSettings;
               )}
               <button
                 type="button"
-                onClick={() => navigateHub({ kind: "team", slug: prettySlug(m.team2Name || m.team2Code) })}
+                onClick={() => navigateHub({ kind: "team", slug: teamSlug(m.team2Name, m.team2Code) })}
                 className={`flex-1 min-w-0 inline-flex items-center gap-2 text-left truncate hover:text-rw-accent hover:underline transition-colors ${w2 ? "font-bold text-rw-text" : "text-rw-sub"}`}
               >
                 <TeamLogo name={m.team2Name} code={m.team2Code} src={m.team2Image} size={20} className="shrink-0" />

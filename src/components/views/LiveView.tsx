@@ -26,7 +26,10 @@ import { H2HMeter } from "../H2HMeter";
 import { tl, tc, locale } from "../../i18n";
 import { isRevealed, setRevealed, useRevealedVersion } from "../../revealed";
 import { riotImg } from "../../riotImage";
-import { prettySlug, resolveLeagueSlug } from "../../hub/data";
+import { prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+
+const teamSlug = (name?: string, code?: string) =>
+  (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
 import { navigateHub } from "../../hub/route";
 import { lazyPart } from "../../lazyPart";
 import { formatMatchTime } from "../../matchTime";
@@ -556,8 +559,8 @@ const LiveMatchBlock: React.FC<{
                     const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "prep",
-                      a: prettySlug(m.team1Name || m.team1Code),
-                      b: prettySlug(m.team2Name || m.team2Code),
+                      a: teamSlug(m.team1Name, m.team1Code),
+                      b: teamSlug(m.team2Name, m.team2Code),
                       ...(yr ? { period: `y${yr}` } : {}),
                     });
                   }}
@@ -668,7 +671,7 @@ const LiveMatchBlock: React.FC<{
                     const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "draft",
-                      query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
+                      query: `teams=${encodeURIComponent(teamSlug(m.team1Name, m.team1Code))},${encodeURIComponent(teamSlug(m.team2Name, m.team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
                     });
                   }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
@@ -683,8 +686,8 @@ const LiveMatchBlock: React.FC<{
                     navigateHub({
                       kind: "compare",
                       mode: "team",
-                      a: prettySlug(m.team1Name || m.team1Code),
-                      b: prettySlug(m.team2Name || m.team2Code),
+                      a: teamSlug(m.team1Name, m.team1Code),
+                      b: teamSlug(m.team2Name, m.team2Code),
                       ...(yr ? { period: `y${yr}` } : {}),
                     });
                   }}
@@ -698,7 +701,7 @@ const LiveMatchBlock: React.FC<{
                     const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "finder",
-                      query: `team=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))}&vs=${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                      query: `team=${encodeURIComponent(teamSlug(m.team1Name, m.team1Code))}&vs=${encodeURIComponent(teamSlug(m.team2Name, m.team2Code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
                     });
                   }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -710,7 +713,7 @@ const LiveMatchBlock: React.FC<{
                   onClick={() =>
                     navigateHub({
                       kind: "rankings",
-                      query: `q=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
+                      query: `q=${encodeURIComponent(teamSlug(m.team1Name, m.team1Code))},${encodeURIComponent(teamSlug(m.team2Name, m.team2Code))}`,
                     })
                   }
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -737,7 +740,7 @@ const LiveMatchBlock: React.FC<{
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
                     const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
-                    const tq = `${prettySlug(m.team1Name || m.team1Code)},${prettySlug(m.team2Name || m.team2Code)}`;
+                    const tq = `${teamSlug(m.team1Name, m.team1Code)},${teamSlug(m.team2Name, m.team2Code)}`;
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
@@ -1008,8 +1011,8 @@ const NextMatchCard: React.FC<{
                   navigateHub({
                     kind: "compare",
                     mode: "team",
-                    a: prettySlug(m.team1Name || m.team1Code),
-                    b: prettySlug(m.team2Name || m.team2Code),
+                    a: teamSlug(m.team1Name, m.team1Code),
+                    b: teamSlug(m.team2Name, m.team2Code),
                     ...(yr ? { period: `y${yr}` } : {}),
                   });
                 }}
@@ -1082,7 +1085,7 @@ const NextMatchCard: React.FC<{
                     const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "draft",
-                      query: `teams=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
+                      query: `teams=${encodeURIComponent(teamSlug(m.team1Name, m.team1Code))},${encodeURIComponent(teamSlug(m.team2Name, m.team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
                     });
                   }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
@@ -1097,8 +1100,8 @@ const NextMatchCard: React.FC<{
                     navigateHub({
                       kind: "compare",
                       mode: "team",
-                      a: prettySlug(m.team1Name || m.team1Code),
-                      b: prettySlug(m.team2Name || m.team2Code),
+                      a: teamSlug(m.team1Name, m.team1Code),
+                      b: teamSlug(m.team2Name, m.team2Code),
                       ...(yr ? { period: `y${yr}` } : {}),
                     });
                   }}
@@ -1112,7 +1115,7 @@ const NextMatchCard: React.FC<{
                     const yr = m.startTimeUtc?.slice(0, 4);
                     navigateHub({
                       kind: "finder",
-                      query: `team=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))}&vs=${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                      query: `team=${encodeURIComponent(teamSlug(m.team1Name, m.team1Code))}&vs=${encodeURIComponent(teamSlug(m.team2Name, m.team2Code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
                     });
                   }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -1124,7 +1127,7 @@ const NextMatchCard: React.FC<{
                   onClick={() =>
                     navigateHub({
                       kind: "rankings",
-                      query: `q=${encodeURIComponent(prettySlug(m.team1Name || m.team1Code))},${encodeURIComponent(prettySlug(m.team2Name || m.team2Code))}`,
+                      query: `q=${encodeURIComponent(teamSlug(m.team1Name, m.team1Code))},${encodeURIComponent(teamSlug(m.team2Name, m.team2Code))}`,
                     })
                   }
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
@@ -1151,7 +1154,7 @@ const NextMatchCard: React.FC<{
                   onClick={() => {
                     const yr = m.startTimeUtc?.slice(0, 4);
                     const lg = m.leagueSlug ? resolveLeagueSlug(m.leagueSlug) : "";
-                    const tq = `${prettySlug(m.team1Name || m.team1Code)},${prettySlug(m.team2Name || m.team2Code)}`;
+                    const tq = `${teamSlug(m.team1Name, m.team1Code)},${teamSlug(m.team2Name, m.team2Code)}`;
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
                       ...(yr ? { year: yr } : {}),
