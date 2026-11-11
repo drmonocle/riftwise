@@ -429,8 +429,10 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             <HubLink
               to={{
                 kind: "tournaments",
-                ...(singleYear ? { year: singleYear } : {}),
-                query: `league=${encodeURIComponent(intlLeague)}`,
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(singleYear ? { year: singleYear } : {}),
+                }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
@@ -751,8 +753,10 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               <HubLink
                 to={{
                   kind: "tournaments",
-                  ...(singleYear ? { year: singleYear } : {}),
-                  query: `league=${encodeURIComponent(intlLeague)}`,
+                  query: new URLSearchParams({
+                    league: intlLeague,
+                    ...(singleYear ? { year: singleYear } : {}),
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"

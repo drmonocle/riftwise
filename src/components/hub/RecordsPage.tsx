@@ -1294,7 +1294,7 @@ export const RecordsPanel: React.FC = () => {
                           <HubLink
                             to={{
                               kind: "finder",
-                              query: `player=${encodeURIComponent(p.u)}&vs=${encodeURIComponent(resolveTeamAlias(p.opp, aliases.data?.team) || prettySlug(p.opp))}`,
+                              query: `player=${encodeURIComponent(p.u)}&champ=${encodeURIComponent(resolveChampSlug(p.c))}&vs=${encodeURIComponent(resolveTeamAlias(p.opp, aliases.data?.team) || prettySlug(p.opp))}${p.e ? `&event=${encodeURIComponent(p.e)}` : ""}`,
                             }}
                             className="hover:text-rw-accent hover:underline"
                             title={tl("Game finder")}
@@ -2064,7 +2064,7 @@ export const TitlesPanel: React.FC = () => {
                     return (
                       <>
                         <HubLink
-                          to={{ kind: "tournaments", ...(tYr ? { year: tYr } : {}) }}
+                          to={{ kind: "tournaments", ...(tYr ? { query: `year=${encodeURIComponent(tYr)}` } : {}) }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
                           {tl("Tournaments")} →

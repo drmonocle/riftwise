@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tk, roleName, fmtDec } from "../../i18n";
-import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug, resolveChampSlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
+import { loadLeagueSeason, loadLeagues, loadPlayerGames, loadPlayerGames2y, loadTeamGames, loadTeamGames2y, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolveTeamAlias } from "../../hub/data";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { EventPlayer, EventTeamStats, LeagueRow, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { hubShareUrl, type HubRoute } from "../../hub/route";
@@ -641,7 +641,13 @@ function defaultRankSeason(
     const params = new URLSearchParams(search);
     const rawP = (params.get("p") || params.get("period") || "").trim();
     const rawEv = (params.get("event") || "").trim();
-    const p = rawP || (rawEv ? (rawEv.startsWith("e:") ? rawEv : `e:${rawEv}`) : "");
+    const p = rawP
+      ? rawP.startsWith("e:")
+        ? `e:${resolveEventSlug(rawP.slice(2))}`
+        : rawP
+      : rawEv
+        ? `e:${resolveEventSlug(rawEv.startsWith("e:") ? rawEv.slice(2) : rawEv)}`
+        : "";
     const rawLg = (params.get("league") || params.get("scope") || "").trim();
     const lgSlug = rawLg ? resolveLeagueSlug(rawLg) : "";
     const y = (params.get("y") || params.get("year") || (/^y:?(\d{4})$/.exec(p)?.[1] ?? (/^\d{4}$/.test(p) ? p : ""))).trim();
@@ -803,6 +809,7 @@ export const PlayerRanks: React.FC<{
                     league: lu,
                     year,
                     ...(me?.r ? { role: me.r } : {}),
+                    ...(games?.[0]?.[2] ? { champ: resolveChampSlug(games[0][2]) } : {}),
                     q: slug,
                   }).toString(),
                 }}
@@ -811,7 +818,10 @@ export const PlayerRanks: React.FC<{
                 {tl("Leaderboards")} →
               </HubLink>
               <HubLink
-                to={{ kind: "items", query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}` }}
+                to={{
+                  kind: "items",
+                  query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${games?.[0]?.[2] ? `&champ=${encodeURIComponent(resolveChampSlug(games[0][2]))}` : ""}`,
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Item history")} →
@@ -863,7 +873,10 @@ export const PlayerRanks: React.FC<{
                 {tl("Counters")} →
               </HubLink>
               <HubLink
-                to={{ kind: "finder", query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}` }}
+                to={{
+                  kind: "finder",
+                  query: `player=${encodeURIComponent(slug)}&year=${encodeURIComponent(year)}${games?.[0]?.[2] ? `&champ=${encodeURIComponent(resolveChampSlug(games[0][2]))}` : ""}`,
+                }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >
                 {tl("Game finder")} →
