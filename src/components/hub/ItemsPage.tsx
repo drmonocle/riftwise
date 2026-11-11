@@ -1315,15 +1315,81 @@ const ItemPlayersView: React.FC<{
     >
       {/* the item at a glance, then its years as columns (a column opens that year) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 rw-stats">
-        <Stat label={tl("Games")} value={fmtNum(it.g)} sub={tl("ended with it")} to={{ kind: "items" }} />
-        <Stat label={tl("Players")} value={fmtNum(it.np)} to={{ kind: "items" }} />
-        {it.w != null && <Stat label={tl("Win %")} value={winRate(it.w, it.g)} sub={tl("{n} won", { n: fmtNum(it.w) })} to={{ kind: "items" }} />}
+        <Stat
+          label={tl("Games")}
+          value={fmtNum(it.g)}
+          sub={tl("ended with it")}
+          to={{
+            kind: "finder",
+            query:
+              new URLSearchParams({
+                ...(top ? { champ: resolveChampSlug(top[0]) } : {}),
+                ...(vschamp ? { vschamp } : {}),
+                ...(role ? { role } : {}),
+                ...(event ? { event } : {}),
+                ...(patch ? { patch } : {}),
+                ...(team ? { team } : {}),
+                ...(vs ? { vs } : {}),
+                ...(league ? { league } : {}),
+              }).toString() || undefined,
+          }}
+        />
+        <Stat
+          label={tl("Players")}
+          value={fmtNum(it.np)}
+          to={{
+            kind: "items",
+            query:
+              new URLSearchParams({
+                ...(vschamp ? { vschamp } : {}),
+                ...(role ? { role } : {}),
+                ...(event ? { event } : {}),
+                ...(patch ? { patch } : {}),
+                ...(team ? { team } : {}),
+                ...(vs ? { vs } : {}),
+                ...(league ? { league } : {}),
+              }).toString() || undefined,
+          }}
+        />
+        {it.w != null && (
+          <Stat
+            label={tl("Win %")}
+            value={winRate(it.w, it.g)}
+            sub={tl("{n} won", { n: fmtNum(it.w) })}
+            to={{
+              kind: "items",
+              query:
+                new URLSearchParams({
+                  ...(vschamp ? { vschamp } : {}),
+                  ...(role ? { role } : {}),
+                  ...(event ? { event } : {}),
+                  ...(patch ? { patch } : {}),
+                  ...(team ? { team } : {}),
+                  ...(vs ? { vs } : {}),
+                  ...(league ? { league } : {}),
+                }).toString() || undefined,
+            }}
+          />
+        )}
         {top && (
           <Stat
             label={tl("Most built on")}
             value={<ChampLink name={top[0]} size={18} />}
             sub={tl("{n} games", { n: fmtNum(top[1]) })}
-            to={{ kind: "items", query: new URLSearchParams({ item: slug, champ: resolveChampSlug(top[0]) }).toString() }}
+            to={{
+              kind: "items",
+              query: new URLSearchParams({
+                item: slug,
+                champ: resolveChampSlug(top[0]),
+                ...(vschamp ? { vschamp } : {}),
+                ...(role ? { role } : {}),
+                ...(event ? { event } : {}),
+                ...(patch ? { patch } : {}),
+                ...(team ? { team } : {}),
+                ...(vs ? { vs } : {}),
+                ...(league ? { league } : {}),
+              }).toString(),
+            }}
           />
         )}
       </div>
@@ -1342,16 +1408,28 @@ const ItemPlayersView: React.FC<{
         <tbody>
           {(() => {
             const maxG = Math.max(1, it.players[0]?.[2] || 1);
+            const rowPeriodQ = event
+              ? `p=e:${encodeURIComponent(event)}`
+              : patch
+                ? `p=p:${encodeURIComponent(patch)}`
+                : undefined;
             return filteredPlayers.map(([n, u, g, last]) => (
               <tr key={u} className="border-t border-rw-border">
                 <td className={td} data-sort={n}>
                   <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <HubLink to={{ kind: "player", slug: u }} title={n} className="shrink-0">
+                    <HubLink to={{ kind: "player", slug: u, ...(rowPeriodQ ? { query: rowPeriodQ } : {}) }} title={n} className="shrink-0">
                       <PlayerPhoto name={n} team={teamBySlug.get(u)} slug={u} size={16} />
                     </HubLink>
-                    <PlayerLink name={n} u={u} />
+                    <PlayerLink name={n} u={u} query={rowPeriodQ} />
                     {teamBySlug.get(u) && (
-                      <HubLink to={{ kind: "team", slug: resolveTeamAlias(teamBySlug.get(u)!, aliases.data?.team) || prettySlug(teamBySlug.get(u)!) }} title={teamBySlug.get(u)!}>
+                      <HubLink
+                        to={{
+                          kind: "team",
+                          slug: resolveTeamAlias(teamBySlug.get(u)!, aliases.data?.team) || prettySlug(teamBySlug.get(u)!),
+                          ...(rowPeriodQ ? { query: rowPeriodQ } : {}),
+                        }}
+                        title={teamBySlug.get(u)!}
+                      >
                         <TeamLogo name={teamBySlug.get(u)!} size={13} />
                       </HubLink>
                     )}
@@ -1668,6 +1746,17 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
             <tbody>
               {(() => {
                 const maxG = Math.max(1, shown[0]?.g || 1);
+                const teamPeriodQ = event
+                  ? `p=e:${encodeURIComponent(event)}`
+                  : patch
+                    ? `p=p:${encodeURIComponent(patch)}`
+                    : year
+                      ? `p=y${encodeURIComponent(year)}`
+                      : undefined;
+                const playerPeriodQ = new URLSearchParams({
+                  ...(event ? { p: `e:${event}` } : patch ? { p: `p:${patch}` } : year ? { p: `y${year}` } : {}),
+                  ...(champ ? { champ: resolveChampSlug(champ) } : {}),
+                }).toString() || undefined;
                 return shown.map((r) => {
                   const p = players?.[r.k];
                   const u = p ? playerSlug(p) : "";
@@ -1676,12 +1765,20 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                       <td className={td} data-sort={p ? p[0] : ""}>
                         {p ? (
                           <span className="inline-flex items-center gap-1.5 min-w-0">
-                            <HubLink to={{ kind: "player", slug: u }} title={p[0]} className="shrink-0">
+                            <HubLink to={{ kind: "player", slug: u, ...(playerPeriodQ ? { query: playerPeriodQ } : {}) }} title={p[0]} className="shrink-0">
                               <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
                             </HubLink>
-                            <PlayerLink name={p[0]} u={u} />
+                            <PlayerLink name={p[0]} u={u} query={playerPeriodQ} />
                             {p[2] && (
-                              <HubLink to={{ kind: "team", slug: resolveTeamAlias(p[2], aliases.data?.team) || prettySlug(p[2]) }} title={p[2]} className="shrink-0">
+                              <HubLink
+                                to={{
+                                  kind: "team",
+                                  slug: resolveTeamAlias(p[2], aliases.data?.team) || prettySlug(p[2]),
+                                  ...(teamPeriodQ ? { query: teamPeriodQ } : {}),
+                                }}
+                                title={p[2]}
+                                className="shrink-0"
+                              >
                                 <TeamLogo name={p[2]} size={13} />
                               </HubLink>
                             )}
@@ -2007,11 +2104,14 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                 kind: "finder",
                 query: new URLSearchParams({
                   year,
+                  ...(y.c?.[0] ? { champ: resolveChampSlug(y.c[0][0]) } : {}),
+                  ...(vschamp ? { vschamp } : {}),
                   ...(role ? { role } : {}),
                   ...(event ? { event } : {}),
                   ...(patch ? { patch } : {}),
                   ...(team ? { team } : {}),
                   ...(vs ? { vs } : {}),
+                  ...(league ? { league } : {}),
                 }).toString(),
               }}
               className="hover:text-rw-accent hover:underline"
@@ -2032,6 +2132,13 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
             <tbody>
               {(() => {
                 const maxG = Math.max(1, y.p[0]?.[1] || 1);
+                const rowPeriodQ = event
+                  ? `p=e:${encodeURIComponent(event)}`
+                  : patch
+                    ? `p=p:${encodeURIComponent(patch)}`
+                    : year
+                      ? `p=y${encodeURIComponent(year)}`
+                      : undefined;
                 return filteredP.map(([k, g]) => {
                   const p = players?.[k];
                   const u = p ? playerSlug(p) : "";
@@ -2040,12 +2147,20 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                       <td className={td} data-sort={p ? p[0] : ""}>
                         {p ? (
                           <span className="inline-flex items-center gap-1.5 min-w-0">
-                            <HubLink to={{ kind: "player", slug: u }} title={p[0]} className="shrink-0">
+                            <HubLink to={{ kind: "player", slug: u, ...(rowPeriodQ ? { query: rowPeriodQ } : {}) }} title={p[0]} className="shrink-0">
                               <PlayerPhoto name={p[0]} team={p[2] || undefined} slug={u} size={16} />
                             </HubLink>
-                            <PlayerLink name={p[0]} u={u} />
+                            <PlayerLink name={p[0]} u={u} query={rowPeriodQ} />
                             {p[2] && (
-                              <HubLink to={{ kind: "team", slug: resolveTeamAlias(p[2], aliases.data?.team) || prettySlug(p[2]) }} title={p[2]} className="shrink-0">
+                              <HubLink
+                                to={{
+                                  kind: "team",
+                                  slug: resolveTeamAlias(p[2], aliases.data?.team) || prettySlug(p[2]),
+                                  ...(rowPeriodQ ? { query: rowPeriodQ } : {}),
+                                }}
+                                title={p[2]}
+                                className="shrink-0"
+                              >
                                 <TeamLogo name={p[2]} size={13} />
                               </HubLink>
                             )}

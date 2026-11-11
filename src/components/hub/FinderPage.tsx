@@ -869,7 +869,29 @@ const FinderBody: React.FC<{
               {" "}
               ·{" "}
               <HubLink
-                to={{ kind: "records", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                to={{
+                  kind: "records",
+                  query:
+                    new URLSearchParams({
+                      ...(q.get("league") && q.get("league") !== "top" ? { league: resolveLeagueSlug(q.get("league")!) } : {}),
+                      ...(year ? { year } : {}),
+                      ...(q.get("event") ? { event: resolveEventSlug(q.get("event")!) } : {}),
+                      ...(q.get("player") || q.get("team") || champs[0]
+                        ? {
+                            q: [
+                              q.get("player") ? resolvePlayerSlug(prettySlug(q.get("player")!)) : "",
+                              q.get("vsplayer") ? resolvePlayerSlug(prettySlug(q.get("vsplayer")!)) : "",
+                              q.get("team") ? resolveTeamAlias(q.get("team")!) || prettySlug(q.get("team")!) : "",
+                              q.get("vs") ? resolveTeamAlias(q.get("vs")!) || prettySlug(q.get("vs")!) : "",
+                              champs[0] ? resolveChampSlug(champs[0]) : "",
+                            ]
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .join(","),
+                          }
+                        : {}),
+                    }).toString() || undefined,
+                }}
                 className="hover:text-rw-accent hover:underline"
                 title={tl("Records")}
               >
@@ -1891,7 +1913,29 @@ const Cohort: React.FC<{
             <>
               {" · "}
               <HubLink
-                to={{ kind: "records", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                to={{
+                  kind: "records",
+                  query:
+                    new URLSearchParams({
+                      ...(scopeLg ? { league: scopeLg } : {}),
+                      ...(year ? { year } : {}),
+                      ...(event ? { event } : {}),
+                      ...(player || team || champ
+                        ? {
+                            q: [
+                              player ? resolvePlayerSlug(prettySlug(player)) : "",
+                              vsplayer ? resolvePlayerSlug(prettySlug(vsplayer)) : "",
+                              team ? resolveTeamAlias(team) || prettySlug(team) : "",
+                              vs ? resolveTeamAlias(vs) || prettySlug(vs) : "",
+                              champ ? resolveChampSlug(champ) : "",
+                            ]
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .join(","),
+                          }
+                        : {}),
+                    }).toString() || undefined,
+                }}
                 className="hover:text-rw-accent hover:underline"
                 title={tl("Records")}
               >
@@ -1903,7 +1947,29 @@ const Cohort: React.FC<{
             <>
               {" · "}
               <HubLink
-                to={{ kind: "records", ...(year ? { query: `year=${encodeURIComponent(year)}` } : {}) }}
+                to={{
+                  kind: "records",
+                  query:
+                    new URLSearchParams({
+                      ...(scopeLg ? { league: scopeLg } : {}),
+                      ...(year ? { year } : {}),
+                      ...(event ? { event } : {}),
+                      ...(player || team || champ
+                        ? {
+                            q: [
+                              player ? resolvePlayerSlug(prettySlug(player)) : "",
+                              vsplayer ? resolvePlayerSlug(prettySlug(vsplayer)) : "",
+                              team ? resolveTeamAlias(team) || prettySlug(team) : "",
+                              vs ? resolveTeamAlias(vs) || prettySlug(vs) : "",
+                              champ ? resolveChampSlug(champ) : "",
+                            ]
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .join(","),
+                          }
+                        : {}),
+                    }).toString() || undefined,
+                }}
                 className="hover:text-rw-accent hover:underline"
                 title={tl("Records")}
               >

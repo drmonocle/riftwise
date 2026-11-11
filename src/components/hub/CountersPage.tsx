@@ -148,10 +148,18 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       n
     );
   };
+  const champQueryForRole = (roleIdx?: number) => {
+    const rStr = roleIdx != null && roleIdx >= 0 ? ROLES[roleIdx] : role || "";
+    const qs = new URLSearchParams({
+      ...(evParam ? { event: evParam } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}`, year: yearParam } : {}),
+      ...(rStr ? { role: rStr } : {}),
+    }).toString();
+    return qs || undefined;
+  };
   const maxRowG = useMemo(() => Math.max(1, ...rows.map((r) => r.g)), [rows]);
   const hasCsd = useMemo(() => rows.some((r) => r.csd != null), [rows]);
   const columns: Column<Row>[] = [
-    { key: "c", label: tl("Lane opponent"), value: (x) => champName(x.c), render: (x) => <ChampLink name={x.c} size={18} /> },
+    { key: "c", label: tl("Lane opponent"), value: (x) => champName(x.c), render: (x) => <ChampLink name={x.c} size={18} query={champQueryForRole(x.role)} /> },
     {
       key: "role",
       label: tl("Role"),
@@ -417,7 +425,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
           {slug && cName && (
             <span className="ml-auto inline-flex flex-wrap items-center gap-1.5">
               <HubLink
-                to={{ kind: "champ", slug }}
+                to={{ kind: "champ", slug, ...(champQueryForRole() ? { query: champQueryForRole() } : {}) }}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-rw-accent/50 bg-rw-accent/10 text-rw-accent hover:bg-rw-accent/20 font-semibold"
               >
                 {rawChamp && <ChampIcon name={rawChamp} size={16} />}
@@ -425,7 +433,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               </HubLink>
               {vsMatch && (
                 <HubLink
-                  to={{ kind: "champ", slug: resolveChampSlug(vsMatch.oppCanon) }}
+                  to={{ kind: "champ", slug: resolveChampSlug(vsMatch.oppCanon), ...(champQueryForRole() ? { query: champQueryForRole() } : {}) }}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
                 >
                   <ChampIcon name={vsMatch.oppCanon} size={16} />
@@ -436,7 +444,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 to={{
                   kind: "champions",
                   query: new URLSearchParams({
-                    q: slug,
+                    q: vsMatch ? `${slug},${resolveChampSlug(vsMatch.oppCanon)}` : slug,
                     ...(role ? { role } : {}),
                     ...(evParam ? { event: evParam } : {}),
                     ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
@@ -1053,7 +1061,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <li key={x.c + x.role} className="space-y-0.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="flex items-center gap-1.5 min-w-0 truncate">
-                            <ChampLink name={x.c} size={18} />{" "}
+                            <ChampLink name={x.c} size={18} query={champQueryForRole(x.role)} />{" "}
                             {x.role >= 0 && (
                               <button
                                 type="button"
@@ -1237,7 +1245,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       <li key={x.c + x.role} className="space-y-0.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="flex items-center gap-1.5 min-w-0 truncate">
-                            <ChampLink name={x.c} size={18} />{" "}
+                            <ChampLink name={x.c} size={18} query={champQueryForRole(x.role)} />{" "}
                             {x.role >= 0 && (
                               <button
                                 type="button"
@@ -1654,7 +1662,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       return (
                         <div key={pc} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
-                            <ChampLink name={pc} size={20} />
+                            <ChampLink name={pc} size={20} query={champQueryForRole(ROLES.indexOf("Bot"))} />
                             <div className="text-right shrink-0">
                               <HubLink
                                 to={{
