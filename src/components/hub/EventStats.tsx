@@ -186,7 +186,9 @@ export const FactGroups: React.FC<{
                 kind: "items",
                 query:
                   new URLSearchParams({
-                    ...(terms.length > 0 && topPlayers[0] ? { player: topPlayers[0] } : {}),
+                    ...(terms.length > 0 && topPlayers[0]
+                      ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) }
+                      : {}),
                     ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
                     ...(topChamps[0] ? { champ: resolveChampSlug(topChamps[0]) } : {}),
                     ...(normLg ? { league: normLg } : {}),
@@ -402,7 +404,7 @@ export const FactCard: React.FC<{
                         kind: "prep",
                         a: f.rows[0].team,
                         ...(f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? { b: f.rows[1].team } : {}),
-                        ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
+                        ...(eventSlug ? { period: `e:${eventSlug}` } : evYr ? { period: `y${evYr}` } : {}),
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
                       data-nocapture="1"
@@ -412,7 +414,7 @@ export const FactCard: React.FC<{
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(f.rows[0].team)}${f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? `,${encodeURIComponent(f.rows[1].team)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : ""}${f.rows[0].champ ? `&champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}` : ""}`,
+                        query: `teams=${encodeURIComponent(f.rows[0].team)}${f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? `,${encodeURIComponent(f.rows[1].team)}` : ""}${eventSlug ? `&p=e:${encodeURIComponent(eventSlug)}` : evYr ? `&p=y${evYr}` : ""}${f.rows[0].champ ? `&champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}` : ""}`,
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                       data-nocapture="1"
@@ -427,7 +429,7 @@ export const FactCard: React.FC<{
                     mode: "player",
                     a: f.rows[0].player,
                     ...(f.rows[1]?.player && f.rows[1].player !== f.rows[0].player ? { b: f.rows[1].player } : {}),
-                    ...(eventSlug ? { period: `e:${eventSlug}` } : {}),
+                    ...(eventSlug ? { period: `e:${eventSlug}` } : evYr ? { period: `y${evYr}` } : {}),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -437,7 +439,7 @@ export const FactCard: React.FC<{
                 <HubLink
                   to={{
                     kind: "items",
-                    query: `player=${encodeURIComponent(f.rows[0].player)}${f.rows[0].team ? `&team=${encodeURIComponent(f.rows[0].team)}` : ""}${f.rows[0].champ ? `&champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
+                    query: `player=${encodeURIComponent(f.rows[0].player)}${f.rows[1]?.player && f.rows[1].player !== f.rows[0].player ? `&vsplayer=${encodeURIComponent(f.rows[1].player)}` : ""}${f.rows[0].team ? `&team=${encodeURIComponent(f.rows[0].team)}` : ""}${f.rows[1]?.team && f.rows[1].team !== f.rows[0].team ? `&vs=${encodeURIComponent(f.rows[1].team)}` : ""}${f.rows[0].champ ? `&champ=${encodeURIComponent(resolveChampSlug(f.rows[0].champ))}` : ""}${normLg ? `&league=${encodeURIComponent(normLg)}` : ""}${evYr ? `&year=${evYr}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -853,7 +855,7 @@ export const FactCard: React.FC<{
           const nums = !f.plain ? f.rows.map((r) => parseV(r.value)) : [];
           const validNums = nums.filter((v): v is number => v != null && isFinite(v) && v > 0);
           const maxNum = validNums.length >= 2 ? Math.max(...validNums) : 0;
-          const evQ = eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : undefined;
+          const evQ = eventSlug ? `p=e:${encodeURIComponent(eventSlug)}` : evYr ? `p=y${encodeURIComponent(evYr)}` : undefined;
           return f.rows.map((r, i) => {
             const vNum = nums[i];
             const barPct = maxNum > 0 && vNum != null && vNum > 0 ? Math.max(4, Math.min(100, Math.round((vNum / maxNum) * 100))) : 0;

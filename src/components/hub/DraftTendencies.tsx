@@ -410,36 +410,38 @@ export const DraftTendencies: React.FC<{
                 >
                   {tl("Draft board")} →
                 </HubLink>
-                {(d.b1[0] || d.r12[0]) && (() => {
+                {(() => {
                   const topOpeners = Array.from(new Set([...d.b1.map((x) => x[0]), ...d.r12.map((x) => x[0])]));
                   return (
                     <>
-                      <HubLink
-                        to={{
-                          kind: "counters",
-                          query: new URLSearchParams({
-                            champ: resolveChampSlug(topOpeners[0]),
-                            ...(topOpeners[1] ? { vs: resolveChampSlug(topOpeners[1]) } : {}),
-                            ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
-                            ...(period?.startsWith("y") && period.length === 5
-                              ? { patch: period, year: period.slice(1) }
-                              : period?.startsWith("p:")
-                                ? { patch: period.slice(2) }
-                                : period?.startsWith("e:")
-                                  ? { event: resolveEventSlug(period.slice(2)) }
-                                  : {}),
-                          }).toString(),
-                        }}
-                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
-                        data-nocapture="1"
-                      >
-                        {tl("Counters")} →
-                      </HubLink>
+                      {topOpeners[0] && (
+                        <HubLink
+                          to={{
+                            kind: "counters",
+                            query: new URLSearchParams({
+                              champ: resolveChampSlug(topOpeners[0]),
+                              ...(topOpeners[1] ? { vs: resolveChampSlug(topOpeners[1]) } : {}),
+                              ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
+                              ...(period?.startsWith("y") && period.length === 5
+                                ? { patch: period, year: period.slice(1) }
+                                : period?.startsWith("p:")
+                                  ? { patch: period.slice(2) }
+                                  : period?.startsWith("e:")
+                                    ? { event: resolveEventSlug(period.slice(2)) }
+                                    : {}),
+                            }).toString(),
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                          data-nocapture="1"
+                        >
+                          {tl("Counters")} →
+                        </HubLink>
+                      )}
                       <HubLink
                         to={{
                           kind: "items",
                           query: new URLSearchParams({
-                            champ: resolveChampSlug(topOpeners[0]),
+                            ...(topOpeners[0] ? { champ: resolveChampSlug(topOpeners[0]) } : {}),
                             ...(resolvedSlug ? { team: resolvedSlug } : {}),
                             ...(oppSlug ? { vs: oppSlug } : {}),
                             ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
