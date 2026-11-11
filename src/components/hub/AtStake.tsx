@@ -59,13 +59,19 @@ function matchLines(
         asOf: s.a || undefined,
       });
     });
-    for (const [pn, pu, , asOf, notes] of s.p)
+    for (const [pn, pu, role, asOf, notes] of s.p)
       notes.forEach((nt, i) => {
         const yr = nt.y ? String(nt.y) : mYr;
+        const pQuery = new URLSearchParams({
+          ...(yr ? { p: `y${yr}` } : {}),
+          team: u,
+          ...(role ? { role } : {}),
+          ...(nt.c ? { champ: resolveChampSlug(nt.c) } : {}),
+        }).toString();
         lines.push({
           key: `${pu}-${i}`,
-          who: { name: pn, team: s.n, to: { kind: "player", slug: pu, ...(yr ? { query: `p=y${encodeURIComponent(yr)}` } : {}) } },
-          text: noteText(nt, { kind: "player", slug: pu }),
+          who: { name: pn, team: s.n, to: { kind: "player", slug: pu, ...(pQuery ? { query: pQuery } : {}) } },
+          text: noteText(nt, { kind: "player", slug: pu, team: u, role: role || undefined }),
           plain: notePlainText(nt),
           champ: nt.c,
           asOf,
@@ -499,7 +505,14 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs border-b border-rw-border pb-1">
               <span className="inline-flex items-center gap-1 font-bold text-rw-text">
                 <HubLink
-                  to={{ kind: "team", slug: t1Slug, ...(mPeriodQ ? { query: mPeriodQ } : {}) }}
+                  to={{
+                    kind: "team",
+                    slug: t1Slug,
+                    query: new URLSearchParams({
+                      ...(mYr && /^\d{4}$/.test(mYr) ? { p: `y${mYr}` } : {}),
+                      ...(t2Slug ? { q: t2Slug } : {}),
+                    }).toString(),
+                  }}
                   className="inline-flex items-center gap-1 hover:text-rw-accent"
                 >
                   <TeamLogo name={m.team1Name || m.team1Code} code={m.team1Code} src={m.team1Image} sizeClass="w-3.5 h-3.5" />
@@ -519,7 +532,14 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                   vs
                 </HubLink>
                 <HubLink
-                  to={{ kind: "team", slug: t2Slug, ...(mPeriodQ ? { query: mPeriodQ } : {}) }}
+                  to={{
+                    kind: "team",
+                    slug: t2Slug,
+                    query: new URLSearchParams({
+                      ...(mYr && /^\d{4}$/.test(mYr) ? { p: `y${mYr}` } : {}),
+                      ...(t1Slug ? { q: t1Slug } : {}),
+                    }).toString(),
+                  }}
                   className="inline-flex items-center gap-1 hover:text-rw-accent"
                 >
                   <TeamLogo name={m.team2Name || m.team2Code} code={m.team2Code} src={m.team2Image} sizeClass="w-3.5 h-3.5" />
@@ -533,6 +553,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                       kind: "league",
                       slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
                       ...(mYr && /^\d{4}$/.test(mYr) ? { year: mYr } : {}),
+                      query: `q=${encodeURIComponent([t1Slug, t2Slug].filter(Boolean).join(","))}`,
                     }}
                     className="hover:text-rw-accent hover:underline"
                   >

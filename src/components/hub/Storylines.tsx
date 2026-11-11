@@ -79,17 +79,24 @@ export function notePlainText(nt: Note): string {
   return "";
 }
 
-export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string; team?: string }): React.ReactNode {
+export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string; team?: string; role?: string }): React.ReactNode {
   const plain = notePlainText(nt);
-  const whoTeamQ =
-    who?.kind === "player" && who.team ? `&team=${encodeURIComponent(resolveTeamAlias(who.team) || prettySlug(who.team))}` : "";
+  const whoTeamSlug = who?.kind === "player" && who.team ? resolveTeamAlias(who.team) || prettySlug(who.team) : "";
+  const whoTeamQ = whoTeamSlug ? `&team=${encodeURIComponent(whoTeamSlug)}` : "";
+  const whoRoleQ = who?.kind === "player" && who.role ? `&role=${encodeURIComponent(who.role)}` : "";
   if ((nt.k === "champ" || nt.k === "crec" || nt.k === "cms") && nt.c) {
     const yr = nt.y ? `&year=${encodeURIComponent(nt.y)}` : "";
+    const champPageQ = new URLSearchParams({
+      ...(who?.kind === "player" ? { player: who.slug } : {}),
+      ...(who?.kind === "team" ? { team: who.slug } : whoTeamSlug ? { team: whoTeamSlug } : {}),
+      ...(who?.role ? { role: who.role } : {}),
+      ...(nt.y ? { p: `y${nt.y}` } : {}),
+    }).toString();
     const textNode = who ? (
       <HubLink
         to={{
           kind: "finder",
-          query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}&champ=${encodeURIComponent(resolveChampSlug(nt.c))}${yr}`,
+          query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}${whoRoleQ}&champ=${encodeURIComponent(resolveChampSlug(nt.c))}${yr}`,
         }}
         className="hover:text-rw-accent hover:underline"
       >
@@ -97,7 +104,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
       </HubLink>
     ) : (
       <HubLink
-        to={{ kind: "champ", slug: resolveChampSlug(nt.c), ...(nt.y ? { query: `p=y${encodeURIComponent(nt.y)}` } : {}) }}
+        to={{ kind: "champ", slug: resolveChampSlug(nt.c), ...(champPageQ ? { query: champPageQ } : {}) }}
         className="hover:text-rw-accent hover:underline"
       >
         {plain}
@@ -106,7 +113,7 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     return (
       <span className="inline-flex items-center gap-1 flex-wrap">
         <HubLink
-          to={{ kind: "champ", slug: resolveChampSlug(nt.c), ...(nt.y ? { query: `p=y${encodeURIComponent(nt.y)}` } : {}) }}
+          to={{ kind: "champ", slug: resolveChampSlug(nt.c), ...(champPageQ ? { query: champPageQ } : {}) }}
           title={champName(nt.c)}
         >
           <ChampIcon name={nt.c} size={16} />
@@ -206,9 +213,14 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     );
   }
   if (nt.k === "streak" && who) {
+    const streakQ = new URLSearchParams({
+      ...(nt.y ? { p: `y${nt.y}` } : {}),
+      ...(whoTeamSlug ? { team: whoTeamSlug } : {}),
+      ...(who.role ? { role: who.role } : {}),
+    }).toString();
     return (
       <HubLink
-        to={{ kind: who.kind, slug: who.slug, tab: "matches", ...(nt.y ? { query: `p=y${encodeURIComponent(nt.y)}` } : {}) }}
+        to={{ kind: who.kind, slug: who.slug, tab: "matches", ...(streakQ ? { query: streakQ } : {}) }}
         className="hover:text-rw-accent hover:underline"
       >
         {plain}
@@ -219,16 +231,21 @@ export function noteText(nt: Note, who?: { kind: "team" | "player"; slug: string
     if (nt.s === "games" || nt.s === "wins") {
       return (
         <HubLink
-          to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}${nt.s === "wins" ? "&result=w" : ""}${nt.y ? `&year=${encodeURIComponent(nt.y)}` : ""}` }}
+          to={{ kind: "finder", query: `${who.kind}=${encodeURIComponent(who.slug)}${whoTeamQ}${whoRoleQ}${nt.s === "wins" ? "&result=w" : ""}${nt.y ? `&year=${encodeURIComponent(nt.y)}` : ""}` }}
           className="hover:text-rw-accent hover:underline"
         >
           {plain}
         </HubLink>
       );
     }
+    const msQ = new URLSearchParams({
+      ...(nt.y ? { p: `y${nt.y}` } : {}),
+      ...(whoTeamSlug ? { team: whoTeamSlug } : {}),
+      ...(who.role ? { role: who.role } : {}),
+    }).toString();
     return (
       <HubLink
-        to={{ kind: who.kind, slug: who.slug, tab: "stats", ...(nt.y ? { query: `p=y${encodeURIComponent(nt.y)}` } : {}) }}
+        to={{ kind: who.kind, slug: who.slug, tab: "stats", ...(msQ ? { query: msQ } : {}) }}
         className="hover:text-rw-accent hover:underline"
       >
         {plain}
