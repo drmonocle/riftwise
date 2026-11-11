@@ -32,9 +32,13 @@ import { useMatchRatings } from "../hub/matchRatings";
 import { gameStory } from "../gameStory";
 import { smoothPath, useWidth } from "../useWidth";
 import { navigateHub } from "../hub/route";
-import { prettySlug, resolveLeagueSlug } from "../hub/data";
+import { prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../hub/data";
 import { SectionCard } from "./hub/BroadcastCard";
 import { PlayerPhoto, TeamLogo } from "./hub/ui";
+
+const teamSlug = (name?: string, code?: string) =>
+  (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
+const playerSlug = (name: string) => resolvePlayerSlug(name) || prettySlug(name);
 
 const POLL_MS = 15_000;
 // the gold graph: blue side's colour, and its dragon and baron marks
@@ -332,8 +336,8 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
               const yr = match.startTimeUtc?.slice(0, 4);
               navigateHub({
                 kind: "prep",
-                a: prettySlug(left.name || left.code),
-                b: prettySlug(right.name || right.code),
+                a: teamSlug(left.name, left.code),
+                b: teamSlug(right.name, right.code),
                 ...(yr ? { period: `y${yr}` } : {}),
               });
             }}
@@ -348,8 +352,8 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
               navigateHub({
                 kind: "compare",
                 mode: "team",
-                a: prettySlug(left.name || left.code),
-                b: prettySlug(right.name || right.code),
+                a: teamSlug(left.name, left.code),
+                b: teamSlug(right.name, right.code),
                 ...(yr ? { period: `y${yr}` } : {}),
               });
             }}
@@ -363,7 +367,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
               const yr = match.startTimeUtc?.slice(0, 4);
               navigateHub({
                 kind: "finder",
-                query: `team=${encodeURIComponent(prettySlug(left.name || left.code))}&vs=${encodeURIComponent(prettySlug(right.name || right.code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                query: `team=${encodeURIComponent(teamSlug(left.name, left.code))}&vs=${encodeURIComponent(teamSlug(right.name, right.code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
               });
             }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
@@ -376,7 +380,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
               const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
-                q: `${prettySlug(left.name || left.code)},${prettySlug(right.name || right.code)}`,
+                q: `${teamSlug(left.name, left.code)},${teamSlug(right.name, right.code)}`,
               }).toString();
               navigateHub({ kind: "rankings", query: q });
             }}
@@ -412,7 +416,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
-                q: `${prettySlug(left.name || left.code)},${prettySlug(right.name || right.code)}`,
+                q: `${teamSlug(left.name, left.code)},${teamSlug(right.name, right.code)}`,
               }).toString();
               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
             }}
@@ -565,7 +569,7 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
                 <td className="px-2 py-1.5 text-left font-bold text-rw-text whitespace-nowrap" style={{ boxShadow: `inset 3px 0 0 ${x.color}` }} title={x.color === "#3fa7ff" ? tl("Blue side") : tl("Red side")}>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "team", slug: prettySlug(x.name || x.code) })}
+                    onClick={() => navigateHub({ kind: "team", slug: teamSlug(x.name, x.code) })}
                     className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline transition-colors"
                   >
                     <TeamLogo name={x.name} code={x.code} src={x.img} size={15} className="shrink-0" />
@@ -578,7 +582,7 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
                     <td key={c.key} className={`${cell} ${ahead ? "text-rw-teal font-bold" : "text-rw-sub"}`}>
                       <button
                         type="button"
-                        onClick={() => navigateHub({ kind: "team", slug: prettySlug(x.name || x.code), tab: "stats" })}
+                        onClick={() => navigateHub({ kind: "team", slug: teamSlug(x.name, x.code), tab: "stats" })}
                         className="hover:text-rw-accent hover:underline"
                         title={tl("Stats")}
                       >
@@ -599,8 +603,8 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
                   navigateHub({
                     kind: "compare",
                     mode: "team",
-                    a: prettySlug(left.name || left.code),
-                    b: prettySlug(right.name || right.code),
+                    a: teamSlug(left.name, left.code),
+                    b: teamSlug(right.name, right.code),
                   })
                 }
                 className="hover:text-rw-accent hover:underline"
@@ -618,8 +622,8 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
                       navigateHub({
                         kind: "compare",
                         mode: "team",
-                        a: prettySlug(left.name || left.code),
-                        b: prettySlug(right.name || right.code),
+                        a: teamSlug(left.name, left.code),
+                        b: teamSlug(right.name, right.code),
                       })
                     }
                     className="hover:text-rw-accent hover:underline"
@@ -666,7 +670,7 @@ const UpsetMeter: React.FC<{ leftCode: string; leftName?: string; rightCode: str
           onClick={() =>
             navigateHub({
               kind: "rankings",
-              query: `q=${encodeURIComponent(`${prettySlug(leftName || leftCode)},${prettySlug(rightName || rightCode)}`)}`,
+              query: `q=${encodeURIComponent(`${teamSlug(leftName, leftCode)},${teamSlug(rightName, rightCode)}`)}`,
             })
           }
           className={`${LABEL} hover:text-rw-accent hover:underline`}
@@ -675,7 +679,7 @@ const UpsetMeter: React.FC<{ leftCode: string; leftName?: string; rightCode: str
         </button>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: prettySlug(dogName) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(dogName, dog) })}
           className="text-rw-muted hover:text-rw-accent hover:underline"
         >
           {tl("{team}: {before} before the game, {now} now", { team: dog, before: `${Math.round(pre * 100)}%`, now: `${Math.round(cur * 100)}%` })}
@@ -730,7 +734,7 @@ const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: stri
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: prettySlug(leftName || leftCode) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(leftName, leftCode) })}
           className="font-mono tabular-nums font-bold text-rw-side-a w-16 text-right whitespace-nowrap hover:underline"
         >
           {leftCode} {a}%
@@ -740,7 +744,7 @@ const ChanceNow: React.FC<{ leftCode: string; leftName?: string; rightCode: stri
         </div>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: prettySlug(rightName || rightCode) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(rightName, rightCode) })}
           className="font-mono tabular-nums font-bold text-rw-side-b w-16 text-left whitespace-nowrap hover:underline"
         >
           {100 - a}% {rightCode}
@@ -785,8 +789,8 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                         navigateHub({
                           kind: "compare",
                           mode: "player",
-                          a: prettySlug(playerName(l[i].meta!.summonerName)),
-                          b: prettySlug(playerName(r[i].meta!.summonerName)),
+                          a: playerSlug(playerName(l[i].meta!.summonerName)),
+                          b: playerSlug(playerName(r[i].meta!.summonerName)),
                         })
                       }
                       className="hover:text-rw-accent hover:underline"
@@ -809,8 +813,8 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                         navigateHub({
                           kind: "compare",
                           mode: "player",
-                          a: prettySlug(playerName(l[i].meta!.summonerName)),
-                          b: prettySlug(playerName(r[i].meta!.summonerName)),
+                          a: playerSlug(playerName(l[i].meta!.summonerName)),
+                          b: playerSlug(playerName(r[i].meta!.summonerName)),
                         })
                       }
                       className={`block w-full font-mono text-[10px] font-semibold tabular-nums normal-case hover:underline ${gd > 150 ? "text-rw-teal" : gd < -150 ? "text-rw-red" : "text-rw-muted"}`}
@@ -884,7 +888,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
           <div className={`flex items-center gap-1.5 ${right ? "flex-row-reverse" : ""}`}>
             <button
               type="button"
-              onClick={() => navigateHub({ kind: "player", slug: prettySlug(pName) })}
+              onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName) })}
               className={`inline-flex items-center gap-1 font-semibold text-rw-text hover:text-rw-accent hover:underline truncate transition-colors ${right ? "flex-row-reverse" : ""}`}
             >
               <PlayerPhoto name={pName} team={teamName} size={15} linkFallback={false} />
@@ -896,7 +900,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
                 navigateHub({
                   kind: "finder",
                   query: new URLSearchParams({
-                    player: prettySlug(pName),
+                    player: playerSlug(pName),
                     champ: champNameById(p.meta!.championId),
                   }).toString(),
                 })
@@ -909,7 +913,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
           </div>
           <button
             type="button"
-            onClick={() => navigateHub({ kind: "player", slug: prettySlug(pName), tab: "stats" })}
+            onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName), tab: "stats" })}
             className="text-[10px] text-rw-sub hover:text-rw-accent hover:underline font-mono text-left"
             title={tl("Stats")}
           >
@@ -947,7 +951,7 @@ const PlayerCells: React.FC<{ p: PlayerRow; teamName?: string; align: "left" | "
                       navigateHub({
                         kind: "items",
                         query: new URLSearchParams({
-                          player: prettySlug(pName),
+                          player: playerSlug(pName),
                           item: iKey,
                           ...(champNameById(p.meta!.championId) ? { champ: prettySlug(champNameById(p.meta!.championId)) } : {}),
                         }).toString(),
@@ -1057,7 +1061,7 @@ const GoldGraph: React.FC<{ points: TimelinePoint[]; blueIsLeft: boolean; leftCo
         </span>
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "compare", mode: "team", a: prettySlug(leftName || leftCode), b: prettySlug(rightName || rightCode) })}
+          onClick={() => navigateHub({ kind: "compare", mode: "team", a: teamSlug(leftName, leftCode), b: teamSlug(rightName, rightCode) })}
           className="font-mono text-rw-text hover:text-rw-accent hover:underline"
           title={mode === "chance" ? tl("From the gold lead only, as in pro games since 2023") : undefined}
         >
@@ -1229,8 +1233,8 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
               const yr = match.startTimeUtc?.slice(0, 4);
               navigateHub({
                 kind: "prep",
-                a: prettySlug(left.name || left.code),
-                b: prettySlug(right.name || right.code),
+                a: teamSlug(left.name, left.code),
+                b: teamSlug(right.name, right.code),
                 ...(yr ? { period: `y${yr}` } : {}),
               });
             }}
@@ -1245,8 +1249,8 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
               navigateHub({
                 kind: "compare",
                 mode: "team",
-                a: prettySlug(left.name || left.code),
-                b: prettySlug(right.name || right.code),
+                a: teamSlug(left.name, left.code),
+                b: teamSlug(right.name, right.code),
                 ...(yr ? { period: `y${yr}` } : {}),
               });
             }}
@@ -1260,7 +1264,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
               const yr = match.startTimeUtc?.slice(0, 4);
               navigateHub({
                 kind: "finder",
-                query: `team=${encodeURIComponent(prettySlug(left.name || left.code))}&vs=${encodeURIComponent(prettySlug(right.name || right.code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
+                query: `team=${encodeURIComponent(teamSlug(left.name, left.code))}&vs=${encodeURIComponent(teamSlug(right.name, right.code))}${yr ? `&year=${encodeURIComponent(yr)}` : ""}`,
               });
             }}
             className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
@@ -1273,7 +1277,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
               const lg = match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
-                q: `${prettySlug(left.name || left.code)},${prettySlug(right.name || right.code)}`,
+                q: `${teamSlug(left.name, left.code)},${teamSlug(right.name, right.code)}`,
               }).toString();
               navigateHub({ kind: "rankings", query: q });
             }}
@@ -1289,7 +1293,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
                 ...(yr ? { year: yr } : {}),
-                q: `${prettySlug(left.name || left.code)},${prettySlug(right.name || right.code)}`,
+                q: `${teamSlug(left.name, left.code)},${teamSlug(right.name, right.code)}`,
               }).toString();
               navigateHub({ kind: "leaders", ...(q ? { query: q } : {}) });
             }}
@@ -1306,7 +1310,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
       <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 gap-y-1 items-center">
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: prettySlug(left.name || left.code) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(left.name, left.code) })}
           className="inline-flex items-center gap-1.5 font-bold text-rw-text hover:text-rw-accent hover:underline transition-colors text-left"
         >
           <TeamLogo name={left.name} code={left.code} src={left.img} size={15} className="shrink-0" />
@@ -1315,7 +1319,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
         <span />
         <button
           type="button"
-          onClick={() => navigateHub({ kind: "team", slug: prettySlug(right.name || right.code) })}
+          onClick={() => navigateHub({ kind: "team", slug: teamSlug(right.name, right.code) })}
           className="inline-flex items-center justify-end gap-1.5 font-bold text-rw-text text-right hover:text-rw-accent hover:underline transition-colors"
         >
           <span>{right.code}</span>
@@ -1348,7 +1352,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigateHub({ kind: "player", slug: prettySlug(pName) })}
+                    onClick={() => navigateHub({ kind: "player", slug: playerSlug(pName) })}
                     className={`inline-flex items-center gap-1 truncate text-[10px] text-rw-muted hover:text-rw-accent hover:underline ${right ? "flex-row-reverse" : ""}`}
                   >
                     <PlayerPhoto name={pName} team={teamName} size={13} linkFallback={false} />
@@ -1369,8 +1373,8 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                       navigateHub({
                         kind: "compare",
                         mode: "player",
-                        a: prettySlug(playerName(p.summonerName)),
-                        b: prettySlug(playerName(q.summonerName)),
+                        a: playerSlug(playerName(p.summonerName)),
+                        b: playerSlug(playerName(q.summonerName)),
                       })
                     }
                     className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline text-center"

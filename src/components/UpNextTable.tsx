@@ -11,13 +11,16 @@ import { tl, tc } from "../i18n";
 import { computeHeadToHead } from "../helpers";
 import { clickable } from "../a11y";
 import { teamForm, useMatchRatings } from "../hub/matchRatings";
-import { prettySlug, resolveLeagueSlug } from "../hub/data";
+import { prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { AddToCalendarMenu } from "./AddToCalendarMenu";
 import { MatchPrepButton } from "./MatchPrepButton";
 import { MatchOverviewButton } from "./MatchOverviewButton";
 import { SectionCard } from "./hub/BroadcastCard";
 import { TeamLogo } from "./hub/ui";
+
+const teamSlug = (name?: string, code?: string) =>
+  (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
 
 // the one-line layout once the table itself is 900 px wide; below that two or three lines a match. Every column has
 // a set width (the buttons' too: an "auto" one was empty in the header row, so its columns sat ~75 px right of the rows').
@@ -56,8 +59,8 @@ export const UpNextTable: React.FC<{
             return matches[0]
               ? navigateHub({
                   kind: "prep",
-                  a: prettySlug(matches[0].team1Name || matches[0].team1Code),
-                  b: prettySlug(matches[0].team2Name || matches[0].team2Code),
+                  a: teamSlug(matches[0].team1Name, matches[0].team1Code),
+                  b: teamSlug(matches[0].team2Name, matches[0].team2Code),
                   ...(yr ? { period: `y${yr}` } : {}),
                 })
               : navigateHub({ kind: "prep" });
@@ -74,7 +77,7 @@ export const UpNextTable: React.FC<{
                 const yr = matches[0].startTimeUtc?.slice(0, 4);
                 navigateHub({
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(prettySlug(matches[0].team1Name || matches[0].team1Code))},${encodeURIComponent(prettySlug(matches[0].team2Name || matches[0].team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
+                  query: `teams=${encodeURIComponent(teamSlug(matches[0].team1Name, matches[0].team1Code))},${encodeURIComponent(teamSlug(matches[0].team2Name, matches[0].team2Code))}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}`,
                 });
               }}
               className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -88,8 +91,8 @@ export const UpNextTable: React.FC<{
                 navigateHub({
                   kind: "compare",
                   mode: "team",
-                  a: prettySlug(matches[0].team1Name || matches[0].team1Code),
-                  b: prettySlug(matches[0].team2Name || matches[0].team2Code),
+                  a: teamSlug(matches[0].team1Name, matches[0].team1Code),
+                  b: teamSlug(matches[0].team2Name, matches[0].team2Code),
                   ...(yr ? { period: `y${yr}` } : {}),
                 });
               }}
@@ -107,7 +110,7 @@ export const UpNextTable: React.FC<{
               ...(lg ? { league: lg } : {}),
               ...(matches[0]
                 ? {
-                    q: `${prettySlug(matches[0].team1Name || matches[0].team1Code)},${prettySlug(matches[0].team2Name || matches[0].team2Code)}`,
+                    q: `${teamSlug(matches[0].team1Name, matches[0].team1Code)},${teamSlug(matches[0].team2Name, matches[0].team2Code)}`,
                   }
                 : {}),
             }).toString();
@@ -142,7 +145,7 @@ export const UpNextTable: React.FC<{
               ...(yr ? { year: yr } : {}),
               ...(matches[0]
                 ? {
-                    q: `${prettySlug(matches[0].team1Name || matches[0].team1Code)},${prettySlug(matches[0].team2Name || matches[0].team2Code)}`,
+                    q: `${teamSlug(matches[0].team1Name, matches[0].team1Code)},${teamSlug(matches[0].team2Name, matches[0].team2Code)}`,
                   }
                 : {}),
             }).toString();
@@ -219,7 +222,7 @@ const UpNextRow: React.FC<{
   const logo = (name: string, code: string, image: string | undefined) => (
     <button
       type="button"
-      onClick={() => (onSelectTeam ? onSelectTeam(code, name) : navigateHub({ kind: "team", slug: prettySlug(name || code) }))}
+      onClick={() => (onSelectTeam ? onSelectTeam(code, name) : navigateHub({ kind: "team", slug: teamSlug(name, code) }))}
       className="w-5 h-5 shrink-0 inline-flex items-center justify-center rounded hover:ring-1 hover:ring-rw-accent transition-all"
       title={tl("View {team} roster", { team: name })}
     >
@@ -243,8 +246,8 @@ const UpNextRow: React.FC<{
             const yr = m.startTimeUtc?.slice(0, 4);
             navigateHub({
               kind: "prep",
-              a: prettySlug(m.team1Name || m.team1Code),
-              b: prettySlug(m.team2Name || m.team2Code),
+              a: teamSlug(m.team1Name, m.team1Code),
+              b: teamSlug(m.team2Name, m.team2Code),
               period: yr ? `y${yr}` : undefined,
             });
           }}
@@ -264,8 +267,8 @@ const UpNextRow: React.FC<{
             navigateHub({
               kind: "compare",
               mode: "team",
-              a: prettySlug(m.team1Name),
-              b: prettySlug(m.team2Name),
+              a: teamSlug(m.team1Name, m.team1Code),
+              b: teamSlug(m.team2Name, m.team2Code),
               period: yr ? `y${yr}` : undefined,
             });
           }}
@@ -288,8 +291,8 @@ const UpNextRow: React.FC<{
                 navigateHub({
                   kind: "compare",
                   mode: "team",
-                  a: prettySlug(m.team1Name),
-                  b: prettySlug(m.team2Name),
+                  a: teamSlug(m.team1Name, m.team1Code),
+                  b: teamSlug(m.team2Name, m.team2Code),
                   period: yr ? `y${yr}` : undefined,
                 });
               }}
@@ -324,8 +327,8 @@ const UpNextRow: React.FC<{
           const yr = m.startTimeUtc?.slice(0, 4);
           navigateHub({
             kind: "prep",
-            a: prettySlug(m.team1Name || m.team1Code),
-            b: prettySlug(m.team2Name || m.team2Code),
+            a: teamSlug(m.team1Name, m.team1Code),
+            b: teamSlug(m.team2Name, m.team2Code),
             period: yr ? `y${yr}` : undefined,
           });
         }}
@@ -356,8 +359,8 @@ const ChanceCell: React.FC<{ m: Match }> = ({ m }) => {
         const yr = m.startTimeUtc?.slice(0, 4);
         navigateHub({
           kind: "prep",
-          a: prettySlug(m.team1Name || m.team1Code),
-          b: prettySlug(m.team2Name || m.team2Code),
+          a: teamSlug(m.team1Name, m.team1Code),
+          b: teamSlug(m.team2Name, m.team2Code),
           period: yr ? `y${yr}` : undefined,
         });
       }}
@@ -395,7 +398,7 @@ const FormCell: React.FC<{ m: Match; schedule: Match[]; hidden: boolean }> = ({ 
   const row = (f: ("W" | "L")[], code: string, name: string) => (
     <button
       type="button"
-      onClick={() => navigateHub({ kind: "team", slug: prettySlug(name || code), tab: "matches" })}
+      onClick={() => navigateHub({ kind: "team", slug: teamSlug(name, code), tab: "matches" })}
       className="flex gap-px hover:opacity-80"
       title={`${code}: ${f.join(" ")}`}
     >

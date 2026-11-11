@@ -6,7 +6,8 @@ import { H2HMeter } from "./H2HMeter";
 import { MatchOverviewButton } from "./MatchOverviewButton";
 import { MatchPrepButton } from "./MatchPrepButton";
 import { tl, locale, roleName, regionName, tc } from "../i18n";
-import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../hub/data";
+import { normalizeRole } from "../hub/champAgg";
 import { findSeriesSlug } from "../hub/seriesLookup";
 import { RIOT_PREFIX } from "../hub/riotMatch";
 import { navigateHub } from "../hub/route";
@@ -15,6 +16,10 @@ import { PlayerPhoto, PhotosLink, TeamLogo, useTeamLogo } from "./hub/ui";
 import { SectionCard } from "./hub/BroadcastCard";
 import { riotImg } from "../riotImage";
 import { isRevealed, setRevealed, useRevealedVersion } from "../revealed";
+
+const teamSlug = (name?: string, code?: string) =>
+  (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
+const playerSlug = (name: string) => resolvePlayerSlug(name) || prettySlug(name);
 
 interface TeamRosterModalProps {
   teamCode: string | null;
@@ -246,7 +251,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
             <button
               type="button"
               onClick={() => {
-                navigateHub({ kind: "team", slug: prettySlug(displayName) });
+                navigateHub({ kind: "team", slug: teamSlug(displayName, upperCode) });
                 onClose();
               }}
               className="shrink-0 rounded-lg hover:ring-1 hover:ring-rw-accent transition-all"
@@ -265,7 +270,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    navigateHub({ kind: "team", slug: prettySlug(displayName) });
+                    navigateHub({ kind: "team", slug: teamSlug(displayName, upperCode) });
                     onClose();
                   }}
                   className="text-xl font-extrabold text-rw-text hover:text-rw-accent hover:underline text-left transition-colors"
@@ -288,7 +293,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    navigateHub({ kind: "team", slug: prettySlug(displayName) });
+                    navigateHub({ kind: "team", slug: teamSlug(displayName, upperCode) });
                     onClose();
                   }}
                   className="font-mono font-bold text-rw-teal bg-rw-teal/10 px-2 py-0.5 rounded border border-rw-teal/30 hover:bg-rw-teal/20 transition-colors"
@@ -317,7 +322,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       type="button"
                       onClick={() => {
                         onClose();
-                        navigateHub({ kind: "leagues" });
+                        navigateHub({ kind: "leagues", query: `q=${encodeURIComponent(catalogTeam.region)}` });
                       }}
                       className="hover:text-rw-accent hover:underline"
                     >
@@ -352,7 +357,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                   type="button"
                   onClick={() => {
                     onClose();
-                    navigateHub({ kind: "team", slug: prettySlug(displayName), tab: "history" });
+                    navigateHub({ kind: "team", slug: teamSlug(displayName, upperCode), tab: "history" });
                   }}
                   className="hover:text-rw-accent hover:underline uppercase tracking-wider"
                 >
@@ -367,8 +372,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       navigateHub({
                         kind: "compare",
                         mode: "player",
-                        a: prettySlug(players[0].name),
-                        b: prettySlug(players[1].name),
+                        a: playerSlug(players[0].name),
+                        b: playerSlug(players[1].name),
                       });
                       onClose();
                     }}
@@ -382,7 +387,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        navigateHub({ kind: "items", query: `player=${encodeURIComponent(prettySlug(players[0].name))}` });
+                        navigateHub({ kind: "items", query: `player=${encodeURIComponent(playerSlug(players[0].name))}` });
                         onClose();
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -392,7 +397,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        navigateHub({ kind: "finder", query: `player=${encodeURIComponent(prettySlug(players[0].name))}` });
+                        navigateHub({ kind: "finder", query: `player=${encodeURIComponent(playerSlug(players[0].name))}` });
                         onClose();
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -404,7 +409,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                       onClick={() => {
                         const lg = catalogTeam?.league ? resolveLeagueSlug(catalogTeam.league) : "";
                         const q = new URLSearchParams({
-                          q: displayName,
+                          q: teamSlug(displayName, upperCode),
                           ...(lg ? { league: lg } : {}),
                         }).toString();
                         navigateHub({ kind: "leaders", query: q });
@@ -427,7 +432,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                         team: displayName,
                         label: p.name,
                         sub: p.realName || upperCode,
-                        value: roleName(p.role),
+                        value: roleName(normalizeRole(p.role) || p.role),
                       }))
                     }
                   />
@@ -441,7 +446,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {players.map((p) => {
                     const isPlayerFollowed = settings.followedPlayers.includes(p.name);
-                    const colors = ROLE_COLORS[p.role] || ROLE_COLORS.Sub;
+                    const rRole = normalizeRole(p.role) || p.role;
+                    const colors = ROLE_COLORS[rRole] || ROLE_COLORS.Sub;
 
                     return (
                       <div
@@ -452,7 +458,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              navigateHub({ kind: "player", slug: prettySlug(p.name) });
+                              navigateHub({ kind: "player", slug: playerSlug(p.name) });
                               onClose();
                             }}
                             className="shrink-0 rounded-full hover:ring-1 hover:ring-rw-accent transition-all"
@@ -465,7 +471,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  navigateHub({ kind: "player", slug: prettySlug(p.name) });
+                                  navigateHub({ kind: "player", slug: playerSlug(p.name) });
                                   onClose();
                                 }}
                                 className="font-bold text-sm text-rw-text hover:text-rw-accent hover:underline transition-colors truncate text-left"
@@ -476,20 +482,20 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  navigateHub({ kind: "player", slug: prettySlug(p.name), tab: "stats" });
+                                  navigateHub({ kind: "player", slug: playerSlug(p.name), tab: "stats" });
                                   onClose();
                                 }}
                                 className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider hover:opacity-80 ${colors.bg} ${colors.text} ${colors.border}`}
                                 title={tl("Stats")}
                               >
-                                {roleName(p.role)}
+                                {roleName(rRole)}
                               </button>
                             </div>
                             {p.realName && (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  navigateHub({ kind: "player", slug: prettySlug(p.name) });
+                                  navigateHub({ kind: "player", slug: playerSlug(p.name) });
                                   onClose();
                                 }}
                                 className="block text-xs text-rw-sub hover:text-rw-accent hover:underline truncate text-left"
@@ -504,7 +510,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              navigateHub({ kind: "finder", query: `player=${encodeURIComponent(prettySlug(p.name))}` });
+                              navigateHub({ kind: "finder", query: `player=${encodeURIComponent(playerSlug(p.name))}` });
                               onClose();
                             }}
                             className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-surface text-[10px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 transition-colors hidden md:inline-block"
@@ -515,7 +521,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              navigateHub({ kind: "items", query: `player=${encodeURIComponent(prettySlug(p.name))}` });
+                              navigateHub({ kind: "items", query: `player=${encodeURIComponent(playerSlug(p.name))}` });
                               onClose();
                             }}
                             className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-surface text-[10px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 transition-colors hidden sm:inline-block"
@@ -526,7 +532,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              navigateHub({ kind: "compare", mode: "player", a: prettySlug(p.name) });
+                              navigateHub({ kind: "compare", mode: "player", a: playerSlug(p.name) });
                               onClose();
                             }}
                             className="p-1.5 rounded hover:bg-rw-border text-rw-sub hover:text-rw-accent transition-colors"
@@ -567,7 +573,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    navigateHub({ kind: "team", slug: prettySlug(displayName), tab: "matches" });
+                    navigateHub({ kind: "team", slug: teamSlug(displayName, upperCode), tab: "matches" });
                     onClose();
                   }}
                   className="hover:underline text-left"
@@ -598,8 +604,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                                 navigateHub({
                                   kind: "compare",
                                   mode: "team",
-                                  a: prettySlug(displayName),
-                                  b: prettySlug(opp),
+                                  a: teamSlug(displayName, upperCode),
+                                  b: teamSlug(opp, oppCode),
                                   period: yr ? `y${yr}` : undefined,
                                 });
                                 onClose();
@@ -612,7 +618,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <button
                               type="button"
                               onClick={() => {
-                                navigateHub({ kind: "team", slug: prettySlug(opp) });
+                                navigateHub({ kind: "team", slug: teamSlug(opp, oppCode) });
                                 onClose();
                               }}
                               className="inline-flex items-center gap-1.5 text-rw-accent hover:underline text-left"
@@ -639,8 +645,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                                 const yr = m.startTimeUtc?.slice(0, 4);
                                 navigateHub({
                                   kind: "prep",
-                                  a: prettySlug(displayName),
-                                  b: prettySlug(opp),
+                                  a: teamSlug(displayName, upperCode),
+                                  b: teamSlug(opp, oppCode),
                                   period: yr ? `y${yr}` : undefined,
                                 });
                                 onClose();
@@ -666,8 +672,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                                 onClose();
                                 navigateHub({
                                   kind: "prep",
-                                  a: prettySlug(displayName),
-                                  b: prettySlug(opp),
+                                  a: teamSlug(displayName, upperCode),
+                                  b: teamSlug(opp, oppCode),
                                   period: yr ? `y${yr}` : undefined,
                                 });
                               }}
@@ -697,7 +703,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    navigateHub({ kind: "team", slug: prettySlug(displayName), tab: "matches" });
+                    navigateHub({ kind: "team", slug: teamSlug(displayName, upperCode), tab: "matches" });
                     onClose();
                   }}
                   className="hover:text-rw-accent hover:underline text-left"
@@ -755,8 +761,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                                 navigateHub({
                                   kind: "compare",
                                   mode: "team",
-                                  a: prettySlug(displayName),
-                                  b: prettySlug(oppName),
+                                  a: teamSlug(displayName, upperCode),
+                                  b: teamSlug(oppName, oppCode),
                                   period: yr ? `y${yr}` : undefined,
                                 });
                                 onClose();
@@ -769,7 +775,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <button
                               type="button"
                               onClick={() => {
-                                navigateHub({ kind: "team", slug: prettySlug(oppName) });
+                                navigateHub({ kind: "team", slug: teamSlug(oppName, oppCode) });
                                 onClose();
                               }}
                               className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline text-left truncate"
@@ -826,8 +832,8 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                                 navigateHub({
                                   kind: "compare",
                                   mode: "team",
-                                  a: prettySlug(displayName),
-                                  b: prettySlug(oppName),
+                                  a: teamSlug(displayName, upperCode),
+                                  b: teamSlug(oppName, oppCode),
                                   period: yr ? `y${yr}` : undefined,
                                 });
                                 onClose();
@@ -840,7 +846,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <button
                               type="button"
                               onClick={() => {
-                                navigateHub({ kind: "team", slug: prettySlug(oppName) });
+                                navigateHub({ kind: "team", slug: teamSlug(oppName, oppCode) });
                                 onClose();
                               }}
                               className="inline-flex items-center gap-1.5 truncate hover:text-rw-accent hover:underline text-left"

@@ -7,7 +7,7 @@ import { Eye } from "lucide-react";
 import { StreamEvent } from "../../types";
 import { tl, locale } from "../../i18n";
 import { normalizeTeamCode, streamEventTitle } from "../../helpers";
-import { loadEventsOfYear, loadHubEvent, prettySlug } from "../../hub/data";
+import { loadEventsOfYear, loadHubEvent, prettySlug, resolveTeamAlias } from "../../hub/data";
 import type { HubEvent, SeriesRow } from "../../hub/types";
 import { Bracket, SeriesBox, Standings } from "./EventPage";
 import { stageLabel } from "../../i18n";
@@ -186,7 +186,7 @@ export const StreamBracket: React.FC<{ events: StreamEvent[]; now: number }> = (
                     query: `q=${encodeURIComponent(
                       ev.standings[0].rows
                         .slice(0, 2)
-                        .map((r) => prettySlug(r.t))
+                        .map((r) => resolveTeamAlias(r.t) || prettySlug(r.t))
                         .filter(Boolean)
                         .join(","),
                     )}`,

@@ -8,9 +8,12 @@ import { TrendingUp } from "lucide-react";
 import type { Match } from "../types";
 import { tl } from "../i18n";
 import { navigateHub } from "../hub/route";
-import { prettySlug, resolveLeagueSlug } from "../hub/data";
+import { prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../hub/data";
 import { pct } from "../hub/winChance";
 import { useMatchRatings } from "../hub/matchRatings";
+
+const teamSlug = (name?: string, code?: string) =>
+  (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
 
 export const WinChanceLine: React.FC<{ match: Match }> = ({ match }) => {
   const r = useMatchRatings(match);
@@ -24,7 +27,7 @@ export const WinChanceLine: React.FC<{ match: Match }> = ({ match }) => {
         const lg = r?.a?.world == null && r?.b?.world == null && match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
         const q = new URLSearchParams({
           ...(lg ? { league: lg } : {}),
-          q: `${prettySlug(match.team1Name || match.team1Code)},${prettySlug(match.team2Name || match.team2Code)}`,
+          q: `${teamSlug(match.team1Name, match.team1Code)},${teamSlug(match.team2Name, match.team2Code)}`,
         }).toString();
         navigateHub({
           kind: "rankings",
@@ -78,10 +81,10 @@ export const TeamRatingSub: React.FC<{ match: Match; side: "a" | "b"; align?: "l
             onClick={(e) => {
               e.stopPropagation();
               const lg = s.world == null && match.leagueSlug ? resolveLeagueSlug(match.leagueSlug) : "";
-              const teamSlug = prettySlug(side === "a" ? match.team1Name || match.team1Code : match.team2Name || match.team2Code);
+              const tSlug = side === "a" ? teamSlug(match.team1Name, match.team1Code) : teamSlug(match.team2Name, match.team2Code);
               const q = new URLSearchParams({
                 ...(lg ? { league: lg } : {}),
-                ...(teamSlug ? { q: teamSlug } : {}),
+                ...(tSlug ? { q: tSlug } : {}),
               }).toString();
               navigateHub({
                 kind: "rankings",

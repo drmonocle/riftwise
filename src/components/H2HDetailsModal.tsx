@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Swords, Eye, EyeOff, Globe, Home, ClipboardList, GitCompare } from "lucide-react";
-import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug } from "../hub/data";
+import { findHubTeam, loadHubIndexQuick, prettySlug, resolveLeagueSlug, resolveTeamAlias } from "../hub/data";
 import { navigateHub } from "../hub/route";
 import { RIOT_PREFIX } from "../hub/riotMatch";
 import { findSeriesSlug } from "../hub/seriesLookup";
@@ -12,6 +12,9 @@ import { fmtDate, useTeamLogo } from "./hub/ui";
 import { SectionCard } from "./hub/BroadcastCard";
 import { tl, tn } from "../i18n";
 import { riotImg } from "../riotImage";
+
+const teamSlug = (name?: string, code?: string) =>
+  (name && resolveTeamAlias(name)) || (code && resolveTeamAlias(code)) || prettySlug(name || code || "");
 
 interface H2HDetailsModalProps {
   team1Code: string;
@@ -265,8 +268,8 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                           navigateHub({
                             kind: "compare",
                             mode: "team",
-                            a: prettySlug(t1.name),
-                            b: prettySlug(t2.name),
+                            a: teamSlug(t1.name, c1),
+                            b: teamSlug(t2.name, c2),
                           });
                           onClose();
                         }}
@@ -284,7 +287,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                     onClick={() => {
                       navigateHub({
                         kind: "finder",
-                        query: new URLSearchParams({ team: prettySlug(t1.name), vs: prettySlug(t2.name) }).toString(),
+                        query: new URLSearchParams({ team: teamSlug(t1.name, c1), vs: teamSlug(t2.name, c2) }).toString(),
                       });
                       onClose();
                     }}
@@ -313,7 +316,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                 onClick={() => {
                   navigateHub({
                     kind: "finder",
-                    query: new URLSearchParams({ team: prettySlug(t1.name), vs: prettySlug(t2.name) }).toString(),
+                    query: new URLSearchParams({ team: teamSlug(t1.name, c1), vs: teamSlug(t2.name, c2) }).toString(),
                   });
                   onClose();
                 }}
@@ -327,7 +330,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                 onClick={() => {
                   navigateHub({
                     kind: "finder",
-                    query: new URLSearchParams({ team: prettySlug(t1.name), vs: prettySlug(t2.name) }).toString(),
+                    query: new URLSearchParams({ team: teamSlug(t1.name, c1), vs: teamSlug(t2.name, c2) }).toString(),
                   });
                   onClose();
                 }}
@@ -415,8 +418,8 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                                   navigateHub({
                                     kind: "finder",
                                     query: new URLSearchParams({
-                                      team: prettySlug(t1.name),
-                                      vs: prettySlug(t2.name),
+                                      team: teamSlug(t1.name, c1),
+                                      vs: teamSlug(t2.name, c2),
                                       ...(m.date.length >= 4 ? { year: m.date.slice(0, 4) } : {}),
                                     }).toString(),
                                   });
