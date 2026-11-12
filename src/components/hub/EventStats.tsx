@@ -31,6 +31,42 @@ const GROUP_OF: Record<string, Group> = {
 };
 const groupOf = (f: Fact): Group => GROUP_OF[f.id] || "players";
 
+const filterFactsByQuery = (facts: Fact[], rawQuery: string): Fact[] => {
+  const terms = rawQuery
+    .trim()
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((s) => normText(s))
+    .filter(Boolean);
+  if (!terms.length) return facts;
+  return facts
+    .map((f) => {
+      const cardMatch = terms.some((t) => {
+        const hay = normText(`${f.title} ${f.headline}`);
+        const ta = searchAlias(t);
+        return hay.includes(t) || (ta ? hay.includes(ta) : false);
+      });
+      if (cardMatch) return f;
+      const matchingRows = f.rows.filter((r) => {
+        const hay = normText(`${r.label} ${r.value} ${r.sub || ""} ${r.player || ""} ${r.team || ""} ${r.champ || ""}`);
+        const canonTeam = resolveTeamAlias(r.team || r.label || "");
+        return terms.some((t) => {
+          const ta = searchAlias(t);
+          return (
+            hay.includes(t) ||
+            (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+            (ta ? hay.includes(ta) || bare(hay).includes(bare(ta)) : false) ||
+            (r.champ ? matchesChampSearch(r.champ, t) : false) ||
+            (r.player ? resolvePlayerSlug(t) === r.player : false) ||
+            (canonTeam ? resolveTeamAlias(t) === canonTeam : false)
+          );
+        });
+      });
+      if (!matchingRows.length) return null;
+      return { ...f, rows: matchingRows };
+    })
+    .filter((f): f is Fact => f !== null);
+};
+
 /** The cards under a heading per group (a group with no cards is left out). */
 export const FactGroups: React.FC<{
   facts: Fact[];
@@ -42,15 +78,16 @@ export const FactGroups: React.FC<{
 }> = ({ facts, link, shareId, eventSlug, leagueSlug, year }) => {
   const nowRoute = currentHubRoute();
   const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
-  const [search, setSearch] = useState(() => {
+  const effectiveUrlSearch = useMemo(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return p.get("q") || p.get("team") || p.get("player") || p.get("champ") || "";
-  });
+    const raw = p.get("q") || p.get("team") || p.get("player") || p.get("champ") || p.get("vs") || "";
+    if (!raw.trim()) return "";
+    return filterFactsByQuery(facts, raw).length > 0 ? raw : "";
+  }, [routeQuery, facts]);
+  const [search, setSearch] = useState(effectiveUrlSearch);
   useEffect(() => {
-    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    const next = p.get("q") || p.get("team") || p.get("player") || p.get("champ") || "";
-    if (next) setSearch(next);
-  }, [routeQuery]);
+    setSearch(effectiveUrlSearch);
+  }, [effectiveUrlSearch]);
   const titles: Record<Group, string> = {
     event: tl("The event"),
     teams: tl("Teams"),
@@ -70,36 +107,7 @@ export const FactGroups: React.FC<{
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((s) => normText(s))
     .filter(Boolean);
-  const filteredFacts = useMemo(() => {
-    if (!terms.length) return facts;
-    return facts
-      .map((f) => {
-        const cardMatch = terms.some((t) => {
-          const hay = normText(`${f.title} ${f.headline}`);
-          const ta = searchAlias(t);
-          return hay.includes(t) || (ta ? hay.includes(ta) : false);
-        });
-        if (cardMatch) return f;
-        const matchingRows = f.rows.filter((r) => {
-          const hay = normText(`${r.label} ${r.value} ${r.sub || ""} ${r.player || ""} ${r.team || ""} ${r.champ || ""}`);
-          const canonTeam = resolveTeamAlias(r.team || r.label || "");
-          return terms.some((t) => {
-            const ta = searchAlias(t);
-            return (
-              hay.includes(t) ||
-              (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
-              (ta ? hay.includes(ta) || bare(hay).includes(bare(ta)) : false) ||
-              (r.champ ? matchesChampSearch(r.champ, t) : false) ||
-              (r.player ? resolvePlayerSlug(t) === r.player : false) ||
-              (canonTeam ? resolveTeamAlias(t) === canonTeam : false)
-            );
-          });
-        });
-        if (!matchingRows.length) return null;
-        return { ...f, rows: matchingRows };
-      })
-      .filter((f): f is Fact => f !== null);
-  }, [facts, terms.join("|")]);
+  const filteredFacts = useMemo(() => filterFactsByQuery(facts, search), [facts, search]);
   const allRows = useMemo(() => filteredFacts.flatMap((f) => f.rows), [filteredFacts]);
   const fallbackRows = useMemo(() => facts.flatMap((f) => f.rows), [facts]);
   const topTeams = useMemo(() => {
@@ -187,7 +195,20 @@ export const FactGroups: React.FC<{
               <HubLink
                 to={{
                   kind: "counters",
-                  query: `champ=${encodeURIComponent(resolveChampSlug(topChamps[0]))}${topChamps[1] ? `&vs=${encodeURIComponent(resolveChampSlug(topChamps[1]))}` : topTeams[0] ? `&vs=${encodeURIComponent(topTeams[0])}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${evYr ? `&patch=y${evYr}&year=${evYr}` : ""}`,
+                  query: new URLSearchParams({
+                    champ: resolveChampSlug(topChamps[0]),
+                    ...(topChamps[1]
+                      ? { vs: resolveChampSlug(topChamps[1]) }
+                      : topTeams[0]
+                        ? { vs: topTeams[0] }
+                        : {}),
+                    ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                    ...(topTeams[0] ? { team: topTeams[0] } : {}),
+                    ...(topTeams[1] ? { vsteam: topTeams[1] } : {}),
+                    ...(normLg ? { league: normLg } : {}),
+                    ...(eventSlug ? { event: eventSlug } : {}),
+                    ...(evYr ? { patch: `y${evYr}`, year: evYr } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline"
               >
@@ -302,7 +323,9 @@ export const FactGroups: React.FC<{
                 query:
                   new URLSearchParams({
                     ...(normLg ? { league: normLg } : {}),
-                    ...(topTeams.length >= 1 ? { q: topTeams.join(",") } : {}),
+                    ...(topTeams.length >= 1 || topPlayers.length >= 1
+                      ? { q: [...topTeams, ...topPlayers].filter(Boolean).join(",") }
+                      : {}),
                   }).toString() || undefined,
               }}
               className="text-rw-accent hover:underline"
@@ -339,8 +362,8 @@ export const FactGroups: React.FC<{
                     ...(normLg ? { league: normLg } : {}),
                     ...(evYr ? { year: evYr } : {}),
                     ...(eventSlug ? { event: eventSlug } : {}),
-                    ...(terms.length > 0 && topTeams.length >= 1
-                      ? { q: topTeams.join(",") }
+                    ...(topTeams.length >= 1 || topPlayers.length >= 1
+                      ? { q: [...topTeams, ...topPlayers].filter(Boolean).join(",") }
                       : eventSlug
                         ? { q: eventSlug }
                         : {}),
@@ -529,7 +552,16 @@ export const FactCard: React.FC<{
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(effChamps[0])}${effChamps[1] ? `&vs=${encodeURIComponent(effChamps[1])}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${evYr ? `&patch=y${evYr}&year=${evYr}` : ""}`,
+                      query: new URLSearchParams({
+                        champ: effChamps[0],
+                        ...(effChamps[1] ? { vs: effChamps[1] } : {}),
+                        player: cardPlayers[0],
+                        ...(effTeams[0] ? { team: effTeams[0] } : {}),
+                        ...(effTeams[1] ? { vsteam: effTeams[1] } : {}),
+                        ...(normLg ? { league: normLg } : {}),
+                        ...(eventSlug ? { event: eventSlug } : {}),
+                        ...(evYr ? { patch: `y${evYr}`, year: evYr } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
                     data-nocapture="1"
@@ -596,7 +628,7 @@ export const FactCard: React.FC<{
                     query:
                       new URLSearchParams({
                         ...(normLg ? { league: normLg } : {}),
-                        ...(effTeams.length >= 1 ? { q: effTeams.join(",") } : {}),
+                        q: [...effTeams, ...cardPlayers].filter(Boolean).join(","),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -649,7 +681,7 @@ export const FactCard: React.FC<{
                     kind: "rankings",
                     query: new URLSearchParams({
                       ...(normLg ? { league: normLg } : {}),
-                      q: cardTeams.join(","),
+                      q: [...cardTeams, ...effPlayers].filter(Boolean).join(","),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -675,6 +707,27 @@ export const FactCard: React.FC<{
                 >
                   {tl("Item history")} →
                 </HubLink>
+                {effChamps[0] && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: new URLSearchParams({
+                        champ: effChamps[0],
+                        ...(effChamps[1] ? { vs: effChamps[1] } : {}),
+                        ...(effPlayers[0] ? { player: effPlayers[0] } : {}),
+                        team: cardTeams[0],
+                        ...(cardTeams[1] ? { vsteam: cardTeams[1] } : {}),
+                        ...(normLg ? { league: normLg } : {}),
+                        ...(eventSlug ? { event: eventSlug } : {}),
+                        ...(evYr ? { patch: `y${evYr}`, year: evYr } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                    data-nocapture="1"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                )}
                 <HubLink
                   to={{
                     kind: "finder",
@@ -761,7 +814,16 @@ export const FactCard: React.FC<{
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(cardChamps[0])}${cardChamps[1] ? `&vs=${encodeURIComponent(cardChamps[1])}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${evYr ? `&patch=y${evYr}&year=${evYr}` : ""}`,
+                    query: new URLSearchParams({
+                      champ: cardChamps[0],
+                      ...(cardChamps[1] ? { vs: cardChamps[1] } : {}),
+                      ...(effPlayers[0] ? { player: effPlayers[0] } : {}),
+                      ...(effTeams[0] ? { team: effTeams[0] } : {}),
+                      ...(effTeams[1] ? { vsteam: effTeams[1] } : {}),
+                      ...(normLg ? { league: normLg } : {}),
+                      ...(eventSlug ? { event: eventSlug } : {}),
+                      ...(evYr ? { patch: `y${evYr}`, year: evYr } : {}),
+                    }).toString(),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline mr-1"
                   data-nocapture="1"
@@ -850,7 +912,7 @@ export const FactCard: React.FC<{
                     query:
                       new URLSearchParams({
                         ...(normLg ? { league: normLg } : {}),
-                        ...(effTeams.length >= 1 ? { q: effTeams.join(",") } : {}),
+                        ...([...effTeams, ...effPlayers].length >= 1 ? { q: [...effTeams, ...effPlayers].join(",") } : {}),
                       }).toString() || undefined,
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
@@ -910,6 +972,27 @@ export const FactCard: React.FC<{
                 >
                   {tl("Item history")} →
                 </HubLink>
+                {effChamps[0] && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: new URLSearchParams({
+                        champ: effChamps[0],
+                        ...(effChamps[1] ? { vs: effChamps[1] } : {}),
+                        ...(effPlayers[0] ? { player: effPlayers[0] } : {}),
+                        ...(effTeams[0] ? { team: effTeams[0] } : {}),
+                        ...(effTeams[1] ? { vsteam: effTeams[1] } : {}),
+                        ...(normLg ? { league: normLg } : {}),
+                        ...(eventSlug ? { event: eventSlug } : {}),
+                        ...(evYr ? { patch: `y${evYr}`, year: evYr } : {}),
+                      }).toString(),
+                    }}
+                    className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                    data-nocapture="1"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                )}
                 <HubLink
                   to={{
                     kind: "finder",
@@ -944,6 +1027,20 @@ export const FactCard: React.FC<{
                   data-nocapture="1"
                 >
                   {tl("Player leaderboards")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "rankings",
+                    query:
+                      new URLSearchParams({
+                        ...(normLg ? { league: normLg } : {}),
+                        ...([...effTeams, ...effPlayers].length >= 1 ? { q: [...effTeams, ...effPlayers].join(",") } : {}),
+                      }).toString() || undefined,
+                  }}
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  data-nocapture="1"
+                >
+                  {tl("Power rankings")} →
                 </HubLink>
                 <HubLink
                   to={{

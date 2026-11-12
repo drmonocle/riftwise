@@ -69,13 +69,41 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
     ? ROLES.find((r) => r.toLowerCase() === normInitRole.toLowerCase())!
     : "All";
   const [role, setRole] = useState(validRole);
-  const [search, setSearch] = useState(initialSearch);
+  const matchEventPlayer = (p: EventPlayer, term: string) => {
+    const qAlias = searchAlias(term);
+    const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""} ${p.r || ""}`);
+    const pTeamSlug = p.t ? resolveTeamAlias(aliases.data?.team[(p.tu || p.t).toLowerCase()] || p.tu || p.t) || prettySlug(p.t) : "";
+    const canonTerm = resolveTeamAlias(aliases.data?.team[term] || term) || (qAlias ? resolveTeamAlias(aliases.data?.team[qAlias] || qAlias) : "") || prettySlug(qAlias || term);
+    const termRole = ROLE_ALIASES[term] || (qAlias ? ROLE_ALIASES[qAlias] : "") || "";
+    const ps = pSlug(p.n, p.u);
+    return (
+      hay.includes(term) ||
+      Boolean(qAlias && hay.includes(qAlias)) ||
+      (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
+      Boolean(qAlias && bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias))) ||
+      resolvePlayerSlug(term) === ps ||
+      Boolean(qAlias && resolvePlayerSlug(qAlias) === ps) ||
+      Boolean(pTeamSlug && canonTerm && canonTerm === pTeamSlug) ||
+      Boolean(termRole && p.r === termRole) ||
+      (p.c || []).some((c) => matchesChampSearch(c, term) || (qAlias ? matchesChampSearch(c, qAlias) : false))
+    );
+  };
+  const effectiveInitialSearch = useMemo(() => {
+    const terms = initialSearch
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s))
+      .filter(Boolean);
+    if (!terms.length || !players.length) return "";
+    return players.some((p) => terms.some((t) => matchEventPlayer(p, t))) ? initialSearch : "";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSearch, players, aliases.data]);
+  const [search, setSearch] = useState(effectiveInitialSearch);
   useEffect(() => {
     setRole(validRole);
   }, [validRole]);
   useEffect(() => {
-    setSearch(initialSearch);
-  }, [initialSearch]);
+    setSearch(effectiveInitialSearch);
+  }, [effectiveInitialSearch]);
   const maxG = Math.max(0, ...players.map((p) => p.g));
   const [regular, setRegular] = useState(true);
   const minG = Math.max(2, Math.ceil(maxG * 0.4));
@@ -88,27 +116,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       (p) =>
         (role === "All" || p.r === role) &&
         (!regular || p.g >= minG || maxG < 3) &&
-        (!terms.length ||
-          terms.some((term) => {
-            const qAlias = searchAlias(term);
-            const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""} ${p.r || ""}`);
-            const pTeamSlug = p.t ? resolveTeamAlias(aliases.data?.team[(p.tu || p.t).toLowerCase()] || p.tu || p.t) || prettySlug(p.t) : "";
-            const canonTerm = resolveTeamAlias(aliases.data?.team[term] || term) || (qAlias ? resolveTeamAlias(aliases.data?.team[qAlias] || qAlias) : "") || prettySlug(qAlias || term);
-            const termRole = ROLE_ALIASES[term] || (qAlias ? ROLE_ALIASES[qAlias] : "") || "";
-            const ps = pSlug(p.n, p.u);
-            return (
-              hay.includes(term) ||
-              Boolean(qAlias && hay.includes(qAlias)) ||
-              (bare(term).length >= 2 && bare(hay).includes(bare(term))) ||
-              Boolean(qAlias && bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias))) ||
-              resolvePlayerSlug(term) === ps ||
-              Boolean(qAlias && resolvePlayerSlug(qAlias) === ps) ||
-              Boolean(pTeamSlug && canonTerm && canonTerm === pTeamSlug) ||
-              Boolean(termRole && p.r === termRole) ||
-              (p.c || []).some((c) => matchesChampSearch(c, term) || (qAlias ? matchesChampSearch(c, qAlias) : false))
-            );
-          })),
+        (!terms.length || terms.some((term) => matchEventPlayer(p, term))),
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [players, role, regular, minG, maxG, search, aliases.data]);
   if (players.length === 0) return null;
   const evYr = /^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? (e.start || e.end || "").slice(0, 4) : "";
@@ -435,9 +445,17 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                 <HubLink
                   to={{
                     kind: "counters",
-                    query: `champ=${encodeURIComponent(topChamps[0])}${
-                      topChamps[1] ? `&vs=${encodeURIComponent(topChamps[1])}` : ""
-                    }${activeRole ? `&role=${encodeURIComponent(activeRole)}` : ""}&event=${encodeURIComponent(e.u)}${/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? `&patch=y${(e.start || e.end || "").slice(0, 4)}&year=${(e.start || e.end || "").slice(0, 4)}` : ""}`,
+                    query: new URLSearchParams({
+                      champ: topChamps[0],
+                      ...(topChamps[1] ? { vs: topChamps[1] } : {}),
+                      ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                      ...(topTeams[0] ? { team: topTeams[0] } : {}),
+                      ...(topTeams[1] ? { vsteam: topTeams[1] } : {}),
+                      ...(activeRole ? { role: activeRole } : {}),
+                      ...(evLg ? { league: evLg } : {}),
+                      event: e.u,
+                      ...(evYr ? { patch: `y${evYr}`, year: evYr } : {}),
+                    }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -535,7 +553,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
               query:
                 new URLSearchParams({
                   ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
-                  ...(topTeams.length ? { q: topTeams.join(",") } : {}),
+                  ...(topTeams.length || topPlayers.length
+                    ? { q: [...topTeams, ...topPlayers].filter(Boolean).join(",") }
+                    : {}),
                 }).toString() || undefined,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -668,6 +688,31 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             >
               {tl("Item history")} →
             </HubLink>
+            {(rows[0].c?.[0] || topChamps[0]) && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: rows[0].c?.[0] ? resolveChampSlug(rows[0].c[0]) : topChamps[0],
+                    ...(rows[1].c?.[0] && rows[1].c[0] !== rows[0].c?.[0]
+                      ? { vs: resolveChampSlug(rows[1].c[0]) }
+                      : topChamps[1]
+                        ? { vs: topChamps[1] }
+                        : {}),
+                    player: pSlug(rows[0].n, rows[0].u),
+                    ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
+                    ...(rows[1].t && rows[1].t !== rows[0].t ? { vsteam: tSlug(rows[1].t, rows[1].tu) } : {}),
+                    ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
+                    ...(evLg ? { league: evLg } : {}),
+                    event: e.u,
+                    ...(evYr ? { patch: `y${evYr}`, year: evYr } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             <HubLink
               to={{
                 kind: "finder",
@@ -755,6 +800,27 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
             >
               {tl("Item history")} →
             </HubLink>
+            {topChamps[0] && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: topChamps[0],
+                    ...(topChamps[1] ? { vs: topChamps[1] } : {}),
+                    player: pSlug(rows[0].n, rows[0].u),
+                    ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
+                    ...(topTeams[1] ? { vsteam: topTeams[1] } : {}),
+                    ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
+                    ...(evLg ? { league: evLg } : {}),
+                    event: e.u,
+                    ...(evYr ? { patch: `y${evYr}`, year: evYr } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-accent hover:underline font-semibold"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             <HubLink
               to={{
                 kind: "finder",
@@ -794,10 +860,45 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
 export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; initialSearch?: string }> = ({ e, hidden, initialSearch = "" }) => {
   const teams = e.teamStats || [];
   const aliases = useLoad(loadAliases, []);
-  const [search, setSearch] = useState(initialSearch);
+  const teamPlayerTextBySlug = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of e.players || []) {
+      const ts = p.t ? tSlug(p.t, p.tu) : "";
+      if (!ts) continue;
+      const prev = map.get(ts) || "";
+      map.set(ts, `${prev} ${p.n} ${p.u || ""} ${pSlug(p.n, p.u)}`);
+    }
+    for (const r of e.rosters || []) {
+      const ts = tSlug(r.t, r.u);
+      if (!ts) continue;
+      const prev = map.get(ts) || "";
+      const pStr = r.p.map(([n, u]) => `${n} ${u || ""} ${pSlug(n, u)}`).join(" ");
+      map.set(ts, `${prev} ${pStr}`);
+    }
+    return map;
+  }, [e.players, e.rosters]);
+  const matchEventTeamStats = (t: EventTeamStats, term: string) => {
+    const ts = resolveTeamAlias(aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || t.t) || prettySlug(t.t);
+    const hay = normText(`${t.t} ${t.u || ""} ${ts} ${teamPlayerTextBySlug.get(ts) || ""}`);
+    const qAlias = searchAlias(term);
+    if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
+    if (qAlias && (hay.includes(qAlias) || (bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias))))) return true;
+    const canonTerm = resolveTeamAlias(aliases.data?.team[term] || term) || (qAlias ? resolveTeamAlias(aliases.data?.team[qAlias] || qAlias) : "") || prettySlug(qAlias || term);
+    return Boolean(canonTerm && canonTerm === ts);
+  };
+  const effectiveInitialSearch = useMemo(() => {
+    const terms = initialSearch
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s))
+      .filter(Boolean);
+    if (!terms.length || !teams.length) return "";
+    return teams.some((t) => terms.some((term) => matchEventTeamStats(t, term))) ? initialSearch : "";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSearch, teams, aliases.data, teamPlayerTextBySlug]);
+  const [search, setSearch] = useState(effectiveInitialSearch);
   useEffect(() => {
-    setSearch(initialSearch);
-  }, [initialSearch]);
+    setSearch(effectiveInitialSearch);
+  }, [effectiveInitialSearch]);
   const rows = useMemo(() => {
     const terms = search
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -805,18 +906,9 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
       .filter(Boolean);
     return !terms.length
       ? teams
-      : teams.filter((t) => {
-          const hay = normText(`${t.t} ${t.u || ""}`);
-          const ts = resolveTeamAlias(aliases.data?.team[(t.u || t.t).toLowerCase()] || t.u || t.t) || prettySlug(t.t);
-          return terms.some((term) => {
-            const qAlias = searchAlias(term);
-            if (hay.includes(term) || (bare(term).length >= 2 && bare(hay).includes(bare(term)))) return true;
-            if (qAlias && (hay.includes(qAlias) || (bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias))))) return true;
-            const canonTerm = resolveTeamAlias(aliases.data?.team[term] || term) || (qAlias ? resolveTeamAlias(aliases.data?.team[qAlias] || qAlias) : "") || prettySlug(qAlias || term);
-            return Boolean(canonTerm && canonTerm === ts);
-          });
-        });
-  }, [teams, search, aliases.data]);
+      : teams.filter((t) => terms.some((term) => matchEventTeamStats(t, term)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teams, search, aliases.data, teamPlayerTextBySlug]);
   if (teams.length === 0 || hidden) return null;
   const maxTeamG = Math.max(1, ...teams.map((t) => t.g));
   const evYr = /^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? (e.start || e.end || "").slice(0, 4) : "";
@@ -1091,6 +1183,10 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                     query: new URLSearchParams({
                       champ: evChamps[0],
                       ...(evChamps[1] ? { vs: evChamps[1] } : {}),
+                      ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                      team: topTeam0,
+                      ...(topTeam1 ? { vsteam: topTeam1 } : {}),
+                      ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
                       event: e.u,
                       ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
                         ? { patch: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) }
@@ -1141,7 +1237,9 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               query:
                 new URLSearchParams({
                   ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
-                  ...(topTeam0 ? { q: [topTeam0, topTeam1].filter(Boolean).join(",") } : {}),
+                  ...(topTeam0 || teamPlayers.length
+                    ? { q: [topTeam0, topTeam1, ...teamPlayers].filter(Boolean).join(",") }
+                    : {}),
                 }).toString() || undefined,
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1280,6 +1378,29 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               >
                 {tl("Item history")}
               </HubLink>
+              {evChamps[0] && (
+                <>
+                  <span className="text-rw-muted">·</span>
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: new URLSearchParams({
+                        champ: evChamps[0],
+                        ...(evChamps[1] ? { vs: evChamps[1] } : {}),
+                        ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                        team: pair[0],
+                        vsteam: pair[1],
+                        ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
+                        event: e.u,
+                        ...(evYr ? { patch: `y${evYr}`, year: evYr } : {}),
+                      }).toString(),
+                    }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Counters")}
+                  </HubLink>
+                </>
+              )}
               <span className="text-rw-muted">·</span>
               <HubLink
                 to={{
@@ -1347,6 +1468,29 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
               >
                 {tl("Item history")}
               </HubLink>
+              {evChamps[0] && (
+                <>
+                  <span className="text-rw-muted">·</span>
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: new URLSearchParams({
+                        champ: evChamps[0],
+                        ...(evChamps[1] ? { vs: evChamps[1] } : {}),
+                        ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                        team: topTeam0,
+                        ...(topTeam1 ? { vsteam: topTeam1 } : {}),
+                        ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
+                        event: e.u,
+                        ...(evYr ? { patch: `y${evYr}`, year: evYr } : {}),
+                      }).toString(),
+                    }}
+                    className="text-rw-accent hover:underline font-semibold"
+                  >
+                    {tl("Counters")}
+                  </HubLink>
+                </>
+              )}
               <span className="text-rw-muted">·</span>
               <HubLink
                 to={{
