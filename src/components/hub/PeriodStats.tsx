@@ -851,29 +851,23 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
   const options = useMemo(() => withRequestedPeriod(baseOptions, period, refs), [baseOptions, period, refs]);
   const [only, setOnly] = useState<GameOnly>("");
-  const [champSearch, setChampSearch] = useState(() => {
-    const q = new URLSearchParams(query ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return q.get("champ") || q.get("q") || "";
-  });
-  useEffect(() => {
-    if (!query) return;
-    const q = new URLSearchParams(query);
-    const c = q.get("champ") || q.get("q");
-    if (c != null) setChampSearch(c);
-  }, [query]);
   const sel = useMemo(
     () => inPeriod(rows, period, playerRowRef).filter((r) => (only === "w" ? r[6] === 1 : only === "l" ? r[6] === 0 : true)),
     [rows, period, only],
   );
   const agg = useMemo(() => playerAgg(sel), [sel]);
-  const filteredChamps = useMemo(() => {
-    const terms = champSearch
+  const urlChamp = useMemo(() => {
+    const q = new URLSearchParams(query ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return q.get("champ") || q.get("q") || "";
+  }, [query]);
+  const urlChampValid = useMemo(() => {
+    const terms = urlChamp
       .trim()
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => normText(s.trim()))
       .filter(Boolean);
-    if (!terms.length) return agg.champs;
-    return agg.champs.filter((c) => {
+    if (!terms.length) return false;
+    return agg.champs.some((c) => {
       const hay = normText(`${c.c} ${champName(c.c)} ${prettySlug(c.c)}`);
       return terms.some(
         (t) =>
@@ -882,7 +876,30 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
           matchesChampSearch(c.c, t),
       );
     });
-  }, [agg.champs, champSearch]);
+  }, [urlChamp, agg.champs]);
+  const [champSearch, setChampSearch] = useState(() => (urlChampValid ? urlChamp : ""));
+  useEffect(() => {
+    setChampSearch(urlChampValid ? urlChamp : "");
+  }, [urlChamp, urlChampValid]);
+  const filteredChamps = useMemo(() => {
+    const terms = champSearch
+      .trim()
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s.trim()))
+      .filter(Boolean);
+    if (!terms.length) return agg.champs;
+    const matched = agg.champs.filter((c) => {
+      const hay = normText(`${c.c} ${champName(c.c)} ${prettySlug(c.c)}`);
+      return terms.some(
+        (t) =>
+          hay.includes(t) ||
+          (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+          matchesChampSearch(c.c, t),
+      );
+    });
+    if (matched.length === 0 && urlChamp && champSearch === urlChamp) return agg.champs;
+    return matched;
+  }, [agg.champs, champSearch, urlChamp]);
   // the period's average RiftWise rating (src/hub/playerRating.ts), and its best game
   const ratingFile = useRatingFile();
   const rated = useMemo(() => {

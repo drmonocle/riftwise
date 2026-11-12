@@ -285,6 +285,16 @@ describe("search shortcuts", () => {
       kind: "records",
       query: "year=2025&q=faker",
     });
+    expect(siblingSectionRoute({ kind: "draft", query: "teams=t1,geng&champ=azir,orianna&role=Mid&p=y2025" }, "counters")).toEqual({
+      kind: "counters",
+      query: "champ=azir&vs=orianna&role=Mid&patch=y2025",
+    });
+    expect(siblingSectionRoute({ kind: "counters", query: "champ=azir&vs=orianna&team=t1&vsteam=geng&patch=y2025" }, "prep")).toEqual({
+      kind: "prep",
+      a: "t1",
+      b: "geng",
+      period: "y2025",
+    });
   });
   it("leaves other searches alone", () => {
     expect(matchupShortcuts(INDEX, "faker")).toEqual([]);
@@ -392,6 +402,16 @@ describe("search shortcuts", () => {
       query: "q=t1",
     });
     expect(hubPath({ kind: "league", slug: "lck", year: "2025", query: "q=t1" })).toBe("/league/lck/2025?q=t1");
+    expect(
+      parseHubPath(
+        "/champion/azir",
+        "?team=t1&vsteam=geng&player=faker&vsplayer=chovy&vschamp=orianna&side=b&result=w",
+      ),
+    ).toEqual({
+      kind: "champ",
+      slug: "azir",
+      query: "vschamp=orianna&team=t1&vsteam=geng&player=faker&vsplayer=chovy&side=b&result=w",
+    });
   });
   it("matches parent-event period keys and synthesizes parent tournament options", () => {
     const rows = [

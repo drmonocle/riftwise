@@ -129,7 +129,10 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
   }
   if (!teamA && params.get("team")) {
     teamA = params.get("team") || undefined;
-    teamB = params.get("vs") || undefined;
+    teamB =
+      (current.kind === "counters"
+        ? params.get("vsteam") || params.get("opp")
+        : params.get("vs") || params.get("vsteam") || params.get("opp")) || undefined;
   }
   if (!playerA && params.get("player")) {
     playerA = params.get("player") || undefined;
@@ -164,8 +167,15 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
           .map((s) => s.trim())
           .filter(Boolean)
       : [];
-  const champ = params.get("champ") || champParts[0] || "";
-  const vsChamp = (current.kind === "counters" ? params.get("vs") : params.get("vschamp")) || champParts[1] || "";
+  const rawChampParam = params.get("champ") || "";
+  const paramChampParts = rawChampParam.includes(",")
+    ? rawChampParam
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+  const champ = paramChampParts[0] || rawChampParam || champParts[0] || "";
+  const vsChamp = (current.kind === "counters" ? params.get("vs") : params.get("vschamp")) || paramChampParts[1] || champParts[1] || "";
   const item = params.get("item") || "";
   const region = params.get("region") || "";
   const q = champParts.length ? "" : rawQ;

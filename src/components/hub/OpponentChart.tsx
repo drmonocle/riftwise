@@ -806,15 +806,35 @@ export const PlayerOpponents: React.FC<{
           ? "kda"
           : metric;
 
-  const [search, setSearch] = useState(() => {
+  const urlSearch = useMemo(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return p.get("vs") || p.get("opp") || p.get("team") || p.get("champ") || p.get("q") || "";
-  });
-  useEffect(() => {
-    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    const v = p.get("vs") || p.get("opp") || p.get("team") || p.get("champ") || p.get("q") || "";
-    if (v) setSearch(v);
+    return p.get("vs") || p.get("opp") || p.get("vsteam") || p.get("champ") || p.get("q") || "";
   }, [routeQuery]);
+  const urlSearchValid = useMemo(() => {
+    const q = normText(urlSearch);
+    const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
+    if (!terms.length) return false;
+    return opps.some((o) => {
+      const hay = normText(`${o.opp} ${o.u || ""} ${o.champs.map((c) => `${c.c} ${champName(c.c)}`).join(" ")}`);
+      const hayBare = bare(hay);
+      const canonOpp = resolveTeamAlias(o.u || o.opp);
+      return terms.some((t) => {
+        const tb = bare(t);
+        const ta = searchAlias(t);
+        return (
+          hay.includes(t) ||
+          (tb.length >= 2 && hayBare.includes(tb)) ||
+          (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
+          (canonOpp ? resolveTeamAlias(t) === canonOpp : false) ||
+          o.champs.some((c) => matchesChampSearch(c.c, t))
+        );
+      });
+    });
+  }, [urlSearch, opps]);
+  const [search, setSearch] = useState(() => (urlSearchValid ? urlSearch : ""));
+  useEffect(() => {
+    setSearch(urlSearchValid ? urlSearch : "");
+  }, [urlSearch, urlSearchValid]);
   const [showAll, setShowAll] = useState(false);
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
 
@@ -906,7 +926,7 @@ export const PlayerOpponents: React.FC<{
     const q = normText(search);
     const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
     if (!terms.length) return opps;
-    return opps.filter((o) => {
+    const matched = opps.filter((o) => {
       const hay = normText(`${o.opp} ${o.u || ""} ${o.champs.map((c) => `${c.c} ${champName(c.c)}`).join(" ")}`);
       const hayBare = bare(hay);
       const canonOpp = resolveTeamAlias(o.u || o.opp);
@@ -922,7 +942,9 @@ export const PlayerOpponents: React.FC<{
         );
       });
     });
-  }, [opps, search]);
+    if (matched.length === 0 && urlSearch && search === urlSearch) return opps;
+    return matched;
+  }, [opps, search, urlSearch]);
 
   if (!opps.length) return null;
 
@@ -1907,15 +1929,36 @@ export const TeamOpponentsChart: React.FC<{
   const nowRoute = currentHubRoute();
   const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
-  const [search, setSearch] = useState(() => {
+  const urlSearch = useMemo(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return p.get("vs") || p.get("opp") || p.get("team") || p.get("q") || "";
-  });
+    const rawTeam = p.get("team") || "";
+    const oppTeam = rawTeam && resolveTeamAlias(rawTeam) !== resolveTeamAlias(teamSlug) ? rawTeam : "";
+    return p.get("vs") || p.get("opp") || p.get("vsteam") || oppTeam || p.get("q") || "";
+  }, [routeQuery, teamSlug]);
+  const urlSearchValid = useMemo(() => {
+    const q = normText(urlSearch);
+    const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
+    if (!terms.length) return false;
+    return opps.some((o) => {
+      const hay = normText(`${o.n} ${o.u || ""}`);
+      const hayBare = bare(hay);
+      const canonOpp = resolveTeamAlias(o.u || o.n);
+      return terms.some((t) => {
+        const tb = bare(t);
+        const ta = searchAlias(t);
+        return (
+          hay.includes(t) ||
+          (tb.length >= 2 && hayBare.includes(tb)) ||
+          (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
+          (canonOpp ? resolveTeamAlias(t) === canonOpp : false)
+        );
+      });
+    });
+  }, [urlSearch, opps]);
+  const [search, setSearch] = useState(() => (urlSearchValid ? urlSearch : ""));
   useEffect(() => {
-    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    const v = p.get("vs") || p.get("opp") || p.get("team") || p.get("q") || "";
-    if (v) setSearch(v);
-  }, [routeQuery]);
+    setSearch(urlSearchValid ? urlSearch : "");
+  }, [urlSearch, urlSearchValid]);
   const [showAll, setShowAll] = useState(false);
 
   const chartOpps = useMemo(() => {
@@ -1949,7 +1992,7 @@ export const TeamOpponentsChart: React.FC<{
     const q = normText(search);
     const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
     if (!terms.length) return opps;
-    return opps.filter((o) => {
+    const matched = opps.filter((o) => {
       const hay = normText(`${o.n} ${o.u || ""}`);
       const hayBare = bare(hay);
       const canonOpp = resolveTeamAlias(o.u || o.n);
@@ -1964,7 +2007,9 @@ export const TeamOpponentsChart: React.FC<{
         );
       });
     });
-  }, [opps, search]);
+    if (matched.length === 0 && urlSearch && search === urlSearch) return opps;
+    return matched;
+  }, [opps, search, urlSearch]);
 
   if (!opps.length) return null;
 
@@ -2333,15 +2378,6 @@ export const TeamPeriodOpponents: React.FC<{
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
   const [metric, setMetric] = useState<"wr" | "gd15">("wr");
   const [showAll, setShowAll] = useState(false);
-  const [search, setSearch] = useState(() => {
-    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return p.get("vs") || p.get("opp") || p.get("team") || p.get("q") || "";
-  });
-  useEffect(() => {
-    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    const v = p.get("vs") || p.get("opp") || p.get("team") || p.get("q") || "";
-    if (v) setSearch(v);
-  }, [routeQuery]);
 
   const opps = useMemo(() => {
     const byOpp = new Map<string, { opp: string; u: string | null; g: number; w: number; k: number; d: number; gd15Sum: number; gd15N: number; last: string; games: TeamGameRow[] }>();
@@ -2383,6 +2419,39 @@ export const TeamPeriodOpponents: React.FC<{
       .sort((a, b) => b.g - a.g || b.last.localeCompare(a.last));
   }, [rows, hiddenCheck]);
 
+  const urlSearch = useMemo(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    const rawTeam = p.get("team") || "";
+    const oppTeam = rawTeam && resolveTeamAlias(rawTeam) !== resolveTeamAlias(teamSlug) ? rawTeam : "";
+    return p.get("vs") || p.get("opp") || p.get("vsteam") || oppTeam || p.get("champ") || p.get("q") || "";
+  }, [routeQuery, teamSlug]);
+  const urlSearchValid = useMemo(() => {
+    const q = normText(urlSearch);
+    const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
+    if (!terms.length) return false;
+    return opps.some((o) => {
+      const oppChamps = o.games.flatMap((g) => g[20] || []);
+      const hay = normText(`${o.opp} ${o.u || ""} ${oppChamps.map((c) => `${c} ${champName(c)}`).join(" ")}`);
+      const hayBare = bare(hay);
+      const canonOpp = resolveTeamAlias(o.u || o.opp);
+      return terms.some((t) => {
+        const tb = bare(t);
+        const ta = searchAlias(t);
+        return (
+          hay.includes(t) ||
+          (tb.length >= 2 && hayBare.includes(tb)) ||
+          (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
+          (canonOpp ? resolveTeamAlias(t) === canonOpp : false) ||
+          oppChamps.some((c) => matchesChampSearch(c, t))
+        );
+      });
+    });
+  }, [urlSearch, opps]);
+  const [search, setSearch] = useState(() => (urlSearchValid ? urlSearch : ""));
+  useEffect(() => {
+    setSearch(urlSearchValid ? urlSearch : "");
+  }, [urlSearch, urlSearchValid]);
+
   const hasGd15 = useMemo(() => opps.some((o) => o.gd15 != null), [opps]);
   const activeMetric = metric === "gd15" && !hasGd15 ? "wr" : metric;
 
@@ -2412,9 +2481,10 @@ export const TeamPeriodOpponents: React.FC<{
   const maxPeriodOppG = Math.max(1, ...opps.map((o) => o.g));
   const q = normText(search);
   const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
-  const filtered = terms.length
+  const matched = terms.length
     ? opps.filter((o) => {
-        const hay = normText(`${o.opp} ${o.u || ""}`);
+        const oppChamps = o.games.flatMap((g) => g[20] || []);
+        const hay = normText(`${o.opp} ${o.u || ""} ${oppChamps.map((c) => `${c} ${champName(c)}`).join(" ")}`);
         const hayBare = bare(hay);
         const canonOpp = resolveTeamAlias(o.u || o.opp);
         return terms.some((t) => {
@@ -2424,11 +2494,13 @@ export const TeamPeriodOpponents: React.FC<{
             hay.includes(t) ||
             (tb.length >= 2 && hayBare.includes(tb)) ||
             (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
-            (canonOpp ? resolveTeamAlias(t) === canonOpp : false)
+            (canonOpp ? resolveTeamAlias(t) === canonOpp : false) ||
+            oppChamps.some((c) => matchesChampSearch(c, t))
           );
         });
       })
     : opps;
+  const filtered = matched.length === 0 && urlSearch && search === urlSearch ? opps : matched;
   const shown = showAll || q ? filtered : filtered.slice(0, 10);
   const expanded = selectedOpp ? opps.find((o) => o.opp === selectedOpp) || null : null;
 

@@ -136,7 +136,34 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   const kind = PATH_ENTITY[parts[0]];
   const rawQ = new URLSearchParams(search);
   const keptQ = new URLSearchParams();
-  for (const k of ["p", "period", "as", "y", "year", "champ", "role", "q", "vs", "team", "player", "event", "patch", "span", "item", "keystone"]) {
+  for (const k of [
+    "p",
+    "period",
+    "as",
+    "y",
+    "year",
+    "champ",
+    "vschamp",
+    "role",
+    "q",
+    "vs",
+    "opp",
+    "team",
+    "vsteam",
+    "player",
+    "vsplayer",
+    "event",
+    "league",
+    "region",
+    "patch",
+    "span",
+    "item",
+    "keystone",
+    "side",
+    "stage",
+    "result",
+    "ban",
+  ]) {
     const v = rawQ.get(k);
     if (v) keptQ.set(k, v);
   }
