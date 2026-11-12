@@ -283,6 +283,11 @@ const PlayerView: React.FC<{
                 query={new URLSearchParams({
                   ...(pParam ? { p: pParam } : {}),
                   ...(pChamp ? { champ: pChamp } : {}),
+                  ...(urlVsChamp ? { vschamp: urlVsChamp } : {}),
+                  player: p.u,
+                  ...(vsPl ? { vsplayer: vsPl } : {}),
+                  ...(vsClubFor(primaryClubSlug) ? { vs: vsClubFor(primaryClubSlug)! } : {}),
+                  ...(p.role ? { role: p.role } : {}),
                   q: p.u,
                 }).toString()}
               />
@@ -306,9 +311,14 @@ const PlayerView: React.FC<{
                       to={{
                         kind: "leaders",
                         query: new URLSearchParams({
-                          q: [p.u, primaryClubSlug, vsClubFor(primaryClubSlug)].filter(Boolean).join(","),
+                          q: [p.u, vsPl, primaryClubSlug, vsClubFor(primaryClubSlug)].filter(Boolean).join(","),
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(primaryClubSlug ? { team: primaryClubSlug } : {}),
+                          ...(vsClubFor(primaryClubSlug) ? { vs: vsClubFor(primaryClubSlug)! } : {}),
                           role: p.role,
                           ...(pChamp || p.champs[0]?.c ? { champ: pChamp || resolveChampSlug(p.champs[0].c) } : {}),
+                          ...(urlVsChamp ? { vschamp: urlVsChamp } : {}),
                           ...(pEv ? { event: pEv } : pYr ? { year: pYr } : {}),
                         }).toString(),
                       }}
@@ -340,6 +350,11 @@ const PlayerView: React.FC<{
               const clubLinkQ = new URLSearchParams({
                 ...(pParam ? { p: pParam } : {}),
                 ...(pChamp ? { champ: pChamp } : {}),
+                ...(urlVsChamp ? { vschamp: urlVsChamp } : {}),
+                player: p.u,
+                ...(vsPl ? { vsplayer: vsPl } : {}),
+                ...(vsClubFor(primaryClubSlug) ? { vs: vsClubFor(primaryClubSlug)! } : {}),
+                ...(p.role ? { role: p.role } : {}),
                 q: p.u,
               }).toString();
               return (
@@ -393,7 +408,10 @@ const PlayerView: React.FC<{
               <span className="font-head text-[12px] font-bold uppercase tracking-[0.12em] text-rw-muted mr-1">
                 {tl("Favorite champions:").replace(/\s*[:：]\s*$/, "")}
               </span>
-              {p.bio.fav.map((c) => (
+              {p.bio.fav.map((c) => {
+                const cFavSlug = resolveChampSlug(c);
+                const vsFavSlug = p.bio.fav?.map((x) => resolveChampSlug(x)).find((s) => s && s !== cFavSlug) || (pChamp && pChamp !== cFavSlug ? pChamp : undefined);
+                return (
                 <ChampLink
                   key={c}
                   name={c}
@@ -401,14 +419,17 @@ const PlayerView: React.FC<{
                   showName={false}
                   query={new URLSearchParams({
                     player: p.u,
+                    ...(vsPl ? { vsplayer: vsPl } : {}),
                     ...(primaryClubSlug ? { team: primaryClubSlug } : {}),
                     ...(vsClubFor(primaryClubSlug) ? { vs: vsClubFor(primaryClubSlug)! } : {}),
+                    ...(vsFavSlug ? { vschamp: vsFavSlug } : {}),
                     ...(p.role ? { role: p.role } : {}),
                     ...(pParam ? { p: pParam } : {}),
                     ...(pYr ? { year: pYr } : pEv ? { event: pEv } : pPatch ? { patch: pPatch } : {}),
                   }).toString()}
                 />
-              ))}
+                );
+              })}
             </div>
           ) : undefined
         }
@@ -523,8 +544,13 @@ const PlayerView: React.FC<{
                         kind: "leaders",
                         query: new URLSearchParams({
                           q: [p.u, vsPl, clubSlug, vsClubSlug].filter(Boolean).join(","),
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(clubSlug ? { team: clubSlug } : {}),
+                          ...(vsClubSlug ? { vs: vsClubSlug } : {}),
                           ...(p.role ? { role: p.role } : {}),
                           ...(heroChamp ? { champ: heroChamp } : {}),
+                          ...(vsChamp ? { vschamp: vsChamp } : {}),
                           ...(pEv ? { event: pEv } : pYr ? { year: pYr } : {}),
                         }).toString(),
                       }}
@@ -537,6 +563,10 @@ const PlayerView: React.FC<{
                         kind: "tiers",
                         query:
                           new URLSearchParams({
+                            player: p.u,
+                            ...(vsPl ? { vsplayer: vsPl } : {}),
+                            ...(clubSlug ? { team: clubSlug } : {}),
+                            ...(vsClubSlug ? { vs: vsClubSlug } : {}),
                             ...(pEv ? { event: pEv } : pPatch ? { key: `p${pPatch}`, patch: pPatch } : pYr ? { key: `y${pYr}`, year: pYr } : {}),
                             ...(p.role ? { role: p.role } : {}),
                             ...(qChamps ? { q: qChamps } : {}),
@@ -573,6 +603,8 @@ const PlayerView: React.FC<{
                             kind: "draft",
                             query: new URLSearchParams({
                               teams: qClubs,
+                              player: p.u,
+                              ...(vsPl ? { vsplayer: vsPl } : {}),
                               ...(qChamps ? { champ: qChamps } : {}),
                               ...(p.role ? { role: p.role } : {}),
                               ...(pParam ? { p: pParam } : {}),
@@ -719,7 +751,7 @@ const PlayerView: React.FC<{
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `teams=${encodeURIComponent(teamSlug)}${vsTeamSlug ? `,${encodeURIComponent(vsTeamSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qEvChamps ? `&champ=${encodeURIComponent(qEvChamps)}` : ""}${evPeriod ? `&p=${encodeURIComponent(evPeriod)}` : ""}`,
+                            query: `teams=${encodeURIComponent(teamSlug)}${vsTeamSlug ? `,${encodeURIComponent(vsTeamSlug)}` : ""}&player=${encodeURIComponent(p.u)}${vsPl ? `&vsplayer=${encodeURIComponent(vsPl)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qEvChamps ? `&champ=${encodeURIComponent(qEvChamps)}` : ""}${evPeriod ? `&p=${encodeURIComponent(evPeriod)}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -767,8 +799,13 @@ const PlayerView: React.FC<{
                         kind: "leaders",
                         query: new URLSearchParams({
                           q: [p.u, vsPl, teamSlug, vsTeamSlug].filter(Boolean).join(","),
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(teamSlug ? { team: teamSlug } : {}),
+                          ...(vsTeamSlug ? { vs: vsTeamSlug } : {}),
                           ...(p.role ? { role: p.role } : {}),
                           ...(evChamp ? { champ: evChamp } : {}),
+                          ...(vsEvChamp ? { vschamp: vsEvChamp } : {}),
                           ...(oneEv ? { event: oneEv } : evYr ? { year: evYr } : {}),
                         }).toString(),
                       }}
@@ -792,6 +829,10 @@ const PlayerView: React.FC<{
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(teamSlug ? { team: teamSlug } : {}),
+                          ...(vsTeamSlug ? { vs: vsTeamSlug } : {}),
                           ...(oneEv ? { event: oneEv } : evYr ? { key: `y${evYr}`, year: evYr } : {}),
                           ...(qEvChamps ? { q: qEvChamps } : {}),
                           ...(p.role ? { role: p.role } : {}),
@@ -848,7 +889,7 @@ const PlayerView: React.FC<{
               </thead>
               <tbody>
                 {events.map((x) => (
-                  <PlayerEventRow key={x.e} x={x} playerSlug={p.u} />
+                  <PlayerEventRow key={x.e} x={x} playerSlug={p.u} playerRole={p.role} vsPlayer={vsPl} vsTeamSlug={vsClubFor(x.tu || (x.t ? resolveTeamAlias(x.t) || prettySlug(x.t) : primaryClubSlug))} />
                 ))}
               </tbody>
             </STable>
@@ -859,7 +900,7 @@ const PlayerView: React.FC<{
 
       {tab === "career" && (
       <div className="rw-span grid gap-3 md:grid-cols-2 items-start">
-        <CareerTimeline p={p} cardSub={cardSub} />
+        <CareerTimeline p={p} cardSub={cardSub} vsPlayer={vsPl} />
         <Section
           title={tl("By year")}
           right={
@@ -895,7 +936,7 @@ const PlayerView: React.FC<{
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `teams=${encodeURIComponent(teamSlug)}${vsTeamSlug ? `,${encodeURIComponent(vsTeamSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qYrChamps ? `&champ=${encodeURIComponent(qYrChamps)}` : ""}${latestYr ? `&p=y${encodeURIComponent(latestYr)}` : ""}`,
+                            query: `teams=${encodeURIComponent(teamSlug)}${vsTeamSlug ? `,${encodeURIComponent(vsTeamSlug)}` : ""}&player=${encodeURIComponent(p.u)}${vsPl ? `&vsplayer=${encodeURIComponent(vsPl)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qYrChamps ? `&champ=${encodeURIComponent(qYrChamps)}` : ""}${latestYr ? `&p=y${encodeURIComponent(latestYr)}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -943,8 +984,13 @@ const PlayerView: React.FC<{
                         kind: "leaders",
                         query: new URLSearchParams({
                           q: [p.u, vsPl, teamSlug, vsTeamSlug].filter(Boolean).join(","),
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(teamSlug ? { team: teamSlug } : {}),
+                          ...(vsTeamSlug ? { vs: vsTeamSlug } : {}),
                           ...(p.role ? { role: p.role } : {}),
                           ...(yrChamp ? { champ: yrChamp } : {}),
+                          ...(vsYrChamp ? { vschamp: vsYrChamp } : {}),
                           ...(latestYr ? { year: latestYr } : {}),
                         }).toString(),
                       }}
@@ -956,6 +1002,10 @@ const PlayerView: React.FC<{
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(teamSlug ? { team: teamSlug } : {}),
+                          ...(vsTeamSlug ? { vs: vsTeamSlug } : {}),
                           ...(latestYr ? { key: `y${latestYr}`, year: latestYr } : {}),
                           ...(qYrChamps ? { q: qYrChamps } : {}),
                           ...(p.role ? { role: p.role } : {}),
@@ -1009,8 +1059,9 @@ const PlayerView: React.FC<{
                 const yTeamSlug = p.teams.find((t) => t.n === y.team)?.u || (y.team ? resolveTeamAlias(y.team) || prettySlug(y.team) : "");
                 const yVsSlug = vsClubFor(yTeamSlug);
                 const yChampSlug = p.champs[0]?.c ? resolveChampSlug(p.champs[0].c) : "";
-                const yStatsQ = `p=y${y.y}${yTeamSlug ? `&team=${encodeURIComponent(yTeamSlug)}` : ""}${yVsSlug ? `&q=${encodeURIComponent(yVsSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${yChampSlug ? `&champ=${encodeURIComponent(yChampSlug)}` : ""}`;
-                const yTeamQ = `p=y${y.y}&q=${encodeURIComponent(p.u)}${yChampSlug ? `&champ=${encodeURIComponent(yChampSlug)}` : ""}`;
+                const yVsChampSlug = p.champs.map((x) => resolveChampSlug(x.c)).find((s) => s && s !== yChampSlug) || "";
+                const yStatsQ = `p=y${y.y}${yTeamSlug ? `&team=${encodeURIComponent(yTeamSlug)}` : ""}${yVsSlug ? `&vs=${encodeURIComponent(yVsSlug)}&q=${encodeURIComponent(yVsSlug)}` : ""}${vsPl ? `&vsplayer=${encodeURIComponent(vsPl)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${yChampSlug ? `&champ=${encodeURIComponent(yChampSlug)}` : ""}${yVsChampSlug ? `&vschamp=${encodeURIComponent(yVsChampSlug)}` : ""}`;
+                const yTeamQ = `p=y${y.y}&player=${encodeURIComponent(p.u)}${vsPl ? `&vsplayer=${encodeURIComponent(vsPl)}` : ""}${yVsSlug ? `&vs=${encodeURIComponent(yVsSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}&q=${encodeURIComponent(p.u)}${yChampSlug ? `&champ=${encodeURIComponent(yChampSlug)}` : ""}${yVsChampSlug ? `&vschamp=${encodeURIComponent(yVsChampSlug)}` : ""}`;
                 return (
                 <tr key={y.y} className="border-t border-rw-border hover:bg-rw-raised/50">
                   <td className={`${td} text-rw-text`} data-sort={y.y}>
@@ -1068,6 +1119,12 @@ const PlayerView: React.FC<{
             setGamesOn(null);
             const nextQ = new URLSearchParams();
             if (champPeriod !== "all") nextQ.set("p", champPeriod);
+            if (urlVsChamp) nextQ.set("vschamp", urlVsChamp);
+            if (urlTeam) nextQ.set("team", urlTeam);
+            if (urlVsTeam) nextQ.set("vs", urlVsTeam);
+            if (vsPl) nextQ.set("vsplayer", vsPl);
+            if (urlRole) nextQ.set("role", urlRole);
+            if (qParam) nextQ.set("q", qParam);
             const qs = nextQ.toString();
             navigateHub({ kind: "player", slug: p.u, tab: "champions", ...(qs ? { query: qs } : {}) }, { replace: true });
           }}
@@ -1083,6 +1140,12 @@ const PlayerView: React.FC<{
             const nextQ = new URLSearchParams();
             if (nextP !== "all") nextQ.set("p", nextP);
             if (gamesOn) nextQ.set("champ", resolveChampSlug(gamesOn));
+            if (urlVsChamp && (!gamesOn || urlVsChamp !== resolveChampSlug(gamesOn))) nextQ.set("vschamp", urlVsChamp);
+            if (urlTeam) nextQ.set("team", urlTeam);
+            if (urlVsTeam) nextQ.set("vs", urlVsTeam);
+            if (vsPl) nextQ.set("vsplayer", vsPl);
+            if (urlRole) nextQ.set("role", urlRole);
+            if (qParam) nextQ.set("q", qParam);
             const qs = nextQ.toString();
             navigateHub({ kind: "player", slug: p.u, tab: "champions", ...(qs ? { query: qs } : {}) }, { replace: true });
           }}
@@ -1094,6 +1157,12 @@ const PlayerView: React.FC<{
             const nextQ = new URLSearchParams();
             if (champPeriod !== "all") nextQ.set("p", champPeriod);
             nextQ.set("champ", resolveChampSlug(c));
+            if (urlVsChamp && urlVsChamp !== resolveChampSlug(c)) nextQ.set("vschamp", urlVsChamp);
+            if (urlTeam) nextQ.set("team", urlTeam);
+            if (urlVsTeam) nextQ.set("vs", urlVsTeam);
+            if (vsPl) nextQ.set("vsplayer", vsPl);
+            if (urlRole) nextQ.set("role", urlRole);
+            if (qParam) nextQ.set("q", qParam);
             navigateHub({ kind: "player", slug: p.u, tab: "champions", query: nextQ.toString() }, { replace: true });
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
@@ -1137,7 +1206,7 @@ const PlayerView: React.FC<{
                           <HubLink
                             to={{
                               kind: "draft",
-                              query: `teams=${encodeURIComponent(clubSlug)}${oppSlug && oppSlug !== clubSlug ? `,${encodeURIComponent(oppSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qRChamps ? `&champ=${encodeURIComponent(qRChamps)}` : ""}${r0Yr ? `&p=y${encodeURIComponent(r0Yr)}` : ""}`,
+                              query: `teams=${encodeURIComponent(clubSlug)}${oppSlug && oppSlug !== clubSlug ? `,${encodeURIComponent(oppSlug)}` : ""}&player=${encodeURIComponent(p.u)}${vsPl ? `&vsplayer=${encodeURIComponent(vsPl)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qRChamps ? `&champ=${encodeURIComponent(qRChamps)}` : ""}${r0Yr ? `&p=y${encodeURIComponent(r0Yr)}` : ""}`,
                             }}
                             className="text-[11px] text-rw-accent hover:underline"
                           >
@@ -1186,9 +1255,14 @@ const PlayerView: React.FC<{
                           query:
                             new URLSearchParams({
                               q: [p.u, vsPl, clubSlug, oppSlug && oppSlug !== clubSlug ? oppSlug : ""].filter(Boolean).join(","),
+                              player: p.u,
+                              ...(vsPl ? { vsplayer: vsPl } : {}),
+                              ...(clubSlug ? { team: clubSlug } : {}),
+                              ...(oppSlug && oppSlug !== clubSlug ? { vs: oppSlug } : {}),
                               ...(r0Yr ? { year: r0Yr } : {}),
                               ...(p.role ? { role: p.role } : {}),
                               ...(r0Champ ? { champ: r0Champ } : {}),
+                              ...(r1Champ ? { vschamp: r1Champ } : {}),
                             }).toString() || undefined,
                         }}
                         className="text-[11px] text-rw-accent hover:underline"
@@ -1200,6 +1274,10 @@ const PlayerView: React.FC<{
                           kind: "tiers",
                           query:
                             new URLSearchParams({
+                              player: p.u,
+                              ...(vsPl ? { vsplayer: vsPl } : {}),
+                              ...(clubSlug ? { team: clubSlug } : {}),
+                              ...(oppSlug && oppSlug !== clubSlug ? { vs: oppSlug } : {}),
                               ...(r0Yr ? { key: `y${r0Yr}`, year: r0Yr } : {}),
                               ...(p.role ? { role: p.role } : {}),
                               ...(qRChamps ? { q: qRChamps } : {}),
@@ -1325,13 +1403,22 @@ const PlayerView: React.FC<{
                       </HubLink>
                       {(() => {
                         const rEvSlug = p.events.find((ev) => ev.en === r.en)?.e;
+                        const rOppSlug = resolveTeamAlias(r.opp) || prettySlug(r.opp);
                         const rOppQ = new URLSearchParams({
                           ...(rEvSlug ? { p: `e:${rEvSlug}` } : r.date && /^\d{4}/.test(r.date) ? { p: `y${r.date.slice(0, 4)}` } : {}),
+                          ...(primaryClubSlug && primaryClubSlug !== rOppSlug ? { vs: primaryClubSlug } : {}),
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(p.role ? { role: p.role } : {}),
                           ...(r.c ? { champ: resolveChampSlug(r.c) } : {}),
                           q: p.u,
                         }).toString();
                         const rEvQ = new URLSearchParams({
-                          q: [p.u, primaryClubSlug, resolveTeamAlias(r.opp) || prettySlug(r.opp)].filter(Boolean).join(","),
+                          q: [p.u, primaryClubSlug, rOppSlug].filter(Boolean).join(","),
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(primaryClubSlug ? { team: primaryClubSlug } : {}),
+                          ...(rOppSlug && rOppSlug !== primaryClubSlug ? { vs: rOppSlug } : {}),
                           ...(r.c ? { champ: resolveChampSlug(r.c) } : {}),
                         }).toString();
                         return (
@@ -1417,7 +1504,7 @@ const PlayerView: React.FC<{
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `teams=${encodeURIComponent(clubSlug)}${vsTeamSlug ? `,${encodeURIComponent(vsTeamSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qBestChamps ? `&champ=${encodeURIComponent(qBestChamps)}` : ""}${bestYr ? `&p=y${encodeURIComponent(bestYr)}` : ""}`,
+                            query: `teams=${encodeURIComponent(clubSlug)}${vsTeamSlug ? `,${encodeURIComponent(vsTeamSlug)}` : ""}&player=${encodeURIComponent(p.u)}${vsPl ? `&vsplayer=${encodeURIComponent(vsPl)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qBestChamps ? `&champ=${encodeURIComponent(qBestChamps)}` : ""}${bestYr ? `&p=y${encodeURIComponent(bestYr)}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -1460,8 +1547,13 @@ const PlayerView: React.FC<{
                         query:
                           new URLSearchParams({
                             q: [p.u, vsPl, clubSlug, vsTeamSlug].filter(Boolean).join(","),
+                            player: p.u,
+                            ...(vsPl ? { vsplayer: vsPl } : {}),
+                            ...(clubSlug ? { team: clubSlug } : {}),
+                            ...(vsTeamSlug ? { vs: vsTeamSlug } : {}),
                             ...(p.role ? { role: p.role } : {}),
                             ...(bestChamp ? { champ: bestChamp } : {}),
+                            ...(vsBestChamp ? { vschamp: vsBestChamp } : {}),
                             ...(bestYr ? { year: bestYr } : {}),
                           }).toString() || undefined,
                       }}
@@ -1492,6 +1584,10 @@ const PlayerView: React.FC<{
                         kind: "tiers",
                         query:
                           new URLSearchParams({
+                            player: p.u,
+                            ...(vsPl ? { vsplayer: vsPl } : {}),
+                            ...(clubSlug ? { team: clubSlug } : {}),
+                            ...(vsTeamSlug ? { vs: vsTeamSlug } : {}),
                             ...(bestYr ? { key: `y${bestYr}`, year: bestYr } : {}),
                             ...(p.role ? { role: p.role } : {}),
                             ...(qBestChamps ? { q: qBestChamps } : {}),
@@ -1670,7 +1766,7 @@ const PlayerView: React.FC<{
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `teams=${encodeURIComponent(clubSlug)}${vsClubSlug ? `,${encodeURIComponent(vsClubSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qChamps ? `&champ=${encodeURIComponent(qChamps)}` : ""}${t0Period ? `&p=${encodeURIComponent(t0Period)}` : ""}`,
+                            query: `teams=${encodeURIComponent(clubSlug)}${vsClubSlug ? `,${encodeURIComponent(vsClubSlug)}` : ""}&player=${encodeURIComponent(p.u)}${vsPl ? `&vsplayer=${encodeURIComponent(vsPl)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qChamps ? `&champ=${encodeURIComponent(qChamps)}` : ""}${t0Period ? `&p=${encodeURIComponent(t0Period)}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -1755,8 +1851,13 @@ const PlayerView: React.FC<{
                         kind: "leaders",
                         query: new URLSearchParams({
                           q: [p.u, vsPl, clubSlug, vsClubSlug].filter(Boolean).join(","),
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(clubSlug ? { team: clubSlug } : {}),
+                          ...(vsClubSlug ? { vs: vsClubSlug } : {}),
                           ...(p.role ? { role: p.role } : {}),
                           ...(c0Slug ? { champ: c0Slug } : {}),
+                          ...(c1Slug ? { vschamp: c1Slug } : {}),
                           ...(t0Ev ? { event: t0Ev } : t0Yr ? { year: t0Yr } : {}),
                         }).toString(),
                       }}
@@ -1787,6 +1888,10 @@ const PlayerView: React.FC<{
                         kind: "tiers",
                         query:
                           new URLSearchParams({
+                            player: p.u,
+                            ...(vsPl ? { vsplayer: vsPl } : {}),
+                            ...(clubSlug ? { team: clubSlug } : {}),
+                            ...(vsClubSlug ? { vs: vsClubSlug } : {}),
                             ...(t0Ev ? { event: t0Ev } : t0Yr ? { key: `y${t0Yr}`, year: t0Yr } : {}),
                             ...(p.role ? { role: p.role } : {}),
                             ...(qChamps ? { q: qChamps } : {}),
@@ -1829,6 +1934,10 @@ const PlayerView: React.FC<{
             {p.titles.map((x) => {
               const titleEvQ = new URLSearchParams({
                 q: [p.u, primaryClubSlug].filter(Boolean).join(","),
+                player: p.u,
+                ...(vsPl ? { vsplayer: vsPl } : {}),
+                ...(primaryClubSlug ? { team: primaryClubSlug } : {}),
+                ...(vsClubFor(primaryClubSlug) ? { vs: vsClubFor(primaryClubSlug)! } : {}),
                 ...(p.champs[0]?.c ? { champ: resolveChampSlug(p.champs[0].c) } : {}),
               }).toString();
               return (
@@ -1881,7 +1990,7 @@ const PlayerView: React.FC<{
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `teams=${encodeURIComponent(clubSlug)}${vsClubSlug ? `,${encodeURIComponent(vsClubSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qPentaChamps ? `&champ=${encodeURIComponent(qPentaChamps)}` : ""}${pentaYr ? `&p=y${encodeURIComponent(pentaYr)}` : ""}`,
+                            query: `teams=${encodeURIComponent(clubSlug)}${vsClubSlug ? `,${encodeURIComponent(vsClubSlug)}` : ""}&player=${encodeURIComponent(p.u)}${vsPl ? `&vsplayer=${encodeURIComponent(vsPl)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qPentaChamps ? `&champ=${encodeURIComponent(qPentaChamps)}` : ""}${pentaYr ? `&p=y${encodeURIComponent(pentaYr)}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -1906,9 +2015,14 @@ const PlayerView: React.FC<{
                         kind: "leaders",
                         query: new URLSearchParams({
                           q: [p.u, vsPl, clubSlug, vsClubSlug].filter(Boolean).join(","),
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(clubSlug ? { team: clubSlug } : {}),
+                          ...(vsClubSlug ? { vs: vsClubSlug } : {}),
                           ...(p.role ? { role: p.role } : {}),
                           ...(pentaYr ? { year: pentaYr } : {}),
                           ...(pentaChamp ? { champ: pentaChamp } : {}),
+                          ...(vsPentaChamp ? { vschamp: vsPentaChamp } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
@@ -1954,6 +2068,10 @@ const PlayerView: React.FC<{
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(clubSlug ? { team: clubSlug } : {}),
+                          ...(vsClubSlug ? { vs: vsClubSlug } : {}),
                           ...(pentaYr ? { key: `y${pentaYr}`, year: pentaYr } : {}),
                           ...(p.role ? { role: p.role } : {}),
                           ...(qPentaChamps ? { q: qPentaChamps } : {}),
@@ -1998,8 +2116,9 @@ const PlayerView: React.FC<{
             {p.pentas.map((x, i) => {
               const pEvSlug = p.events.find((ev) => ev.en === x.en)?.e;
               const pYrStr = /^\d{4}/.test(x.date) ? x.date.slice(0, 4) : "";
-              const pentaChampQ = `player=${encodeURIComponent(p.u)}${primaryClubSlug ? `&team=${encodeURIComponent(primaryClubSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${pEvSlug ? `&event=${encodeURIComponent(pEvSlug)}&p=e:${encodeURIComponent(pEvSlug)}` : pYrStr ? `&p=y${pYrStr}&year=${pYrStr}` : ""}`;
-              const pentaFinderQ = `player=${encodeURIComponent(p.u)}${primaryClubSlug ? `&team=${encodeURIComponent(primaryClubSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}&champ=${encodeURIComponent(resolveChampSlug(x.c))}${pEvSlug ? `&event=${encodeURIComponent(pEvSlug)}` : ""}${pYrStr ? `&year=${pYrStr}` : ""}`;
+              const vsClubSlug = vsClubFor(primaryClubSlug);
+              const pentaChampQ = `player=${encodeURIComponent(p.u)}${vsPl ? `&vsplayer=${encodeURIComponent(vsPl)}` : ""}${primaryClubSlug ? `&team=${encodeURIComponent(primaryClubSlug)}` : ""}${vsClubSlug ? `&vs=${encodeURIComponent(vsClubSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${pEvSlug ? `&event=${encodeURIComponent(pEvSlug)}&p=e:${encodeURIComponent(pEvSlug)}` : pYrStr ? `&p=y${pYrStr}&year=${pYrStr}` : ""}`;
+              const pentaFinderQ = `player=${encodeURIComponent(p.u)}${vsPl ? `&vsplayer=${encodeURIComponent(vsPl)}` : ""}${primaryClubSlug ? `&team=${encodeURIComponent(primaryClubSlug)}` : ""}${vsClubSlug ? `&vs=${encodeURIComponent(vsClubSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}&champ=${encodeURIComponent(resolveChampSlug(x.c))}${pEvSlug ? `&event=${encodeURIComponent(pEvSlug)}` : ""}${pYrStr ? `&year=${pYrStr}` : ""}`;
               return (
               <li
                 key={i}
@@ -2046,6 +2165,10 @@ const PlayerView: React.FC<{
                         u={pEvSlug}
                         query={new URLSearchParams({
                           q: [p.u, primaryClubSlug].filter(Boolean).join(","),
+                          player: p.u,
+                          ...(vsPl ? { vsplayer: vsPl } : {}),
+                          ...(primaryClubSlug ? { team: primaryClubSlug } : {}),
+                          ...(vsClubSlug ? { vs: vsClubSlug } : {}),
                           ...(x.c ? { champ: resolveChampSlug(x.c) } : {}),
                         }).toString()}
                         className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -2226,7 +2349,7 @@ const PlayerChampionsTab: React.FC<{
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${encodeURIComponent(clubSlug)}${vsClubSlug ? `,${encodeURIComponent(vsClubSlug)}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}&champ=${encodeURIComponent(qChamps)}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
+                        query: `teams=${encodeURIComponent(clubSlug)}${vsClubSlug ? `,${encodeURIComponent(vsClubSlug)}` : ""}&player=${encodeURIComponent(p.u)}${vsPlayer ? `&vsplayer=${encodeURIComponent(vsPlayer)}` : ""}${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}&champ=${encodeURIComponent(qChamps)}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -2254,6 +2377,10 @@ const PlayerChampionsTab: React.FC<{
                     kind: "leaders",
                     query: new URLSearchParams({
                       q: [p.u, vsPlayer, clubSlug, vsClubSlug].filter(Boolean).join(","),
+                      player: p.u,
+                      ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
+                      ...(clubSlug ? { team: clubSlug } : {}),
+                      ...(vsClubSlug ? { vs: vsClubSlug } : {}),
                       ...(p.role ? { role: p.role } : {}),
                       ...(/^y\d{4}$/.test(period)
                         ? { year: period.slice(1) }
@@ -2261,6 +2388,7 @@ const PlayerChampionsTab: React.FC<{
                           ? { event: resolveEventSlug(period.slice(2)) }
                           : {}),
                       champ: c0Slug,
+                      ...(c1Slug ? { vschamp: c1Slug } : {}),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
@@ -2271,6 +2399,10 @@ const PlayerChampionsTab: React.FC<{
                   to={{
                     kind: "tiers",
                     query: new URLSearchParams({
+                      player: p.u,
+                      ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
+                      ...(clubSlug ? { team: clubSlug } : {}),
+                      ...(vsClubSlug ? { vs: vsClubSlug } : {}),
                       ...(/^y\d{4}$/.test(period)
                         ? { key: period, year: period.slice(1) }
                         : period.startsWith("p:")
@@ -2360,7 +2492,7 @@ const PlayerChampionsTab: React.FC<{
                     <ChampLink
                       name={c.c}
                       size={18}
-                      query={`player=${encodeURIComponent(p.u)}${rowClubSlug ? `&team=${encodeURIComponent(rowClubSlug)}` : ""}${rowVsClubSlug ? `&vs=${encodeURIComponent(rowVsClubSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${vsRowChamp ? `&vschamp=${encodeURIComponent(vsRowChamp)}` : ""}${
+                      query={`player=${encodeURIComponent(p.u)}${vsPlayer ? `&vsplayer=${encodeURIComponent(vsPlayer)}` : ""}${rowClubSlug ? `&team=${encodeURIComponent(rowClubSlug)}` : ""}${rowVsClubSlug ? `&vs=${encodeURIComponent(rowVsClubSlug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${vsRowChamp ? `&vschamp=${encodeURIComponent(vsRowChamp)}` : ""}${
                         /^y\d{4}$/.test(period)
                           ? `&p=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}`
                           : period.startsWith("p:")
@@ -2438,20 +2570,30 @@ const PlayerChampionsTab: React.FC<{
   );
 };
 
-const PlayerEventRow: React.FC<{ x: HubPlayer["events"][number]; playerSlug: string }> = ({
+const PlayerEventRow: React.FC<{
+  x: HubPlayer["events"][number];
+  playerSlug: string;
+  playerRole?: string;
+  vsPlayer?: string;
+  vsTeamSlug?: string;
+}> = ({
   x,
   playerSlug,
+  playerRole,
+  vsPlayer,
+  vsTeamSlug,
 }) => {
   const [hidden, reveal] = useHidden(`player-event:${x.e}`, x.date);
   const evTeamSlug = x.tu || (x.t ? resolveTeamAlias(x.t) || prettySlug(x.t) : "");
   const evC0Slug = x.c[0] ? resolveChampSlug(x.c[0]) : "";
-  const evStatsBaseQ = `p=e:${encodeURIComponent(x.e)}${evTeamSlug ? `&team=${encodeURIComponent(evTeamSlug)}` : ""}`;
-  const evStatsQ = `${evStatsBaseQ}${evC0Slug ? `&champ=${encodeURIComponent(evC0Slug)}` : ""}`;
-  const evPageQ = `q=${encodeURIComponent(playerSlug)}${evTeamSlug ? `,${encodeURIComponent(evTeamSlug)}` : ""}${evC0Slug ? `&champ=${encodeURIComponent(evC0Slug)}` : ""}`;
+  const evC1Slug = x.c[1] && resolveChampSlug(x.c[1]) !== evC0Slug ? resolveChampSlug(x.c[1]) : "";
+  const evStatsBaseQ = `p=e:${encodeURIComponent(x.e)}${evTeamSlug ? `&team=${encodeURIComponent(evTeamSlug)}` : ""}${vsTeamSlug ? `&vs=${encodeURIComponent(vsTeamSlug)}&q=${encodeURIComponent(vsTeamSlug)}` : ""}${vsPlayer ? `&vsplayer=${encodeURIComponent(vsPlayer)}` : ""}${playerRole ? `&role=${encodeURIComponent(playerRole)}` : ""}`;
+  const evStatsQ = `${evStatsBaseQ}${evC0Slug ? `&champ=${encodeURIComponent(evC0Slug)}` : ""}${evC1Slug ? `&vschamp=${encodeURIComponent(evC1Slug)}` : ""}`;
+  const evPageQ = `q=${encodeURIComponent(playerSlug)}${evTeamSlug ? `,${encodeURIComponent(evTeamSlug)}` : ""}&player=${encodeURIComponent(playerSlug)}${vsPlayer ? `&vsplayer=${encodeURIComponent(vsPlayer)}` : ""}${evTeamSlug ? `&team=${encodeURIComponent(evTeamSlug)}` : ""}${vsTeamSlug ? `&vs=${encodeURIComponent(vsTeamSlug)}` : ""}${playerRole ? `&role=${encodeURIComponent(playerRole)}` : ""}${evC0Slug ? `&champ=${encodeURIComponent(evC0Slug)}` : ""}${evC1Slug ? `&vschamp=${encodeURIComponent(evC1Slug)}` : ""}`;
   const evTeamQ = x.e
-    ? `p=e:${encodeURIComponent(x.e)}&q=${encodeURIComponent(playerSlug)}${evC0Slug ? `&champ=${encodeURIComponent(evC0Slug)}` : ""}`
+    ? `p=e:${encodeURIComponent(x.e)}&player=${encodeURIComponent(playerSlug)}${vsPlayer ? `&vsplayer=${encodeURIComponent(vsPlayer)}` : ""}${vsTeamSlug ? `&vs=${encodeURIComponent(vsTeamSlug)}` : ""}${playerRole ? `&role=${encodeURIComponent(playerRole)}` : ""}&q=${encodeURIComponent(playerSlug)}${evC0Slug ? `&champ=${encodeURIComponent(evC0Slug)}` : ""}${evC1Slug ? `&vschamp=${encodeURIComponent(evC1Slug)}` : ""}`
     : /^\d{4}/.test(x.date)
-      ? `p=y${x.date.slice(0, 4)}&q=${encodeURIComponent(playerSlug)}${evC0Slug ? `&champ=${encodeURIComponent(evC0Slug)}` : ""}`
+      ? `p=y${x.date.slice(0, 4)}&player=${encodeURIComponent(playerSlug)}${vsPlayer ? `&vsplayer=${encodeURIComponent(vsPlayer)}` : ""}${vsTeamSlug ? `&vs=${encodeURIComponent(vsTeamSlug)}` : ""}${playerRole ? `&role=${encodeURIComponent(playerRole)}` : ""}&q=${encodeURIComponent(playerSlug)}${evC0Slug ? `&champ=${encodeURIComponent(evC0Slug)}` : ""}${evC1Slug ? `&vschamp=${encodeURIComponent(evC1Slug)}` : ""}`
       : undefined;
   return (
     <tr className="border-t border-rw-border">
@@ -2602,7 +2744,7 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string; vsPlayer?: stri
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(t0Slug)}${t1Slug ? `,${encodeURIComponent(t1Slug)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qChamps ? `&champ=${encodeURIComponent(qChamps)}` : ""}${t0Yr ? `&p=y${encodeURIComponent(t0Yr)}` : ""}`,
+                    query: `teams=${encodeURIComponent(t0Slug)}${t1Slug ? `,${encodeURIComponent(t1Slug)}` : ""}&player=${encodeURIComponent(p.u)}${vsPlayer ? `&vsplayer=${encodeURIComponent(vsPlayer)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${qChamps ? `&champ=${encodeURIComponent(qChamps)}` : ""}${t0Yr ? `&p=y${encodeURIComponent(t0Yr)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -2640,6 +2782,10 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string; vsPlayer?: stri
                     kind: "tiers",
                     query:
                       new URLSearchParams({
+                        player: p.u,
+                        ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
+                        team: t0Slug,
+                        ...(t1Slug ? { vs: t1Slug } : {}),
                         ...(t0Yr ? { key: `y${t0Yr}`, year: t0Yr } : {}),
                         ...(p.role ? { role: p.role } : {}),
                         ...(qChamps ? { q: qChamps } : {}),
@@ -2654,8 +2800,13 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string; vsPlayer?: stri
                     kind: "leaders",
                     query: new URLSearchParams({
                       q: [p.u, vsPlayer, t0Slug, t1Slug].filter(Boolean).join(","),
+                      player: p.u,
+                      ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
+                      team: t0Slug,
+                      ...(t1Slug ? { vs: t1Slug } : {}),
                       ...(p.role ? { role: p.role } : {}),
                       ...(c0Slug ? { champ: c0Slug } : {}),
+                      ...(c1Slug ? { vschamp: c1Slug } : {}),
                       ...(t0Yr ? { year: t0Yr } : {}),
                     }).toString(),
                   }}
@@ -2696,6 +2847,12 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string; vsPlayer?: stri
           const yrLabel = fy === ty ? fy : `${fy}–${ty}`;
           const stintTitles = p.titles.filter((ti) => ti.date >= t.from && ti.date <= t.to);
           const wrPct = t.g > 0 ? Math.round((t.w / t.g) * 100) : 0;
+          const tSlug = t.u || resolveTeamAlias(t.n) || prettySlug(t.n);
+          const vsStintTeam = p.teams.map((x) => x.u || resolveTeamAlias(x.n) || prettySlug(x.n)).find((s) => s && s !== tSlug);
+          const c0Slug = p.champs[0]?.c ? resolveChampSlug(p.champs[0].c) : "";
+          const c1Slug = p.champs.map((x) => resolveChampSlug(x.c)).find((s) => s && s !== c0Slug) || "";
+          const stintTeamQ = `p=y${ty}&player=${encodeURIComponent(p.u)}${vsPlayer ? `&vsplayer=${encodeURIComponent(vsPlayer)}` : ""}${vsStintTeam ? `&vs=${encodeURIComponent(vsStintTeam)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}&q=${encodeURIComponent(p.u)}${c0Slug ? `&champ=${encodeURIComponent(c0Slug)}` : ""}${c1Slug ? `&vschamp=${encodeURIComponent(c1Slug)}` : ""}`;
+          const stintStatsQ = `p=y${ty}&team=${encodeURIComponent(tSlug)}${vsStintTeam ? `&vs=${encodeURIComponent(vsStintTeam)}&q=${encodeURIComponent(vsStintTeam)}` : ""}${vsPlayer ? `&vsplayer=${encodeURIComponent(vsPlayer)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${c0Slug ? `&champ=${encodeURIComponent(c0Slug)}` : ""}${c1Slug ? `&vschamp=${encodeURIComponent(c1Slug)}` : ""}`;
           return (
             <li key={`${t.n}-${t.from}`} className="relative min-w-0">
               <span
@@ -2709,17 +2866,17 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string; vsPlayer?: stri
                   <HubLink
                     to={{
                       kind: "team",
-                      slug: t.u || resolveTeamAlias(t.n) || prettySlug(t.n),
-                      query: `p=y${ty}&q=${encodeURIComponent(p.u)}${p.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(p.champs[0].c))}` : ""}`,
+                      slug: tSlug,
+                      query: stintTeamQ,
                     }}
                     className="shrink-0 hover:opacity-80"
                     title={t.n}
                   >
                     <TeamLogo name={t.n} size={20} />
                   </HubLink>
-                  <TeamLink name={t.n} u={t.u} query={`p=y${ty}&q=${encodeURIComponent(p.u)}${p.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(p.champs[0].c))}` : ""}`} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
+                  <TeamLink name={t.n} u={t.u} query={stintTeamQ} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
                   <HubLink
-                    to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${ty}&team=${encodeURIComponent(t.u || resolveTeamAlias(t.n) || prettySlug(t.n))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${p.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(p.champs[0].c))}` : ""}` }}
+                    to={{ kind: "player", slug: p.u, tab: "stats", query: stintStatsQ }}
                     className="text-[11px] text-rw-muted hover:text-rw-accent hover:underline tabular-nums shrink-0"
                     title={`${tl("Stats for")} ${ty}`}
                   >
@@ -2727,7 +2884,7 @@ const CareerTimeline: React.FC<{ p: HubPlayer; cardSub?: string; vsPlayer?: stri
                   </HubLink>
                 </span>
                 <HubLink
-                  to={{ kind: "player", slug: p.u, tab: "stats", query: `p=y${ty}&team=${encodeURIComponent(t.u || resolveTeamAlias(t.n) || prettySlug(t.n))}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${p.champs[0]?.c ? `&champ=${encodeURIComponent(resolveChampSlug(p.champs[0].c))}` : ""}` }}
+                  to={{ kind: "player", slug: p.u, tab: "stats", query: stintStatsQ }}
                   className="text-[11px] font-mono tabular-nums text-rw-sub hover:text-rw-accent hover:underline shrink-0"
                   title={`${tl("Stats for")} ${ty}`}
                 >
@@ -2842,7 +2999,7 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string; period?: string
             return (
               <>
                 <HubLink
-                  to={{ kind: "prep", a: ta, ...(tb ? { b: tb } : {}) }}
+                  to={{ kind: "prep", a: ta, ...(tb ? { b: tb } : {}), ...(period ? { period } : {}) }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
                   {tl("Match prep")} →
@@ -2850,7 +3007,7 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string; period?: string
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(ta)}${tb ? `,${encodeURIComponent(tb)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${peers[0]?.shared?.length ? `&champ=${encodeURIComponent(peers[0].shared.slice(0, 2).map(resolveChampSlug).join(","))}` : ""}`,
+                    query: `teams=${encodeURIComponent(ta)}${tb ? `,${encodeURIComponent(tb)}` : ""}&player=${encodeURIComponent(p.u)}${peers[0]?.peer?.u ? `&vsplayer=${encodeURIComponent(peers[0].peer.u)}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${peers[0]?.shared?.length ? `&champ=${encodeURIComponent(peers[0].shared.slice(0, 2).map(resolveChampSlug).join(","))}` : ""}${period ? `&p=${encodeURIComponent(period)}` : ""}`,
                   }}
                   className="text-[11px] text-rw-accent hover:underline"
                 >
@@ -2860,7 +3017,7 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string; period?: string
             );
           })()}
           <HubLink
-            to={{ kind: "compare", mode: "player", a: p.u, b: peers[0].peer.u }}
+            to={{ kind: "compare", mode: "player", a: p.u, b: peers[0].peer.u, ...(period ? { period } : {}) }}
             className="text-[11px] text-rw-accent hover:underline"
           >
             {tl("Compare")} →
@@ -2869,7 +3026,7 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string; period?: string
             <HubLink
               to={{
                 kind: "counters",
-                query: `champ=${encodeURIComponent(resolveChampSlug(peers[0].shared[0]))}${peers[0].shared[1] ? `&vs=${encodeURIComponent(resolveChampSlug(peers[0].shared[1]))}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}&player=${encodeURIComponent(p.u)}${peers[0]?.peer?.u ? `&vsplayer=${encodeURIComponent(peers[0].peer.u)}` : ""}${p.club ? `&team=${encodeURIComponent(p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club))}` : ""}${p.club && peers[0].peer.club && (p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club)) !== (peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club)) ? `&vsteam=${encodeURIComponent(peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club))}` : ""}`,
+                query: `champ=${encodeURIComponent(resolveChampSlug(peers[0].shared[0]))}${peers[0].shared[1] ? `&vs=${encodeURIComponent(resolveChampSlug(peers[0].shared[1]))}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}&player=${encodeURIComponent(p.u)}${peers[0]?.peer?.u ? `&vsplayer=${encodeURIComponent(peers[0].peer.u)}` : ""}${p.club ? `&team=${encodeURIComponent(p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club))}` : ""}${p.club && peers[0].peer.club && (p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club)) !== (peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club)) ? `&vsteam=${encodeURIComponent(peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club))}` : ""}${period && /^y\d{4}$/.test(period) ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : ""}`,
               }}
               className="text-[11px] text-rw-accent hover:underline"
             >
@@ -2890,8 +3047,16 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string; period?: string
                     ].filter(Boolean),
                   ),
                 ].join(","),
+                player: p.u,
+                ...(peers[0]?.peer?.u ? { vsplayer: peers[0].peer.u } : {}),
+                ...(p.club ? { team: p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club) } : {}),
+                ...(p.club && peers[0].peer.club && (p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club)) !== (peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club))
+                  ? { vs: peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club) }
+                  : {}),
                 ...(p.role ? { role: p.role } : {}),
                 ...(peers[0]?.shared?.[0] ? { champ: resolveChampSlug(peers[0].shared[0]) } : {}),
+                ...(peers[0]?.shared?.[1] ? { vschamp: resolveChampSlug(peers[0].shared[1]) } : {}),
+                ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : period?.startsWith("e:") ? { event: resolveEventSlug(period.slice(2)) } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-accent hover:underline"
@@ -2901,7 +3066,7 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string; period?: string
           <HubLink
             to={{
               kind: "items",
-              query: `player=${encodeURIComponent(p.u)}${peers[0]?.peer?.u ? `&vsplayer=${encodeURIComponent(peers[0].peer.u)}` : ""}${p.club ? `&team=${encodeURIComponent(p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club))}` : ""}${p.club && peers[0].peer.club && (p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club)) !== (peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club)) ? `&vs=${encodeURIComponent(peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club))}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${peers[0]?.shared?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(peers[0].shared[0]))}` : ""}${peers[0]?.shared?.[1] ? `&vschamp=${encodeURIComponent(resolveChampSlug(peers[0].shared[1]))}` : ""}`,
+              query: `player=${encodeURIComponent(p.u)}${peers[0]?.peer?.u ? `&vsplayer=${encodeURIComponent(peers[0].peer.u)}` : ""}${p.club ? `&team=${encodeURIComponent(p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club))}` : ""}${p.club && peers[0].peer.club && (p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club)) !== (peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club)) ? `&vs=${encodeURIComponent(peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club))}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${peers[0]?.shared?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(peers[0].shared[0]))}` : ""}${peers[0]?.shared?.[1] ? `&vschamp=${encodeURIComponent(resolveChampSlug(peers[0].shared[1]))}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period?.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
             }}
             className="text-[11px] text-rw-accent hover:underline"
           >
@@ -2910,7 +3075,7 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string; period?: string
           <HubLink
             to={{
               kind: "finder",
-              query: `player=${encodeURIComponent(p.u)}${p.club ? `&team=${encodeURIComponent(p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club))}` : ""}${p.club && peers[0].peer.club && (p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club)) !== (peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club)) ? `&vs=${encodeURIComponent(peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club))}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${peers[0]?.peer?.u ? `&vsplayer=${encodeURIComponent(peers[0].peer.u)}` : ""}${peers[0]?.shared?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(peers[0].shared[0]))}` : ""}${peers[0]?.shared?.[1] ? `&vschamp=${encodeURIComponent(resolveChampSlug(peers[0].shared[1]))}` : ""}`,
+              query: `player=${encodeURIComponent(p.u)}${p.club ? `&team=${encodeURIComponent(p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club))}` : ""}${p.club && peers[0].peer.club && (p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club)) !== (peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club)) ? `&vs=${encodeURIComponent(peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club))}` : ""}${p.role ? `&role=${encodeURIComponent(p.role)}` : ""}${peers[0]?.peer?.u ? `&vsplayer=${encodeURIComponent(peers[0].peer.u)}` : ""}${peers[0]?.shared?.[0] ? `&champ=${encodeURIComponent(resolveChampSlug(peers[0].shared[0]))}` : ""}${peers[0]?.shared?.[1] ? `&vschamp=${encodeURIComponent(resolveChampSlug(peers[0].shared[1]))}` : ""}${period && /^y\d{4}$/.test(period) ? `&year=${encodeURIComponent(period.slice(1))}` : period?.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period?.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`,
             }}
             className="text-[11px] text-rw-accent hover:underline"
           >
@@ -2919,14 +3084,24 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string; period?: string
           <HubLink
             to={{
               kind: "tiers",
-              ...((p.role || peers[0]?.shared?.length)
-                ? {
-                    query: new URLSearchParams({
-                      ...(p.role ? { role: p.role } : {}),
-                      ...(peers[0]?.shared?.length ? { q: peers[0].shared.slice(0, 3).map(resolveChampSlug).join(",") } : {}),
-                    }).toString(),
-                  }
-                : {}),
+              query:
+                new URLSearchParams({
+                  player: p.u,
+                  ...(peers[0]?.peer?.u ? { vsplayer: peers[0].peer.u } : {}),
+                  ...(p.club ? { team: p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club) } : {}),
+                  ...(p.club && peers[0].peer.club && (p.clubU || resolveTeamAlias(p.club) || prettySlug(p.club)) !== (peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club))
+                    ? { vs: peers[0].peer.clubU || resolveTeamAlias(peers[0].peer.club) || prettySlug(peers[0].peer.club) }
+                    : {}),
+                  ...(p.role ? { role: p.role } : {}),
+                  ...(peers[0]?.shared?.length ? { q: peers[0].shared.slice(0, 3).map(resolveChampSlug).join(",") } : {}),
+                  ...(period && /^y\d{4}$/.test(period)
+                    ? { key: period, year: period.slice(1) }
+                    : period?.startsWith("p:")
+                      ? { key: `p${period.slice(2)}`, patch: period.slice(2) }
+                      : period?.startsWith("e:")
+                        ? { event: resolveEventSlug(period.slice(2)) }
+                        : {}),
+                }).toString() || undefined,
             }}
             className="text-[11px] text-rw-accent hover:underline"
           >
@@ -2975,18 +3150,27 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string; period?: string
       <ul className="space-y-2 text-xs">
         {peers.map(({ peer, sim, shared }) => {
           const peerClubSlug = peer.clubU || (peer.club ? resolveTeamAlias(peer.club) || prettySlug(peer.club) : "");
+          const pClubSlug = p.clubU || (p.club ? resolveTeamAlias(p.club) || prettySlug(p.club) : "");
           const peerQ =
             new URLSearchParams({
               ...(period ? { p: period } : {}),
               ...(peerClubSlug ? { team: peerClubSlug } : {}),
+              ...(pClubSlug && pClubSlug !== peerClubSlug ? { vs: pClubSlug } : {}),
+              vsplayer: p.u,
               ...(peer.role || p.role ? { role: peer.role || p.role } : {}),
               ...(shared[0] ? { champ: resolveChampSlug(shared[0]) } : {}),
+              ...(shared[1] ? { vschamp: resolveChampSlug(shared[1]) } : {}),
               q: p.u,
             }).toString() || undefined;
           const peerTeamQ =
             new URLSearchParams({
               ...(period ? { p: period } : {}),
+              ...(pClubSlug && pClubSlug !== peerClubSlug ? { vs: pClubSlug } : {}),
+              player: peer.u,
+              vsplayer: p.u,
+              ...(peer.role || p.role ? { role: peer.role || p.role } : {}),
               ...(shared[0] ? { champ: resolveChampSlug(shared[0]) } : {}),
+              ...(shared[1] ? { vschamp: resolveChampSlug(shared[1]) } : {}),
               q: peer.u,
             }).toString() || undefined;
           return (
@@ -3028,15 +3212,18 @@ const SimilarPlayers: React.FC<{ p: HubPlayer; cardSub?: string; period?: string
                 <span>{sim}%</span>
               </HubLink>
               <span className="flex gap-0.5" title={shared.map(champName).join(", ")}>
-                {shared.slice(0, 3).map((c) => (
+                {shared.slice(0, 3).map((c) => {
+                  const vsSharedC = shared.find((sc) => sc !== c);
+                  return (
                   <HubLink
                     key={c}
-                    to={{ kind: "player", slug: peer.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}${peerClubSlug ? `&team=${encodeURIComponent(peerClubSlug)}` : ""}${peer.role || p.role ? `&role=${encodeURIComponent(peer.role || p.role)}` : ""}&q=${encodeURIComponent(p.u)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                    to={{ kind: "player", slug: peer.u, tab: "champions", query: `champ=${encodeURIComponent(resolveChampSlug(c))}${vsSharedC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsSharedC))}` : ""}${peerClubSlug ? `&team=${encodeURIComponent(peerClubSlug)}` : ""}${pClubSlug && pClubSlug !== peerClubSlug ? `&vs=${encodeURIComponent(pClubSlug)}` : ""}&vsplayer=${encodeURIComponent(p.u)}${peer.role || p.role ? `&role=${encodeURIComponent(peer.role || p.role)}` : ""}&q=${encodeURIComponent(p.u)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
                     title={`${peer.name} · ${champName(c)}`}
                   >
                     <ChampIcon name={c} size={18} />
                   </HubLink>
-                ))}
+                  );
+                })}
               </span>
               <HubLink
                 to={{ kind: "compare", mode: "player", a: p.u, b: peer.u, ...(period ? { period } : {}) }}
