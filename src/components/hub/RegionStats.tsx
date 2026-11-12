@@ -273,6 +273,9 @@ const RegionTrend: React.FC<{
                 query: new URLSearchParams({
                   champ: cA,
                   ...(cB ? { vs: cB } : {}),
+                  ...(pA ? { player: pA } : {}),
+                  ...(tA ? { team: tA, ...(tB && tB !== tA ? { vsteam: tB } : {}) } : {}),
+                  league: intlLeague,
                 }).toString(),
               }}
               className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -330,7 +333,7 @@ const RegionTrend: React.FC<{
               kind: "rankings",
               query: new URLSearchParams({
                 league: intlLeague,
-                ...(tJoin ? { q: tJoin } : {}),
+                ...(tpJoin ? { q: tpJoin } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -387,7 +390,7 @@ const RegionTrend: React.FC<{
               kind: "best",
               query: new URLSearchParams({
                 league: intlLeague,
-                ...(tJoin ? { q: tJoin } : {}),
+                ...(tpJoin ? { q: tpJoin } : {}),
               }).toString(),
             }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -540,15 +543,44 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
   }, [files]);
   const nowRoute = currentHubRoute();
   const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
+  const matchesPairRow = (p: (typeof pairs)[number], terms: string[]) => {
+    const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
+    const taSlug = topTeamByRegion.get(p.a) || "";
+    const tbSlug = topTeamByRegion.get(p.b) || "";
+    const hay = normText(`${p.a} ${regionLabel(p.a)} ${REGION_SEARCH_ALIASES[p.a] || ""} ${taSlug} ${p.b} ${regionLabel(p.b)} ${REGION_SEARCH_ALIASES[p.b] || ""} ${tbSlug}`);
+    const hayBare = bare(hay);
+    return terms.some((t) => {
+      const ta = searchAlias(t);
+      return (
+        hay.includes(t) ||
+        (t.length >= 2 && hayBare.includes(bare(t))) ||
+        (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false)
+      );
+    });
+  };
   const [pairSearch, setPairSearch] = useState(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    return p.get("region") || p.get("pair") || "";
+    const raw = p.get("region") || p.get("pair") || "";
+    if (!raw.trim() || !pairs.length) return "";
+    const terms = raw
+      .trim()
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s.trim()))
+      .filter(Boolean);
+    return terms.length && pairs.some((row) => matchesPairRow(row, terms)) ? raw : "";
   });
   useEffect(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
     const v = p.get("region") || p.get("pair") || "";
-    if (v) setPairSearch(v);
-  }, [routeQuery]);
+    if (v && pairs.length) {
+      const terms = v
+        .trim()
+        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+        .map((s) => normText(s.trim()))
+        .filter(Boolean);
+      if (terms.length && pairs.some((row) => matchesPairRow(row, terms))) setPairSearch(v);
+    }
+  }, [routeQuery, pairs]);
   const pairTerms = useMemo(
     () =>
       pairSearch
@@ -560,20 +592,8 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
   );
   const filteredPairs = useMemo(() => {
     if (!pairTerms.length) return pairs;
-    const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
-    return pairs.filter((p) => {
-      const hay = normText(`${p.a} ${regionLabel(p.a)} ${REGION_SEARCH_ALIASES[p.a] || ""} ${p.b} ${regionLabel(p.b)} ${REGION_SEARCH_ALIASES[p.b] || ""}`);
-      const hayBare = bare(hay);
-      return pairTerms.some((t) => {
-        const ta = searchAlias(t);
-        return (
-          hay.includes(t) ||
-          (t.length >= 2 && hayBare.includes(bare(t))) ||
-          (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false)
-        );
-      });
-    });
-  }, [pairs, pairTerms]);
+    return pairs.filter((p) => matchesPairRow(p, pairTerms));
+  }, [pairs, pairTerms, topTeamByRegion]);
   const topChamps = useMemo(() => topChampsFromFiles(files), [files]);
   const topPlayers = useMemo(() => topPlayersFromFiles(files), [files]);
   if (!list.length) return null;
@@ -591,6 +611,8 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
   const cJoin = topChamps.join(",");
   const pA = topPlayers[0];
   const pB = topPlayers[1];
+  const regQParts = [topRegTeamA, topRegTeamB !== topRegTeamA ? topRegTeamB : undefined, pA, pB].filter(Boolean);
+  const pairQParts = [pairTeamA, pairTeamB !== pairTeamA ? pairTeamB : undefined, pA, pB].filter(Boolean);
   return (
     <>
     <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -605,6 +627,9 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
+                    ...(pA ? { player: pA } : {}),
+                    ...(topRegTeamA ? { team: topRegTeamA, ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { vsteam: topRegTeamB } : {}) } : {}),
+                    league: intlLeague,
                     ...(singleYear ? { patch: `y${singleYear}`, year: singleYear } : {}),
                   }).toString(),
                 }}
@@ -686,7 +711,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 kind: "rankings",
                 query: new URLSearchParams({
                   league: intlLeague,
-                  ...(topRegTeamA ? { q: `${topRegTeamA}${topRegTeamB && topRegTeamB !== topRegTeamA ? `,${topRegTeamB}` : ""}` } : {}),
+                  ...(regQParts.length ? { q: regQParts.join(",") } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -757,7 +782,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
-                  ...(topRegTeamA ? { q: `${topRegTeamA}${topRegTeamB && topRegTeamB !== topRegTeamA ? `,${topRegTeamB}` : ""}` } : {}),
+                  ...(regQParts.length ? { q: regQParts.join(",") } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -772,9 +797,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
                   ...(cA ? { champ: cA } : {}),
-                  ...([topRegTeamA, topRegTeamB !== topRegTeamA ? topRegTeamB : undefined, pA, pB].some(Boolean)
-                    ? { q: [topRegTeamA, topRegTeamB !== topRegTeamA ? topRegTeamB : undefined, pA, pB].filter(Boolean).join(",") }
-                    : {}),
+                  ...(regQParts.length ? { q: regQParts.join(",") } : {}),
                 }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -976,6 +999,9 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     query: new URLSearchParams({
                       champ: cA,
                       ...(cB ? { vs: cB } : {}),
+                      ...(pA ? { player: pA } : {}),
+                      ...(pairTeamA ? { team: pairTeamA, ...(pairTeamB && pairTeamB !== pairTeamA ? { vsteam: pairTeamB } : {}) } : {}),
+                      league: intlLeague,
                       ...(singleYear ? { patch: `y${singleYear}`, year: singleYear } : {}),
                     }).toString(),
                   }}
@@ -1057,7 +1083,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   kind: "rankings",
                   query: new URLSearchParams({
                     league: intlLeague,
-                    ...(pairTeamA ? { q: `${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}` } : {}),
+                    ...(pairQParts.length ? { q: pairQParts.join(",") } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1128,9 +1154,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     league: intlLeague,
                     ...(singleYear ? { year: singleYear } : {}),
-                    ...(pairTeamA
-                      ? { q: `${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}` }
-                      : {}),
+                    ...(pairQParts.length ? { q: pairQParts.join(",") } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1145,9 +1169,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     league: intlLeague,
                     ...(singleYear ? { year: singleYear } : {}),
                     ...(cA ? { champ: cA } : {}),
-                    ...([pairTeamA, pairTeamB !== pairTeamA ? pairTeamB : undefined, pA, pB].some(Boolean)
-                      ? { q: [pairTeamA, pairTeamB !== pairTeamA ? pairTeamB : undefined, pA, pB].filter(Boolean).join(",") }
-                      : {}),
+                    ...(pairQParts.length ? { q: pairQParts.join(",") } : {}),
                   }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
