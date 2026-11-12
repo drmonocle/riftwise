@@ -3726,15 +3726,18 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                   <HubLink
                     to={{
                       kind: "counters",
-                      query: `champ=${encodeURIComponent(resolveChampSlug(topTeamChamp))}${vsChamp ? `&vs=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}&team=${encodeURIComponent(rows[0].slug)}&vsteam=${encodeURIComponent(rows[1].slug)}${
-                        period.startsWith("y") && period.length === 5
-                          ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}`
-                          : period.startsWith("e:")
-                            ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                            : period.startsWith("p:")
-                              ? `&patch=${encodeURIComponent(period.slice(2))}`
-                              : ""
-                      }`,
+                      query: (() => {
+                        const p0 = (rows[0].info as HubTeam).starters?.[0]?.[1] || (rows[0].info as HubTeam).roster[0]?.p?.find((r) => r.u)?.u;
+                        return `champ=${encodeURIComponent(resolveChampSlug(topTeamChamp))}${vsChamp ? `&vs=${encodeURIComponent(resolveChampSlug(vsChamp))}` : ""}${p0 ? `&player=${encodeURIComponent(p0)}` : ""}&team=${encodeURIComponent(rows[0].slug)}&vsteam=${encodeURIComponent(rows[1].slug)}${
+                          period.startsWith("y") && period.length === 5
+                            ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}`
+                            : period.startsWith("e:")
+                              ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                              : period.startsWith("p:")
+                                ? `&patch=${encodeURIComponent(period.slice(2))}`
+                                : ""
+                        }`;
+                      })(),
                     }}
                     className="text-rw-accent hover:underline"
                   >
@@ -4101,15 +4104,22 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
                               <HubLink
                                 to={{
                                   kind: "finder",
-                                  query: `team=${encodeURIComponent(rows[i].slug)}${firstOtherSlug ? `&vs=${encodeURIComponent(firstOtherSlug)}` : ""}&side=${label === tl("Blue side wins") ? "b" : "r"}${cellChamp ? `&champ=${encodeURIComponent(resolveChampSlug(cellChamp))}` : ""}${
-                                    period.startsWith("y") && period.length === 5
-                                      ? `&year=${encodeURIComponent(period.slice(1))}`
-                                      : period.startsWith("e:")
-                                        ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
-                                        : period.startsWith("p:")
-                                          ? `&patch=${encodeURIComponent(period.slice(2))}`
-                                          : ""
-                                  }`,
+                                  query: (() => {
+                                    const p0 = (rows[i].info as HubTeam).starters?.[0]?.[1] || (rows[i].info as HubTeam).roster[0]?.p?.find((r) => r.u)?.u;
+                                    const otherRow = rows.find((o) => o.slug === firstOtherSlug);
+                                    const p1 = otherRow ? (otherRow.info as HubTeam).starters?.[0]?.[1] || (otherRow.info as HubTeam).roster[0]?.p?.find((r) => r.u)?.u : undefined;
+                                    const otherAgg = otherRow ? (aggs[rows.indexOf(otherRow)] as TeamAgg) : undefined;
+                                    const vsC = otherAgg?.picks[0]?.[0] && otherAgg.picks[0][0] !== cellChamp ? otherAgg.picks[0][0] : (aggs[i] as TeamAgg)?.picks[1]?.[0];
+                                    return `team=${encodeURIComponent(rows[i].slug)}${firstOtherSlug ? `&vs=${encodeURIComponent(firstOtherSlug)}` : ""}&side=${label === tl("Blue side wins") ? "b" : "r"}${p0 ? `&player=${encodeURIComponent(p0)}${p1 && p1 !== p0 ? `&vsplayer=${encodeURIComponent(p1)}` : ""}` : ""}${cellChamp ? `&champ=${encodeURIComponent(resolveChampSlug(cellChamp))}${vsC && vsC !== cellChamp ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""}` : ""}${
+                                      period.startsWith("y") && period.length === 5
+                                        ? `&year=${encodeURIComponent(period.slice(1))}`
+                                        : period.startsWith("e:")
+                                          ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}`
+                                          : period.startsWith("p:")
+                                            ? `&patch=${encodeURIComponent(period.slice(2))}`
+                                            : ""
+                                    }`;
+                                  })(),
                                 }}
                                 className="hover:text-rw-accent hover:underline"
                               >
