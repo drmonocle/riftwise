@@ -1801,10 +1801,24 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
 };
 
 /** A small picker used on champion pages and Match prep: open the finder for a champion. */
-export const CountersLink: React.FC<{ slug: string; vs?: string; role?: string; patch?: string; year?: string; event?: string; className?: string }> = ({
+export const CountersLink: React.FC<{
+  slug: string;
+  vs?: string;
+  role?: string;
+  player?: string;
+  team?: string;
+  vsteam?: string;
+  patch?: string;
+  year?: string;
+  event?: string;
+  className?: string;
+}> = ({
   slug,
   vs,
   role,
+  player,
+  team,
+  vsteam,
   patch,
   year,
   event,
@@ -1816,6 +1830,9 @@ export const CountersLink: React.FC<{ slug: string; vs?: string; role?: string; 
       query: new URLSearchParams({
         champ: slug,
         ...(vs && vs !== slug ? { vs } : {}),
+        ...(player ? { player } : {}),
+        ...(team ? { team } : {}),
+        ...(vsteam && vsteam !== team ? { vsteam } : {}),
         ...(role ? { role } : {}),
         ...(event ? { event } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
       }).toString(),
