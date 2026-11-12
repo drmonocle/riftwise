@@ -135,7 +135,7 @@ export const RosterMoves: React.FC = () => {
                     ? {
                         query: new URLSearchParams({
                           ...(lg0 ? { league: lg0 } : {}),
-                          ...(to0Slug ? { q: [to0Slug, from0Slug && from0Slug !== to0Slug ? from0Slug : ""].filter(Boolean).join(",") } : {}),
+                          ...(to0Slug ? { q: [to0Slug, from0Slug && from0Slug !== to0Slug ? from0Slug : "", p0Slug, twoPlayers ? p1Slug : ""].filter(Boolean).join(",") } : {}),
                         }).toString(),
                       }
                     : {}),
@@ -165,7 +165,7 @@ export const RosterMoves: React.FC = () => {
                 to={{
                   kind: "teams",
                   ...(to0Slug
-                    ? { query: `q=${encodeURIComponent([to0Slug, from0Slug && from0Slug !== to0Slug ? from0Slug : ""].filter(Boolean).join(","))}` }
+                    ? { query: `q=${encodeURIComponent([to0Slug, from0Slug && from0Slug !== to0Slug ? from0Slug : "", p0Slug, twoPlayers ? p1Slug : ""].filter(Boolean).join(","))}` }
                     : {}),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -306,13 +306,15 @@ export const RosterMoves: React.FC = () => {
             ...(fromSlug && fromSlug !== toSlug ? { q: fromSlug } : {}),
             ...(mRole ? { role: mRole } : {}),
           }).toString() || undefined;
+          const fromTeamQList = [toSlug && toSlug !== fromSlug ? toSlug : "", pSlug, vsPlayerSlug].filter(Boolean).join(",");
+          const toTeamQList = [fromSlug && fromSlug !== toSlug ? fromSlug : "", pSlug, vsPlayerSlug].filter(Boolean).join(",");
           const fromTeamQ = new URLSearchParams({
             ...(myr ? { p: `y${myr}` } : {}),
-            ...(toSlug && toSlug !== fromSlug ? { q: toSlug } : pSlug ? { q: pSlug } : {}),
+            ...(fromTeamQList ? { q: fromTeamQList } : {}),
           }).toString() || undefined;
           const toTeamQ = new URLSearchParams({
             ...(myr ? { p: `y${myr}` } : {}),
-            ...(fromSlug && fromSlug !== toSlug ? { q: fromSlug } : pSlug ? { q: pSlug } : {}),
+            ...(toTeamQList ? { q: toTeamQList } : {}),
           }).toString() || undefined;
           return (
           <li key={`${m.u}-${m.d}`} className="py-1.5 border-b border-rw-border break-inside-avoid flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">

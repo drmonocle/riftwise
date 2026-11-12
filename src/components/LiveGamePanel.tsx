@@ -422,7 +422,7 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
                   onClick={() => {
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
-                      q: `${teamSlug(left.name, left.code)},${teamSlug(right.name, right.code)}`,
+                      q: [teamSlug(left.name, left.code), teamSlug(right.name, right.code), pA, pB].filter(Boolean).join(","),
                     }).toString();
                     navigateHub({ kind: "rankings", query: q });
                   }}
@@ -619,9 +619,15 @@ const StatsTable: React.FC<{ left: SideInfo; right: SideInfo; minutes: number | 
         <tbody>
           {[left, right].map((x, i) => {
             const other = i === 0 ? right : left;
+            const xMid = x.meta.find((p) => p.role === "mid") || x.meta[0];
+            const oMid = other.meta.find((p) => p.role === "mid") || other.meta[0];
+            const xP = xMid ? playerSlug(playerName(xMid.summonerName)) : "";
+            const oP = oMid ? playerSlug(playerName(oMid.summonerName)) : "";
+            const xC = xMid?.championId && champNameById(xMid.championId) ? resolveChampSlug(champNameById(xMid.championId)) : "";
             const xTeamQ = new URLSearchParams({
               ...(year ? { p: `y${year}` } : {}),
-              q: teamSlug(other.name, other.code),
+              ...(xC ? { champ: xC } : {}),
+              q: [teamSlug(other.name, other.code), xP, oP].filter(Boolean).join(","),
             }).toString();
             return (
               <tr key={x.code} className="border-t border-rw-border/60">
@@ -975,11 +981,13 @@ const PlayerCells: React.FC<{
     ...(oppPName ? { q: playerSlug(oppPName) } : {}),
     ...(cSlug ? { champ: cSlug } : {}),
   }).toString();
+  const cLinkQList = [oppTSlug && oppTSlug !== tSlug ? oppTSlug : "", oppPName ? playerSlug(oppPName) : ""].filter(Boolean).join(",");
   const cLinkQ = new URLSearchParams({
     ...(year ? { p: `y${year}` } : {}),
     ...(tSlug ? { team: tSlug } : {}),
     ...(pName ? { player: playerSlug(pName) } : {}),
     ...(roleLabel ? { role: roleLabel } : {}),
+    ...(cLinkQList ? { q: cLinkQList } : {}),
   }).toString();
   return (
     <td className="py-1.5 align-top">
@@ -1454,7 +1462,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                   onClick={() => {
                     const q = new URLSearchParams({
                       ...(lg ? { league: lg } : {}),
-                      q: `${teamSlug(left.name, left.code)},${teamSlug(right.name, right.code)}`,
+                      q: [teamSlug(left.name, left.code), teamSlug(right.name, right.code), pA, pB].filter(Boolean).join(","),
                     }).toString();
                     navigateHub({ kind: "rankings", query: q });
                   }}
@@ -1536,19 +1544,22 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
         {l.map((p, i) => {
           const q = r[i];
           const yr = match.startTimeUtc?.slice(0, 4);
-          const cell = (x: LiveParticipantMeta | undefined, oppX: LiveParticipantMeta | undefined, teamName: string, teamCode: string, rightSide: boolean) => {
+          const cell = (x: LiveParticipantMeta | undefined, oppX: LiveParticipantMeta | undefined, teamName: string, teamCode: string, oppTeamName: string, oppTeamCode: string, rightSide: boolean) => {
             if (!x) return <span />;
             const icon = champIcon(x.championId);
             const pName = playerName(x.summonerName);
             const oppPName = oppX ? playerName(oppX.summonerName) : "";
             const tSlug = teamSlug(teamName, teamCode);
+            const oppTSlug = teamSlug(oppTeamName, oppTeamCode);
             const rLab = ROLE_LABEL[x.role] || x.role;
             const cSlug = champNameById(x.championId) ? resolveChampSlug(champNameById(x.championId)) : "";
+            const cQList = [oppTSlug && oppTSlug !== tSlug ? oppTSlug : "", oppPName ? playerSlug(oppPName) : ""].filter(Boolean).join(",");
             const cQ = new URLSearchParams({
               ...(yr ? { p: `y${yr}` } : {}),
               ...(tSlug ? { team: tSlug } : {}),
               ...(pName ? { player: playerSlug(pName) } : {}),
               ...(rLab ? { role: rLab } : {}),
+              ...(cQList ? { q: cQList } : {}),
             }).toString();
             const pQ = new URLSearchParams({
               ...(yr ? { p: `y${yr}` } : {}),
@@ -1590,7 +1601,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
           };
           return (
             <React.Fragment key={i}>
-              {cell(p, q, left.name, left.code, false)}
+              {cell(p, q, left.name, left.code, right.name, right.code, false)}
               <span className="flex flex-col items-center justify-center w-12 shrink-0 leading-tight">
                 {p && q ? (
                   <button
@@ -1632,7 +1643,7 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                   </button>
                 )}
               </span>
-              {cell(q, p, right.name, right.code, true)}
+              {cell(q, p, right.name, right.code, left.name, left.code, true)}
             </React.Fragment>
           );
         })}

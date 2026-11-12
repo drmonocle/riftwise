@@ -86,9 +86,10 @@ const TeamStatsLink: React.FC<{ name: string; code: string; vsSlug?: string; lea
         disabled={busy}
         onClick={() =>
           openRoute((slug) => {
+            const qList = [vsSlug && vsSlug !== slug ? vsSlug : "", ...(topPlayers || [])].filter(Boolean).join(",");
             const q = new URLSearchParams({
               ...(year ? { p: `y${year}` } : {}),
-              ...(vsSlug && vsSlug !== slug ? { q: vsSlug } : {}),
+              ...(qList ? { q: qList } : {}),
             }).toString();
             navigateHub({ kind: "team", slug, ...(q ? { query: q } : {}) });
           })
@@ -201,7 +202,7 @@ const TeamStatsLink: React.FC<{ name: string; code: string; vsSlug?: string; lea
             navigateHub({
               kind: "rankings",
               query: new URLSearchParams({
-                q: vsSlug && vsSlug !== slug ? `${slug},${vsSlug}` : slug,
+                q: [slug, vsSlug && vsSlug !== slug ? vsSlug : "", ...(topPlayers || [])].filter(Boolean).join(","),
                 ...(lg ? { league: lg } : {}),
               }).toString(),
             }),
@@ -327,6 +328,9 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
     .slice(0, 2);
   const refMatch = upcomingMatches[0] || completedMatches[0];
   const modalYr = refMatch?.startTimeUtc?.slice(0, 4);
+  const modalOppCode = refMatch
+    ? (refMatch.team1Code.toUpperCase() === upperCode ? refMatch.team2Code : refMatch.team1Code)
+    : "";
   const modalOppSlug = refMatch
     ? (() => {
         const isT1 = refMatch.team1Code.toUpperCase() === upperCode;
@@ -335,9 +339,16 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
         return oCode && oCode !== "TBD" ? teamSlug(oName, oCode) : "";
       })()
     : "";
+  const modalOppPlayer = modalOppCode && modalOppCode !== "TBD"
+    ? allPlayers.find((p) => p.teamCode.toUpperCase() === modalOppCode.toUpperCase() && p.role.toLowerCase() === "mid") ||
+      allPlayers.find((p) => p.teamCode.toUpperCase() === modalOppCode.toUpperCase())
+    : undefined;
+  const modalOppPSlug = modalOppPlayer ? playerSlug(modalOppPlayer.name) : "";
+  const modalMyPSlug = players[0] ? playerSlug(players[0].name) : "";
+  const modalQList = [modalOppSlug, modalMyPSlug, modalOppPSlug].filter(Boolean).join(",");
   const modalTeamQ = new URLSearchParams({
     ...(modalYr ? { p: `y${modalYr}` } : {}),
-    ...(modalOppSlug ? { q: modalOppSlug } : {}),
+    ...(modalQList ? { q: modalQList } : {}),
   }).toString();
 
   return (
@@ -413,7 +424,7 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        const lq = [teamSlug(displayName, upperCode), modalOppSlug].filter(Boolean).join(",");
+                        const lq = [teamSlug(displayName, upperCode), modalOppSlug, modalMyPSlug, modalOppPSlug].filter(Boolean).join(",");
                         navigateHub({
                           kind: "league",
                           slug: resolveLeagueSlug(catalogTeam.league),
@@ -841,7 +852,12 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <button
                               type="button"
                               onClick={() => {
-                                navigateHub({ kind: "team", slug: teamSlug(opp, oppCode), ...(mYr ? { query: `p=y${mYr}` } : {}) });
+                                const qList = [teamSlug(displayName, upperCode), modalMyPSlug].filter(Boolean).join(",");
+                                const q = new URLSearchParams({
+                                  ...(mYr ? { p: `y${mYr}` } : {}),
+                                  ...(qList ? { q: qList } : {}),
+                                }).toString();
+                                navigateHub({ kind: "team", slug: teamSlug(opp, oppCode), ...(q ? { query: q } : {}) });
                                 onClose();
                               }}
                               className="inline-flex items-center gap-1.5 text-rw-accent hover:underline text-left"
@@ -854,7 +870,13 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                             <button
                               type="button"
                               onClick={() => {
-                                navigateHub({ kind: "league", slug: resolveLeagueSlug(m.leagueSlug || m.leagueName), ...(mYr ? { year: mYr } : {}) });
+                                const lq = [teamSlug(displayName, upperCode), teamSlug(opp, oppCode), modalMyPSlug].filter(Boolean).join(",");
+                                navigateHub({
+                                  kind: "league",
+                                  slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
+                                  ...(mYr ? { year: mYr } : {}),
+                                  ...(lq ? { query: `q=${encodeURIComponent(lq)}` } : {}),
+                                });
                                 onClose();
                               }}
                               className="hover:text-rw-accent hover:underline"
@@ -997,7 +1019,12 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               type="button"
                               onClick={() => {
                                 const yr = m.startTimeUtc?.slice(0, 4);
-                                navigateHub({ kind: "team", slug: teamSlug(oppName, oppCode), ...(yr ? { query: `p=y${yr}` } : {}) });
+                                const qList = [teamSlug(displayName, upperCode), modalMyPSlug].filter(Boolean).join(",");
+                                const q = new URLSearchParams({
+                                  ...(yr ? { p: `y${yr}` } : {}),
+                                  ...(qList ? { q: qList } : {}),
+                                }).toString();
+                                navigateHub({ kind: "team", slug: teamSlug(oppName, oppCode), ...(q ? { query: q } : {}) });
                                 onClose();
                               }}
                               className="inline-flex items-center gap-1.5 hover:text-rw-accent hover:underline text-left truncate"
@@ -1069,7 +1096,12 @@ export const TeamRosterModal: React.FC<TeamRosterModalProps> = ({
                               type="button"
                               onClick={() => {
                                 const yr = m.startTimeUtc?.slice(0, 4);
-                                navigateHub({ kind: "team", slug: teamSlug(oppName, oppCode), ...(yr ? { query: `p=y${yr}` } : {}) });
+                                const qList = [teamSlug(displayName, upperCode), modalMyPSlug].filter(Boolean).join(",");
+                                const q = new URLSearchParams({
+                                  ...(yr ? { p: `y${yr}` } : {}),
+                                  ...(qList ? { q: qList } : {}),
+                                }).toString();
+                                navigateHub({ kind: "team", slug: teamSlug(oppName, oppCode), ...(q ? { query: q } : {}) });
                                 onClose();
                               }}
                               className="inline-flex items-center gap-1.5 truncate hover:text-rw-accent hover:underline text-left"

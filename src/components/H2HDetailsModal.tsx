@@ -408,7 +408,7 @@ export const H2HDetailsModal: React.FC<H2HDetailsModalProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            const pairQ = [teamSlug(t1.name, c1), teamSlug(t2.name, c2)].filter(Boolean).join(",");
+                            const pairQ = [teamSlug(t1.name, c1), teamSlug(t2.name, c2), p1Slug, p2Slug].filter(Boolean).join(",");
                             navigateHub({
                               kind: "event",
                               slug: resolveEventSlug(m.tournament) || prettySlug(m.tournament),
@@ -625,7 +625,7 @@ const PrepButton: React.FC<{
               navigateHub({
                 kind: "rankings",
                 query: new URLSearchParams({
-                  q: `${a},${b}`,
+                  q: [a, b, p1, p2].filter(Boolean).join(","),
                   ...(lg ? { league: lg } : {}),
                 }).toString(),
               }),

@@ -412,7 +412,14 @@ export const LiveNextGamePreview: React.FC<{
                 kind: "rankings",
                 query: new URLSearchParams({
                   ...(resolveLeagueSlug(match.leagueSlug || match.leagueName) ? { league: resolveLeagueSlug(match.leagueSlug || match.leagueName) } : {}),
-                  q: `${draftIntel.slugA},${draftIntel.slugB}`,
+                  q: [
+                    draftIntel.slugA,
+                    draftIntel.slugB,
+                    draftIntel.rolesA[0]?.player ? playerSlug(draftIntel.rolesA[0].player, draftIntel.rolesA[0].u) : "",
+                    draftIntel.rolesB[0]?.player ? playerSlug(draftIntel.rolesB[0].player, draftIntel.rolesB[0].u) : "",
+                  ]
+                    .filter(Boolean)
+                    .join(","),
                 }).toString(),
               }}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
@@ -518,13 +525,16 @@ export const LiveNextGamePreview: React.FC<{
                       <TeamLogo name={match.team1Name} code={match.team1Code} src={match.team1Image} size={14} className="shrink-0" />
                       <span>{match.team1Code}</span>
                     </HubLink>
-                    {g.team1.map((p) => {
+                    {g.team1.map((p, pIdx) => {
                       const rIdx = ROLE_ORDER.indexOf(p.role);
+                      const oppP = g.team2[pIdx]?.player ? playerSlug(g.team2[pIdx].player) : "";
+                      const qList = [tBSlug, oppP].filter(Boolean).join(",");
                       const cQ = new URLSearchParams({
                         ...(pVal ? { p: pVal } : {}),
                         ...(tASlug ? { team: tASlug } : {}),
                         ...(p.player ? { player: playerSlug(p.player) } : {}),
                         ...(rIdx >= 0 ? { role: ROLE_LABELS[rIdx] } : {}),
+                        ...(qList ? { q: qList } : {}),
                       }).toString();
                       return (
                         <HubLink
@@ -547,13 +557,16 @@ export const LiveNextGamePreview: React.FC<{
                       <TeamLogo name={match.team2Name} code={match.team2Code} src={match.team2Image} size={14} className="shrink-0" />
                       <span>{match.team2Code}</span>
                     </HubLink>
-                    {g.team2.map((p) => {
+                    {g.team2.map((p, pIdx) => {
                       const rIdx = ROLE_ORDER.indexOf(p.role);
+                      const oppP = g.team1[pIdx]?.player ? playerSlug(g.team1[pIdx].player) : "";
+                      const qList = [tASlug, oppP].filter(Boolean).join(",");
                       const cQ = new URLSearchParams({
                         ...(pVal ? { p: pVal } : {}),
                         ...(tBSlug ? { team: tBSlug } : {}),
                         ...(p.player ? { player: playerSlug(p.player) } : {}),
                         ...(rIdx >= 0 ? { role: ROLE_LABELS[rIdx] } : {}),
+                        ...(qList ? { q: qList } : {}),
                       }).toString();
                       return (
                         <HubLink
