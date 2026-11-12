@@ -543,6 +543,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     ...(qLeague ? { league: qLeague } : {}),
                     ...(qEvent ? { event: qEvent } : qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
                     ...(heroRole ? { role: heroRole } : {}),
+                    ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                    ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                    ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                    ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                     q: heroChamps,
                   }).toString(),
                 }}
@@ -583,6 +587,9 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     ...(heroTeamsQuery ? { teams: heroTeamsQuery } : {}),
                     champ: heroChamps,
                     ...(heroRole ? { role: heroRole } : {}),
+                    ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                    ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                    ...(qLeague ? { league: qLeague } : {}),
                     ...(qEvent ? { p: `e:${qEvent}` } : qPatch ? { p: `p:${qPatch}` } : qYear ? { p: `y${qYear}` } : {}),
                   }).toString(),
                 }}
@@ -595,7 +602,12 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   kind: "leaders",
                   query: new URLSearchParams({
                     champ: cSlug,
+                    ...(vsHeroSlug && vsHeroSlug !== cSlug ? { vschamp: vsHeroSlug } : {}),
                     ...(heroRole ? { role: heroRole } : {}),
+                    ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                    ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                    ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                    ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                     ...(qLeague ? { league: qLeague } : {}),
                     ...(qEvent ? { event: qEvent } : qYear ? { year: qYear } : {}),
                     ...(heroLeadersQuery ? { q: heroLeadersQuery } : {}),
@@ -638,7 +650,9 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               bar: c.p + c.b > 0 ? { pct: Math.round((c.b / (c.p + c.b)) * 100), tone: "red" } : undefined,
               to: {
                 kind: "finder",
-                query: `ban=${encodeURIComponent(cSlug)}${heroTeam0 ? `&team=${encodeURIComponent(heroTeam0)}` : ""}${
+                query: `ban=${encodeURIComponent(cSlug)}${topPlayerSlug ? `&player=${encodeURIComponent(topPlayerSlug)}` : ""}${
+                  vsPlayerSlug ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""
+                }${heroTeam0 ? `&team=${encodeURIComponent(heroTeam0)}` : ""}${
                   heroTeam1 ? `&vs=${encodeURIComponent(heroTeam1)}` : ""
                 }${heroPeriodQuery}`,
               },
@@ -763,6 +777,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     ...(qLeague ? { league: qLeague } : {}),
                     ...(qEvent ? { event: qEvent } : qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
                     ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
+                    ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                    ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                    ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                    ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                     q: heroChamps,
                   }).toString(),
                 }}
@@ -777,6 +795,9 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     ...(heroTeamsQuery ? { teams: heroTeamsQuery } : {}),
                     champ: heroChamps,
                     ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
+                    ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                    ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                    ...(qLeague ? { league: qLeague } : {}),
                     ...(qEvent ? { p: `e:${qEvent}` } : qPatch ? { p: `p:${qPatch}` } : qYear ? { p: `y${qYear}` } : {}),
                   }).toString(),
                 }}
@@ -804,7 +825,12 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   kind: "leaders",
                   query: new URLSearchParams({
                     champ: cSlug,
+                    ...(vsHeroSlug && vsHeroSlug !== cSlug ? { vschamp: vsHeroSlug } : {}),
                     ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
+                    ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                    ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                    ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                    ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                     ...(qLeague ? { league: qLeague } : {}),
                     ...(qEvent ? { event: qEvent } : qYear ? { year: qYear } : {}),
                     ...(heroLeadersQuery ? { q: heroLeadersQuery } : {}),
@@ -1102,6 +1128,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           ...(qLeague ? { league: qLeague } : {}),
                           ...(qEvent ? { event: qEvent } : qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
                           ...(muRole ? { role: muRole } : {}),
+                          ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                          ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                          ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                          ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                           q: hitSlug ? `${c.u},${hitSlug}` : c.u,
                         }).toString(),
                       }}
@@ -1116,6 +1146,9 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           ...(heroTeamsQuery ? { teams: heroTeamsQuery } : {}),
                           champ: hitSlug ? `${c.u},${hitSlug}` : c.u,
                           ...(muRole ? { role: muRole } : {}),
+                          ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                          ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                          ...(qLeague ? { league: qLeague } : {}),
                           ...(qEvent ? { p: `e:${qEvent}` } : qPatch ? { p: `p:${qPatch}` } : qYear ? { p: `y${qYear}` } : {}),
                         }).toString(),
                       }}
@@ -1141,7 +1174,12 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         kind: "leaders",
                         query: new URLSearchParams({
                           champ: cSlug,
+                          ...(hitSlug ? { vschamp: hitSlug } : {}),
                           ...(muRole ? { role: muRole } : {}),
+                          ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                          ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                          ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                          ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                           ...(qLeague ? { league: qLeague } : {}),
                           ...(qEvent ? { event: qEvent } : qYear ? { year: qYear } : {}),
                           ...(heroLeadersQuery ? { q: heroLeadersQuery } : {}),
@@ -1264,6 +1302,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
                           ...(heroTeam0 ? { team: heroTeam0 } : {}),
                           ...(heroTeam1 ? { vsteam: heroTeam1 } : {}),
+                          ...(qLeague ? { league: qLeague } : {}),
                           ...(muRecent ? { span: "12m" } : {}),
                           ...(qEvent ? { event: qEvent, p: `e:${qEvent}` } : qPatch ? { patch: qPatch, p: `p:${qPatch}` } : qYear ? { year: qYear, p: `y${qYear}` } : {}),
                         }).toString()}
@@ -1350,6 +1389,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
                           ...(heroTeam0 ? { team: heroTeam0 } : {}),
                           ...(heroTeam1 ? { vsteam: heroTeam1 } : {}),
+                          ...(qLeague ? { league: qLeague } : {}),
                           ...(muRecent ? { span: "12m" } : {}),
                           ...(qEvent ? { event: qEvent, p: `e:${qEvent}` } : qPatch ? { patch: qPatch, p: `p:${qPatch}` } : qYear ? { year: qYear, p: `y${qYear}` } : {}),
                         }).toString()}
@@ -1596,7 +1636,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           heroTeamsQuery
                             ? `teams=${heroTeamSlugs.map(encodeURIComponent).join(",")}&`
                             : ""
-                        }champ=${encodeURIComponent(topDuo ? `${c.u},${resolveChampSlug(topDuo[0])}` : c.u)}&role=Bot${qEvent ? `&p=e:${encodeURIComponent(qEvent)}` : qPatch ? `&p=p:${encodeURIComponent(qPatch)}` : qYear ? `&p=y${encodeURIComponent(qYear)}` : ""}`,
+                        }champ=${encodeURIComponent(topDuo ? `${c.u},${resolveChampSlug(topDuo[0])}` : c.u)}&role=Bot${
+                          topPlayerSlug ? `&player=${encodeURIComponent(topPlayerSlug)}` : ""
+                        }${vsPlayerSlug ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""}${
+                          qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""
+                        }${qEvent ? `&p=e:${encodeURIComponent(qEvent)}` : qPatch ? `&p=p:${encodeURIComponent(qPatch)}` : qYear ? `&p=y${encodeURIComponent(qYear)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -1609,6 +1653,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           role: "Bot",
                           ...(qLeague ? { league: qLeague } : {}),
                           ...(qEvent ? { event: qEvent } : qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
+                          ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                          ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                          ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                          ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                           q: topDuo ? `${c.u},${resolveChampSlug(topDuo[0])}` : c.u,
                         }).toString(),
                       }}
@@ -1634,7 +1682,12 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         kind: "leaders",
                         query: new URLSearchParams({
                           champ: cSlug,
+                          ...(topDuo ? { vschamp: resolveChampSlug(topDuo[0]) } : {}),
                           role: "Bot",
+                          ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                          ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                          ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                          ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                           ...(qLeague ? { league: qLeague } : {}),
                           ...(qEvent ? { event: qEvent } : qYear ? { year: qYear } : {}),
                           ...(heroLeadersQuery ? { q: heroLeadersQuery } : {}),
@@ -1715,6 +1768,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                             ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
                             ...(heroTeam0 ? { team: heroTeam0 } : {}),
                             ...(heroTeam1 ? { vsteam: heroTeam1 } : {}),
+                            ...(qLeague ? { league: qLeague } : {}),
                             ...(qEvent ? { event: qEvent, p: `e:${qEvent}` } : qPatch ? { patch: qPatch, p: `p:${qPatch}` } : qYear ? { year: qYear, p: `y${qYear}` } : {}),
                           }).toString() || undefined
                         }
@@ -1846,7 +1900,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       <HubLink
                         to={{
                           kind: "draft",
-                          query: `teams=${encodeURIComponent(t0)}${t1 ? `,${encodeURIComponent(t1)}` : ""}&champ=${encodeURIComponent(heroChamps)}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}${playersRecent ? "&p=12m" : qEvent ? `&p=e:${encodeURIComponent(qEvent)}` : qPatch ? `&p=p:${encodeURIComponent(qPatch)}` : qYear ? `&p=y${encodeURIComponent(qYear)}` : ""}`,
+                          query: `teams=${encodeURIComponent(t0)}${t1 ? `,${encodeURIComponent(t1)}` : ""}&champ=${encodeURIComponent(heroChamps)}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}${pSlugs[0] ? `&player=${encodeURIComponent(pSlugs[0])}` : ""}${pSlugs[1] ? `&vsplayer=${encodeURIComponent(pSlugs[1])}` : ""}${!playersRecent && qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${playersRecent ? "&p=12m" : qEvent ? `&p=e:${encodeURIComponent(qEvent)}` : qPatch ? `&p=p:${encodeURIComponent(qPatch)}` : qYear ? `&p=y${encodeURIComponent(qYear)}` : ""}`,
                         }}
                         className="text-[11px] text-rw-accent hover:underline"
                       >
@@ -1918,7 +1972,12 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       kind: "leaders",
                       query: new URLSearchParams({
                         champ: cSlug,
+                        ...(vsHeroSlug && vsHeroSlug !== cSlug ? { vschamp: vsHeroSlug } : {}),
                         ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                        ...(pSlugs[0] ? { player: pSlugs[0] } : {}),
+                        ...(pSlugs[1] ? { vsplayer: pSlugs[1] } : {}),
+                        ...(t0 ? { team: t0 } : {}),
+                        ...(t1 ? { vs: t1 } : {}),
                         ...(!playersRecent && qLeague ? { league: qLeague } : {}),
                         ...(!playersRecent && qEvent ? { event: qEvent } : !playersRecent && qYear ? { year: qYear } : {}),
                         ...(pSlugs.length || tSlugs.length ? { q: [...new Set([...pSlugs, ...tSlugs])].join(",") } : {}),
@@ -1941,6 +2000,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                               ? { key: `y${qYear}`, year: qYear }
                               : {}),
                         ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                        ...(pSlugs[0] ? { player: pSlugs[0] } : {}),
+                        ...(pSlugs[1] ? { vsplayer: pSlugs[1] } : {}),
+                        ...(t0 ? { team: t0 } : {}),
+                        ...(t1 ? { vs: t1 } : {}),
                         q: heroChamps,
                       }).toString(),
                     }}
@@ -2022,7 +2085,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       : qYear
                         ? `p=y${encodeURIComponent(qYear)}`
                         : "";
-                const pTabQuery = `champ=${encodeURIComponent(cSlug)}${pTeamSlugVal ? `&team=${encodeURIComponent(pTeamSlugVal)}` : ""}${pRowQ ? `&q=${encodeURIComponent(pRowQ)}` : ""}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}${pPeriodQ ? `&${pPeriodQ}` : ""}`;
+                const pTabQuery = `champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${pTeamSlugVal ? `&team=${encodeURIComponent(pTeamSlugVal)}` : ""}${pOppSlug ? `&vs=${encodeURIComponent(pOppSlug)}` : ""}${pOppPlayerSlug ? `&vsplayer=${encodeURIComponent(pOppPlayerSlug)}` : ""}${pRowQ ? `&q=${encodeURIComponent(pRowQ)}` : ""}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}${!playersRecent && qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${pPeriodQ ? `&${pPeriodQ}` : ""}`;
                 const pRowTo = p.u
                   ? ({ kind: "player", slug: p.u, tab: "champions", query: pTabQuery } as const)
                   : ({
@@ -2049,7 +2112,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           to={{
                             kind: "team",
                             slug: pTeamSlugVal,
-                            query: `champ=${encodeURIComponent(cSlug)}&player=${encodeURIComponent(pSlugVal)}&q=${encodeURIComponent([pSlugVal, pOppSlug].filter(Boolean).join(","))}${pPeriodQ ? `&${pPeriodQ}` : ""}`,
+                            query: `champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}&player=${encodeURIComponent(pSlugVal)}${pOppPlayerSlug ? `&vsplayer=${encodeURIComponent(pOppPlayerSlug)}` : ""}${pOppSlug ? `&vs=${encodeURIComponent(pOppSlug)}` : ""}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}&q=${encodeURIComponent([pSlugVal, pOppSlug].filter(Boolean).join(","))}${!playersRecent && qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${pPeriodQ ? `&${pPeriodQ}` : ""}`,
                           }}
                           className="shrink-0 hover:opacity-80"
                           title={pTeam}
@@ -2184,7 +2247,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         <HubLink
                           to={{
                             kind: "draft",
-                            query: `teams=${rTeams.map(encodeURIComponent).join(",")}&champ=${encodeURIComponent(heroChamps)}${buildRole || heroRole ? `&role=${encodeURIComponent(buildRole || heroRole)}` : ""}${r0Year ? `&p=y${encodeURIComponent(r0Year)}` : ""}`,
+                            query: `teams=${rTeams.map(encodeURIComponent).join(",")}&champ=${encodeURIComponent(heroChamps)}${buildRole || heroRole ? `&role=${encodeURIComponent(buildRole || heroRole)}` : ""}${rPlayers[0] ? `&player=${encodeURIComponent(rPlayers[0])}` : ""}${rPlayers[1] ? `&vsplayer=${encodeURIComponent(rPlayers[1])}` : ""}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${r0Year ? `&p=y${encodeURIComponent(r0Year)}` : ""}`,
                           }}
                           className="text-[11px] text-rw-accent hover:underline"
                         >
@@ -2195,7 +2258,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       <HubLink
                         to={{
                           kind: "draft",
-                          query: `champ=${encodeURIComponent(heroChamps)}${buildRole || heroRole ? `&role=${encodeURIComponent(buildRole || heroRole)}` : ""}${r0Year ? `&p=y${encodeURIComponent(r0Year)}` : ""}`,
+                          query: `champ=${encodeURIComponent(heroChamps)}${buildRole || heroRole ? `&role=${encodeURIComponent(buildRole || heroRole)}` : ""}${rPlayers[0] ? `&player=${encodeURIComponent(rPlayers[0])}` : ""}${rPlayers[1] ? `&vsplayer=${encodeURIComponent(rPlayers[1])}` : ""}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${r0Year ? `&p=y${encodeURIComponent(r0Year)}` : ""}`,
                         }}
                         className="text-[11px] text-rw-accent hover:underline"
                       >
@@ -2240,6 +2303,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           ...(qLeague ? { league: qLeague } : {}),
                           ...(r0Year ? { key: `y${r0Year}`, year: r0Year } : {}),
                           ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
+                          ...(rPlayers[0] ? { player: rPlayers[0] } : {}),
+                          ...(rPlayers[1] ? { vsplayer: rPlayers[1] } : {}),
+                          ...(rt0 ? { team: rt0 } : {}),
+                          ...(rt1 ? { vs: rt1 } : {}),
                           q: heroChamps,
                         }).toString(),
                       }}
@@ -2252,6 +2319,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         kind: "leaders",
                         query: new URLSearchParams({
                           champ: cSlug,
+                          ...(vsHeroSlug && vsHeroSlug !== cSlug ? { vschamp: vsHeroSlug } : {}),
+                          ...(rPlayers[0] ? { player: rPlayers[0] } : {}),
+                          ...(rPlayers[1] ? { vsplayer: rPlayers[1] } : {}),
+                          ...(rt0 ? { team: rt0 } : {}),
+                          ...(rt1 ? { vs: rt1 } : {}),
                           ...(qLeague ? { league: qLeague } : {}),
                           ...(r0Year ? { year: r0Year } : {}),
                           ...(buildRole || c.roles[0]?.r ? { role: buildRole || c.roles[0].r } : {}),
@@ -2362,7 +2434,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       to={{
                         kind: "player",
                         slug: r.u || resolvePlayerSlug(r.n),
-                        query: `champ=${encodeURIComponent(cSlug)}${r.team ? `&team=${encodeURIComponent(teamSlug(r.team))}` : ""}${r.opp ? `&q=${encodeURIComponent(teamSlug(r.opp))}` : ""}${r.r ? `&role=${encodeURIComponent(r.r)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
+                        query: `champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${r.team ? `&team=${encodeURIComponent(teamSlug(r.team))}` : ""}${r.opp ? `&vs=${encodeURIComponent(teamSlug(r.opp))}&q=${encodeURIComponent(teamSlug(r.opp))}` : ""}${vsPlayerSlug && vsPlayerSlug !== (r.u || resolvePlayerSlug(r.n)) ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""}${r.r ? `&role=${encodeURIComponent(r.r)}` : ""}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
                       }}
                       className="shrink-0 hover:opacity-80"
                       title={r.n}
@@ -2374,7 +2446,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         to={{
                           kind: "team",
                           slug: teamSlug(r.team),
-                          query: `champ=${encodeURIComponent(cSlug)}&player=${encodeURIComponent(r.u || resolvePlayerSlug(r.n))}&q=${encodeURIComponent([r.u || resolvePlayerSlug(r.n), r.opp ? teamSlug(r.opp) : ""].filter(Boolean).join(","))}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
+                          query: `champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}&player=${encodeURIComponent(r.u || resolvePlayerSlug(r.n))}${vsPlayerSlug && vsPlayerSlug !== (r.u || resolvePlayerSlug(r.n)) ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""}${r.opp ? `&vs=${encodeURIComponent(teamSlug(r.opp))}` : ""}${r.r ? `&role=${encodeURIComponent(r.r)}` : ""}&q=${encodeURIComponent([r.u || resolvePlayerSlug(r.n), r.opp ? teamSlug(r.opp) : ""].filter(Boolean).join(","))}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
                         }}
                         className="shrink-0 hover:opacity-80"
                         title={r.team}
@@ -2385,7 +2457,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <PlayerLink
                       name={r.n}
                       u={r.u}
-                      query={`champ=${encodeURIComponent(cSlug)}${r.team ? `&team=${encodeURIComponent(teamSlug(r.team))}` : ""}${r.opp ? `&q=${encodeURIComponent(teamSlug(r.opp))}` : ""}${r.r ? `&role=${encodeURIComponent(r.r)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`}
+                      query={`champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${r.team ? `&team=${encodeURIComponent(teamSlug(r.team))}` : ""}${r.opp ? `&vs=${encodeURIComponent(teamSlug(r.opp))}&q=${encodeURIComponent(teamSlug(r.opp))}` : ""}${vsPlayerSlug && vsPlayerSlug !== (r.u || resolvePlayerSlug(r.n)) ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""}${r.r ? `&role=${encodeURIComponent(r.r)}` : ""}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`}
                     />
                     {r.g ? (
                       <HubLink to={{ kind: "match", slug: r.g, game: r.gn }} className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums shrink-0">
@@ -2415,7 +2487,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       to={{
                         kind: "team",
                         slug: teamSlug(r.opp),
-                        query: `champ=${encodeURIComponent(cSlug)}&q=${encodeURIComponent([r.team ? teamSlug(r.team) : "", r.u || resolvePlayerSlug(r.n)].filter(Boolean).join(","))}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
+                        query: `champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${r.team ? `&vs=${encodeURIComponent(teamSlug(r.team))}` : ""}&vsplayer=${encodeURIComponent(r.u || resolvePlayerSlug(r.n))}${r.r ? `&role=${encodeURIComponent(r.r)}` : ""}&q=${encodeURIComponent([r.team ? teamSlug(r.team) : "", r.u || resolvePlayerSlug(r.n)].filter(Boolean).join(","))}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
                       }}
                       className="shrink-0 hover:opacity-80"
                       title={r.opp}
@@ -2424,7 +2496,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     </HubLink>
                     <TeamLink
                       name={r.opp}
-                      query={`champ=${encodeURIComponent(cSlug)}&q=${encodeURIComponent([r.team ? teamSlug(r.team) : "", r.u || resolvePlayerSlug(r.n)].filter(Boolean).join(","))}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`}
+                      query={`champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${r.team ? `&vs=${encodeURIComponent(teamSlug(r.team))}` : ""}&vsplayer=${encodeURIComponent(r.u || resolvePlayerSlug(r.n))}${r.r ? `&role=${encodeURIComponent(r.r)}` : ""}&q=${encodeURIComponent([r.team ? teamSlug(r.team) : "", r.u || resolvePlayerSlug(r.n)].filter(Boolean).join(","))}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`}
                       className="truncate"
                     />
                   </span>
@@ -2447,7 +2519,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                             kind: "draft",
                             query: `teams=${encodeURIComponent(teamSlug(r.team))},${encodeURIComponent(teamSlug(r.opp))}&champ=${encodeURIComponent(heroChamps)}${
                               buildRole || heroRole ? `&role=${encodeURIComponent(buildRole || heroRole)}` : ""
-                            }${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
+                            }&player=${encodeURIComponent(r.u || resolvePlayerSlug(r.n))}${vsPlayerSlug && vsPlayerSlug !== (r.u || resolvePlayerSlug(r.n)) ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&p=y${(r.date || "").slice(0, 4)}` : ""}`,
                           }}
                           className="hidden md:inline text-[10px] hover:text-rw-accent hover:underline"
                         >
@@ -2458,7 +2530,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                             kind: "items",
                             query: `player=${encodeURIComponent(r.u || resolvePlayerSlug(r.n))}${vsPlayerSlug && vsPlayerSlug !== (r.u || resolvePlayerSlug(r.n)) ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""}&team=${encodeURIComponent(teamSlug(r.team))}&vs=${encodeURIComponent(teamSlug(r.opp))}${
                               buildRole || c.roles[0]?.r ? `&role=${encodeURIComponent(buildRole || c.roles[0].r)}` : ""
-                            }&champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
+                            }&champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
                           }}
                           className="hidden md:inline text-[10px] hover:text-rw-accent hover:underline"
                         >
@@ -2469,7 +2541,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                             kind: "finder",
                             query: `player=${encodeURIComponent(r.u || resolvePlayerSlug(r.n))}${vsPlayerSlug && vsPlayerSlug !== (r.u || resolvePlayerSlug(r.n)) ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""}&team=${encodeURIComponent(teamSlug(r.team))}&vs=${encodeURIComponent(teamSlug(r.opp))}${
                               buildRole || c.roles[0]?.r ? `&role=${encodeURIComponent(buildRole || c.roles[0].r)}` : ""
-                            }&champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
+                            }&champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
                           }}
                           className="hidden md:inline text-[10px] hover:text-rw-accent hover:underline"
                         >
@@ -2502,7 +2574,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                             r.team ? `&team=${encodeURIComponent(teamSlug(r.team))}` : ""
                           }${r.opp ? `&vs=${encodeURIComponent(teamSlug(r.opp))}` : ""}${
                             buildRole || c.roles[0]?.r ? `&role=${encodeURIComponent(buildRole || c.roles[0].r)}` : ""
-                          }&champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
+                          }&champ=${encodeURIComponent(cSlug)}${vsHeroSlug && vsHeroSlug !== cSlug ? `&vschamp=${encodeURIComponent(vsHeroSlug)}` : ""}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${/^\d{4}$/.test((r.date || "").slice(0, 4)) ? `&year=${(r.date || "").slice(0, 4)}` : ""}`,
                         }}
                         title={itemName(it)}
                       >
@@ -2528,6 +2600,13 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           .filter(Boolean)
                           .join(","),
                         champ: cSlug,
+                        ...(vsHeroSlug && vsHeroSlug !== cSlug ? { vschamp: vsHeroSlug } : {}),
+                        player: r.u || resolvePlayerSlug(r.n),
+                        ...(vsPlayerSlug && vsPlayerSlug !== (r.u || resolvePlayerSlug(r.n)) ? { vsplayer: vsPlayerSlug } : {}),
+                        ...(r.team ? { team: teamSlug(r.team) } : {}),
+                        ...(r.opp ? { vs: teamSlug(r.opp) } : {}),
+                        ...(r.r ? { role: r.r } : buildRole || heroRole ? { role: buildRole || heroRole } : {}),
+                        ...(qLeague ? { league: qLeague } : {}),
                       }).toString() || undefined
                     }
                     className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -2591,7 +2670,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     <HubLink
                       to={{
                         kind: "draft",
-                        query: `teams=${rTeams.map(encodeURIComponent).join(",")}&champ=${encodeURIComponent(heroChamps)}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}${r0Year ? `&p=y${encodeURIComponent(r0Year)}` : ""}`,
+                        query: `teams=${rTeams.map(encodeURIComponent).join(",")}&champ=${encodeURIComponent(heroChamps)}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}${topPlayerSlug ? `&player=${encodeURIComponent(topPlayerSlug)}` : ""}${vsPlayerSlug ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${r0Year ? `&p=y${encodeURIComponent(r0Year)}` : ""}`,
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
                     >
@@ -2602,7 +2681,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   <HubLink
                     to={{
                       kind: "draft",
-                      query: `champ=${encodeURIComponent(heroChamps)}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}${r0Year ? `&p=y${encodeURIComponent(r0Year)}` : ""}`,
+                      query: `champ=${encodeURIComponent(heroChamps)}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}${topPlayerSlug ? `&player=${encodeURIComponent(topPlayerSlug)}` : ""}${vsPlayerSlug ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""}${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}${r0Year ? `&p=y${encodeURIComponent(r0Year)}` : ""}`,
                     }}
                     className="text-[11px] text-rw-accent hover:underline"
                   >
@@ -2639,6 +2718,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     ...(qLeague ? { league: qLeague } : {}),
                     ...(qEvent ? { event: qEvent } : qPatch ? { key: `p${qPatch}`, patch: qPatch } : qYear ? { key: `y${qYear}`, year: qYear } : {}),
                     ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                    ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                    ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                    ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                    ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                     q: heroChamps,
                   }).toString(),
                 }}
@@ -2664,7 +2747,12 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                   kind: "leaders",
                   query: new URLSearchParams({
                     champ: cSlug,
+                    ...(vsHeroSlug && vsHeroSlug !== cSlug ? { vschamp: vsHeroSlug } : {}),
                     ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                    ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                    ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                    ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                    ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                     ...(qLeague ? { league: qLeague } : {}),
                     ...(qEvent ? { event: qEvent } : qYear ? { year: qYear } : {}),
                     ...(heroLeadersQuery ? { q: heroLeadersQuery } : {}),
@@ -2809,6 +2897,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           ...(p0 ? { key: `p${p0}`, patch: p0 } : {}),
                           ...(p0Yr ? { year: p0Yr } : {}),
                           ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                          ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                          ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                          ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                          ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                           q: heroChamps,
                         }).toString(),
                       }}
@@ -2823,6 +2915,9 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           ...(heroTeamsQuery ? { teams: heroTeamsQuery } : {}),
                           champ: heroChamps,
                           ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                          ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                          ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                          ...(qLeague ? { league: qLeague } : {}),
                           ...(p0 ? { p: `p:${p0}` } : {}),
                         }).toString(),
                       }}
@@ -2838,6 +2933,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                           ...(p0 ? { key: `p${p0}`, patch: p0 } : {}),
                           ...(p0Yr ? { year: p0Yr } : {}),
                           ...(heroRole ? { role: heroRole } : {}),
+                          ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                          ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                          ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                          ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                           q: heroChamps,
                         }).toString(),
                       }}
@@ -2873,6 +2972,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         kind: "leaders",
                         query: new URLSearchParams({
                           champ: cSlug,
+                          ...(vsHeroSlug && vsHeroSlug !== cSlug ? { vschamp: vsHeroSlug } : {}),
+                          ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                          ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                          ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                          ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                           ...(qLeague ? { league: qLeague } : {}),
                           ...(p0Yr ? { year: p0Yr } : {}),
                           ...(heroRole ? { role: heroRole } : {}),
@@ -2939,7 +3043,13 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     to={{
                       kind: "champions",
                       query: `key=p${encodeURIComponent(p.p)}&patch=${encodeURIComponent(p.p)}${pYr ? `&year=${encodeURIComponent(pYr)}` : ""}${
+                        qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""
+                      }${
                         heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""
+                      }${topPlayerSlug ? `&player=${encodeURIComponent(topPlayerSlug)}` : ""}${
+                        vsPlayerSlug ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""
+                      }${heroTeam0 ? `&team=${encodeURIComponent(heroTeam0)}` : ""}${
+                        heroTeam1 ? `&vs=${encodeURIComponent(heroTeam1)}` : ""
                       }&q=${encodeURIComponent(heroChamps)}`,
                     }}
                     className="text-rw-text hover:text-rw-accent hover:underline font-semibold"
@@ -2964,7 +3074,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         vsPlayerSlug ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""
                       }${heroTeam0 ? `&team=${encodeURIComponent(heroTeam0)}` : ""}${
                         heroTeam1 ? `&vs=${encodeURIComponent(heroTeam1)}` : ""
-                      }&patch=${encodeURIComponent(p.p)}${pYr ? `&year=${encodeURIComponent(pYr)}` : ""}`,
+                      }${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}&patch=${encodeURIComponent(p.p)}${pYr ? `&year=${encodeURIComponent(pYr)}` : ""}`,
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums text-right leading-tight sm:whitespace-nowrap sm:min-w-56"
                     title={tl("Game finder")}
@@ -3042,6 +3152,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         ...(qLeague ? { league: qLeague } : {}),
                         ...(latestY ? { key: `y${latestY}`, year: latestY } : {}),
                         ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                        ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                        ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                        ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                        ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                         q: heroChamps,
                       }).toString(),
                     }}
@@ -3056,6 +3170,9 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         ...(heroTeamsQuery ? { teams: heroTeamsQuery } : {}),
                         champ: heroChamps,
                         ...(c.roles[0]?.r ? { role: c.roles[0].r } : {}),
+                        ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                        ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                        ...(qLeague ? { league: qLeague } : {}),
                         ...(latestY ? { p: `y${latestY}` } : {}),
                       }).toString(),
                     }}
@@ -3070,6 +3187,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                         ...(qLeague ? { league: qLeague } : {}),
                         ...(latestY ? { key: `y${latestY}`, year: latestY } : {}),
                         ...(heroRole ? { role: heroRole } : {}),
+                        ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                        ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                        ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                        ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                         q: heroChamps,
                       }).toString(),
                     }}
@@ -3099,6 +3220,11 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                       kind: "leaders",
                       query: new URLSearchParams({
                         champ: cSlug,
+                        ...(vsHeroSlug && vsHeroSlug !== cSlug ? { vschamp: vsHeroSlug } : {}),
+                        ...(topPlayerSlug ? { player: topPlayerSlug } : {}),
+                        ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                        ...(heroTeam0 ? { team: heroTeam0 } : {}),
+                        ...(heroTeam1 ? { vs: heroTeam1 } : {}),
                         ...(qLeague ? { league: qLeague } : {}),
                         ...(latestY ? { year: latestY } : {}),
                         ...(heroRole ? { role: heroRole } : {}),
@@ -3157,7 +3283,13 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               <HubLink
                 to={{
                   kind: "champions",
-                  query: `key=y${encodeURIComponent(y.y)}&year=${encodeURIComponent(y.y)}${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}&q=${encodeURIComponent(heroChamps)}`,
+                  query: `key=y${encodeURIComponent(y.y)}&year=${encodeURIComponent(y.y)}${
+                    qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""
+                  }${heroRole ? `&role=${encodeURIComponent(heroRole)}` : ""}${
+                    topPlayerSlug ? `&player=${encodeURIComponent(topPlayerSlug)}` : ""
+                  }${vsPlayerSlug ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""}${
+                    heroTeam0 ? `&team=${encodeURIComponent(heroTeam0)}` : ""
+                  }${heroTeam1 ? `&vs=${encodeURIComponent(heroTeam1)}` : ""}&q=${encodeURIComponent(heroChamps)}`,
                 }}
                 className="text-rw-text hover:text-rw-accent hover:underline font-semibold"
               >
@@ -3176,7 +3308,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     vsPlayerSlug ? `&vsplayer=${encodeURIComponent(vsPlayerSlug)}` : ""
                   }${heroTeam0 ? `&team=${encodeURIComponent(heroTeam0)}` : ""}${
                     heroTeam1 ? `&vs=${encodeURIComponent(heroTeam1)}` : ""
-                  }&year=${encodeURIComponent(y.y)}`,
+                  }${qLeague ? `&league=${encodeURIComponent(qLeague)}` : ""}&year=${encodeURIComponent(y.y)}`,
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline tabular-nums text-right shrink-0 whitespace-nowrap min-w-44"
                 title={tl("Game finder")}
