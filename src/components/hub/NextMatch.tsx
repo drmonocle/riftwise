@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 import type { Match } from "../../types";
 import type { HubTeam, TeamSeriesRow } from "../../hub/types";
 import { tl, tc, roleName } from "../../i18n";
-import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries, prettySlug, resolveLeagueSlug, resolveTeamAlias, teamStarter } from "../../hub/data";
+import { findHubTeam, loadHubIndexQuick, loadHubTeam, loadTeamSeries, prettySlug, resolveChampSlug, resolveLeagueSlug, resolveTeamAlias, teamStarter } from "../../hub/data";
 import { recentSchedule, RIOT_PREFIX } from "../../hub/riotMatch";
 import { useMatchRatings } from "../../hub/matchRatings";
 import { formatMatchTime } from "../../matchTime";
@@ -62,7 +62,14 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
   const [first, ...rest] = list;
   const firstYr = first.m.startTimeUtc && /^\d{4}$/.test(first.m.startTimeUtc.slice(0, 4)) ? first.m.startTimeUtc.slice(0, 4) : "";
   const firstLg = first.m.leagueSlug || first.m.leagueName ? resolveLeagueSlug(first.m.leagueSlug || first.m.leagueName) : "";
-  const ourStarter = ROLES.map((r) => teamStarter(t, r)).find(Boolean);
+  const ourStarter = ROLES.map((r) => {
+    const p = teamStarter(t, r);
+    return p ? { ...p, r } : null;
+  }).find(Boolean);
+  const secStarter = ROLES.map((r) => teamStarter(t, r)).find((p) => p?.u && p.u !== ourStarter?.u);
+  const ourChamp = t.champs?.[0]?.c ? resolveChampSlug(t.champs[0].c) : undefined;
+  const secChamp = (t.champs || []).map((x) => resolveChampSlug(x.c)).find((s) => Boolean(s) && s !== ourChamp);
+  const champJoin = [ourChamp, secChamp].filter(Boolean).join(",");
   return (
     <Section
       title={tl("Next match")}
@@ -85,7 +92,12 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(t.u)},${encodeURIComponent(first.opp)}${firstYr ? `&p=y${firstYr}` : ""}`,
+                  query: new URLSearchParams({
+                    teams: `${t.u},${first.opp}`,
+                    ...(firstYr ? { p: `y${firstYr}` } : {}),
+                    ...(champJoin ? { champ: champJoin } : {}),
+                    ...(ourStarter?.r ? { role: ourStarter.r } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
               >
@@ -103,6 +115,22 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               >
                 {tl("Compare")} →
               </HubLink>
+              {ourChamp && (
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: new URLSearchParams({
+                      champ: ourChamp,
+                      ...(secChamp ? { vs: secChamp } : {}),
+                      ...(ourStarter?.r ? { role: ourStarter.r } : {}),
+                      ...(firstYr ? { patch: `y${firstYr}`, year: firstYr } : {}),
+                    }).toString(),
+                  }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Counters")} →
+                </HubLink>
+              )}
               <HubLink
                 to={{
                   kind: "items",
@@ -110,6 +138,10 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                     team: t.u,
                     vs: first.opp,
                     ...(ourStarter?.u ? { player: ourStarter.u } : {}),
+                    ...(secStarter?.u ? { vsplayer: secStarter.u } : {}),
+                    ...(ourChamp ? { champ: ourChamp } : {}),
+                    ...(secChamp ? { vschamp: secChamp } : {}),
+                    ...(ourStarter?.r ? { role: ourStarter.r } : {}),
                     ...(firstYr ? { year: firstYr } : {}),
                     ...(firstLg ? { league: firstLg } : {}),
                   }).toString(),
@@ -125,6 +157,10 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                     team: t.u,
                     vs: first.opp,
                     ...(ourStarter?.u ? { player: ourStarter.u } : {}),
+                    ...(secStarter?.u ? { vsplayer: secStarter.u } : {}),
+                    ...(ourChamp ? { champ: ourChamp } : {}),
+                    ...(secChamp ? { vschamp: secChamp } : {}),
+                    ...(ourStarter?.r ? { role: ourStarter.r } : {}),
                     ...(firstYr ? { year: firstYr } : {}),
                     ...(firstLg ? { league: firstLg } : {}),
                   }).toString(),
@@ -148,11 +184,13 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
               <HubLink
                 to={{
                   kind: "tiers",
-                  ...((firstLg || firstYr)
+                  ...((firstLg || firstYr || champJoin || ourStarter?.r)
                     ? {
                         query: new URLSearchParams({
                           ...(firstLg ? { scope: firstLg, league: firstLg } : {}),
                           ...(firstYr ? { key: `y${firstYr}`, year: firstYr } : {}),
+                          ...(champJoin ? { q: champJoin } : {}),
+                          ...(ourStarter?.r ? { role: ourStarter.r } : {}),
                         }).toString(),
                       }
                     : {}),
@@ -167,7 +205,9 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   query: new URLSearchParams({
                     ...(firstLg ? { league: firstLg } : {}),
                     ...(firstYr ? { year: firstYr } : {}),
-                    q: [ourStarter?.u, t.u, first.opp || resolveTeamAlias(sides(first)[1].name) || resolveTeamAlias(sides(first)[1].code) || prettySlug(sides(first)[1].name)].filter(Boolean).join(","),
+                    ...(ourChamp ? { champ: ourChamp } : {}),
+                    ...(ourStarter?.r ? { role: ourStarter.r } : {}),
+                    q: [ourStarter?.u, secStarter?.u, t.u, first.opp || resolveTeamAlias(sides(first)[1].name) || resolveTeamAlias(sides(first)[1].code) || prettySlug(sides(first)[1].name)].filter(Boolean).join(","),
                   }).toString(),
                 }}
                 className="text-rw-accent hover:underline font-semibold"
@@ -223,7 +263,8 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                       slug: c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name),
                       query: new URLSearchParams({
                         ...(period ? { p: period } : {}),
-                        q: t.u,
+                        q: [t.u, ourStarter?.u].filter(Boolean).join(","),
+                        ...(ourChamp ? { champ: ourChamp } : {}),
                       }).toString(),
                     }}
                     className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
@@ -235,7 +276,8 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                     u={c.opp}
                     query={new URLSearchParams({
                       ...(period ? { p: period } : {}),
-                      q: t.u,
+                      q: [t.u, ourStarter?.u].filter(Boolean).join(","),
+                      ...(ourChamp ? { champ: ourChamp } : {}),
                     }).toString()}
                     className="truncate hover:text-rw-accent"
                   />
@@ -246,7 +288,10 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                         kind: "league",
                         slug: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName),
                         ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
-                        query: `q=${encodeURIComponent([t.u, c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name)].filter(Boolean).join(","))}`,
+                        query: new URLSearchParams({
+                          q: [t.u, c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name), ourStarter?.u].filter(Boolean).join(","),
+                          ...(ourChamp ? { champ: ourChamp } : {}),
+                        }).toString(),
                       }}
                       className="hover:text-rw-accent hover:underline"
                     >
@@ -260,7 +305,15 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                   {c.opp && (
                     <>
                       <HubLink
-                        to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)},${encodeURIComponent(c.opp)}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+                        to={{
+                          kind: "draft",
+                          query: new URLSearchParams({
+                            teams: `${t.u},${c.opp}`,
+                            ...(period ? { p: period } : {}),
+                            ...(champJoin ? { champ: champJoin } : {}),
+                            ...(ourStarter?.r ? { role: ourStarter.r } : {}),
+                          }).toString(),
+                        }}
                         className="text-[11px] font-medium text-rw-accent hover:underline"
                       >
                         {tl("Draft board")}
@@ -278,6 +331,10 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                             team: t.u,
                             vs: c.opp,
                             ...(ourStarter?.u ? { player: ourStarter.u } : {}),
+                            ...(secStarter?.u ? { vsplayer: secStarter.u } : {}),
+                            ...(ourChamp ? { champ: ourChamp } : {}),
+                            ...(secChamp ? { vschamp: secChamp } : {}),
+                            ...(ourStarter?.r ? { role: ourStarter.r } : {}),
                             ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
                             ...(c.m.leagueSlug || c.m.leagueName ? { league: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName) } : {}),
                           }).toString(),
@@ -293,6 +350,10 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                             team: t.u,
                             vs: c.opp,
                             ...(ourStarter?.u ? { player: ourStarter.u } : {}),
+                            ...(secStarter?.u ? { vsplayer: secStarter.u } : {}),
+                            ...(ourChamp ? { champ: ourChamp } : {}),
+                            ...(secChamp ? { vschamp: secChamp } : {}),
+                            ...(ourStarter?.r ? { role: ourStarter.r } : {}),
                             ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
                             ...(c.m.leagueSlug || c.m.leagueName ? { league: resolveLeagueSlug(c.m.leagueSlug || c.m.leagueName) } : {}),
                           }).toString(),
@@ -360,13 +421,29 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
   const period = yr && /^\d{4}$/.test(yr) ? `y${yr}` : undefined;
   const lg = m.leagueSlug || m.leagueName ? resolveLeagueSlug(m.leagueSlug || m.leagueName) : "";
   const themSlug = c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name);
+  const firstLanePair = lanePairs.find((lp) => lp.a);
+  const ourStarter = firstLanePair?.a
+    ? { ...firstLanePair.a, r: firstLanePair.role }
+    : ROLES.map((r) => {
+        const p = teamStarter(t, r);
+        return p ? { ...p, r } : null;
+      }).find(Boolean);
+  const oppStarter =
+    lanePairs.find((lp) => lp.b)?.b ||
+    (oppTeam ? ROLES.map((r) => teamStarter(oppTeam, r)).find(Boolean) : undefined) ||
+    ROLES.map((r) => teamStarter(t, r)).find((p) => p?.u && p.u !== ourStarter?.u);
+  const ourChamp = t.champs?.[0]?.c ? resolveChampSlug(t.champs[0].c) : undefined;
+  const oppChamp = (oppTeam?.champs || t.champs || []).map((x) => resolveChampSlug(x.c)).find((s) => Boolean(s) && s !== ourChamp);
+  const champJoin = [ourChamp, oppChamp].filter(Boolean).join(",");
   const ourQ = new URLSearchParams({
     ...(period ? { p: period } : {}),
-    ...(themSlug && themSlug !== t.u ? { q: themSlug } : {}),
+    ...(themSlug && themSlug !== t.u ? { q: [themSlug, ourStarter?.u, oppStarter?.u].filter(Boolean).join(",") } : {}),
+    ...(ourChamp ? { champ: ourChamp } : {}),
   }).toString();
   const themQ = new URLSearchParams({
     ...(period ? { p: period } : {}),
-    ...(t.u ? { q: t.u } : {}),
+    ...(t.u ? { q: [t.u, oppStarter?.u, ourStarter?.u].filter(Boolean).join(",") } : {}),
+    ...(oppChamp || ourChamp ? { champ: oppChamp || ourChamp! } : {}),
   }).toString();
   return (
     <div className="space-y-2">
@@ -377,7 +454,10 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
               kind: "league",
               slug: resolveLeagueSlug(m.leagueSlug || m.leagueName),
               ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
-              query: `q=${encodeURIComponent([t.u, themSlug].filter(Boolean).join(","))}`,
+              query: new URLSearchParams({
+                q: [t.u, themSlug, ourStarter?.u, oppStarter?.u].filter(Boolean).join(","),
+                ...(ourChamp ? { champ: ourChamp } : {}),
+              }).toString(),
             }}
             className="font-bold text-rw-accent hover:underline"
           >
@@ -526,11 +606,35 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         <MatchPrepButton match={m} />
         <MatchOverviewButton match={m} />
         <HubLink
-          to={{ kind: "draft", query: `teams=${encodeURIComponent(t.u)}${c.opp ? `,${encodeURIComponent(c.opp)}` : ""}${period ? `&p=${encodeURIComponent(period)}` : ""}` }}
+          to={{
+            kind: "draft",
+            query: new URLSearchParams({
+              teams: [t.u, c.opp].filter(Boolean).join(","),
+              ...(period ? { p: period } : {}),
+              ...(champJoin ? { champ: champJoin } : {}),
+              ...(ourStarter?.r ? { role: ourStarter.r } : {}),
+            }).toString(),
+          }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
         >
           {tl("Draft board")}
         </HubLink>
+        {ourChamp && (
+          <HubLink
+            to={{
+              kind: "counters",
+              query: new URLSearchParams({
+                champ: ourChamp,
+                ...(oppChamp ? { vs: oppChamp } : {}),
+                ...(ourStarter?.r ? { role: ourStarter.r } : {}),
+                ...(yr && /^\d{4}$/.test(yr) ? { patch: `y${yr}`, year: yr } : {}),
+              }).toString(),
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"
+          >
+            {tl("Counters")}
+          </HubLink>
+        )}
         {c.opp && (
           <>
             <HubLink
@@ -545,8 +649,11 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
                 query: new URLSearchParams({
                   team: t.u,
                   vs: c.opp,
-                  ...(lanePairs[0]?.a?.u ? { player: lanePairs[0].a.u } : {}),
-                  ...(lanePairs[0]?.b?.u ? { vsplayer: lanePairs[0].b.u } : {}),
+                  ...(ourStarter?.u ? { player: ourStarter.u } : {}),
+                  ...(oppStarter?.u ? { vsplayer: oppStarter.u } : {}),
+                  ...(ourChamp ? { champ: ourChamp } : {}),
+                  ...(oppChamp ? { vschamp: oppChamp } : {}),
+                  ...(ourStarter?.r ? { role: ourStarter.r } : {}),
                   ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
                   ...(lg ? { league: lg } : {}),
                 }).toString(),
@@ -561,8 +668,11 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
                 query: new URLSearchParams({
                   team: t.u,
                   vs: c.opp,
-                  ...(lanePairs[0]?.a?.u ? { player: lanePairs[0].a.u } : {}),
-                  ...(lanePairs[0]?.b?.u ? { vsplayer: lanePairs[0].b.u } : {}),
+                  ...(ourStarter?.u ? { player: ourStarter.u } : {}),
+                  ...(oppStarter?.u ? { vsplayer: oppStarter.u } : {}),
+                  ...(ourChamp ? { champ: ourChamp } : {}),
+                  ...(oppChamp ? { vschamp: oppChamp } : {}),
+                  ...(ourStarter?.r ? { role: ourStarter.r } : {}),
                   ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
                   ...(lg ? { league: lg } : {}),
                 }).toString(),
@@ -588,11 +698,13 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
         <HubLink
           to={{
             kind: "tiers",
-            ...((lg || period)
+            ...((lg || period || champJoin || ourStarter?.r)
               ? {
                   query: new URLSearchParams({
                     ...(lg ? { scope: lg, league: lg } : {}),
                     ...(period ? { key: period, ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}) } : {}),
+                    ...(champJoin ? { q: champJoin } : {}),
+                    ...(ourStarter?.r ? { role: ourStarter.r } : {}),
                   }).toString(),
                 }
               : {}),
@@ -607,7 +719,9 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
             query: new URLSearchParams({
               ...(lg ? { league: lg } : {}),
               ...(yr && /^\d{4}$/.test(yr) ? { year: yr } : {}),
-              q: [lanePairs[0]?.a?.u, lanePairs[0]?.b?.u, t.u, c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name)].filter(Boolean).join(","),
+              ...(ourChamp ? { champ: ourChamp } : {}),
+              ...(ourStarter?.r ? { role: ourStarter.r } : {}),
+              q: [ourStarter?.u, oppStarter?.u, t.u, c.opp || resolveTeamAlias(them.name) || resolveTeamAlias(them.code) || prettySlug(them.name)].filter(Boolean).join(","),
             }).toString(),
           }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-accent hover:border-rw-accent/60"

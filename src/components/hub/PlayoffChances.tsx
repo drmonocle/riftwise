@@ -298,9 +298,15 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                     (p) => (p.tu || (p.t ? resolveTeamAlias(p.t) || prettySlug(p.t) : "")) === r.u,
                   );
                   const rPSlug = rPlayer ? rPlayer.u || resolvePlayerSlug(rPlayer.n) || prettySlug(rPlayer.n) : "";
+                  const vsPlayer = vsTeam
+                    ? (e.players || []).find(
+                        (p) => (p.tu || (p.t ? resolveTeamAlias(p.t) || prettySlug(p.t) : "")) === vsTeam,
+                      )
+                    : undefined;
+                  const vsPSlug = vsPlayer ? vsPlayer.u || resolvePlayerSlug(vsPlayer.n) || prettySlug(vsPlayer.n) : "";
                   const rTeamQ = new URLSearchParams({
                     p: `e:${e.u}`,
-                    ...(vsTeam ? { q: vsTeam } : {}),
+                    ...([vsTeam, rPSlug].some(Boolean) ? { q: [vsTeam, rPSlug].filter(Boolean).join(",") } : {}),
                     ...(evChamps[0] ? { champ: evChamps[0] } : {}),
                   }).toString();
                   return (
@@ -334,7 +340,9 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                                 team: r.u,
                                 ...(vsTeam ? { vs: vsTeam } : {}),
                                 ...(rPSlug ? { player: rPSlug } : {}),
+                                ...(vsPSlug && vsPSlug !== rPSlug ? { vsplayer: vsPSlug } : {}),
                                 ...(evChamps[0] ? { champ: evChamps[0] } : {}),
+                                ...(evChamps[1] && evChamps[1] !== evChamps[0] ? { vschamp: evChamps[1] } : {}),
                                 ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
                                 ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                               }).toString(),

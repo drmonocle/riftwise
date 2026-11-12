@@ -166,7 +166,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
     const yr = match.startTimeUtc?.slice(0, 4);
     const sTeamQ = new URLSearchParams({
       ...(yr ? { p: `y${yr}` } : {}),
-      ...(oppSlug ? { q: oppSlug } : {}),
+      ...([oppSlug, pA, pB].some(Boolean) ? { q: [oppSlug, pA, pB].filter(Boolean).join(",") } : {}),
       ...(cA ? { champ: cA } : {}),
     }).toString();
     return (
@@ -608,7 +608,17 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                       <>
                         {(() => {
                           const yr = match.startTimeUtc?.slice(0, 4);
-                          const q = l.who.to.query || (yr && /^\d{4}$/.test(yr) ? `p=y${yr}` : undefined);
+                          const qp = new URLSearchParams(l.who.to.query || "");
+                          if (!qp.has("p") && yr && /^\d{4}$/.test(yr)) qp.set("p", `y${yr}`);
+                          if (!qp.has("champ") && cA) qp.set("champ", cA);
+                          if (l.who.to.kind === "team") {
+                            const oppT = l.who.to.slug === x.team.u ? y.team.u : x.team.u;
+                            if (!qp.has("q")) qp.set("q", [oppT, pA, pB].filter(Boolean).join(","));
+                          } else if (l.who.to.kind === "player") {
+                            const oppP = l.who.to.slug === pA ? pB : pA;
+                            if (!qp.has("q") && oppP) qp.set("q", oppP);
+                          }
+                          const q = qp.toString() || undefined;
                           return l.who.to.kind === "team" ? (
                             <span className="inline-flex items-center gap-1 align-baseline font-semibold">
                               <HubLink to={{ ...l.who.to, ...(q ? { query: q } : {}) }} className="shrink-0">

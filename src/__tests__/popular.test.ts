@@ -38,6 +38,7 @@ describe("page view counts", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
     sent = [];
     listeners = new Map();
     vi.stubGlobal("localStorage", storage());

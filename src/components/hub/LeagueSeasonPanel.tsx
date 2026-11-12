@@ -321,9 +321,16 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 const vsP = vsTeamU ? [...regular, ...allRegular].find((p) => tSlug(p.t, p.tu) === vsTeamU) : undefined;
                 const myPU = myP ? pSlug(myP.n, myP.u) : "";
                 const vsPU = vsP ? pSlug(vsP.n, vsP.u) : "";
+                const myChamp = myP?.c?.[0] ? resolveChampSlug(myP.c[0]) : topChampsList[0];
+                const vsChamp =
+                  (vsP?.c?.[0] ? resolveChampSlug(vsP.c[0]) : undefined) ||
+                  topChampsList.find((c) => c !== myChamp);
                 const teamQ = new URLSearchParams({
                   p: `y${year}`,
-                  ...(vsTeamU && vsTeamU !== myTeamU ? { q: vsTeamU } : {}),
+                  ...([vsTeamU && vsTeamU !== myTeamU ? vsTeamU : "", myPU].some(Boolean)
+                    ? { q: [vsTeamU && vsTeamU !== myTeamU ? vsTeamU : "", myPU].filter(Boolean).join(",") }
+                    : {}),
+                  ...(myChamp ? { champ: myChamp } : {}),
                 }).toString();
                 return (
                   <li key={t.u || t.t} className="flex items-center justify-between gap-2 min-w-0">
@@ -350,6 +357,8 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                               ...(vsTeamU && vsTeamU !== myTeamU ? { vs: vsTeamU } : {}),
                               ...(myPU ? { player: myPU } : {}),
                               ...(vsPU && vsPU !== myPU ? { vsplayer: vsPU } : {}),
+                              ...(myChamp ? { champ: myChamp } : {}),
+                              ...(vsChamp && vsChamp !== myChamp ? { vschamp: vsChamp } : {}),
                             }).toString(),
                           }}
                           className="hover:text-rw-accent hover:underline"

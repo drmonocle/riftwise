@@ -1647,7 +1647,7 @@ export const PlayerGamesArchive: React.FC<{
           to={{
             kind: "leaders",
             query: new URLSearchParams({
-              q: slug,
+              q: [slug, initialQ?.trim()].filter(Boolean).join(","),
               ...(initialChamp ? { champ: resolveChampSlug(initialChamp) } : {}),
               ...(initialYear
                 ? { year: initialYear }
@@ -1708,7 +1708,13 @@ export const PlayerGamesArchive: React.FC<{
         >
           {tl("Match prep")} →
         </HubLink>
-        <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline">
+        <HubLink
+          to={{
+            kind: "rankings",
+            ...(initialQ?.trim() ? { query: `q=${encodeURIComponent(initialQ.trim())}` } : {}),
+          }}
+          className="text-rw-accent hover:underline"
+        >
           {tl("Power rankings")} →
         </HubLink>
       </span>
