@@ -445,7 +445,7 @@ const ColoredOpponentGraph: React.FC<{
                 const qp = new URLSearchParams();
                 if (period && period !== "all") qp.set("p", period);
                 if (active.champs?.[0]?.c) qp.set("champ", resolveChampSlug(active.champs[0].c));
-                const subQ = subjectPlayerSlug || subjectTeamSlug;
+                const subQ = [subjectPlayerSlug, vsPlayerSlug, subjectTeamSlug].filter(Boolean).join(",");
                 if (subQ) qp.set("q", subQ);
                 return qp.toString() || undefined;
               })();
@@ -501,11 +501,13 @@ const ColoredOpponentGraph: React.FC<{
                         slug: cSlug,
                         query: new URLSearchParams({
                           ...(subjectPlayerSlug ? { player: subjectPlayerSlug } : {}),
+                          ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
                           ...(subjectTeamSlug ? { team: subjectTeamSlug } : {}),
                           vs: resolveOppSlug(active.opp, active.u),
                           ...(subjectRole ? { role: subjectRole } : {}),
                           ...(otherC ? { vschamp: resolveChampSlug(otherC.c) } : {}),
                           ...(period && period !== "all" ? { p: period } : {}),
+                          q: [subjectPlayerSlug, vsPlayerSlug, subjectTeamSlug, resolveOppSlug(active.opp, active.u)].filter(Boolean).join(","),
                         }).toString(),
                       }}
                       title={`${champName(c.c)} (${c.w}–${c.g - c.w})`}
@@ -623,7 +625,7 @@ const ColoredOpponentGraph: React.FC<{
                     to={{
                       kind: "rankings",
                       query: new URLSearchParams({
-                        q: [subjectTeamSlug, resolveOppSlug(active.opp, active.u)].filter(Boolean).join(","),
+                        q: [subjectTeamSlug, resolveOppSlug(active.opp, active.u), subjectPlayerSlug, vsPlayerSlug].filter(Boolean).join(","),
                       }).toString(),
                     }}
                     className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -1044,7 +1046,7 @@ export const PlayerOpponents: React.FC<{
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings", query: `q=${encodeURIComponent(`${opp0Slug},${opp1Slug}`)}` }}
+                  to={{ kind: "rankings", query: `q=${encodeURIComponent([opp0Slug, opp1Slug, subTeam, slug].filter(Boolean).join(","))}` }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -1163,7 +1165,7 @@ export const PlayerOpponents: React.FC<{
                   {tl("Pro tier list")} →
                 </HubLink>
                 <HubLink
-                  to={{ kind: "rankings", query: `q=${encodeURIComponent([teamA, teamB].filter(Boolean).join(","))}` }}
+                  to={{ kind: "rankings", query: `q=${encodeURIComponent([teamA, teamB, slug].filter(Boolean).join(","))}` }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Power rankings")} →
@@ -1312,7 +1314,7 @@ export const PlayerOpponents: React.FC<{
                   to={{
                     kind: "rankings",
                     query: new URLSearchParams({
-                      q: [teamA, teamB].filter(Boolean).join(","),
+                      q: [teamA, teamB, slug].filter(Boolean).join(","),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1436,7 +1438,7 @@ export const PlayerOpponents: React.FC<{
                   query: new URLSearchParams({
                     ...((period || scope) && (period || scope) !== "all" ? { p: (period || scope)! } : {}),
                     ...(expanded.champs[0]?.c ? { champ: resolveChampSlug(expanded.champs[0].c) } : {}),
-                    q: slug,
+                    q: [slug, scopedRows[0]?.[7] ? resolveOppSlug(scopedRows[0][7]) : ""].filter(Boolean).join(","),
                   }).toString(),
                 }}
                 className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
@@ -1449,7 +1451,7 @@ export const PlayerOpponents: React.FC<{
                 query={new URLSearchParams({
                   ...((period || scope) && (period || scope) !== "all" ? { p: (period || scope)! } : {}),
                   ...(expanded.champs[0]?.c ? { champ: resolveChampSlug(expanded.champs[0].c) } : {}),
-                  q: slug,
+                  q: [slug, scopedRows[0]?.[7] ? resolveOppSlug(scopedRows[0][7]) : ""].filter(Boolean).join(","),
                 }).toString()}
               />
               <HubLink
@@ -1577,7 +1579,7 @@ export const PlayerOpponents: React.FC<{
                       to={{
                         kind: "rankings",
                         query: new URLSearchParams({
-                          q: [teamA, teamB].filter(Boolean).join(","),
+                          q: [teamA, teamB, slug].filter(Boolean).join(","),
                         }).toString(),
                       }}
                       className="text-[11px] text-rw-accent hover:underline"
@@ -1635,6 +1637,7 @@ export const PlayerOpponents: React.FC<{
                             : g[0]?.slice(0, 4)
                               ? { p: `y${g[0].slice(0, 4)}` }
                               : {}),
+                          q: [slug, g[7] ? resolveOppSlug(g[7]) : "", resolveOppSlug(expanded.opp, expanded.u)].filter(Boolean).join(","),
                         }).toString(),
                       }}
                       title={champName(g[2])}
@@ -1737,7 +1740,7 @@ export const PlayerOpponents: React.FC<{
                           query: new URLSearchParams({
                             ...((period || scope) && (period || scope) !== "all" ? { p: (period || scope)! } : {}),
                             ...(rowC0 ? { champ: rowC0 } : {}),
-                            q: slug,
+                            q: [slug, subTeam].filter(Boolean).join(","),
                           }).toString(),
                         }}
                         className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
@@ -1750,7 +1753,7 @@ export const PlayerOpponents: React.FC<{
                         query={new URLSearchParams({
                           ...((period || scope) && (period || scope) !== "all" ? { p: (period || scope)! } : {}),
                           ...(rowC0 ? { champ: rowC0 } : {}),
-                          q: slug,
+                          q: [slug, subTeam].filter(Boolean).join(","),
                         }).toString()}
                         className="text-rw-text hover:text-rw-accent hover:underline truncate"
                       />
@@ -2540,7 +2543,7 @@ export const TeamPeriodOpponents: React.FC<{
                   to={{
                     kind: "rankings",
                     query: new URLSearchParams({
-                      q: [teamSlug, opp0Slug].filter(Boolean).join(","),
+                      q: [teamSlug, opp0Slug, ...(rosterSlugs || [])].filter(Boolean).join(","),
                     }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -2643,7 +2646,7 @@ export const TeamPeriodOpponents: React.FC<{
                 const expTeamQ = new URLSearchParams({
                   ...(pVal ? { p: pVal } : {}),
                   ...(expTopC ? { champ: resolveChampSlug(expTopC) } : {}),
-                  q: [teamSlug, rosterSlugs?.[0]].filter(Boolean).join(","),
+                  q: [teamSlug, ...(rosterSlugs || [])].filter(Boolean).join(","),
                 }).toString();
                 return (
                   <>
@@ -2787,7 +2790,7 @@ export const TeamPeriodOpponents: React.FC<{
                       to={{
                         kind: "rankings",
                         query: new URLSearchParams({
-                          q: `${teamSlug},${expSlug}`,
+                          q: [teamSlug, expSlug, ...(rosterSlugs || [])].filter(Boolean).join(","),
                         }).toString(),
                       }}
                       className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -2857,6 +2860,7 @@ export const TeamPeriodOpponents: React.FC<{
                                     : g[0]?.slice(0, 4)
                                       ? { p: `y${g[0].slice(0, 4)}` }
                                       : {}),
+                                q: [teamSlug, resolveOppSlug(expanded.opp, expanded.u), ...(rosterSlugs || [])].filter(Boolean).join(","),
                               }).toString(),
                             }}
                             title={champName(ch)}
@@ -2948,7 +2952,7 @@ export const TeamPeriodOpponents: React.FC<{
                           query: new URLSearchParams({
                             ...(pVal ? { p: pVal } : {}),
                             ...(rowC0 ? { champ: rowC0 } : {}),
-                            q: [teamSlug, rosterSlugs?.[0]].filter(Boolean).join(","),
+                            q: [teamSlug, ...(rosterSlugs || [])].filter(Boolean).join(","),
                           }).toString(),
                         }}
                         className="shrink-0 rounded hover:ring-1 hover:ring-rw-accent"
@@ -2961,7 +2965,7 @@ export const TeamPeriodOpponents: React.FC<{
                         query={new URLSearchParams({
                           ...(pVal ? { p: pVal } : {}),
                           ...(rowC0 ? { champ: rowC0 } : {}),
-                          q: [teamSlug, rosterSlugs?.[0]].filter(Boolean).join(","),
+                          q: [teamSlug, ...(rosterSlugs || [])].filter(Boolean).join(","),
                         }).toString()}
                       />
                     </span>
@@ -3050,7 +3054,7 @@ export const TeamPeriodOpponents: React.FC<{
                           {tl("Compare")}
                         </HubLink>
                         <HubLink
-                          to={{ kind: "rankings", query: `q=${encodeURIComponent(`${teamSlug},${oppSlug}`)}` }}
+                          to={{ kind: "rankings", query: `q=${encodeURIComponent([teamSlug, oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(","))}` }}
                           className="text-rw-muted hover:text-rw-accent hover:underline"
                           title={tl("Power rankings")}
                         >
