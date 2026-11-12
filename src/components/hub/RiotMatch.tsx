@@ -236,7 +236,12 @@ export const RiotMatchPage: React.FC<{ matchId: string }> = ({ matchId }) => {
             <HubLink
               to={{
                 kind: "counters",
-                ...(yr ? { query: `patch=y${encodeURIComponent(yr)}&year=${encodeURIComponent(yr)}` } : {}),
+                query: new URLSearchParams({
+                  ...(t1Slug ? { team: t1Slug } : {}),
+                  ...(t2Slug && t2Slug !== t1Slug ? { vsteam: t2Slug } : {}),
+                  ...(lg ? { league: lg } : {}),
+                  ...(yr ? { patch: `y${yr}`, year: yr } : {}),
+                }).toString(),
               }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-rw-border bg-rw-bg text-[11px] text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
             >
