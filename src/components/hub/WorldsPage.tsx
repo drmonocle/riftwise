@@ -1106,12 +1106,14 @@ const SwissTable: React.FC<{
     if (!initTerms.length) return "";
     return allRows.some((u) => matchesSwissRow(u, initTerms)) ? raw : "";
   });
+  const [userTypedSwiss, setUserTypedSwiss] = useState(false);
   const terms = search
     .trim()
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((s) => normText(s.trim()))
     .filter(Boolean);
-  const rows = terms.length ? allRows.filter((u) => matchesSwissRow(u, terms)) : allRows;
+  const matchedRows = terms.length ? allRows.filter((u) => matchesSwissRow(u, terms)) : allRows;
+  const rows = matchedRows.length > 0 || userTypedSwiss || !terms.length ? matchedRows : allRows;
   const swTopC = useMemo(() => evTopChampsOf(main, parent), [main, parent]);
   const swTopP = useMemo(() => evTopPlayersOf(main, parent), [main, parent]);
   const swCJoin = swTopC.join(",");
@@ -1122,7 +1124,10 @@ const SwissTable: React.FC<{
           <input
             type="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setUserTypedSwiss(true);
+              setSearch(e.target.value);
+            }}
             placeholder={tl("Filter by name or team…")}
             aria-label={tl("Filter by name or team…")}
             className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-40"
@@ -1709,14 +1714,27 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
       return Boolean(qCanon && (qCanon === champSlug || (runSlug && qCanon === runSlug)));
     });
   };
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => {
+    const qp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    const raw = qp.get("q") || qp.get("team") || qp.get("vs") || "";
+    if (!raw.trim() || !shown.length) return "";
+    const initTerms = raw
+      .trim()
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(s.trim()))
+      .filter(Boolean);
+    if (!initTerms.length) return "";
+    return shown.some((x) => matchesWinnerRow(x, initTerms)) ? raw : "";
+  });
+  const [userTypedWin, setUserTypedWin] = useState(false);
   if (!list.length) return null;
   const searchTerms = search
     .trim()
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((s) => normText(s.trim()))
     .filter(Boolean);
-  const filteredShown = searchTerms.length ? shown.filter((x) => matchesWinnerRow(x, searchTerms)) : shown;
+  const matchedShown = searchTerms.length ? shown.filter((x) => matchesWinnerRow(x, searchTerms)) : shown;
+  const filteredShown = matchedShown.length > 0 || userTypedWin || !searchTerms.length ? matchedShown : shown;
   const topWin = filteredShown[0] || shown[0];
   const topChampSlug = topWin ? topWin.u || runnerSlug(topWin.as) : "";
   const topOppSlug = topWin?.l
@@ -1743,7 +1761,10 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setUserTypedWin(true);
+                setSearch(e.target.value);
+              }}
               placeholder={tl("Filter by name or team…")}
               aria-label={tl("Filter by name or team…")}
               className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"

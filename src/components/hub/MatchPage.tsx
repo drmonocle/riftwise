@@ -360,7 +360,7 @@ const SeriesView: React.FC<{ s: HubSeries; slug: string; game?: number; onOpenUr
                         <HubLink
                           to={{
                             kind: "counters",
-                            query: `champ=${encodeURIComponent(resolveChampSlug(cBlue))}${cRed && cRed !== cBlue ? `&vs=${encodeURIComponent(resolveChampSlug(cRed))}` : ""}${pBlue ? `&player=${encodeURIComponent(pBlue)}` : ""}&team=${encodeURIComponent(blueTeamSlug)}&vsteam=${encodeURIComponent(redTeamSlug)}${rBlue ? `&role=${encodeURIComponent(rBlue)}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${game?.patch ? `&patch=${encodeURIComponent(game.patch)}` : seriesYear ? `&patch=y${encodeURIComponent(seriesYear)}&year=${encodeURIComponent(seriesYear)}` : ""}`,
+                            query: `champ=${encodeURIComponent(resolveChampSlug(cBlue))}${cRed && cRed !== cBlue ? `&vs=${encodeURIComponent(resolveChampSlug(cRed))}` : ""}${pBlue ? `&player=${encodeURIComponent(pBlue)}` : ""}${pRed && pRed !== pBlue ? `&vsplayer=${encodeURIComponent(pRed)}` : ""}&team=${encodeURIComponent(blueTeamSlug)}&vsteam=${encodeURIComponent(redTeamSlug)}${rBlue ? `&role=${encodeURIComponent(rBlue)}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${game?.patch ? `&patch=${encodeURIComponent(game.patch)}` : seriesYear ? `&patch=y${encodeURIComponent(seriesYear)}&year=${encodeURIComponent(seriesYear)}` : ""}`,
                           }}
                           className={heroBtn()}
                         >
@@ -923,7 +923,7 @@ const SeriesGames: React.FC<{
                         curGp.bPicks[0] && curGp.bPicks[0] !== curGp.aPicks[0]
                           ? `&vs=${encodeURIComponent(resolveChampSlug(curGp.bPicks[0]))}`
                           : ""
-                      }${pA ? `&player=${encodeURIComponent(pA)}` : ""}&team=${encodeURIComponent(slugA)}&vsteam=${encodeURIComponent(slugB)}${rA ? `&role=${encodeURIComponent(rA)}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${
+                      }${pA ? `&player=${encodeURIComponent(pA)}` : ""}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}&team=${encodeURIComponent(slugA)}&vsteam=${encodeURIComponent(slugB)}${rA ? `&role=${encodeURIComponent(rA)}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${
                         game?.patch ? `&patch=${encodeURIComponent(game.patch)}` : seriesYear ? `&patch=y${encodeURIComponent(seriesYear)}&year=${encodeURIComponent(seriesYear)}` : ""
                       }`,
                     }}
@@ -1375,7 +1375,7 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
                           : red[1]?.c && red[1].c !== blue[0].c
                             ? `&vs=${encodeURIComponent(resolveChampSlug(red[1].c))}`
                             : ""
-                      }${blue[0] ? `&player=${encodeURIComponent(pSlug(blue[0].n, blue[0].u))}` : ""}&team=${encodeURIComponent(blueTeamSlug)}&vsteam=${encodeURIComponent(redTeamSlug)}${blue[0].r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : gameYear ? `&patch=y${encodeURIComponent(gameYear)}&year=${encodeURIComponent(gameYear)}` : ""}`,
+                      }${blue[0] ? `&player=${encodeURIComponent(pSlug(blue[0].n, blue[0].u))}` : ""}${red[0] && pSlug(red[0].n, red[0].u) !== (blue[0] ? pSlug(blue[0].n, blue[0].u) : "") ? `&vsplayer=${encodeURIComponent(pSlug(red[0].n, red[0].u))}` : ""}&team=${encodeURIComponent(blueTeamSlug)}&vsteam=${encodeURIComponent(redTeamSlug)}${blue[0].r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""}${s.e ? `&event=${encodeURIComponent(s.e)}` : ""}${g.patch ? `&patch=${encodeURIComponent(g.patch)}` : gameYear ? `&patch=y${encodeURIComponent(gameYear)}&year=${encodeURIComponent(gameYear)}` : ""}`,
                     }}
                     className="text-[11px] font-semibold text-rw-accent hover:underline"
                   >
@@ -2234,7 +2234,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                         kind: "counters",
                         query: `champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}${
                           red[0]?.c && red[0].c !== blue[0].c ? `&vs=${encodeURIComponent(resolveChampSlug(red[0].c))}` : ""
-                        }${b0S ? `&player=${encodeURIComponent(b0S)}` : ""}&team=${encodeURIComponent(blueU)}&vsteam=${encodeURIComponent(redU)}${blue[0].r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
+                        }${b0S ? `&player=${encodeURIComponent(b0S)}` : ""}${r0S && r0S !== b0S ? `&vsplayer=${encodeURIComponent(r0S)}` : ""}&team=${encodeURIComponent(blueU)}&vsteam=${encodeURIComponent(redU)}${blue[0].r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
                           g.patch ? `&patch=${encodeURIComponent(g.patch)}` : period && /^y\d{4}$/.test(period) ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` : ""
                         }`,
                       }}
@@ -2415,7 +2415,7 @@ const Leads: React.FC<{ g: HubGame; blueName: string; redName: string; blueU?: s
                         kind: "counters",
                         query: `champ=${encodeURIComponent(resolveChampSlug(lanes[0].b.c))}${
                           lanes[0]?.o?.c && lanes[0].o.c !== lanes[0].b.c ? `&vs=${encodeURIComponent(resolveChampSlug(lanes[0].o.c))}` : ""
-                        }${lb0S ? `&player=${encodeURIComponent(lb0S)}` : ""}&team=${encodeURIComponent(blueU)}&vsteam=${encodeURIComponent(redU)}&role=${encodeURIComponent(normalizeRole(lanes[0].r))}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
+                        }${lb0S ? `&player=${encodeURIComponent(lb0S)}` : ""}${lo0S && lo0S !== lb0S ? `&vsplayer=${encodeURIComponent(lo0S)}` : ""}&team=${encodeURIComponent(blueU)}&vsteam=${encodeURIComponent(redU)}&role=${encodeURIComponent(normalizeRole(lanes[0].r))}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
                           g.patch ? `&patch=${encodeURIComponent(g.patch)}` : period && /^y\d{4}$/.test(period) ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` : ""
                         }`,
                       }}
@@ -2993,7 +2993,7 @@ const Scoreboard: React.FC<{
                   kind: "counters",
                   query: `champ=${encodeURIComponent(resolveChampSlug(players[0].c))}${
                     oppPlayers?.[0]?.c && oppPlayers[0].c !== players[0].c ? `&vs=${encodeURIComponent(resolveChampSlug(oppPlayers[0].c))}` : ""
-                  }${p0Slug ? `&player=${encodeURIComponent(p0Slug)}` : ""}&team=${encodeURIComponent(u)}${oppU && oppU !== u ? `&vsteam=${encodeURIComponent(oppU)}` : ""}${players[0].r ? `&role=${encodeURIComponent(normalizeRole(players[0].r))}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : period && /^y\d{4}$/.test(period) ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` : ""}`,
+                  }${p0Slug ? `&player=${encodeURIComponent(p0Slug)}` : ""}${oppP0Slug && oppP0Slug !== p0Slug ? `&vsplayer=${encodeURIComponent(oppP0Slug)}` : ""}&team=${encodeURIComponent(u)}${oppU && oppU !== u ? `&vsteam=${encodeURIComponent(oppU)}` : ""}${players[0].r ? `&role=${encodeURIComponent(normalizeRole(players[0].r))}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : period && /^y\d{4}$/.test(period) ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` : ""}`,
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               >

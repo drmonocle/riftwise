@@ -923,12 +923,17 @@ export const PlayerRanks: React.FC<{
                     <HubLink
                       to={{
                         kind: "counters",
-                        ...((topSeasonChampSlug || me?.r || year)
+                        ...((topSeasonChampSlug || me?.r || year || slug)
                           ? {
                               query: new URLSearchParams({
                                 ...(topSeasonChampSlug ? { champ: topSeasonChampSlug } : {}),
                                 ...(secSeasonChampSlug ? { vs: secSeasonChampSlug } : {}),
+                                player: slug,
+                                ...(topPeer?.u && topPeer.u !== slug ? { vsplayer: topPeer.u } : {}),
+                                ...(meTeam ? { team: meTeam } : {}),
+                                ...(peerTeam && peerTeam !== meTeam ? { vsteam: peerTeam } : {}),
                                 ...(me?.r ? { role: me.r } : {}),
+                                ...(lu ? { league: lu } : {}),
                                 ...(year ? { patch: `y${year}`, year } : {}),
                               }).toString(),
                             }
@@ -1264,6 +1269,11 @@ export const TeamRanks: React.FC<{
                           query: new URLSearchParams({
                             champ: topPick,
                             ...(secPick ? { vs: secPick } : {}),
+                            team: slug,
+                            ...(topTeam?.u && topTeam.u !== slug ? { vsteam: topTeam.u } : {}),
+                            ...(mePlayer ? { player: mePlayer } : {}),
+                            ...(peerPlayer && peerPlayer !== mePlayer ? { vsplayer: peerPlayer } : {}),
+                            ...(lu ? { league: lu } : {}),
                             ...(year ? { patch: `y${year}`, year } : {}),
                           }).toString(),
                         }}

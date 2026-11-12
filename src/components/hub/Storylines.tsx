@@ -443,6 +443,8 @@ export const OwnStorylines: React.FC<{
                         query: new URLSearchParams({
                           champ: resolveChampSlug(noteChamp),
                           ...(noteChamps[1] ? { vs: resolveChampSlug(noteChamps[1]) } : {}),
+                          team: who.slug,
+                          ...(whoOppSlug && whoOppSlug !== who.slug ? { vsteam: whoOppSlug } : {}),
                           ...(noteYr ? { patch: `y${noteYr}`, year: String(noteYr) } : {}),
                           ...(noteEv ? { event: noteEv } : {}),
                         }).toString(),
@@ -572,6 +574,9 @@ export const OwnStorylines: React.FC<{
                         query: new URLSearchParams({
                           champ: resolveChampSlug(noteChamp),
                           ...(noteChamps[1] ? { vs: resolveChampSlug(noteChamps[1]) } : {}),
+                          player: who.slug,
+                          ...(who.team ? { team: resolveTeamAlias(who.team) || prettySlug(who.team) } : {}),
+                          ...(whoOppSlug ? { vsteam: whoOppSlug } : {}),
                           ...(who.role ? { role: who.role } : {}),
                           ...(noteYr ? { patch: `y${noteYr}`, year: String(noteYr) } : {}),
                           ...(noteEv ? { event: noteEv } : {}),
@@ -774,6 +779,8 @@ export const HomeStorylines: React.FC = () => {
                         query: new URLSearchParams({
                           champ: resolveChampSlug(topChamps[0]),
                           ...(topChamps[1] ? { vs: resolveChampSlug(topChamps[1]) } : {}),
+                          ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] && topTeams[1] !== topTeams[0] ? { vsteam: topTeams[1] } : {}) } : {}),
+                          ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] && topPlayers[1] !== topPlayers[0] ? { vsplayer: topPlayers[1] } : {}) } : {}),
                           ...(topYr ? { patch: `y${topYr}`, year: String(topYr) } : {}),
                           ...(topEv ? { event: topEv } : {}),
                         }).toString(),
@@ -954,6 +961,9 @@ export const HomeStorylines: React.FC = () => {
                           query: new URLSearchParams({
                             champ: resolveChampSlug(filteredChamp),
                             ...(filteredChamps[1] ? { vs: resolveChampSlug(filteredChamps[1]) } : {}),
+                            team: a,
+                            ...(b && b !== a ? { vsteam: b } : {}),
+                            ...(playerSlugs[0] ? { player: playerSlugs[0], ...(playerSlugs[1] && playerSlugs[1] !== playerSlugs[0] ? { vsplayer: playerSlugs[1] } : {}) } : {}),
                             ...(filteredYr ? { patch: `y${filteredYr}`, year: String(filteredYr) } : {}),
                             ...(filteredEv ? { event: filteredEv } : {}),
                           }).toString(),
@@ -1062,6 +1072,8 @@ export const HomeStorylines: React.FC = () => {
                           query: new URLSearchParams({
                             champ: resolveChampSlug(filteredChamp),
                             ...(filteredChamps[1] ? { vs: resolveChampSlug(filteredChamps[1]) } : {}),
+                            player: playerSlugs[0],
+                            ...(playerSlugs[1] && playerSlugs[1] !== playerSlugs[0] ? { vsplayer: playerSlugs[1] } : {}),
                             ...(filteredYr ? { patch: `y${filteredYr}`, year: String(filteredYr) } : {}),
                             ...(filteredEv ? { event: filteredEv } : {}),
                           }).toString(),

@@ -285,6 +285,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                 <button
                   type="button"
                   onClick={() => {
+                    const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
                     const yr = match.startTimeUtc?.slice(0, 4);
                     onClose();
                     navigateHub({
@@ -292,7 +293,12 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                       query: new URLSearchParams({
                         champ: cA,
                         ...(cB ? { vs: cB } : {}),
+                        team: x.team.u,
+                        ...(y.team.u && y.team.u !== x.team.u ? { vsteam: y.team.u } : {}),
+                        ...(pA ? { player: pA } : {}),
+                        ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                         ...(topRole ? { role: topRole } : {}),
+                        ...(lg ? { league: lg } : {}),
                         ...(yr ? { patch: `y${yr}`, year: yr } : {}),
                       }).toString(),
                     });
@@ -655,6 +661,7 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
             <button
               type="button"
               onClick={() => {
+                const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
                 const yr = match.startTimeUtc?.slice(0, 4);
                 onClose();
                 navigateHub({
@@ -662,7 +669,12 @@ const Body: React.FC<{ x: Side; y: Side; match: Match; onClose: () => void; onPr
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
+                    team: x.team.u,
+                    ...(y.team.u && y.team.u !== x.team.u ? { vsteam: y.team.u } : {}),
+                    ...(pA ? { player: pA } : {}),
+                    ...(pB && pB !== pA ? { vsplayer: pB } : {}),
                     ...(topRole ? { role: topRole } : {}),
+                    ...(lg ? { league: lg } : {}),
                     ...(yr ? { patch: `y${yr}`, year: yr } : {}),
                   }).toString(),
                 });

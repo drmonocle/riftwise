@@ -122,7 +122,12 @@ export const NextMatch: React.FC<{ t: HubTeam }> = ({ t }) => {
                     query: new URLSearchParams({
                       champ: ourChamp,
                       ...(secChamp ? { vs: secChamp } : {}),
+                      team: t.u,
+                      ...(first.opp && first.opp !== t.u ? { vsteam: first.opp } : {}),
+                      ...(ourStarter?.u ? { player: ourStarter.u } : {}),
+                      ...(secStarter?.u && secStarter.u !== ourStarter?.u ? { vsplayer: secStarter.u } : {}),
                       ...(ourStarter?.r ? { role: ourStarter.r } : {}),
+                      ...(firstLg ? { league: firstLg } : {}),
                       ...(firstYr ? { patch: `y${firstYr}`, year: firstYr } : {}),
                     }).toString(),
                   }}
@@ -626,7 +631,12 @@ const FirstMatch: React.FC<{ c: Coming; t: HubTeam }> = ({ c, t }) => {
               query: new URLSearchParams({
                 champ: ourChamp,
                 ...(oppChamp ? { vs: oppChamp } : {}),
+                team: t.u,
+                ...(c.opp && c.opp !== t.u ? { vsteam: c.opp } : {}),
+                ...(ourStarter?.u ? { player: ourStarter.u } : {}),
+                ...(oppStarter?.u && oppStarter.u !== ourStarter?.u ? { vsplayer: oppStarter.u } : {}),
                 ...(ourStarter?.r ? { role: ourStarter.r } : {}),
+                ...(lg ? { league: lg } : {}),
                 ...(yr && /^\d{4}$/.test(yr) ? { patch: `y${yr}`, year: yr } : {}),
               }).toString(),
             }}
