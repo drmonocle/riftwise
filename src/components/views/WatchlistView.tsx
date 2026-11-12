@@ -838,11 +838,18 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               const vsTeamObj = filteredTeams.find((x) => x.slug !== team.slug);
               const vsSlug = vsTeamObj ? teamSlug(vsTeamObj.name, vsTeamObj.code) : "";
               const useVs = Boolean(vsSlug && vsSlug !== tSlug && (filteredTeams.length === 2 || isFollowed));
+              const vsRoster = vsTeamObj
+                ? (catalog.players || []).filter((p) =>
+                    p.teamSlug ? p.teamSlug === vsTeamObj.slug : p.teamCode === vsTeamObj.code
+                  )
+                : [];
+              const vsPlayer0 = vsRoster[0] ? playerSlug(vsRoster[0].name) : "";
               const rPlayers = roster
                 .slice(0, 2)
                 .map((p) => playerSlug(p.name))
                 .filter(Boolean);
-              const tQuery = useVs ? `q=${encodeURIComponent(vsSlug)}` : undefined;
+              const tQueryList = [useVs ? vsSlug : "", rPlayers[0], useVs && vsPlayer0 ? vsPlayer0 : rPlayers[1]].filter(Boolean).join(",");
+              const tQuery = tQueryList ? `q=${encodeURIComponent(tQueryList)}` : undefined;
               return (
                 <div
                   key={team.slug}
@@ -943,13 +950,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         type="button"
                         onClick={() => {
                           const lg = team.league ? resolveLeagueSlug(team.league) : "";
+                          const oppP = useVs && vsPlayer0 && vsPlayer0 !== rPlayers[0] ? vsPlayer0 : rPlayers[1];
                           navigateHub({
                             kind: "finder",
                             query: new URLSearchParams({
                               team: tSlug,
                               ...(useVs ? { vs: vsSlug } : {}),
                               ...(rPlayers[0] ? { player: rPlayers[0] } : {}),
-                              ...(rPlayers[1] ? { vsplayer: rPlayers[1] } : {}),
+                              ...(oppP ? { vsplayer: oppP } : {}),
                               ...(lg ? { league: lg } : {}),
                             }).toString(),
                           });
@@ -962,13 +970,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         type="button"
                         onClick={() => {
                           const lg = team.league ? resolveLeagueSlug(team.league) : "";
+                          const oppP = useVs && vsPlayer0 && vsPlayer0 !== rPlayers[0] ? vsPlayer0 : rPlayers[1];
                           navigateHub({
                             kind: "items",
                             query: new URLSearchParams({
                               team: tSlug,
                               ...(useVs ? { vs: vsSlug } : {}),
                               ...(rPlayers[0] ? { player: rPlayers[0] } : {}),
-                              ...(rPlayers[1] ? { vsplayer: rPlayers[1] } : {}),
+                              ...(oppP ? { vsplayer: oppP } : {}),
                               ...(lg ? { league: lg } : {}),
                             }).toString(),
                           });
@@ -1616,61 +1625,122 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {region.leagues[0] && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigateHub({ kind: "rankings", query: `league=${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
-                          }}
-                          className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
-                        >
-                          {tl("Power rankings")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const lg = resolveLeagueSlug(region.leagues[0]);
-                            navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(lg)}&league=${encodeURIComponent(lg)}` });
-                          }}
-                          className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
-                        >
-                          {tl("Pro tier list")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigateHub({ kind: "leaders", query: `league=${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
-                          }}
-                          className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden lg:inline-block"
-                        >
-                          {tl("Player leaderboards")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigateHub({ kind: "finder", query: `league=${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
-                          }}
-                          className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden xl:inline-block"
-                        >
-                          {tl("Game finder")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigateHub({ kind: "items", query: `league=${encodeURIComponent(resolveLeagueSlug(region.leagues[0]))}` });
-                          }}
-                          className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden xl:inline-block"
-                        >
-                          {tl("Item history")}
-                        </button>
-                      </>
-                    )}
+                    {region.leagues[0] && (() => {
+                      const lg = resolveLeagueSlug(region.leagues[0]);
+                      const regTeamObjs = (catalog.teams || [])
+                        .filter((t) => t.league && resolveLeagueSlug(t.league) === lg)
+                        .slice(0, 2);
+                      const regTeams = regTeamObjs.map((t) => teamSlug(t.name, t.code)).filter(Boolean);
+                      const regPlayers = regTeamObjs
+                        .map((t) => {
+                          const p = (catalog.players || []).find((pl) =>
+                            pl.teamSlug ? pl.teamSlug === t.slug : pl.teamCode === t.code,
+                          );
+                          return p ? playerSlug(p.name) : "";
+                        })
+                        .filter(Boolean);
+                      const regQ = [...regTeams, ...regPlayers].filter(Boolean).join(",");
+                      return (
+                        <>
+                          {regTeams[0] && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigateHub({
+                                  kind: "prep",
+                                  a: regTeams[0],
+                                  ...(regTeams[1] ? { b: regTeams[1] } : {}),
+                                });
+                              }}
+                              className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
+                            >
+                              {tl("Match prep")}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigateHub({
+                                kind: "rankings",
+                                query: new URLSearchParams({
+                                  league: lg,
+                                  ...(regQ ? { q: regQ } : {}),
+                                }).toString(),
+                              });
+                            }}
+                            className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
+                          >
+                            {tl("Power rankings")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigateHub({ kind: "tiers", query: `scope=${encodeURIComponent(lg)}&league=${encodeURIComponent(lg)}` });
+                            }}
+                            className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden md:inline-block"
+                          >
+                            {tl("Pro tier list")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigateHub({
+                                kind: "leaders",
+                                query: new URLSearchParams({
+                                  league: lg,
+                                  ...(regQ ? { q: regQ } : {}),
+                                }).toString(),
+                              });
+                            }}
+                            className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden lg:inline-block"
+                          >
+                            {tl("Player leaderboards")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigateHub({
+                                kind: "finder",
+                                query: new URLSearchParams({
+                                  league: lg,
+                                  ...(regTeams[0] ? { team: regTeams[0] } : {}),
+                                  ...(regTeams[1] ? { vs: regTeams[1] } : {}),
+                                  ...(regPlayers[0] ? { player: regPlayers[0] } : {}),
+                                  ...(regPlayers[1] && regPlayers[1] !== regPlayers[0] ? { vsplayer: regPlayers[1] } : {}),
+                                }).toString(),
+                              });
+                            }}
+                            className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden xl:inline-block"
+                          >
+                            {tl("Game finder")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigateHub({
+                                kind: "items",
+                                query: new URLSearchParams({
+                                  league: lg,
+                                  ...(regTeams[0] ? { team: regTeams[0] } : {}),
+                                  ...(regTeams[1] ? { vs: regTeams[1] } : {}),
+                                  ...(regPlayers[0] ? { player: regPlayers[0] } : {}),
+                                  ...(regPlayers[1] && regPlayers[1] !== regPlayers[0] ? { vsplayer: regPlayers[1] } : {}),
+                                }).toString(),
+                              });
+                            }}
+                            className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden xl:inline-block"
+                          >
+                            {tl("Item history")}
+                          </button>
+                        </>
+                      );
+                    })()}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1787,13 +1857,39 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   <div className="flex items-center gap-1.5">
                     {(() => {
                       const lg = resolveLeagueSlug(league.slug);
-                      const lgTeams = (catalog.teams || [])
+                      const lgTeamObjs = (catalog.teams || [])
                         .filter((t) => t.league && resolveLeagueSlug(t.league) === lg)
-                        .slice(0, 2)
+                        .slice(0, 2);
+                      const lgTeams = lgTeamObjs
                         .map((t) => teamSlug(t.name, t.code))
                         .filter(Boolean);
+                      const lgPlayers = lgTeamObjs
+                        .map((t) => {
+                          const p = (catalog.players || []).find((pl) =>
+                            pl.teamSlug ? pl.teamSlug === t.slug : pl.teamCode === t.code,
+                          );
+                          return p ? playerSlug(p.name) : "";
+                        })
+                        .filter(Boolean);
+                      const lgAllQ = [...lgTeams, ...lgPlayers].filter(Boolean).join(",");
                       return (
                         <>
+                          {lgTeams[0] && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigateHub({
+                                  kind: "prep",
+                                  a: lgTeams[0],
+                                  ...(lgTeams[1] ? { b: lgTeams[1] } : {}),
+                                });
+                              }}
+                              className="px-2 py-1 rounded bg-rw-bg border border-rw-border text-[10px] text-rw-muted hover:text-rw-accent transition-colors hidden sm:inline-block"
+                            >
+                              {tl("Match prep")}
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1802,7 +1898,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                                 kind: "rankings",
                                 query: new URLSearchParams({
                                   league: lg,
-                                  ...(lgTeams.length ? { q: lgTeams.join(",") } : {}),
+                                  ...(lgAllQ ? { q: lgAllQ } : {}),
                                 }).toString(),
                               });
                             }}
@@ -1828,7 +1924,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                                 kind: "leaders",
                                 query: new URLSearchParams({
                                   league: lg,
-                                  ...(lgTeams.length ? { q: lgTeams.join(",") } : {}),
+                                  ...(lgAllQ ? { q: lgAllQ } : {}),
                                 }).toString(),
                               });
                             }}
@@ -1846,6 +1942,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                                   league: lg,
                                   ...(lgTeams[0] ? { team: lgTeams[0] } : {}),
                                   ...(lgTeams[1] ? { vs: lgTeams[1] } : {}),
+                                  ...(lgPlayers[0] ? { player: lgPlayers[0] } : {}),
+                                  ...(lgPlayers[1] && lgPlayers[1] !== lgPlayers[0] ? { vsplayer: lgPlayers[1] } : {}),
                                 }).toString(),
                               });
                             }}
@@ -1863,6 +1961,8 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                                   league: lg,
                                   ...(lgTeams[0] ? { team: lgTeams[0] } : {}),
                                   ...(lgTeams[1] ? { vs: lgTeams[1] } : {}),
+                                  ...(lgPlayers[0] ? { player: lgPlayers[0] } : {}),
+                                  ...(lgPlayers[1] && lgPlayers[1] !== lgPlayers[0] ? { vsplayer: lgPlayers[1] } : {}),
                                 }).toString(),
                               });
                             }}

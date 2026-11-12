@@ -505,7 +505,7 @@ const LiveMatchBlock: React.FC<{
   const pB = pBEntry ? playerSlug(pBEntry.name) : "";
   const t1Slug = m.team1Code && m.team1Code !== "TBD" ? teamSlug(m.team1Name, m.team1Code) : "";
   const t2Slug = m.team2Code && m.team2Code !== "TBD" ? teamSlug(m.team2Name, m.team2Code) : "";
-  const pairQ = [t1Slug, t2Slug].filter(Boolean).join(",");
+  const pairQ = [t1Slug, t2Slug, pA, pB].filter(Boolean).join(",");
   const shown = isRevealed(`match:${m.matchId}`);
   const showScore = !settings.spoilerMode || shown;
   const toggleReveal = () => setRevealed(`match:${m.matchId}`, !shown);
@@ -765,11 +765,12 @@ const LiveMatchBlock: React.FC<{
                   type="button"
                   onClick={() => {
                     const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
+                    const rq = [teamSlug(m.team1Name, m.team1Code), teamSlug(m.team2Name, m.team2Code), pA, pB].filter(Boolean).join(",");
                     navigateHub({
                       kind: "rankings",
                       query: new URLSearchParams({
                         ...(lg ? { league: lg } : {}),
-                        q: `${teamSlug(m.team1Name, m.team1Code)},${teamSlug(m.team2Name, m.team2Code)}`,
+                        ...(rq ? { q: rq } : {}),
                       }).toString(),
                     });
                   }}
@@ -969,7 +970,7 @@ const NextMatchCard: React.FC<{
   const pB = pBEntry ? playerSlug(pBEntry.name) : "";
   const t1Slug = m.team1Code && m.team1Code !== "TBD" ? teamSlug(m.team1Name, m.team1Code) : "";
   const t2Slug = m.team2Code && m.team2Code !== "TBD" ? teamSlug(m.team2Name, m.team2Code) : "";
-  const pairQ = [t1Slug, t2Slug].filter(Boolean).join(",");
+  const pairQ = [t1Slug, t2Slug, pA, pB].filter(Boolean).join(",");
   const team = (code: string, name: string, image: string | undefined, side: "a" | "b") => {
     const followed = settings.followedTeams.includes(code);
     const open = () => onSelectTeam?.(code, name);
@@ -1240,11 +1241,12 @@ const NextMatchCard: React.FC<{
                   type="button"
                   onClick={() => {
                     const lg = resolveLeagueSlug(m.leagueSlug || m.leagueName);
+                    const rq = [teamSlug(m.team1Name, m.team1Code), teamSlug(m.team2Name, m.team2Code), pA, pB].filter(Boolean).join(",");
                     navigateHub({
                       kind: "rankings",
                       query: new URLSearchParams({
                         ...(lg ? { league: lg } : {}),
-                        q: `${teamSlug(m.team1Name, m.team1Code)},${teamSlug(m.team2Name, m.team2Code)}`,
+                        ...(rq ? { q: rq } : {}),
                       }).toString(),
                     });
                   }}
@@ -1310,11 +1312,18 @@ const IntlBanner: React.FC<{ schedule: Match[]; onSelectTab: (tab: "stats") => v
   if (!on) return null;
   const ev = INTL_EVENTS[on.leagueSlug];
   const year = on.startTimeUtc.slice(0, 4);
+  const t1 = on.team1Name && on.team1Name !== "TBD" ? teamSlug(on.team1Name, on.team1Code) : "";
+  const t2 = on.team2Name && on.team2Name !== "TBD" ? teamSlug(on.team2Name, on.team2Code) : "";
+  const intlQ = [t1, t2].filter(Boolean).join(",");
   return (
     <button
       type="button"
       onClick={() => {
-        navigateHub({ kind: ev.kind, ...(year ? { year } : {}) });
+        navigateHub({
+          kind: ev.kind,
+          ...(year ? { year } : {}),
+          ...(intlQ ? { query: `q=${encodeURIComponent(intlQ)}` } : {}),
+        });
         onSelectTab("stats");
       }}
       className="w-full text-left rounded-xl border border-rw-border border-l-[3px] border-l-rw-accent bg-rw-panel rw-lit hover:bg-rw-raised px-4 py-3 flex flex-wrap items-center justify-between gap-2"

@@ -119,7 +119,9 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
 
   const EventTitleLink: React.FC<{ e: StreamEvent; className?: string }> = ({ e, className }) => {
     const baseRoute = streamEventRoute(e);
-    const pairQ = e.team1 && e.team2 ? [teamSlug(e.team1), teamSlug(e.team2)].filter(Boolean).join(",") : "";
+    const pA = starterSlug(e.team1);
+    const pB = starterSlug(e.team2);
+    const pairQ = e.team1 && e.team2 ? [teamSlug(e.team1), teamSlug(e.team2), pA, pB].filter(Boolean).join(",") : "";
     const route = baseRoute && pairQ ? ({ ...baseRoute, query: `q=${encodeURIComponent(pairQ)}` } as HubRoute) : baseRoute;
     const text = `${streamEventTitle(e)}${e.stage ? ` · ${stageName(e.stage)}` : ""}`;
     return route ? (
@@ -152,13 +154,17 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
     const year = /\b(20\d\d)\b/.exec(e.season || "")?.[1];
     const t1U = e.team1 ? teamSlug(e.team1) : "";
     const t2U = e.team2 ? teamSlug(e.team2) : "";
+    const pA = starterSlug(e.team1);
+    const pB = starterSlug(e.team2);
+    const t1QList = [t2U && t2U !== t1U ? t2U : "", pA, pB].filter(Boolean).join(",");
+    const t2QList = [t1U && t1U !== t2U ? t1U : "", pB, pA].filter(Boolean).join(",");
     const t1Q = new URLSearchParams({
       ...(year ? { p: `y${year}` } : {}),
-      ...(t2U && t2U !== t1U ? { q: t2U } : {}),
+      ...(t1QList ? { q: t1QList } : {}),
     }).toString();
     const t2Q = new URLSearchParams({
       ...(year ? { p: `y${year}` } : {}),
-      ...(t1U && t1U !== t2U ? { q: t1U } : {}),
+      ...(t2QList ? { q: t2QList } : {}),
     }).toString();
     return e.team1 && e.team2 ? (
       <span className={`flex items-center ${big ? "gap-3" : "gap-1.5"} min-w-0`}>
@@ -412,9 +418,12 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                         const y = /\b(20\d\d)\b/.exec(phase.lastAired!.season || "")?.[1];
                         const t1U = teamSlug(phase.lastAired!.team1!);
                         const t2U = teamSlug(phase.lastAired!.team2!);
+                        const pA = starterSlug(phase.lastAired!.team1);
+                        const pB = starterSlug(phase.lastAired!.team2);
+                        const qList = [t2U && t2U !== t1U ? t2U : "", pA, pB].filter(Boolean).join(",");
                         const q = new URLSearchParams({
                           ...(y ? { p: `y${y}` } : {}),
-                          ...(t2U && t2U !== t1U ? { q: t2U } : {}),
+                          ...(qList ? { q: qList } : {}),
                         }).toString();
                         navigateHub({ kind: "team", slug: t1U, ...(q ? { query: q } : {}) });
                       }}
@@ -445,9 +454,12 @@ export const StreamView: React.FC<StreamViewProps> = ({ events, status, settings
                         const y = /\b(20\d\d)\b/.exec(phase.lastAired!.season || "")?.[1];
                         const t1U = teamSlug(phase.lastAired!.team1!);
                         const t2U = teamSlug(phase.lastAired!.team2!);
+                        const pA = starterSlug(phase.lastAired!.team1);
+                        const pB = starterSlug(phase.lastAired!.team2);
+                        const qList = [t1U && t1U !== t2U ? t1U : "", pB, pA].filter(Boolean).join(",");
                         const q = new URLSearchParams({
                           ...(y ? { p: `y${y}` } : {}),
-                          ...(t1U && t1U !== t2U ? { q: t1U } : {}),
+                          ...(qList ? { q: qList } : {}),
                         }).toString();
                         navigateHub({ kind: "team", slug: t2U, ...(q ? { query: q } : {}) });
                       }}

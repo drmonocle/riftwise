@@ -425,18 +425,67 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      const lq = [...schedTeams, ...schedPlayers].filter(Boolean).join(",");
                       navigateHub({
                         kind: "league",
                         slug: resolveLeagueSlug(league),
                         ...(schedYr ? { year: schedYr } : {}),
-                        ...(schedTeams.length ? { query: `q=${encodeURIComponent(schedTeams.join(","))}` } : {}),
-                      })
-                    }
+                        ...(lq ? { query: `q=${encodeURIComponent(lq)}` } : {}),
+                      });
+                    }}
                     className="px-2 py-1 rounded text-[11px] font-semibold text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Full history and stats")} →
                   </button>
+                  {schedTeams[0] && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigateHub({
+                            kind: "prep",
+                            a: schedTeams[0],
+                            ...(schedTeams[1] ? { b: schedTeams[1] } : {}),
+                            ...(schedYr ? { period: `y${schedYr}` } : {}),
+                          })
+                        }
+                        className="hidden sm:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                      >
+                        {tl("Match prep")} →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigateHub({
+                            kind: "draft",
+                            query: new URLSearchParams({
+                              teams: schedTeams.join(","),
+                              ...(schedYr ? { p: `y${schedYr}` } : {}),
+                            }).toString(),
+                          })
+                        }
+                        className="hidden md:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                      >
+                        {tl("Draft board")} →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigateHub({
+                            kind: "compare",
+                            mode: "team",
+                            a: schedTeams[0],
+                            ...(schedTeams[1] ? { b: schedTeams[1] } : {}),
+                            ...(schedYr ? { period: `y${schedYr}` } : {}),
+                          })
+                        }
+                        className="hidden md:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
+                      >
+                        {tl("Compare")} →
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() =>
@@ -471,15 +520,16 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      const rq = [...schedTeams, ...schedPlayers].filter(Boolean).join(",");
                       navigateHub({
                         kind: "rankings",
                         query: new URLSearchParams({
                           league: resolveLeagueSlug(league),
-                          ...(schedTeams.length ? { q: schedTeams.join(",") } : {}),
+                          ...(rq ? { q: rq } : {}),
                         }).toString(),
-                      })
-                    }
+                      });
+                    }}
                     className="hidden md:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Power rankings")} →
@@ -502,16 +552,17 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      const bq = [...schedTeams, ...schedPlayers].filter(Boolean).join(",");
                       navigateHub({
                         kind: "best",
                         query: new URLSearchParams({
                           league: resolveLeagueSlug(league),
                           ...(schedYr ? { year: schedYr } : {}),
-                          ...(schedTeams.length ? { q: schedTeams.join(",") } : {}),
+                          ...(bq ? { q: bq } : {}),
                         }).toString(),
-                      })
-                    }
+                      });
+                    }}
                     className="hidden lg:inline px-1.5 py-1 rounded text-[11px] font-medium text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                   >
                     {tl("Best games")} →
@@ -687,7 +738,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                             kind: "rankings",
                             query: new URLSearchParams({
                               ...(sLg ? { league: sLg } : {}),
-                              q: sVsSlug ? `${sSlug},${sVsSlug}` : sSlug,
+                              q: [sSlug, sVsSlug, ...sPlayers].filter(Boolean).join(","),
                             }).toString(),
                           })
                         }
@@ -809,7 +860,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                           kind: "rankings",
                           query: new URLSearchParams({
                             ...(pLg ? { league: pLg } : {}),
-                            q: `${a},${b}`,
+                            q: [a, b, pA, pB].filter(Boolean).join(","),
                           }).toString(),
                         })
                       }
