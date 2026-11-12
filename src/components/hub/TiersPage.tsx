@@ -139,21 +139,25 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   const byRole = useMemo(() => {
     const out = new Map<string, Ranked[]>(ROLES.map((r) => [r, []]));
     if (!block) return out;
-    const cfTerms = champFilter
+    const rawTerms = champFilter
       .toLowerCase()
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => s.trim())
       .filter(Boolean);
-    for (const c of block.champs) {
-      if (!c.role || !out.has(c.role) || c.p + c.b < 2) continue;
+    const eligible = block.champs.filter((c) => c.role && out.has(c.role) && c.p + c.b >= 2);
+    const hasMatch =
+      !rawTerms.length ||
+      eligible.some((c) => rawTerms.some((cf) => matchesChampSearch(c.c, cf)));
+    const cfTerms = !hasMatch && urlChampFilter && champFilter === urlChampFilter ? [] : rawTerms;
+    for (const c of eligible) {
       if (cfTerms.length > 0 && !cfTerms.some((cf) => matchesChampSearch(c.c, cf))) {
         continue;
       }
-      out.get(c.role)!.push({ ...c, presence: block.games ? (c.p + c.b) / block.games : 0, wr: c.p ? c.w / c.p : null, score: tierScore(c, block.games) });
+      out.get(c.role!)!.push({ ...c, presence: block.games ? (c.p + c.b) / block.games : 0, wr: c.p ? c.w / c.p : null, score: tierScore(c, block.games) });
     }
     for (const list of out.values()) list.sort((a, b) => b.score - a.score);
     return out;
-  }, [block, champFilter]);
+  }, [block, champFilter, urlChampFilter]);
 
   const label = (k: string) =>
     k === "all" ? tl("All time (2011 to today)") : k.startsWith("p") ? tl("Patch {patch}", { patch: k.slice(1) }) : tl("Year {year}", { year: k.slice(1) });
@@ -161,8 +165,13 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   const fullLabel = isLeague
     ? `${lgBlock.data?.eventLabel || leagueName} · ${label(key)}`
     : label(key);
-  const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text";
-  const shown = role ? [role] : ROLES;
+  const sel = "bg-rw-bg border border-rw-bg border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text";
+  const shown =
+    role && (byRole.get(role) || []).length === 0 && ROLES.some((r) => (byRole.get(r) || []).length > 0)
+      ? ROLES
+      : role
+        ? [role]
+        : ROLES;
   const topChamps = shown
     .flatMap((r) => byRole.get(r) || [])
     .sort((a, b) => b.score - a.score);

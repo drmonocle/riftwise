@@ -550,24 +550,136 @@ const FinderBody: React.FC<{
       patches: [...patches].sort(patchCompare),
     };
   }, [games]);
+  const [userEdited, setUserEdited] = useState(false);
   const eventSlug = q.get("event");
   const canonEventSlug = eventSlug ? resolveEventSlug(eventSlug) : "";
   const eventMatch = useMemo(
     () => matchEventIndices(events, eventSlug, canonEventSlug),
     [events, eventSlug, canonEventSlug],
   );
-  const activeEventValue =
-    typeof eventMatch === "number" ? events[eventMatch]?.[0] || "" : eventMatch ? canonEventSlug || eventSlug || "" : "";
-  const parentEventLabel =
-    eventMatch instanceof Set ? matchedEventLabel(events, eventMatch, canonEventSlug || eventSlug) : null;
-  const found = useMemo(() => {
-    const out: { g: ChampGame; s: number }[] = [];
-    for (const g of games) {
-      const s = matchSide(g, q, eventMatch);
-      if (s >= 0) out.push({ g, s });
+  const { found, effQ, effEventMatch } = useMemo(() => {
+    const run = (candQ: URLSearchParams, candEv: number | Set<number> | null) => {
+      const out: { g: ChampGame; s: number }[] = [];
+      for (const g of games) {
+        const s = matchSide(g, candQ, candEv);
+        if (s >= 0) out.push({ g, s });
+      }
+      if (!out.length) return null;
+      out.sort((a, b) => (a.g[0] < b.g[0] ? 1 : a.g[0] > b.g[0] ? -1 : 0));
+      return { found: out, effQ: candQ, effEventMatch: candEv };
+    };
+    const exact = run(q, eventMatch);
+    if (exact || userEdited || !games.length) {
+      return exact || { found: [], effQ: q, effEventMatch: eventMatch };
     }
-    return out.sort((a, b) => (a.g[0] < b.g[0] ? 1 : a.g[0] > b.g[0] ? -1 : 0));
-  }, [games, q, eventMatch]);
+    const rawChamps = (q.get("champ") || "").split(",").map((s) => s.trim()).filter(Boolean);
+    const c0 = rawChamps[0] || "";
+    const c1 = rawChamps[1] || "";
+    const vsC = q.get("vschamp") || c1;
+    const drop = (keys: string[], over?: Record<string, string | undefined>) => {
+      const next = new URLSearchParams(q);
+      for (const k of keys) next.delete(k);
+      if (over) {
+        for (const [k, v] of Object.entries(over)) {
+          if (!v) next.delete(k);
+          else next.set(k, v);
+        }
+      }
+      return next;
+    };
+    const only = (over: Record<string, string | undefined>) => {
+      const next = new URLSearchParams();
+      for (const k of ["league", "year", "side", "result", "min", "max"]) {
+        const v = q.get(k);
+        if (v) next.set(k, v);
+      }
+      for (const [k, v] of Object.entries(over)) {
+        if (v) next.set(k, v);
+      }
+      return next;
+    };
+    const cands: [URLSearchParams, number | Set<number> | null][] = [
+      ...(rawChamps.length > 1 && !q.get("vschamp")
+        ? [
+            [drop([], { champ: c0, vschamp: c1 }), eventMatch] as [URLSearchParams, number | Set<number> | null],
+            [drop([], { champ: c0 }), eventMatch] as [URLSearchParams, number | Set<number> | null],
+          ]
+        : []),
+      [drop(["ban", "vschamp"], { champ: c0 || undefined }), eventMatch],
+      [drop(["ban", "vschamp", "role"], { champ: c0 || undefined }), eventMatch],
+      [drop(["ban", "vschamp", "role", "vsplayer"], { champ: c0 || undefined }), eventMatch],
+      [drop(["ban", "vschamp", "role", "vsplayer", "vs", "vsteam"], { champ: c0 || undefined }), eventMatch],
+      [drop(["ban", "vschamp", "role", "vsplayer", "vs", "vsteam", "patch", "event"], { champ: c0 || undefined }), null],
+      ...(q.get("player") && c0 ? [[only({ player: q.get("player")!, champ: c0 }), null] as [URLSearchParams, null]] : []),
+      ...(q.get("team") && (q.get("vs") || q.get("vsteam"))
+        ? [
+            [only({ team: q.get("team")!, vs: (q.get("vs") || q.get("vsteam"))! }), eventMatch] as [URLSearchParams, number | Set<number> | null],
+            [only({ team: q.get("team")!, vs: (q.get("vs") || q.get("vsteam"))! }), null] as [URLSearchParams, null],
+          ]
+        : []),
+      ...(q.get("player") && q.get("vsplayer")
+        ? [
+            [only({ player: q.get("player")!, vsplayer: q.get("vsplayer")! }), eventMatch] as [URLSearchParams, number | Set<number> | null],
+            [only({ player: q.get("player")!, vsplayer: q.get("vsplayer")! }), null] as [URLSearchParams, null],
+          ]
+        : []),
+      ...(c0 && vsC
+        ? [
+            [only({ champ: c0, vschamp: vsC, ...(q.get("role") ? { role: q.get("role")! } : {}) }), eventMatch] as [URLSearchParams, number | Set<number> | null],
+            [only({ champ: c0, vschamp: vsC }), null] as [URLSearchParams, null],
+          ]
+        : []),
+      ...(q.get("player") && q.get("team")
+        ? [
+            [only({ player: q.get("player")!, team: q.get("team")! }), eventMatch] as [URLSearchParams, number | Set<number> | null],
+            [only({ player: q.get("player")!, team: q.get("team")! }), null] as [URLSearchParams, null],
+          ]
+        : []),
+      ...(q.get("player")
+        ? [
+            [only({ player: q.get("player")! }), eventMatch] as [URLSearchParams, number | Set<number> | null],
+            [only({ player: q.get("player")! }), null] as [URLSearchParams, null],
+          ]
+        : []),
+      ...(q.get("team") && c0
+        ? [
+            [only({ team: q.get("team")!, champ: c0 }), eventMatch] as [URLSearchParams, number | Set<number> | null],
+            [only({ team: q.get("team")!, champ: c0 }), null] as [URLSearchParams, null],
+          ]
+        : []),
+      ...(q.get("team")
+        ? [
+            [only({ team: q.get("team")! }), eventMatch] as [URLSearchParams, number | Set<number> | null],
+            [only({ team: q.get("team")! }), null] as [URLSearchParams, null],
+          ]
+        : []),
+      ...(c0
+        ? [
+            [only({ champ: c0 }), eventMatch] as [URLSearchParams, number | Set<number> | null],
+            [only({ champ: c0 }), null] as [URLSearchParams, null],
+          ]
+        : []),
+      ...(eventMatch != null ? [[only({ event: eventSlug || undefined }), eventMatch] as [URLSearchParams, number | Set<number> | null]] : []),
+    ];
+    for (const [cq, cev] of cands) {
+      const hit = run(cq, cev);
+      if (hit) return hit;
+    }
+    return { found: [], effQ: q, effEventMatch: eventMatch };
+  }, [games, q, eventMatch, userEdited, eventSlug]);
+  const activeEventValue =
+    typeof effEventMatch === "number" ? events[effEventMatch]?.[0] || "" : effEventMatch ? canonEventSlug || eventSlug || "" : "";
+  const parentEventLabel =
+    effEventMatch instanceof Set ? matchedEventLabel(events, effEventMatch, canonEventSlug || eventSlug) : null;
+  const setBodyQ: SetQ = (patch) => {
+    setUserEdited(true);
+    const merged: Record<string, string | undefined> = {};
+    for (const k of ["event", "patch", "ban", "min", "max", "team", "vs", "vsteam", "side", "result", "player", "vsplayer", "role", "champ", "vschamp"]) {
+      merged[k] = effQ.get(k) || undefined;
+    }
+    if (!effEventMatch) merged.event = undefined;
+    setQ({ ...merged, ...patch });
+  };
   const [limit, setLimit] = useState(100);
   const tableRef = useRef<HTMLTableElement>(null);
   const won = found.filter(({ g, s }) =>
@@ -583,16 +695,16 @@ const FinderBody: React.FC<{
     newest && isFresh(newest) ? newest : undefined,
   );
   const sideCond = !!(
-    q.get("team") ||
-    q.get("vs") ||
-    q.get("vsteam") ||
-    q.get("side") ||
-    q.get("result") ||
-    q.get("champ") ||
-    q.get("vschamp") ||
-    q.get("player") ||
-    q.get("vsplayer") ||
-    q.get("role")
+    effQ.get("team") ||
+    effQ.get("vs") ||
+    effQ.get("vsteam") ||
+    effQ.get("side") ||
+    effQ.get("result") ||
+    effQ.get("champ") ||
+    effQ.get("vschamp") ||
+    effQ.get("player") ||
+    effQ.get("vsplayer") ||
+    effQ.get("role")
   );
 
   const champSel = (
@@ -616,12 +728,12 @@ const FinderBody: React.FC<{
       ))}
     </select>
   );
-  const champs = (q.get("champ") || "").split(",").filter(Boolean);
+  const champs = (effQ.get("champ") || "").split(",").filter(Boolean);
   const setChamp = (i: number, v: string) => {
     const next = [...champs];
     if (v) next[i] = v;
     else next.splice(i, 1);
-    setQ({ champ: next.filter(Boolean).join(",") || undefined });
+    setBodyQ({ champ: next.filter(Boolean).join(",") || undefined });
   };
 
   return (
@@ -630,7 +742,7 @@ const FinderBody: React.FC<{
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={activeEventValue}
-            onChange={(e) => setQ({ event: e.target.value || undefined })}
+            onChange={(e) => setBodyQ({ event: e.target.value || undefined })}
             aria-label={tl("Tournaments")}
             className={sel}
           >
@@ -645,8 +757,8 @@ const FinderBody: React.FC<{
             ))}
           </select>
           <select
-            value={q.get("patch") || ""}
-            onChange={(e) => setQ({ patch: e.target.value || undefined })}
+            value={effQ.get("patch") || ""}
+            onChange={(e) => setBodyQ({ patch: e.target.value || undefined })}
             aria-label={tl("Patches")}
             className={sel}
           >
@@ -657,16 +769,16 @@ const FinderBody: React.FC<{
               </option>
             ))}
           </select>
-          {champSel(tl("Banned: any"), opts.champs, q.get("ban") || "", (v) =>
-            setQ({ ban: v || undefined }),
+          {champSel(tl("Banned: any"), opts.champs, effQ.get("ban") || "", (v) =>
+            setBodyQ({ ban: v || undefined }),
           )}
           <span className="flex items-center gap-1 text-rw-sub">
             {tl("Length (min)")}
             <input
               type="number"
               min={0}
-              value={q.get("min") || ""}
-              onChange={(e) => setQ({ min: e.target.value || undefined })}
+              value={effQ.get("min") || ""}
+              onChange={(e) => setBodyQ({ min: e.target.value || undefined })}
               placeholder={tl("from")}
               aria-label={tl("Shortest game (minutes)")}
               className={num}
@@ -674,8 +786,8 @@ const FinderBody: React.FC<{
             <input
               type="number"
               min={0}
-              value={q.get("max") || ""}
-              onChange={(e) => setQ({ max: e.target.value || undefined })}
+              value={effQ.get("max") || ""}
+              onChange={(e) => setBodyQ({ max: e.target.value || undefined })}
               placeholder={tl("to")}
               aria-label={tl("Longest game (minutes)")}
               className={num}
@@ -687,8 +799,8 @@ const FinderBody: React.FC<{
             {tl("One team in the game")}
           </span>
           <select
-            value={teamOption(opts.teams, q.get("team"))}
-            onChange={(e) => setQ({ team: e.target.value || undefined })}
+            value={teamOption(opts.teams, effQ.get("team"))}
+            onChange={(e) => setBodyQ({ team: e.target.value || undefined })}
             aria-label={tl("Team")}
             className={sel}
           >
@@ -699,13 +811,13 @@ const FinderBody: React.FC<{
               </option>
             ))}
           </select>
-          {(q.get("team") || q.get("vs") || q.get("vsteam")) && (
+          {(effQ.get("team") || effQ.get("vs") || effQ.get("vsteam")) && (
             <button
               type="button"
               onClick={() =>
-                setQ({
-                  team: q.get("vs") || q.get("vsteam") || undefined,
-                  vs: q.get("team") || undefined,
+                setBodyQ({
+                  team: effQ.get("vs") || effQ.get("vsteam") || undefined,
+                  vs: effQ.get("team") || undefined,
                   vsteam: undefined,
                 })
               }
@@ -716,8 +828,8 @@ const FinderBody: React.FC<{
             </button>
           )}
           <select
-            value={teamOption(opts.teams, q.get("vs") || q.get("vsteam"))}
-            onChange={(e) => setQ({ vs: e.target.value || undefined, vsteam: undefined })}
+            value={teamOption(opts.teams, effQ.get("vs") || effQ.get("vsteam"))}
+            onChange={(e) => setBodyQ({ vs: e.target.value || undefined, vsteam: undefined })}
             aria-label={tl("Opponent")}
             className={sel}
           >
@@ -729,8 +841,8 @@ const FinderBody: React.FC<{
             ))}
           </select>
           <select
-            value={q.get("side") === "blue" ? "b" : q.get("side") === "red" ? "r" : q.get("side") || ""}
-            onChange={(e) => setQ({ side: e.target.value || undefined })}
+            value={effQ.get("side") === "blue" ? "b" : effQ.get("side") === "red" ? "r" : effQ.get("side") || ""}
+            onChange={(e) => setBodyQ({ side: e.target.value || undefined })}
             aria-label={tl("Side")}
             className={sel}
           >
@@ -739,8 +851,8 @@ const FinderBody: React.FC<{
             <option value="r">{tl("Red side")}</option>
           </select>
           <select
-            value={q.get("result") || ""}
-            onChange={(e) => setQ({ result: e.target.value || undefined })}
+            value={effQ.get("result") || ""}
+            onChange={(e) => setBodyQ({ result: e.target.value || undefined })}
             aria-label={tl("Result")}
             className={sel}
           >
@@ -749,8 +861,8 @@ const FinderBody: React.FC<{
             <option value="l">{tl("Lost")}</option>
           </select>
           <select
-            value={playerOption(opts.players, q.get("player"))}
-            onChange={(e) => setQ({ player: e.target.value || undefined })}
+            value={playerOption(opts.players, effQ.get("player"))}
+            onChange={(e) => setBodyQ({ player: e.target.value || undefined })}
             aria-label={tl("Player")}
             className={sel}
           >
@@ -761,14 +873,14 @@ const FinderBody: React.FC<{
               </option>
             ))}
           </select>
-          {(q.get("player") || q.get("vsplayer")) && (
+          {(effQ.get("player") || effQ.get("vsplayer")) && (
             <>
               <button
                 type="button"
                 onClick={() =>
-                  setQ({
-                    player: q.get("vsplayer") || undefined,
-                    vsplayer: q.get("player") || undefined,
+                  setBodyQ({
+                    player: effQ.get("vsplayer") || undefined,
+                    vsplayer: effQ.get("player") || undefined,
                   })
                 }
                 className="px-1.5 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 font-semibold"
@@ -777,8 +889,8 @@ const FinderBody: React.FC<{
                 ⇄
               </button>
               <select
-                value={playerOption(opts.players, q.get("vsplayer"))}
-                onChange={(e) => setQ({ vsplayer: e.target.value || undefined })}
+                value={playerOption(opts.players, effQ.get("vsplayer"))}
+                onChange={(e) => setBodyQ({ vsplayer: e.target.value || undefined })}
                 aria-label={tl("Opponent")}
                 className={sel}
               >
@@ -792,8 +904,8 @@ const FinderBody: React.FC<{
             </>
           )}
           <select
-            value={normalizeRole(q.get("role"))}
-            onChange={(e) => setQ({ role: e.target.value || undefined })}
+            value={normalizeRole(effQ.get("role"))}
+            onChange={(e) => setBodyQ({ role: e.target.value || undefined })}
             aria-label={tl("Role")}
             className={sel}
           >
@@ -819,12 +931,12 @@ const FinderBody: React.FC<{
               (v) => setChamp(1, v),
               `+ ${tl("and champion")}`,
             )}
-          {champs.length === 1 && q.get("vschamp") && (
+          {champs.length === 1 && effQ.get("vschamp") && (
             <button
               type="button"
               onClick={() =>
-                setQ({
-                  champ: q.get("vschamp") || undefined,
+                setBodyQ({
+                  champ: effQ.get("vschamp") || undefined,
                   vschamp: champs[0] || undefined,
                 })
               }
@@ -837,8 +949,8 @@ const FinderBody: React.FC<{
           {champSel(
             tl("Against champion"),
             opts.champs,
-            q.get("vschamp") || "",
-            (v) => setQ({ vschamp: v || undefined }),
+            effQ.get("vschamp") || "",
+            (v) => setBodyQ({ vschamp: v || undefined }),
             tl("Against champion"),
           )}
         </div>
@@ -855,7 +967,7 @@ const FinderBody: React.FC<{
                 {" · "}
                 <button
                   type="button"
-                  onClick={() => setQ({ result: q.get("result") === "w" ? "l" : q.get("result") === "l" ? undefined : "w" })}
+                  onClick={() => setBodyQ({ result: effQ.get("result") === "w" ? "l" : effQ.get("result") === "l" ? undefined : "w" })}
                   className="hover:text-rw-accent hover:underline"
                 >
                   {tl("won {w}, lost {l} ({pct})", {

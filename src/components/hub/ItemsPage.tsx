@@ -574,13 +574,47 @@ const PlayerItemsView: React.FC<{
   if (mine.loading || log.loading) return <Loading />;
   if (!mine.data || !log.data) return <p className="text-xs text-rw-sub rw-span">{tl("No item history for this player yet.")}</p>;
   const rows = log.data;
-  const keep = (r: PlayerGameRow) =>
-    (!champ || sameChamp(r[2], champ)) &&
-    (!year || r[0].startsWith(year)) &&
-    (!patch || r[24] === patch) &&
-    (!vs || (r[8] ? (resolveTeamAlias(r[8]) || prettySlug(r[8])) === vs : false)) &&
-    (!team || (r[7] ? (resolveTeamAlias(r[7]) || prettySlug(r[7])) === team : false)) &&
-    (!event || (r[11] ? matchesPeriodEvent(r[11], r[9], event) : normText(r[9] || "").includes(normText(event))));
+  const hit = item
+    ? mine.data.find(([it]) => resolveItemSlug(it) === item || prettySlug(it) === item || prettySlug(it).replace(/-/g, "") === item.replace(/-/g, ""))
+    : undefined;
+  const mChamp = (r: PlayerGameRow) => !champ || sameChamp(r[2], champ);
+  const mYear = (r: PlayerGameRow) => !year || r[0].startsWith(year);
+  const mPatch = (r: PlayerGameRow) => !patch || r[24] === patch;
+  const mVs = (r: PlayerGameRow) => !vs || (r[8] ? (resolveTeamAlias(r[8]) || prettySlug(r[8])) === vs : false);
+  const mTeam = (r: PlayerGameRow) => !team || (r[7] ? (resolveTeamAlias(r[7]) || prettySlug(r[7])) === team : false);
+  const mEvent = (r: PlayerGameRow) => !event || (r[11] ? matchesPeriodEvent(r[11], r[9], event) : normText(r[9] || "").includes(normText(event)));
+  const candidates: { c: boolean; y: boolean; fn: (r: PlayerGameRow) => boolean }[] = [
+    { c: true, y: true, fn: (r) => mChamp(r) && mYear(r) && mPatch(r) && mVs(r) && mTeam(r) && mEvent(r) },
+    { c: true, y: true, fn: (r) => mChamp(r) && mYear(r) && mPatch(r) && mTeam(r) && mEvent(r) },
+    { c: true, y: true, fn: (r) => mChamp(r) && mYear(r) && mPatch(r) && mEvent(r) },
+    { c: true, y: true, fn: (r) => mChamp(r) && mYear(r) && mTeam(r) },
+    { c: true, y: true, fn: (r) => mChamp(r) && mYear(r) },
+    ...(champ
+      ? [
+          { c: true, y: false, fn: (r: PlayerGameRow) => mChamp(r) && mTeam(r) },
+          { c: true, y: false, fn: (r: PlayerGameRow) => mChamp(r) },
+        ]
+      : []),
+    { c: false, y: true, fn: (r) => mYear(r) && mPatch(r) && mVs(r) && mTeam(r) && mEvent(r) },
+    { c: false, y: true, fn: (r) => mYear(r) && mPatch(r) && mTeam(r) && mEvent(r) },
+    { c: false, y: true, fn: (r) => mYear(r) && mPatch(r) && mEvent(r) },
+    { c: false, y: true, fn: (r) => mYear(r) && mTeam(r) },
+    { c: false, y: true, fn: (r) => mYear(r) },
+    { c: false, y: false, fn: (r) => mTeam(r) },
+    { c: false, y: false, fn: () => true },
+  ];
+  let chosen = candidates.find((cand) => rows.some(cand.fn)) || candidates[candidates.length - 1];
+  if (
+    hit &&
+    vs &&
+    chosen === candidates[0] &&
+    !hit[1].some((i) => rows[i] && candidates[0].fn(rows[i])) &&
+    hit[1].some((i) => rows[i] && candidates[1].fn(rows[i]))
+  ) {
+    chosen = candidates[1];
+  }
+  const keep = chosen.fn;
+  const effScope = scopeText(chosen.c && champ ? champLabel : "", chosen.y ? year : "");
   const games = (pos: number[]) => pos.map((i) => rows[i]).filter((r): r is PlayerGameRow => !!r && keep(r));
   const counted = champ || year || event || patch || vs || team ? rows.filter(keep).length : rows.length;
   const whoBuilt = (label: string) => (
@@ -607,7 +641,6 @@ const PlayerItemsView: React.FC<{
     </HubLink>
   );
   if (item) {
-    const hit = mine.data.find(([it]) => resolveItemSlug(it) === item || prettySlug(it) === item || prettySlug(it).replace(/-/g, "") === item.replace(/-/g, ""));
     const label = itemName(hit?.[0] || itemTitle || item);
     const g = hit ? games(hit[1]) : [];
     const primaryTeam = team || (g[0]?.[7] ? resolveTeamAlias(g[0][7]) || prettySlug(g[0][7]) : "");
@@ -615,7 +648,7 @@ const PlayerItemsView: React.FC<{
     if (!g.length)
       return (
         <Section title={label}>
-          {scope && <p className="text-[11px] text-rw-accent">{scope}</p>}
+          {effScope && <p className="text-[11px] text-rw-accent">{effScope}</p>}
           <p className="text-sm text-rw-text">
             <span className="font-bold text-rw-red">{tl("No.")}</span>{" "}
             <HubLink
@@ -758,14 +791,14 @@ const PlayerItemsView: React.FC<{
             </HubLink>
             <CopyItemsPost
               title={`${name} · ${label}`}
-              sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
+              sub={`${fmtNum(g.length)}G${effScope ? ` · ${effScope}` : ""}`}
               rows={g.slice(0, 5).map((r) => `${r[6] ? tc("short result", "W") : tc("short result", "L")} ${champName(r[2])} (${r[3]}/${r[4]}/${r[5]}) ${tl("vs")} ${r[8]} · ${fmtDate(r[0], false)}`)}
               picks={picks}
             />
             <SectionCard
               section={tl("Item history")}
               name={`${name} · ${label}`}
-              sub={`${fmtNum(g.length)}G${scope ? ` · ${scope}` : ""}`}
+              sub={`${fmtNum(g.length)}G${effScope ? ` · ${effScope}` : ""}`}
               rows={() =>
                 g.slice(0, 12).map((r, idx) => ({
                   rank: idx + 1,
@@ -782,7 +815,7 @@ const PlayerItemsView: React.FC<{
           </span>
         }
       >
-        {scope && <p className="text-[11px] text-rw-accent">{scope}</p>}
+        {effScope && <p className="text-[11px] text-rw-accent">{effScope}</p>}
         <p className="text-sm text-rw-text">
           <span className="font-bold text-rw-teal">{tl("Yes.")}</span>{" "}
           {tl("{player} finished {n} pro games holding {item}: first on {first}, last on {last}.", {
@@ -946,7 +979,7 @@ const PlayerItemsView: React.FC<{
             </HubLink>
             <CopyItemsPost
               title={tl("Every item {player} finished pro games with", { player: name })}
-              sub={scope || undefined}
+              sub={effScope || undefined}
               rows={list.slice(0, 5).map(([it, g]) => {
                 const won = g.filter((r) => r[6]).length;
                 return `${itemName(it)}: ${fmtNum(g.length)}G (${winRate(won, g.length)})`;
@@ -956,7 +989,7 @@ const PlayerItemsView: React.FC<{
             <SectionCard
               section={tl("Item history")}
               name={name}
-              sub={scope || undefined}
+              sub={effScope || undefined}
               rows={() =>
                 list.slice(0, 12).map(([it, g], idx) => {
                   const won = g.filter((r) => r[6]).length;
@@ -976,7 +1009,7 @@ const PlayerItemsView: React.FC<{
         ) : undefined
       }
     >
-      {scope && <p className="text-[11px] text-rw-accent">{scope}</p>}
+      {effScope && <p className="text-[11px] text-rw-accent">{effScope}</p>}
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={tl("Find an item…")} aria-label={tl("Find an item")} className={`${sel} w-48`} />
         <label className="flex items-center gap-1.5 text-rw-sub">
@@ -1132,15 +1165,15 @@ const ItemPlayersView: React.FC<{
   if (!st.data) return <p className="text-xs text-rw-sub rw-span">{tl("No pro game in the stats ended with this item.")}</p>;
   const it = st.data;
   const top = it.c?.[0];
-  const terms = search
+  const rawTerms = search
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((t) => t.trim().toLowerCase())
     .filter(Boolean);
-  const filteredPlayers = terms.length
+  const directPlayers = rawTerms.length
     ? it.players.filter(([n, u]) => {
         const pTeam = teamBySlug.get(u) || "";
         const hay = `${n} ${u} ${pTeam}`.toLowerCase();
-        return terms.some((t) => {
+        return rawTerms.some((t) => {
           const tAlias = searchAlias(t);
           return (
             hay.includes(t) ||
@@ -1154,6 +1187,9 @@ const ItemPlayersView: React.FC<{
         });
       })
     : it.players;
+  const ignoreInitialSearch = Boolean(initialSearch && search === initialSearch && directPlayers.length === 0);
+  const terms = ignoreInitialSearch ? [] : rawTerms;
+  const filteredPlayers = ignoreInitialSearch ? it.players : directPlayers;
   const topTeamA = team || (filteredPlayers[0] && teamBySlug.get(filteredPlayers[0][1]) ? resolveTeamAlias(teamBySlug.get(filteredPlayers[0][1])!, aliases.data?.team) || prettySlug(teamBySlug.get(filteredPlayers[0][1])!) : "");
   const topTeamB = vs || (filteredPlayers[1] && teamBySlug.get(filteredPlayers[1][1]) ? resolveTeamAlias(teamBySlug.get(filteredPlayers[1][1])!, aliases.data?.team) || prettySlug(teamBySlug.get(filteredPlayers[1][1])!) : "");
   return (
@@ -1164,7 +1200,7 @@ const ItemPlayersView: React.FC<{
           {it.players.length > 8 && (
             <input
               type="search"
-              value={search}
+              value={ignoreInitialSearch ? "" : search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={tl("Filter by name or team…")}
               aria-label={tl("Filter by name or team…")}
@@ -1579,17 +1615,17 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
     .filter((r) => r.g > 0)
     .sort((a, b) => b.g - a.g || a.k - b.k);
   const total = rows.reduce((s, r) => s + r.g, 0);
-  const terms = search
+  const rawTerms = search
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((t) => t.trim().toLowerCase())
     .filter(Boolean);
-  const filteredRows = terms.length
+  const directRows = rawTerms.length
     ? rows.filter((r) => {
         const p = players?.[r.k];
         if (!p) return false;
         const u = playerSlug(p);
         const hay = `${p[0]} ${p[2] || ""} ${u}`.toLowerCase();
-        return terms.some((t) => {
+        return rawTerms.some((t) => {
           const tAlias = searchAlias(t);
           return (
             hay.includes(t) ||
@@ -1603,6 +1639,9 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
         });
       })
     : rows;
+  const ignoreInitialSearch = Boolean(initialSearch && search === initialSearch && directRows.length === 0);
+  const terms = ignoreInitialSearch ? [] : rawTerms;
+  const filteredRows = ignoreInitialSearch ? rows : directRows;
   const shown = all || terms.length ? filteredRows : filteredRows.slice(0, 100);
   const topA = filteredRows[0] && players?.[filteredRows[0].k] ? playerSlug(players[filteredRows[0].k]) : "";
   const topB = filteredRows[1] && players?.[filteredRows[1].k] ? playerSlug(players[filteredRows[1].k]) : "";
@@ -1616,7 +1655,7 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
           {rows.length > 8 && (
             <input
               type="search"
-              value={search}
+              value={ignoreInitialSearch ? "" : search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={tl("Filter by name or team…")}
               aria-label={tl("Filter by name or team…")}
@@ -1945,18 +1984,18 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
   if (st.loading || head.loading) return <Loading />;
   const label = itemName(head.data?.n || item);
   const y = st.data;
-  const terms = search
+  const rawTerms = search
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((t) => t.trim().toLowerCase())
     .filter(Boolean);
-  const filteredP = y
-    ? terms.length
+  const directP = y
+    ? rawTerms.length
       ? y.p.filter(([k]) => {
           const p = players?.[k];
           if (!p) return false;
           const u = playerSlug(p);
           const hay = `${p[0]} ${p[2] || ""} ${u}`.toLowerCase();
-          return terms.some((t) => {
+          return rawTerms.some((t) => {
             const tAlias = searchAlias(t);
             return (
               hay.includes(t) ||
@@ -1971,6 +2010,9 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
         })
       : y.p
     : [];
+  const ignoreInitialSearch = Boolean(initialSearch && search === initialSearch && directP.length === 0);
+  const terms = ignoreInitialSearch ? [] : rawTerms;
+  const filteredP = y ? (ignoreInitialSearch ? y.p : directP) : [];
   const topA = filteredP[0] && players?.[filteredP[0][0]] ? playerSlug(players[filteredP[0][0]]) : "";
   const topB = filteredP[1] && players?.[filteredP[1][0]] ? playerSlug(players[filteredP[1][0]]) : "";
   const topTeamA = team || (filteredP[0] && players?.[filteredP[0][0]]?.[2] ? resolveTeamAlias(players[filteredP[0][0]][2]!, aliases.data?.team) || prettySlug(players[filteredP[0][0]][2]!) : "");
@@ -1983,7 +2025,7 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
           {y && y.p.length > 8 && (
             <input
               type="search"
-              value={search}
+              value={ignoreInitialSearch ? "" : search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={tl("Filter by name or team…")}
               aria-label={tl("Filter by name or team…")}

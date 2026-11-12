@@ -116,45 +116,64 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
         };
       });
   }, [rawTeam, isVsQuery, aliases.data]);
-  const shown = rows.filter((r) => {
-    if (spoilerHidden && isFresh(dateOf(r))) return false;
-    if (tiers.size && !tiers.has(ratingTier(r[0]))) return false;
-    if (vodOnly && (view === "games" ? !(r as BestGame)[15] : !seriesWithVod.has(r[1]))) return false;
-    const [a, aSlug, b, bSlug, en, eSlug] =
-      view === "series"
-        ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9], (r as BestSeries)[3], (r as BestSeries)[4]]
-        : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10], (r as BestGame)[4], (r as BestGame)[5]];
-    if (rawEvent && !matchesPeriodEvent(eSlug || "", en || "", normText(rawEvent))) return false;
-    if (teamTerms.length) {
-      const aCanon = aSlug || resolveTeamAlias(a, aliases.data?.team);
-      const bCanon = bSlug || resolveTeamAlias(b, aliases.data?.team);
-      const matchesTerm = (term: { norm: string; alias?: string | null; aliasSlug?: string }) => {
-        const bTerm = bare(term.norm);
-        const bAlias = term.alias ? bare(term.alias) : "";
-        const matchName =
-          normText(a).includes(term.norm) ||
-          normText(b).includes(term.norm) ||
-          normText(en || "").includes(term.norm) ||
-          (term.alias && (normText(a).includes(term.alias) || normText(b).includes(term.alias) || normText(en || "").includes(term.alias))) ||
-          (bTerm.length >= 2 && (bare(a).includes(bTerm) || bare(b).includes(bTerm))) ||
-          (bAlias.length >= 2 && (bare(a).includes(bAlias) || bare(b).includes(bAlias)));
-        const matchSlug =
-          Boolean(term.aliasSlug && (aCanon === term.aliasSlug || bCanon === term.aliasSlug)) ||
-          (aSlug && (normText(aSlug).includes(term.norm) || (bTerm.length >= 2 && bare(aSlug).includes(bTerm)))) ||
-          (bSlug && (normText(bSlug).includes(term.norm) || (bTerm.length >= 2 && bare(bSlug).includes(bTerm))));
-        const matchEvent =
-          matchesPeriodEvent(eSlug || "", en || "", term.norm) ||
-          Boolean(term.alias && matchesPeriodEvent(eSlug || "", en || "", term.alias));
-        return Boolean(matchName || matchSlug || matchEvent);
-      };
-      if (isVsQuery && teamTerms.length >= 2) {
-        if (!teamTerms.every(matchesTerm)) return false;
-      } else {
-        if (!teamTerms.some(matchesTerm)) return false;
-      }
+  const shown = useMemo(() => {
+    const baseRows = rows.filter((r) => {
+      if (spoilerHidden && isFresh(dateOf(r))) return false;
+      if (tiers.size && !tiers.has(ratingTier(r[0]))) return false;
+      if (vodOnly && (view === "games" ? !(r as BestGame)[15] : !seriesWithVod.has(r[1]))) return false;
+      return true;
+    });
+    const filterWith = (useEv: boolean, requireBothTeams: boolean, useTeams: boolean) =>
+      baseRows.filter((r) => {
+        const [a, aSlug, b, bSlug, en, eSlug] =
+          view === "series"
+            ? [(r as BestSeries)[6], (r as BestSeries)[7], (r as BestSeries)[8], (r as BestSeries)[9], (r as BestSeries)[3], (r as BestSeries)[4]]
+            : [(r as BestGame)[7], (r as BestGame)[8], (r as BestGame)[9], (r as BestGame)[10], (r as BestGame)[4], (r as BestGame)[5]];
+        if (useEv && rawEvent && !matchesPeriodEvent(eSlug || "", en || "", normText(rawEvent))) return false;
+        if (useTeams && teamTerms.length) {
+          const aCanon = aSlug || resolveTeamAlias(a, aliases.data?.team);
+          const bCanon = bSlug || resolveTeamAlias(b, aliases.data?.team);
+          const matchesTerm = (term: { norm: string; alias?: string | null; aliasSlug?: string }) => {
+            const bTerm = bare(term.norm);
+            const bAlias = term.alias ? bare(term.alias) : "";
+            const matchName =
+              normText(a).includes(term.norm) ||
+              normText(b).includes(term.norm) ||
+              normText(en || "").includes(term.norm) ||
+              (term.alias && (normText(a).includes(term.alias) || normText(b).includes(term.alias) || normText(en || "").includes(term.alias))) ||
+              (bTerm.length >= 2 && (bare(a).includes(bTerm) || bare(b).includes(bTerm))) ||
+              (bAlias.length >= 2 && (bare(a).includes(bAlias) || bare(b).includes(bAlias)));
+            const matchSlug =
+              Boolean(term.aliasSlug && (aCanon === term.aliasSlug || bCanon === term.aliasSlug)) ||
+              (aSlug && (normText(aSlug).includes(term.norm) || (bTerm.length >= 2 && bare(aSlug).includes(bTerm)))) ||
+              (bSlug && (normText(bSlug).includes(term.norm) || (bTerm.length >= 2 && bare(bSlug).includes(bTerm))));
+            const matchEvent =
+              matchesPeriodEvent(eSlug || "", en || "", term.norm) ||
+              Boolean(term.alias && matchesPeriodEvent(eSlug || "", en || "", term.alias));
+            return Boolean(matchName || matchSlug || matchEvent);
+          };
+          if (requireBothTeams && isVsQuery && teamTerms.length >= 2) {
+            if (!teamTerms.every(matchesTerm)) return false;
+          } else {
+            if (!teamTerms.some(matchesTerm)) return false;
+          }
+        }
+        return true;
+      });
+    const exact = filterWith(true, true, true);
+    if (exact.length > 0 || team !== urlTeam || !baseRows.length) return exact;
+    for (const [uEv, reqBoth, uTeams] of [
+      [true, false, true],
+      [false, true, true],
+      [false, false, true],
+      [true, false, false],
+      [false, false, false],
+    ] as const) {
+      const hit = filterWith(uEv, reqBoth, uTeams);
+      if (hit.length > 0) return hit;
     }
-    return true;
-  });
+    return exact;
+  }, [rows, spoilerHidden, tiers, vodOnly, view, seriesWithVod, rawEvent, teamTerms, isVsQuery, aliases.data, team, urlTeam]);
   const held = spoilerHidden ? rows.filter((r) => isFresh(dateOf(r))).length : 0;
   const toggleTier = (t: string) =>
     setTiers((cur) => {

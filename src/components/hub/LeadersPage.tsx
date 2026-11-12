@@ -74,7 +74,7 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       .map((s) => normText(s.trim()))
       .filter(Boolean);
     if (!terms.length) return rows;
-    const filtered = rows.filter((p) => {
+    const matchOne = (p: EventPlayer) => {
       const n = normText(p.n);
       const u = normText(p.u || "");
       const t = normText(p.t);
@@ -94,10 +94,14 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
           cs.some((c) => matchesChampSearch(c, term))
         );
       });
-    });
-    if (filtered.length === 0 && !q.get("q") && q.get("champ") && search === q.get("champ")) return rows;
+    };
+    const filtered = rows.filter(matchOne);
+    if (filtered.length > 0) return filtered;
+    const allInRole = inRole.filter(matchOne);
+    if (allInRole.length > 0) return allInRole;
+    if (urlSearch && search === urlSearch) return rows;
     return filtered;
-  }, [rows, aliases.data, search, q]);
+  }, [rows, inRole, aliases.data, search, urlSearch]);
   // z-scores: each stat against the average of the player's own role in this list (support vision next to mid CS)
   const zMode = q.get("show") === "z";
   const roleStats = useMemo(() => {

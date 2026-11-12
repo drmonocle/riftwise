@@ -1002,7 +1002,7 @@ export const RecordsPanel: React.FC = () => {
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((s) => normText(s.trim()))
     .filter(Boolean);
-  const matchText = terms.length
+  const rawMatchText = terms.length
     ? (
         s: string,
         champ?: string,
@@ -1040,6 +1040,30 @@ export const RecordsPanel: React.FC = () => {
       {(all) => {
         const y = year !== "all" ? yearState.data : null;
         const r: HubRecords = y ? { ...all, game: y.game, player: y.player, pentas: y.pentas } : all;
+        const hasAnyRecordMatch =
+          !rawMatchText ||
+          [r.game.fastest, r.game.longest, r.game.bloodiest, r.game.comebacks].some((arr) =>
+            arr.some((g) => rawMatchText(`${g.w} ${g.a} ${g.b} ${g.t} ${g.e || ""}`, undefined, undefined, [g.w, g.a, g.b], g.e, g.t)),
+          ) ||
+          [r.player.kills, r.player.assists, r.player.perfect, r.player.dmg, r.player.cs].some((arr) =>
+            arr.some((p) =>
+              rawMatchText(`${p.pl} ${p.u || ""} ${p.c} ${champName(p.c)} ${p.opp} ${p.t} ${p.e || ""}`, p.c, p.u || resolvePlayerSlug(p.pl), [p.opp], p.e, p.t),
+            ),
+          ) ||
+          Boolean(
+            r.pentas &&
+              (r.pentas.most.some((p) => rawMatchText(`${p.n} ${p.u || ""}`, undefined, p.u || resolvePlayerSlug(p.n))) ||
+                r.pentas.recent.some((p) =>
+                  rawMatchText(`${p.n} ${p.u || ""} ${p.c} ${champName(p.c)} ${p.a} ${p.b} ${p.t} ${p.e || ""}`, p.c, p.u || resolvePlayerSlug(p.n), [p.a, p.b], p.e, p.t),
+                )),
+          ) ||
+          (year === "all" &&
+            (r.team.streaks.some((t) => rawMatchText(`${t.team} ${t.u || ""}`, undefined, undefined, [t.u, t.team])) ||
+              r.team.titles.some((t) => rawMatchText(`${t.team} ${t.u || ""}`, undefined, undefined, [t.u, t.team])) ||
+              [r.career.games, r.career.kills, r.career.assists, r.career.pool, ...(r.careerAll ? [r.careerAll.games, r.careerAll.kills, r.careerAll.assists, r.careerAll.pool] : [])].some(
+                (arr) => arr.some((p) => rawMatchText(`${p.pl} ${p.u || ""}`, undefined, p.u || resolvePlayerSlug(p.pl))),
+              )));
+        const matchText = !hasAnyRecordMatch && urlQ && search === urlQ ? undefined : rawMatchText;
         const btn = (on: boolean) =>
           `px-2 py-1 rounded text-xs font-semibold border ${on ? "border-rw-accent text-rw-accent bg-rw-accent/10" : "border-rw-border text-rw-sub hover:text-rw-text"}`;
         const yearPick = all.years && all.years.length > 0 && (
@@ -2365,38 +2389,47 @@ export const TitlesPanel: React.FC = () => {
             .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
             .map((s) => normText(s.trim()))
             .filter(Boolean);
-          const rows = data
-            .filter((x) =>
-              kind === "All"
-                ? true
-                : kind === "International"
-                  ? INTERNATIONAL_KINDS.includes(x.kind)
-                  : kind === "Worlds"
-                    ? x.kind === "Worlds"
-                    : x.kind === "Regional",
-            )
-            .filter((x) => {
-              if (!terms.length) return true;
-              const hay = normText(`${eventTitle(x.t)} ${x.t} ${x.w} ${x.as} ${x.l} ${x.u || ""}`);
-              const hayBare = bare(hay);
-              const rowTeams = [x.u, x.w, x.as, x.l]
-                .filter((tn): tn is string => Boolean(tn))
-                .map((tn) => resolveTeamAlias(tn, aliases.data?.team) || prettySlug(tn));
-              return terms.some((t) => {
-                const qAlias = searchAlias(t);
-                if (
-                  hay.includes(t) ||
-                  (t.length >= 2 && hayBare.includes(bare(t))) ||
-                  (qAlias && (hay.includes(normText(qAlias)) || (bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias)))))
-                )
-                  return true;
-                const canonTeam = resolveTeamAlias(qAlias || t, aliases.data?.team) || resolveTeamAlias(t, aliases.data?.team) || prettySlug(qAlias || t);
-                if (canonTeam && rowTeams.includes(canonTeam)) return true;
-                if (matchesPeriodEvent(x.e || "", x.t || "", t)) return true;
-                return false;
-              });
-            })
-            .slice(0, 300);
+          const byKind = data.filter((x) =>
+            kind === "All"
+              ? true
+              : kind === "International"
+                ? INTERNATIONAL_KINDS.includes(x.kind)
+                : kind === "Worlds"
+                  ? x.kind === "Worlds"
+                  : x.kind === "Regional",
+          );
+          const matchTitleRow = (x: HubTitle) => {
+            if (!terms.length) return true;
+            const hay = normText(`${eventTitle(x.t)} ${x.t} ${x.w} ${x.as} ${x.l} ${x.u || ""}`);
+            const hayBare = bare(hay);
+            const rowTeams = [x.u, x.w, x.as, x.l]
+              .filter((tn): tn is string => Boolean(tn))
+              .map((tn) => resolveTeamAlias(tn, aliases.data?.team) || prettySlug(tn));
+            return terms.some((t) => {
+              const qAlias = searchAlias(t);
+              if (
+                hay.includes(t) ||
+                (t.length >= 2 && hayBare.includes(bare(t))) ||
+                (qAlias && (hay.includes(normText(qAlias)) || (bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias)))))
+              )
+                return true;
+              const canonTeam = resolveTeamAlias(qAlias || t, aliases.data?.team) || resolveTeamAlias(t, aliases.data?.team) || prettySlug(qAlias || t);
+              if (canonTeam && rowTeams.includes(canonTeam)) return true;
+              if (matchesPeriodEvent(x.e || "", x.t || "", t)) return true;
+              return false;
+            });
+          };
+          const directKindRows = byKind.filter(matchTitleRow);
+          const allKindMatches = terms.length && !directKindRows.length ? data.filter(matchTitleRow) : [];
+          const rows = (
+            directKindRows.length
+              ? directKindRows
+              : allKindMatches.length
+                ? allKindMatches
+                : urlQ && search === urlQ
+                  ? byKind
+                  : []
+          ).slice(0, 300);
           return (
             <div className={`${card} space-y-2 overflow-x-auto`}>
               {rows.length > 0 && (() => {

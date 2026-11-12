@@ -401,8 +401,10 @@ const LeagueTable: React.FC<{
       .map((s) => normText(s.trim()))
       .filter(Boolean);
     if (!terms.length) return base;
-    return base.filter((r) => terms.some((t) => matchesChampSearch(r.c, t)));
-  }, [result.rows, emerging, vs, search]);
+    const filtered = base.filter((r) => terms.some((t) => matchesChampSearch(r.c, t)));
+    if (filtered.length === 0 && urlSearch && search === urlSearch) return base;
+    return filtered;
+  }, [result.rows, emerging, vs, search, urlSearch]);
   const maxLPicks = Math.max(1, ...result.rows.map((r) => r.p || 0));
   const maxLBans = Math.max(1, ...result.rows.map((r) => r.b || 0));
   const champQuery = (cRole?: number, curSlug?: string) => {
@@ -895,13 +897,16 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   const then = useLoad<ChampionStats | null>(() => (vs ? loadChampionStats(vs) : Promise.resolve(null)), [vs]);
   const thenBlock = then.data ? then.data[scope] || then.data.all : null;
   const emerging = q.get("new") === "1";
-  const rows = useMemo(() => {
+  const allRows = useMemo(() => {
     if (!block) return [];
     const shape = (b: NonNullable<typeof block>) =>
       b.champs.map((c) => ({ ...c, presence: Math.min(1, (c.p + c.b) / b.games), wr: c.p ? c.w / c.p : null }));
+    return deltas(shape(block), thenBlock ? shape(thenBlock) : null, 10);
+  }, [block, thenBlock]);
+  const rows = useMemo(() => {
     // the role filter applies to this patch only: a flex pick whose main role changed isn't "new"
-    return deltas(shape(block).filter((c) => !roleQ || c.role === roleQ), thenBlock ? shape(thenBlock) : null, 10);
-  }, [block, thenBlock, roleQ]);
+    return roleQ ? allRows.filter((c) => c.role === roleQ) : allRows;
+  }, [allRows, roleQ]);
   const label = (k: string) =>
     k === "all" ? tl("All time (2011 to today)") : k.startsWith("p") ? tl("Patch {patch}", { patch: k.slice(1) }) : tl("Year {year}", { year: k.slice(1) });
   type Row = (typeof rows)[number];
@@ -912,8 +917,17 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
       .map((s) => normText(s.trim()))
       .filter(Boolean);
     if (!terms.length) return base;
-    return base.filter((r) => terms.some((t) => matchesChampSearch(r.c, t)));
-  }, [rows, emerging, thenBlock, search]);
+    const filtered = base.filter((r) => terms.some((t) => matchesChampSearch(r.c, t)));
+    if (filtered.length > 0) return filtered;
+    if (roleQ) {
+      const anyRole = (emerging && thenBlock ? allRows.filter((r) => r.emerging) : allRows).filter((r) =>
+        terms.some((t) => matchesChampSearch(r.c, t)),
+      );
+      if (anyRole.length > 0) return anyRole;
+    }
+    if (urlSearch && search === urlSearch) return base;
+    return filtered;
+  }, [rows, allRows, roleQ, emerging, thenBlock, search, urlSearch]);
   const maxOPicks = useMemo(() => Math.max(1, ...rows.map((r) => r.p || 0)), [rows]);
   const maxOBans = useMemo(() => Math.max(1, ...rows.map((r) => r.b || 0)), [rows]);
   const overallChampQuery = (cRole?: string | null, curSlug?: string) => {

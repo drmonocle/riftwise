@@ -212,11 +212,13 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       return false;
     };
     const pool =
-      !league && terms.some((t) => !rows.some(({ r }) => matchRow(r, t)) && d.teams.some((r) => matchRow(r, t)))
+      terms.some((t) => !rows.some(({ r }) => matchRow(r, t)) && d.teams.some((r) => matchRow(r, t)))
         ? rankList(d.teams)
         : rows;
-    return pool.filter(({ r }) => terms.some((t) => matchRow(r, t)));
-  }, [rows, d.teams, league, search, asOf, hist.data, aliases.data]); // eslint-disable-line react-hooks/exhaustive-deps
+    const filtered = pool.filter(({ r }) => terms.some((t) => matchRow(r, t)));
+    if (filtered.length === 0 && urlQ && search === urlQ) return rows;
+    return filtered;
+  }, [rows, d.teams, league, search, urlQ, asOf, hist.data, aliases.data]); // eslint-disable-line react-hooks/exhaustive-deps
   const pair =
     search.trim() && shownRows.length >= 2 && (shownRows[0].r[0] || shownRows[0].r[1]) && (shownRows[1].r[0] || shownRows[1].r[1])
       ? [
