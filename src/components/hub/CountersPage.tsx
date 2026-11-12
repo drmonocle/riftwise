@@ -33,6 +33,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const rawPatchParam = q.get("patch") || "";
   const patchParam = rawPatchParam && !/^y\d{4}$/.test(rawPatchParam) ? (rawPatchParam.startsWith("p") ? rawPatchParam.slice(1) : rawPatchParam) : "";
   const yearParam = q.get("year") || (/^y(\d{4})$/.exec(rawPatchParam)?.[1] ?? "") || (/(?:^|-)(20\d{2})(?:-|$)/.exec(evParam)?.[1] ?? "");
+  const leagueParam = q.get("league") || "";
   const index = useLoad(loadHubIndexQuick, []);
   const data = useLoad(
     () =>
@@ -153,6 +154,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
             ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
             ...(topTeam ? { team: topTeam } : {}),
             ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+            ...(leagueParam ? { league: leagueParam } : {}),
             ...(evParam ? { event: evParam } : {}),
             ...(patchParam ? { patch: patchParam } : {}),
             ...(yearParam ? { year: yearParam } : {}),
@@ -170,6 +172,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const champQueryForRole = (roleIdx?: number, vsChampSlug?: string) => {
     const rStr = roleIdx != null && roleIdx >= 0 ? ROLES[roleIdx] : role || "";
     const qs = new URLSearchParams({
+      ...(leagueParam ? { league: leagueParam } : {}),
       ...(evParam ? { event: evParam } : patchParam ? { p: `p:${patchParam}` } : yearParam ? { p: `y${yearParam}`, year: yearParam } : {}),
       ...(rStr ? { role: rStr } : {}),
       ...(vsChampSlug ? { vschamp: vsChampSlug } : {}),
@@ -484,6 +487,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   query: new URLSearchParams({
                     q: vsMatch ? `${slug},${resolveChampSlug(vsMatch.oppCanon)}` : slug,
                     ...(role ? { role } : {}),
+                    ...(leagueParam ? { league: leagueParam } : {}),
                     ...(evParam ? { event: evParam } : {}),
                     ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                   }).toString(),
@@ -544,6 +548,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                     ...(topTeam ? { team: topTeam } : {}),
                     ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                    ...(leagueParam ? { league: leagueParam } : {}),
                     ...(patchParam ? { patch: patchParam } : {}),
                     ...(yearParam ? { year: yearParam } : {}),
                     ...(evParam ? { event: evParam } : {}),
@@ -559,6 +564,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   query: new URLSearchParams({
                     q: vsMatch ? `${slug},${resolveChampSlug(vsMatch.oppCanon)}` : slug,
                     ...(role ? { role } : {}),
+                    ...(leagueParam ? { league: leagueParam } : {}),
                     ...(evParam ? { event: evParam } : {}),
                     ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                   }).toString(),
@@ -573,6 +579,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   query: new URLSearchParams({
                     champ: slug,
                     ...(role ? { role } : {}),
+                    ...(leagueParam ? { league: leagueParam } : {}),
                     ...(yearParam ? { year: yearParam } : {}),
                     ...(evParam ? { event: evParam } : {}),
                     ...(leaderQ ? { q: leaderQ } : {}),
@@ -593,6 +600,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                     ...(topTeam ? { team: topTeam } : {}),
                     ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                    ...(leagueParam ? { league: leagueParam } : {}),
                     ...(evParam ? { event: evParam } : {}),
                     ...(patchParam ? { patch: patchParam } : {}),
                     ...(yearParam ? { year: yearParam } : {}),
@@ -605,8 +613,15 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               <HubLink
                 to={{
                   kind: "rankings",
-                  ...(topTeam || topPlayer
-                    ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
+                  ...(leagueParam || topTeam || topPlayer
+                    ? {
+                        query: new URLSearchParams({
+                          ...(leagueParam ? { league: leagueParam } : {}),
+                          ...(topTeam || topPlayer
+                            ? { q: [topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(",") }
+                            : {}),
+                        }).toString(),
+                      }
                     : {}),
                 }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
@@ -775,6 +790,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                 ...(topTeam ? { team: topTeam } : {}),
                                 ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                                ...(leagueParam ? { league: leagueParam } : {}),
                                 ...(evParam ? { event: evParam } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
@@ -795,6 +811,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                 ...(topTeam ? { team: topTeam } : {}),
                                 ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                                ...(leagueParam ? { league: leagueParam } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
                                 ...(evParam ? { event: evParam } : {}),
@@ -810,6 +827,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               query: new URLSearchParams({
                                 q: `${slug},${resolveChampSlug(vsMatch.oppCanon)}`,
                                 ...(vsRole ? { role: vsRole } : {}),
+                                ...(leagueParam ? { league: leagueParam } : {}),
                                 ...(evParam ? { event: evParam } : {}),
                                 ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                               }).toString(),
@@ -865,6 +883,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               query: new URLSearchParams({
                                 champ: slug,
                                 ...(vsRole ? { role: vsRole } : {}),
+                                ...(leagueParam ? { league: leagueParam } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
                                 ...(evParam ? { event: evParam } : {}),
                                 ...(leaderQ ? { q: leaderQ } : {}),
@@ -880,8 +899,15 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(topTeam || topPlayer
-                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
+                        ...(leagueParam || topTeam || topPlayer
+                          ? {
+                              query: new URLSearchParams({
+                                ...(leagueParam ? { league: leagueParam } : {}),
+                                ...(topTeam || topPlayer
+                                  ? { q: [topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(",") }
+                                  : {}),
+                              }).toString(),
+                            }
                           : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1048,8 +1074,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               vs: resolveChampSlug(good[0].c),
                               ...(good[0].role >= 0 ? { role: ROLES[good[0].role] } : role ? { role } : {}),
                               ...(topPlayer ? { player: topPlayer } : {}),
+                              ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                               ...(topTeam ? { team: topTeam } : {}),
                               ...(topOpp && topOpp !== topTeam ? { vsteam: topOpp } : {}),
+                              ...(leagueParam ? { league: leagueParam } : {}),
                               ...(evParam ? { event: evParam } : {}),
                               ...(patchParam ? { patch: patchParam } : {}),
                               ...(yearParam ? { year: yearParam } : {}),
@@ -1070,6 +1098,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                               ...(topTeam ? { team: topTeam } : {}),
                               ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                              ...(leagueParam ? { league: leagueParam } : {}),
                               ...(evParam ? { event: evParam } : {}),
                               ...(patchParam ? { patch: patchParam } : {}),
                               ...(yearParam ? { year: yearParam } : {}),
@@ -1092,6 +1121,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                           ...(topTeam ? { team: topTeam } : {}),
                           ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                          ...(leagueParam ? { league: leagueParam } : {}),
                           ...(patchParam ? { patch: patchParam } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
@@ -1107,6 +1137,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           q: good[0] ? `${slug},${resolveChampSlug(good[0].c)}` : slug,
                           ...(role ? { role } : good[0] && good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
+                          ...(leagueParam ? { league: leagueParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
                           ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                         }).toString(),
@@ -1162,6 +1193,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           champ: slug,
                           ...(role ? { role } : good[0] && good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
+                          ...(leagueParam ? { league: leagueParam } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
                           ...(leaderQ ? { q: leaderQ } : {}),
@@ -1174,8 +1206,15 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(topTeam || topPlayer
-                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
+                        ...(leagueParam || topTeam || topPlayer
+                          ? {
+                              query: new URLSearchParams({
+                                ...(leagueParam ? { league: leagueParam } : {}),
+                                ...(topTeam || topPlayer
+                                  ? { q: [topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(",") }
+                                  : {}),
+                              }).toString(),
+                            }
                           : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1266,8 +1305,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               vs: resolveChampSlug(bad[0].c),
                               ...(bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : role ? { role } : {}),
                               ...(topPlayer ? { player: topPlayer } : {}),
+                              ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                               ...(topTeam ? { team: topTeam } : {}),
                               ...(topOpp && topOpp !== topTeam ? { vsteam: topOpp } : {}),
+                              ...(leagueParam ? { league: leagueParam } : {}),
                               ...(evParam ? { event: evParam } : {}),
                               ...(patchParam ? { patch: patchParam } : {}),
                               ...(yearParam ? { year: yearParam } : {}),
@@ -1288,6 +1329,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                               ...(topTeam ? { team: topTeam } : {}),
                               ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                              ...(leagueParam ? { league: leagueParam } : {}),
                               ...(evParam ? { event: evParam } : {}),
                               ...(patchParam ? { patch: patchParam } : {}),
                               ...(yearParam ? { year: yearParam } : {}),
@@ -1310,6 +1352,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                           ...(topTeam ? { team: topTeam } : {}),
                           ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                          ...(leagueParam ? { league: leagueParam } : {}),
                           ...(patchParam ? { patch: patchParam } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
@@ -1325,6 +1368,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           q: bad[0] ? `${slug},${resolveChampSlug(bad[0].c)}` : slug,
                           ...(role ? { role } : bad[0] && bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
+                          ...(leagueParam ? { league: leagueParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
                           ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                         }).toString(),
@@ -1380,6 +1424,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           champ: slug,
                           ...(role ? { role } : bad[0] && bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
+                          ...(leagueParam ? { league: leagueParam } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
                           ...(leaderQ ? { q: leaderQ } : {}),
@@ -1392,8 +1437,15 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(topTeam || topPlayer
-                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
+                        ...(leagueParam || topTeam || topPlayer
+                          ? {
+                              query: new URLSearchParams({
+                                ...(leagueParam ? { league: leagueParam } : {}),
+                                ...(topTeam || topPlayer
+                                  ? { q: [topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(",") }
+                                  : {}),
+                              }).toString(),
+                            }
                           : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1496,8 +1548,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             vs: resolveChampSlug(filteredRows[0].c),
                             ...(role ? { role } : filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
                             ...(topPlayer ? { player: topPlayer } : {}),
+                            ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                             ...(topTeam ? { team: topTeam } : {}),
                             ...(topOpp && topOpp !== topTeam ? { vsteam: topOpp } : {}),
+                            ...(leagueParam ? { league: leagueParam } : {}),
                             ...(evParam ? { event: evParam } : {}),
                             ...(patchParam ? { patch: patchParam } : {}),
                             ...(yearParam ? { year: yearParam } : {}),
@@ -1518,6 +1572,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                             ...(topTeam ? { team: topTeam } : {}),
                             ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                            ...(leagueParam ? { league: leagueParam } : {}),
                             ...(evParam ? { event: evParam } : {}),
                             ...(patchParam ? { patch: patchParam } : {}),
                             ...(yearParam ? { year: yearParam } : {}),
@@ -1540,6 +1595,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                         ...(topTeam ? { team: topTeam } : {}),
                         ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                        ...(leagueParam ? { league: leagueParam } : {}),
                         ...(patchParam ? { patch: patchParam } : {}),
                         ...(yearParam ? { year: yearParam } : {}),
                         ...(evParam ? { event: evParam } : {}),
@@ -1555,6 +1611,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       query: new URLSearchParams({
                         q: [slug, filteredRows[0]?.c ? resolveChampSlug(filteredRows[0].c) : ""].filter(Boolean).join(","),
                         ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
+                        ...(leagueParam ? { league: leagueParam } : {}),
                         ...(evParam ? { event: evParam } : {}),
                         ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                       }).toString(),
@@ -1610,6 +1667,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       query: new URLSearchParams({
                         champ: slug,
                         ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
+                        ...(leagueParam ? { league: leagueParam } : {}),
                         ...(yearParam ? { year: yearParam } : {}),
                         ...(evParam ? { event: evParam } : {}),
                         ...(leaderQ ? { q: leaderQ } : {}),
@@ -1622,8 +1680,15 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(topTeam || topPlayer
-                        ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
+                      ...(leagueParam || topTeam || topPlayer
+                        ? {
+                            query: new URLSearchParams({
+                              ...(leagueParam ? { league: leagueParam } : {}),
+                              ...(topTeam || topPlayer
+                                ? { q: [topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(",") }
+                                : {}),
+                            }).toString(),
+                          }
                         : {}),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1668,6 +1733,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                       ...(topTeam ? { team: topTeam } : {}),
                       ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                      ...(leagueParam ? { league: leagueParam } : {}),
                       ...(evParam ? { event: evParam } : {}),
                       ...(patchParam ? { patch: patchParam } : {}),
                       ...(yearParam ? { year: yearParam } : {}),
@@ -1722,6 +1788,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                 ...(topTeam ? { team: topTeam } : {}),
                                 ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                                ...(leagueParam ? { league: leagueParam } : {}),
                                 ...(evParam ? { event: evParam } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
@@ -1739,8 +1806,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 vs: slug,
                                 role: "Bot",
                                 ...(topPlayer ? { player: topPlayer } : {}),
+                                ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                 ...(topTeam ? { team: topTeam } : {}),
                                 ...(topOpp && topOpp !== topTeam ? { vsteam: topOpp } : {}),
+                                ...(leagueParam ? { league: leagueParam } : {}),
                                 ...(evParam ? { event: evParam } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
@@ -1756,6 +1825,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               query: new URLSearchParams({
                                 role: "Bot",
                                 q: `${slug},${resolveChampSlug(topDuo[0])}`,
+                                ...(leagueParam ? { league: leagueParam } : {}),
                                 ...(evParam ? { event: evParam } : {}),
                                 ...(patchParam ? { key: `p${patchParam}`, patch: patchParam } : yearParam ? { key: `y${yearParam}`, year: yearParam } : {}),
                               }).toString(),
@@ -1816,6 +1886,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                 ...(topTeam ? { team: topTeam } : {}),
                                 ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                                ...(leagueParam ? { league: leagueParam } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
                                 ...(evParam ? { event: evParam } : {}),
@@ -1837,6 +1908,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                               ...(topTeam ? { team: topTeam } : {}),
                               ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                              ...(leagueParam ? { league: leagueParam } : {}),
                               ...(patchParam ? { patch: patchParam } : {}),
                               ...(yearParam ? { year: yearParam } : {}),
                               ...(evParam ? { event: evParam } : {}),
@@ -1854,6 +1926,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           role: "Bot",
                           champ: slug,
+                          ...(leagueParam ? { league: leagueParam } : {}),
                           ...(yearParam ? { year: yearParam } : {}),
                           ...(evParam ? { event: evParam } : {}),
                           ...(leaderQ ? { q: leaderQ } : {}),
@@ -1866,8 +1939,15 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(topTeam || topPlayer
-                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
+                        ...(leagueParam || topTeam || topPlayer
+                          ? {
+                              query: new URLSearchParams({
+                                ...(leagueParam ? { league: leagueParam } : {}),
+                                ...(topTeam || topPlayer
+                                  ? { q: [topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(",") }
+                                  : {}),
+                              }).toString(),
+                            }
                           : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1924,8 +2004,10 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                     vs: slug,
                                     role: "Bot",
                                     ...(topPlayer ? { player: topPlayer } : {}),
+                                    ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                     ...(topTeam ? { team: topTeam } : {}),
                                     ...(topOpp && topOpp !== topTeam ? { vsteam: topOpp } : {}),
+                                    ...(leagueParam ? { league: leagueParam } : {}),
                                     ...(evParam ? { event: evParam } : {}),
                                     ...(patchParam ? { patch: patchParam } : {}),
                                     ...(yearParam ? { year: yearParam } : {}),
@@ -1946,6 +2028,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                     ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                     ...(topTeam ? { team: topTeam } : {}),
                                     ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
+                                    ...(leagueParam ? { league: leagueParam } : {}),
                                     ...(evParam ? { event: evParam } : {}),
                                     ...(patchParam ? { patch: patchParam } : {}),
                                     ...(yearParam ? { year: yearParam } : {}),
@@ -1988,6 +2071,7 @@ export const CountersLink: React.FC<{
   vsplayer?: string;
   team?: string;
   vsteam?: string;
+  league?: string;
   patch?: string;
   year?: string;
   event?: string;
@@ -2000,6 +2084,7 @@ export const CountersLink: React.FC<{
   vsplayer,
   team,
   vsteam,
+  league,
   patch,
   year,
   event,
@@ -2016,6 +2101,7 @@ export const CountersLink: React.FC<{
         ...(team ? { team } : {}),
         ...(vsteam && vsteam !== team ? { vsteam } : {}),
         ...(role ? { role } : {}),
+        ...(league ? { league } : {}),
         ...(event ? { event } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
       }).toString(),
     }}

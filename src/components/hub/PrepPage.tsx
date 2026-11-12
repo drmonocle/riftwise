@@ -1730,7 +1730,12 @@ const PrepView: React.FC<{ a: Side; b: Side; route: PrepRoute; set: (p: Partial<
                             ? b.team.champs[1].c
                             : "";
                     const pA = a.players.find(Boolean)?.p.u || a.team.starters?.[0]?.[1];
-                    return `${vsC ? `&vs=${encodeURIComponent(resolveChampSlug(vsC))}` : ""}${pA ? `&player=${encodeURIComponent(pA)}` : ""}&team=${encodeURIComponent(a.team.u)}&vsteam=${encodeURIComponent(b.team.u)}`;
+                    const pB = b.players.find(Boolean)?.p.u || b.team.starters?.[0]?.[1];
+                    const sharedLg =
+                      a.team.rating?.league && a.team.rating.league === b.team.rating?.league
+                        ? resolveLeagueSlug(a.team.rating.league) || a.team.rating.league
+                        : "";
+                    return `${vsC ? `&vs=${encodeURIComponent(resolveChampSlug(vsC))}` : ""}${pA ? `&player=${encodeURIComponent(pA)}${pB && pB !== pA ? `&vsplayer=${encodeURIComponent(pB)}` : ""}` : ""}&team=${encodeURIComponent(a.team.u)}&vsteam=${encodeURIComponent(b.team.u)}${sharedLg ? `&league=${encodeURIComponent(sharedLg)}` : ""}`;
                   })()
                 }${
                   period.startsWith("y") && period.length === 5
@@ -2016,7 +2021,9 @@ const Tendencies: React.FC<{ side: Side; other?: Side; rows: TeamGameRow[]; peri
                 kind: "counters",
                 query: `champ=${encodeURIComponent(resolveChampSlug(topPick))}${
                   oppPick && oppPick !== topPick ? `&vs=${encodeURIComponent(resolveChampSlug(oppPick))}` : ""
-                }${p0Slug ? `&player=${encodeURIComponent(p0Slug)}` : ""}&team=${encodeURIComponent(side.team.u)}${other ? `&vsteam=${encodeURIComponent(other.team.u)}` : ""}${
+                }${p0Slug ? `&player=${encodeURIComponent(p0Slug)}${p1Slug && p1Slug !== p0Slug ? `&vsplayer=${encodeURIComponent(p1Slug)}` : ""}` : ""}&team=${encodeURIComponent(side.team.u)}${other ? `&vsteam=${encodeURIComponent(other.team.u)}` : ""}${
+                  side.team.rating?.league ? `&league=${encodeURIComponent(resolveLeagueSlug(side.team.rating.league) || side.team.rating.league)}` : ""
+                }${
                   period.startsWith("y") && period.length === 5
                     ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}`
                     : period.startsWith("e:")
@@ -2295,7 +2302,13 @@ export function prepLines(a: Side, b: Side, period?: PeriodKey): StoryLine[] {
         key: `${s.team.u}-${i}`,
         who: { name: s.team.name, team: s.team.name, to: { kind: "team", slug: s.team.u, ...(teamNoteQ ? { query: teamNoteQ } : {}) } },
         team: s.team.name,
-        text: noteText(nt, { kind: "team", slug: s.team.u, opp: opp.team.u }),
+        text: noteText(nt, {
+          kind: "team",
+          slug: s.team.u,
+          opp: opp.team.u,
+          ...(sTopP ? { player: sTopP } : {}),
+          ...(oppTopP && oppTopP !== sTopP ? { vsPlayer: oppTopP } : {}),
+        }),
         plain: notePlainText(nt),
         champ: nt.c,
         asOf: s.team.notes?.asOf,
@@ -2316,7 +2329,14 @@ export function prepLines(a: Side, b: Side, period?: PeriodKey): StoryLine[] {
             key: `${pl.p.u}-${i}`,
             who: { name: pl.p.name, team: s.team.name, to: { kind: "player", slug: pl.p.u, ...(plNoteQ ? { query: plNoteQ } : {}) } },
             team: s.team.name,
-            text: noteText(nt, { kind: "player", slug: pl.p.u, team: s.team.u, opp: opp.team.u, role: pl.p.role || undefined }),
+            text: noteText(nt, {
+              kind: "player",
+              slug: pl.p.u,
+              team: s.team.u,
+              opp: opp.team.u,
+              ...(oppLaneP && oppLaneP !== pl.p.u ? { vsPlayer: oppLaneP } : {}),
+              role: pl.p.role || undefined,
+            }),
             plain: notePlainText(nt),
             champ: nt.c,
             asOf: pl.p.notes.asOf,
@@ -4008,6 +4028,8 @@ const DraftScouting: React.FC<{ a: Side; b: Side; period: PeriodKey }> = ({ a, b
                 to={{
                   kind: "counters",
                   query: `champ=${encodeURIComponent(resolveChampSlug(x.c))}${oppMatch ? `&vs=${encodeURIComponent(resolveChampSlug(oppMatch.c))}` : ""}${plSlug ? `&player=${encodeURIComponent(plSlug)}${oppPlSlug && oppPlSlug !== plSlug ? `&vsplayer=${encodeURIComponent(oppPlSlug)}` : ""}` : ""}&team=${encodeURIComponent(teamSlug)}${oppTeamSlug ? `&vsteam=${encodeURIComponent(oppTeamSlug)}` : ""}&role=${encodeURIComponent(ROLES[x.role])}${
+                    sideForChip.team.rating?.league ? `&league=${encodeURIComponent(resolveLeagueSlug(sideForChip.team.rating.league) || sideForChip.team.rating.league)}` : ""
+                  }${
                     period.startsWith("y") && period.length === 5
                       ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}`
                       : period.startsWith("e:")

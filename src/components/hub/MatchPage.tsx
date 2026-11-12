@@ -1810,7 +1810,7 @@ const PlayerBars: React.FC<{
                     kind: "counters",
                     query: `champ=${encodeURIComponent(resolveChampSlug(blue[0].c))}${
                       red[0]?.c && red[0].c !== blue[0].c ? `&vs=${encodeURIComponent(resolveChampSlug(red[0].c))}` : ""
-                    }${b0S ? `&player=${encodeURIComponent(b0S)}` : ""}&team=${encodeURIComponent(blueU)}&vsteam=${encodeURIComponent(redU)}${blue[0].r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
+                    }${b0S ? `&player=${encodeURIComponent(b0S)}` : ""}${r0S && r0S !== b0S ? `&vsplayer=${encodeURIComponent(r0S)}` : ""}&team=${encodeURIComponent(blueU)}&vsteam=${encodeURIComponent(redU)}${blue[0].r ? `&role=${encodeURIComponent(normalizeRole(blue[0].r))}` : ""}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ""}${
                       g.patch ? `&patch=${encodeURIComponent(g.patch)}` : period && /^y\d{4}$/.test(period) ? `&patch=${encodeURIComponent(period)}&year=${encodeURIComponent(period.slice(1))}` : ""
                     }`,
                   }}
