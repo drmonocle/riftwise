@@ -216,6 +216,9 @@ const List: React.FC<{
                     vsC && vsC !== cSlug ? `vschamp=${encodeURIComponent(vsC)}` : "",
                     side ? `side=${side}` : "",
                     period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
+                    teamName || oppSlug || rosterSlugs?.length
+                      ? `q=${encodeURIComponent([teamName, oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(","))}`
+                      : "",
                   ]
                     .filter(Boolean)
                     .join("&") || undefined
@@ -260,8 +263,9 @@ const RoleLine: React.FC<{ title: string; shares: [number, number][]; teamSlug?:
           const pctVal = Math.round(v * 100);
           const roleQuery = new URLSearchParams({
             ...(period && period !== "all" ? { p: period } : {}),
-            ...(oppSlug ? { q: oppSlug } : {}),
+            ...(oppSlug || rosterSlugs?.length ? { q: [oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(",") } : {}),
             ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
+            ...(rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? { vsplayer: rosterSlugs[1] } : {}),
             ...(ROLES[r] ? { role: ROLES[r] } : {}),
           }).toString();
           return (
@@ -356,6 +360,9 @@ const Pairs: React.FC<{
                       role ? `role=${encodeURIComponent(role)}` : "",
                       side ? `side=${side}` : "",
                       period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
+                      teamName || oppSlug || rosterSlugs?.length
+                        ? `q=${encodeURIComponent([teamName, oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(","))}`
+                        : "",
                     ]
                       .filter(Boolean)
                       .join("&") || undefined
@@ -375,6 +382,9 @@ const Pairs: React.FC<{
                       role ? `role=${encodeURIComponent(role)}` : "",
                       side ? `side=${side}` : "",
                       period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
+                      teamName || oppSlug || rosterSlugs?.length
+                        ? `q=${encodeURIComponent([teamName, oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(","))}`
+                        : "",
                     ]
                       .filter(Boolean)
                       .join("&") || undefined
@@ -511,6 +521,9 @@ export const DraftTendencies: React.FC<{
                         query: new URLSearchParams({
                           champ: topOpenerSlugs[0],
                           ...(topOpenerSlugs[1] ? { vs: topOpenerSlugs[1] } : {}),
+                          ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
+                          ...(resolvedSlug ? { team: resolvedSlug } : {}),
+                          ...(oppSlug ? { vsteam: oppSlug } : {}),
                           ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
                           ...(period?.startsWith("y") && period.length === 5
                             ? { patch: period, year: period.slice(1) }
@@ -580,7 +593,7 @@ export const DraftTendencies: React.FC<{
                     to={{
                       kind: "rankings",
                       query: new URLSearchParams({
-                        q: oppSlug ? `${resolvedSlug},${oppSlug}` : resolvedSlug,
+                        q: [resolvedSlug, oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(","),
                       }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -609,11 +622,13 @@ export const DraftTendencies: React.FC<{
                       kind: "team",
                       slug: resolvedSlug,
                       tab: "champions",
-                      ...((period && period !== "all") || oppSlug || topOpenerSlugs[0]
+                      ...((period && period !== "all") || oppSlug || topOpenerSlugs[0] || rosterSlugs?.length
                         ? {
                             query: new URLSearchParams({
                               ...(period && period !== "all" ? { p: period } : {}),
-                              ...(oppSlug ? { q: oppSlug } : {}),
+                              ...(oppSlug || rosterSlugs?.length ? { q: [oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(",") } : {}),
+                              ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
+                              ...(rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? { vsplayer: rosterSlugs[1] } : {}),
                               ...(topOpenerSlugs[0] ? { champ: topOpenerSlugs[0] } : {}),
                             }).toString(),
                           }
@@ -725,8 +740,9 @@ export const DraftTendencies: React.FC<{
                   tab: "champions",
                   query: new URLSearchParams({
                     ...(period && period !== "all" ? { p: period } : {}),
-                    ...(oppSlug ? { q: oppSlug } : {}),
+                    ...(oppSlug || rosterSlugs?.length ? { q: [oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(",") } : {}),
                     ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
+                    ...(rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? { vsplayer: rosterSlugs[1] } : {}),
                     ...(ROLES[i] ? { role: ROLES[i] } : {}),
                   }).toString(),
                 }}
@@ -763,6 +779,9 @@ export const DraftTendencies: React.FC<{
                       vsFlex && vsFlex !== cSlug ? `vschamp=${encodeURIComponent(vsFlex)}` : "",
                       ROLES[roles[0]] ? `role=${encodeURIComponent(ROLES[roles[0]])}` : "",
                       period && period !== "all" ? `p=${encodeURIComponent(period)}` : "",
+                      resolvedSlug || oppSlug || rosterSlugs?.length
+                        ? `q=${encodeURIComponent([resolvedSlug, oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(","))}`
+                        : "",
                     ]
                       .filter(Boolean)
                       .join("&") || undefined
@@ -774,7 +793,7 @@ export const DraftTendencies: React.FC<{
                       kind: "team",
                       slug: resolvedSlug,
                       tab: "champions",
-                      query: `champ=${encodeURIComponent(cSlug)}${oppSlug ? `&q=${encodeURIComponent(oppSlug)}` : ""}${rosterSlugs?.[0] ? `&player=${encodeURIComponent(rosterSlugs[0])}` : ""}${ROLES[roles[0]] ? `&role=${encodeURIComponent(ROLES[roles[0]])}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
+                      query: `champ=${encodeURIComponent(cSlug)}${oppSlug || rosterSlugs?.length ? `&q=${encodeURIComponent([oppSlug, ...(rosterSlugs || [])].filter(Boolean).join(","))}` : ""}${rosterSlugs?.[0] ? `&player=${encodeURIComponent(rosterSlugs[0])}` : ""}${rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? `&vsplayer=${encodeURIComponent(rosterSlugs[1])}` : ""}${ROLES[roles[0]] ? `&role=${encodeURIComponent(ROLES[roles[0]])}` : ""}${period && period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                     }}
                     className="text-rw-muted hover:text-rw-accent hover:underline"
                   >

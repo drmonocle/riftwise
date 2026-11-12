@@ -132,6 +132,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
             champ: resolveChampSlug(rawChamp),
             vschamp: resolveChampSlug(opp),
             ...(rStr ? { role: rStr } : {}),
+            ...(topPlayer ? { player: topPlayer } : {}),
+            ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
             ...(topTeam ? { team: topTeam } : {}),
             ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
             ...(evParam ? { event: evParam } : {}),
@@ -157,6 +159,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       ...(topTeam ? { team: topTeam } : {}),
       ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
       ...(topPlayer ? { player: topPlayer } : {}),
+      ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
+      ...(leaderQ ? { q: leaderQ } : {}),
     }).toString();
     return qs || undefined;
   };
@@ -492,6 +496,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     champ: slug,
                     ...(vsMatch ? { vschamp: resolveChampSlug(vsMatch.oppCanon) } : {}),
                     ...(role ? { role } : {}),
+                    ...(topPlayer ? { player: topPlayer } : {}),
+                    ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                     ...(topTeam ? { team: topTeam } : {}),
                     ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                     ...(patchParam ? { patch: patchParam } : {}),
@@ -539,6 +545,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     champ: slug,
                     ...(vsMatch ? { vschamp: resolveChampSlug(vsMatch.oppCanon) } : {}),
                     ...(role ? { role } : {}),
+                    ...(topPlayer ? { player: topPlayer } : {}),
+                    ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                     ...(topTeam ? { team: topTeam } : {}),
                     ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                     ...(evParam ? { event: evParam } : {}),
@@ -553,8 +561,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               <HubLink
                 to={{
                   kind: "rankings",
-                  ...(topTeam
-                    ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : ""].filter(Boolean).join(","))}` }
+                  ...(topTeam || topPlayer
+                    ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
                     : {}),
                 }}
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
@@ -719,6 +727,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 champ: slug,
                                 vschamp: resolveChampSlug(vsMatch.oppCanon),
                                 ...(vsRole ? { role: vsRole } : {}),
+                                ...(topPlayer ? { player: topPlayer } : {}),
+                                ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                 ...(topTeam ? { team: topTeam } : {}),
                                 ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                                 ...(evParam ? { event: evParam } : {}),
@@ -737,6 +747,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 champ: slug,
                                 vschamp: resolveChampSlug(vsMatch.oppCanon),
                                 ...(vsRole ? { role: vsRole } : {}),
+                                ...(topPlayer ? { player: topPlayer } : {}),
+                                ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                 ...(topTeam ? { team: topTeam } : {}),
                                 ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
@@ -797,8 +809,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(topTeam
-                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : ""].filter(Boolean).join(","))}` }
+                        ...(topTeam || topPlayer
+                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
                           : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -964,6 +976,9 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               champ: slug,
                               vs: resolveChampSlug(good[0].c),
                               ...(good[0].role >= 0 ? { role: ROLES[good[0].role] } : role ? { role } : {}),
+                              ...(topPlayer ? { player: topPlayer } : {}),
+                              ...(topTeam ? { team: topTeam } : {}),
+                              ...(topOpp && topOpp !== topTeam ? { vsteam: topOpp } : {}),
                               ...(evParam ? { event: evParam } : {}),
                               ...(patchParam ? { patch: patchParam } : {}),
                               ...(yearParam ? { year: yearParam } : {}),
@@ -980,6 +995,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               champ: slug,
                               vschamp: resolveChampSlug(good[0].c),
                               ...(good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
+                              ...(topPlayer ? { player: topPlayer } : {}),
+                              ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                               ...(topTeam ? { team: topTeam } : {}),
                               ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                               ...(evParam ? { event: evParam } : {}),
@@ -1000,6 +1017,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           champ: slug,
                           ...(good[0] ? { vschamp: resolveChampSlug(good[0].c) } : {}),
                           ...(role ? { role } : good[0] && good[0].role >= 0 ? { role: ROLES[good[0].role] } : {}),
+                          ...(topPlayer ? { player: topPlayer } : {}),
+                          ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                           ...(topTeam ? { team: topTeam } : {}),
                           ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                           ...(patchParam ? { patch: patchParam } : {}),
@@ -1057,8 +1076,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(topTeam
-                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : ""].filter(Boolean).join(","))}` }
+                        ...(topTeam || topPlayer
+                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
                           : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1148,6 +1167,9 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               champ: slug,
                               vs: resolveChampSlug(bad[0].c),
                               ...(bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : role ? { role } : {}),
+                              ...(topPlayer ? { player: topPlayer } : {}),
+                              ...(topTeam ? { team: topTeam } : {}),
+                              ...(topOpp && topOpp !== topTeam ? { vsteam: topOpp } : {}),
                               ...(evParam ? { event: evParam } : {}),
                               ...(patchParam ? { patch: patchParam } : {}),
                               ...(yearParam ? { year: yearParam } : {}),
@@ -1164,6 +1186,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               champ: slug,
                               vschamp: resolveChampSlug(bad[0].c),
                               ...(bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
+                              ...(topPlayer ? { player: topPlayer } : {}),
+                              ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                               ...(topTeam ? { team: topTeam } : {}),
                               ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                               ...(evParam ? { event: evParam } : {}),
@@ -1184,6 +1208,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           champ: slug,
                           ...(bad[0] ? { vschamp: resolveChampSlug(bad[0].c) } : {}),
                           ...(role ? { role } : bad[0] && bad[0].role >= 0 ? { role: ROLES[bad[0].role] } : {}),
+                          ...(topPlayer ? { player: topPlayer } : {}),
+                          ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                           ...(topTeam ? { team: topTeam } : {}),
                           ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                           ...(patchParam ? { patch: patchParam } : {}),
@@ -1241,8 +1267,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(topTeam
-                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : ""].filter(Boolean).join(","))}` }
+                        ...(topTeam || topPlayer
+                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
                           : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1344,6 +1370,9 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             champ: slug,
                             vs: resolveChampSlug(filteredRows[0].c),
                             ...(role ? { role } : filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
+                            ...(topPlayer ? { player: topPlayer } : {}),
+                            ...(topTeam ? { team: topTeam } : {}),
+                            ...(topOpp && topOpp !== topTeam ? { vsteam: topOpp } : {}),
                             ...(evParam ? { event: evParam } : {}),
                             ...(patchParam ? { patch: patchParam } : {}),
                             ...(yearParam ? { year: yearParam } : {}),
@@ -1360,6 +1389,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             champ: slug,
                             vschamp: resolveChampSlug(filteredRows[0].c),
                             ...(role ? { role } : filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
+                            ...(topPlayer ? { player: topPlayer } : {}),
+                            ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                             ...(topTeam ? { team: topTeam } : {}),
                             ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                             ...(evParam ? { event: evParam } : {}),
@@ -1380,6 +1411,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         champ: slug,
                         ...(filteredRows[0] ? { vschamp: resolveChampSlug(filteredRows[0].c) } : {}),
                         ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
+                        ...(topPlayer ? { player: topPlayer } : {}),
+                        ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                         ...(topTeam ? { team: topTeam } : {}),
                         ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                         ...(patchParam ? { patch: patchParam } : {}),
@@ -1437,8 +1470,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   <HubLink
                     to={{
                       kind: "rankings",
-                      ...(topTeam
-                        ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : ""].filter(Boolean).join(","))}` }
+                      ...(topTeam || topPlayer
+                        ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
                         : {}),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1479,6 +1512,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       champ: slug,
                       ...(filteredRows[0] ? { vschamp: resolveChampSlug(filteredRows[0].c) } : {}),
                       ...(role ? { role } : filteredRows[0] && filteredRows[0].role >= 0 ? { role: ROLES[filteredRows[0].role] } : {}),
+                      ...(topPlayer ? { player: topPlayer } : {}),
+                      ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                       ...(topTeam ? { team: topTeam } : {}),
                       ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                       ...(evParam ? { event: evParam } : {}),
@@ -1531,6 +1566,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                               query: new URLSearchParams({
                                 champ: `${slug},${resolveChampSlug(topDuo[0])}`,
                                 role: "Bot",
+                                ...(topPlayer ? { player: topPlayer } : {}),
+                                ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                 ...(topTeam ? { team: topTeam } : {}),
                                 ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                                 ...(evParam ? { event: evParam } : {}),
@@ -1549,6 +1586,9 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 champ: resolveChampSlug(topDuo[0]),
                                 vs: slug,
                                 role: "Bot",
+                                ...(topPlayer ? { player: topPlayer } : {}),
+                                ...(topTeam ? { team: topTeam } : {}),
+                                ...(topOpp && topOpp !== topTeam ? { vsteam: topOpp } : {}),
                                 ...(evParam ? { event: evParam } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
                                 ...(yearParam ? { year: yearParam } : {}),
@@ -1593,6 +1633,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                 champ: slug,
                                 vschamp: resolveChampSlug(topDuo[0]),
                                 role: "Bot",
+                                ...(topPlayer ? { player: topPlayer } : {}),
+                                ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                 ...(topTeam ? { team: topTeam } : {}),
                                 ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                                 ...(patchParam ? { patch: patchParam } : {}),
@@ -1612,6 +1654,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                             query: new URLSearchParams({
                               champ: slug,
                               role: "Bot",
+                              ...(topPlayer ? { player: topPlayer } : {}),
+                              ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                               ...(topTeam ? { team: topTeam } : {}),
                               ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                               ...(patchParam ? { patch: patchParam } : {}),
@@ -1643,8 +1687,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(topTeam
-                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : ""].filter(Boolean).join(","))}` }
+                        ...(topTeam || topPlayer
+                          ? { query: `q=${encodeURIComponent([topTeam, topOpp && topOpp !== topTeam ? topOpp : "", topPlayer, secPlayer].filter(Boolean).join(","))}` }
                           : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
@@ -1700,6 +1744,9 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                     champ: resolveChampSlug(pc),
                                     vs: slug,
                                     role: "Bot",
+                                    ...(topPlayer ? { player: topPlayer } : {}),
+                                    ...(topTeam ? { team: topTeam } : {}),
+                                    ...(topOpp && topOpp !== topTeam ? { vsteam: topOpp } : {}),
                                     ...(evParam ? { event: evParam } : {}),
                                     ...(patchParam ? { patch: patchParam } : {}),
                                     ...(yearParam ? { year: yearParam } : {}),
@@ -1716,6 +1763,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                                   query: new URLSearchParams({
                                     champ: `${slug},${resolveChampSlug(pc)}`,
                                     role: "Bot",
+                                    ...(topPlayer ? { player: topPlayer } : {}),
+                                    ...(secPlayer && secPlayer !== topPlayer ? { vsplayer: secPlayer } : {}),
                                     ...(topTeam ? { team: topTeam } : {}),
                                     ...(topOpp && topOpp !== topTeam ? { vs: topOpp } : {}),
                                     ...(evParam ? { event: evParam } : {}),
