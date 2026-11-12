@@ -3,12 +3,12 @@
  * from every game (one year, or every year together), and for Worlds the Swiss stage and knockout pickers with the power ratings' chances (pick by hand, fill with the favourites,
  * roll by the chances or flip a coin, or play the rest out thousands of times). Picks stay on this device.
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ClipboardCopy, Dice5, Eraser, Lock, RefreshCw, Shuffle, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { eventName, eventTitle, stageName, tk, tl } from "../../i18n";
-import { bare, loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadEventLines, loadHubEvent, loadHubTitles, loadLeague, loadRatings, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
 import type { EventListItem, HubEvent, HubLeague, HubRatings } from "../../hub/types";
-import { hubShareUrl, navigateHub } from "../../hub/route";
+import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import {
   coin, favourites, quarterPairs, rng, roller, runKnockout, runSwiss, simulate,
   withLive, withLiveKo,
@@ -175,12 +175,38 @@ function liveResults(schedule: Match[] | undefined, leagueSlug: string, teams: W
   return out;
 }
 
+function currentQueryParams(): URLSearchParams {
+  const now = currentHubRoute();
+  const q = "query" in now && now.query ? now.query : typeof window !== "undefined" ? window.location.search : "";
+  return new URLSearchParams(q);
+}
+
 function evTopTeamsOf(ev?: HubEvent | null, fallback?: HubEvent | null): string[] {
   const out: string[] = [];
-  const push = (t?: string, u?: string | null) => {
+  const push = (t?: string | null, u?: string | null) => {
     const slug = u || (t ? resolveTeamAlias(t) || prettySlug(t) : "");
     if (slug && !out.includes(slug)) out.push(slug);
   };
+  const qp = currentQueryParams();
+  push(qp.get("team"));
+  push(qp.get("vs") || qp.get("vsteam"));
+  const allEvTeams = [
+    ...(ev?.results || []),
+    ...(fallback?.results || []),
+    ...(ev?.teams || []),
+    ...(fallback?.teams || []),
+  ];
+  const qRaw = qp.get("q") || "";
+  for (const tok of qRaw.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)) {
+    const n = normText(tok.trim());
+    if (!n) continue;
+    const matched = allEvTeams.find((x) => {
+      const ts = x.u || resolveTeamAlias(x.t) || prettySlug(x.t);
+      const hay = normText(`${x.t} ${x.u || ""} ${ts}`);
+      return hay.includes(n) || (bare(n).length >= 2 && bare(hay).includes(bare(n)));
+    });
+    if (matched) push(matched.t, matched.u);
+  }
   for (const r of ev?.results || fallback?.results || []) push(r.t, r.u);
   for (const t of ev?.teams || fallback?.teams || []) push(t.t, t.u);
   return out.slice(0, 2);
@@ -188,7 +214,26 @@ function evTopTeamsOf(ev?: HubEvent | null, fallback?: HubEvent | null): string[
 
 function evTopChampsOf(ev?: HubEvent | null, fallback?: HubEvent | null): string[] {
   const out: string[] = [];
-  for (const c of [...(ev?.champs || []), ...(fallback?.champs || [])]) {
+  const qp = currentQueryParams();
+  const evChamps = [...(ev?.champs || []), ...(fallback?.champs || [])];
+  for (const raw of [qp.get("champ"), qp.get("vschamp")]) {
+    if (!raw) continue;
+    for (const part of raw.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)) {
+      const slug = resolveChampSlug(part.trim());
+      if (slug && !out.includes(slug)) out.push(slug);
+    }
+  }
+  const qRaw = qp.get("q") || "";
+  for (const part of qRaw.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)) {
+    const t = part.trim();
+    if (!t) continue;
+    const matched = evChamps.find((c) => sameChamp(c.c, t) || matchesChampSearch(c.c, t));
+    if (matched) {
+      const slug = resolveChampSlug(matched.c);
+      if (slug && !out.includes(slug)) out.push(slug);
+    }
+  }
+  for (const c of evChamps) {
     const slug = resolveChampSlug(c.c);
     if (slug && !out.includes(slug)) out.push(slug);
   }
@@ -197,9 +242,30 @@ function evTopChampsOf(ev?: HubEvent | null, fallback?: HubEvent | null): string
 
 function evTopPlayersOf(ev?: HubEvent | null, fallback?: HubEvent | null): string[] {
   const out: string[] = [];
-  for (const p of [...(ev?.players || []), ...(fallback?.players || [])]) {
-    const slug = p.u || resolvePlayerSlug(p.n) || prettySlug(p.n);
+  const push = (n?: string | null, u?: string | null) => {
+    const slug = u || (n ? resolvePlayerSlug(n) || prettySlug(n) : "");
     if (slug && !out.includes(slug)) out.push(slug);
+  };
+  const qp = currentQueryParams();
+  push(qp.get("player"));
+  push(qp.get("vsplayer"));
+  const allEvPlayers = [...(ev?.players || []), ...(fallback?.players || [])];
+  const evChamps = [...(ev?.champs || []), ...(fallback?.champs || [])];
+  const qRaw = qp.get("q") || "";
+  for (const tok of qRaw.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)) {
+    const t = tok.trim();
+    if (!t || evChamps.some((c) => sameChamp(c.c, t))) continue;
+    const n = normText(t);
+    if (!n) continue;
+    const matched = allEvPlayers.find((p) => {
+      const ps = p.u || resolvePlayerSlug(p.n) || prettySlug(p.n);
+      const hay = normText(`${p.n} ${p.u || ""} ${ps}`);
+      return hay.includes(n) || (bare(n).length >= 2 && bare(hay).includes(bare(n)));
+    });
+    if (matched) push(matched.n, matched.u);
+  }
+  for (const p of allEvPlayers) {
+    push(p.n, p.u);
   }
   return out.slice(0, 2);
 }
@@ -322,7 +388,7 @@ export const WorldsPage: React.FC<{ kind?: IntlKind; year?: string; schedule?: M
                         query: new URLSearchParams({
                           champ: topC[0],
                           ...(topC[1] ? { vs: topC[1] } : {}),
-                          ...(topP[0] ? { player: topP[0] } : {}),
+                          ...(topP[0] ? { player: topP[0], ...(topP[1] && topP[1] !== topP[0] ? { vsplayer: topP[1] } : {}) } : {}),
                           ...(topT[0] ? { team: topT[0], ...(topT[1] ? { vsteam: topT[1] } : {}) } : {}),
                           league: def.league,
                           event: d.parent.u,
@@ -775,7 +841,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                               query: new URLSearchParams({
                                 champ: koTopC[0],
                                 ...(koTopC[1] && koTopC[1] !== koTopC[0] ? { vs: koTopC[1] } : {}),
-                                ...(koTopP[0] ? { player: koTopP[0] } : {}),
+                                ...(koTopP[0] ? { player: koTopP[0], ...(koTopP[1] && koTopP[1] !== koTopP[0] ? { vsplayer: koTopP[1] } : {}) } : {}),
                                 ...(ko.final?.a ? { team: ko.final.a, ...(ko.final?.b && ko.final.b !== ko.final.a ? { vsteam: ko.final.b } : {}) } : {}),
                                 league: "world-championship",
                                 event: main.u,
@@ -952,7 +1018,7 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                           query: new URLSearchParams({
                             champ: swTopC[0],
                             ...(swTopC[1] && swTopC[1] !== swTopC[0] ? { vs: swTopC[1] } : {}),
-                            ...(swTopP[0] ? { player: swTopP[0] } : {}),
+                            ...(swTopP[0] ? { player: swTopP[0], ...(swTopP[1] && swTopP[1] !== swTopP[0] ? { vsplayer: swTopP[1] } : {}) } : {}),
                             ...(swissUs[0] ? { team: swissUs[0], ...(swissUs[1] ? { vsteam: swissUs[1] } : {}) } : {}),
                             league: "world-championship",
                             event: main.u,
@@ -1094,19 +1160,36 @@ const SwissTable: React.FC<{
       return Boolean(qCanon && (qCanon === uCanon || (oppCanon && qCanon === oppCanon)));
     });
   };
-  const [search, setSearch] = useState(() => {
-    const qp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
-    const raw = qp.get("q") || qp.get("team") || qp.get("vs") || "";
-    if (!raw.trim() || !allRows.length) return "";
-    const initTerms = raw
+  const nowRouteSwiss = currentHubRoute();
+  const routeQuerySwiss = "query" in nowRouteSwiss ? nowRouteSwiss.query : undefined;
+  const rawUrlSwiss = useMemo(() => {
+    const qp = new URLSearchParams(routeQuerySwiss ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return qp.get("q") || qp.get("team") || qp.get("vs") || "";
+  }, [routeQuerySwiss]);
+  const effectiveUrlSwiss = useMemo(() => {
+    if (!rawUrlSwiss.trim() || !allRows.length) return "";
+    const initTerms = rawUrlSwiss
       .trim()
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => normText(s.trim()))
       .filter(Boolean);
-    if (!initTerms.length) return "";
-    return allRows.some((u) => matchesSwissRow(u, initTerms)) ? raw : "";
-  });
+    const matching = initTerms.filter((t) => allRows.some((u) => matchesSwissRow(u, [t])));
+    if (!matching.length) return "";
+    return matching.length === initTerms.length ? rawUrlSwiss : matching.join(",");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawUrlSwiss, allRows, byU, next]);
+  const [search, setSearch] = useState(effectiveUrlSwiss);
   const [userTypedSwiss, setUserTypedSwiss] = useState(false);
+  const lastRawUrlSwissRef = useRef(rawUrlSwiss);
+  useEffect(() => {
+    if (lastRawUrlSwissRef.current !== rawUrlSwiss) {
+      lastRawUrlSwissRef.current = rawUrlSwiss;
+      setUserTypedSwiss(false);
+      setSearch(effectiveUrlSwiss);
+      return;
+    }
+    if (!userTypedSwiss) setSearch(effectiveUrlSwiss);
+  }, [rawUrlSwiss, effectiveUrlSwiss, userTypedSwiss]);
   const terms = search
     .trim()
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -1183,7 +1266,7 @@ const SwissTable: React.FC<{
                       query: new URLSearchParams({
                         champ: swTopC[0],
                         ...(swTopC[1] && swTopC[1] !== swTopC[0] ? { vs: swTopC[1] } : {}),
-                        ...(swTopP[0] ? { player: swTopP[0] } : {}),
+                        ...(swTopP[0] ? { player: swTopP[0], ...(swTopP[1] && swTopP[1] !== swTopP[0] ? { vsplayer: swTopP[1] } : {}) } : {}),
                         team: rows[0],
                         ...(opp ? { vsteam: opp } : {}),
                         league: "world-championship",
@@ -1459,7 +1542,7 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
                           query: new URLSearchParams({
                             champ: brTopC[0],
                             ...(brTopC[1] && brTopC[1] !== brTopC[0] ? { vs: brTopC[1] } : {}),
-                            ...(brTopP[0] ? { player: brTopP[0] } : {}),
+                            ...(brTopP[0] ? { player: brTopP[0], ...(brTopP[1] && brTopP[1] !== brTopP[0] ? { vsplayer: brTopP[1] } : {}) } : {}),
                             ...(topM?.a ? { team: topM.a, ...(topM.b && topM.b !== topM.a ? { vsteam: topM.b } : {}) } : {}),
                             league: INTL[kind].league,
                             event: main.u,
@@ -1714,19 +1797,36 @@ const Winners: React.FC<{ kind: IntlKind; name: string; current?: string }> = ({
       return Boolean(qCanon && (qCanon === champSlug || (runSlug && qCanon === runSlug)));
     });
   };
-  const [search, setSearch] = useState(() => {
-    const qp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
-    const raw = qp.get("q") || qp.get("team") || qp.get("vs") || "";
-    if (!raw.trim() || !shown.length) return "";
-    const initTerms = raw
+  const nowRouteWin = currentHubRoute();
+  const routeQueryWin = "query" in nowRouteWin ? nowRouteWin.query : undefined;
+  const rawUrlWin = useMemo(() => {
+    const qp = new URLSearchParams(routeQueryWin ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return qp.get("q") || qp.get("team") || qp.get("vs") || "";
+  }, [routeQueryWin]);
+  const effectiveUrlWin = useMemo(() => {
+    if (!rawUrlWin.trim() || !shown.length) return "";
+    const initTerms = rawUrlWin
       .trim()
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => normText(s.trim()))
       .filter(Boolean);
-    if (!initTerms.length) return "";
-    return shown.some((x) => matchesWinnerRow(x, initTerms)) ? raw : "";
-  });
+    const matching = initTerms.filter((t) => shown.some((x) => matchesWinnerRow(x, [t])));
+    if (!matching.length) return "";
+    return matching.length === initTerms.length ? rawUrlWin : matching.join(",");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawUrlWin, shown]);
+  const [search, setSearch] = useState(effectiveUrlWin);
   const [userTypedWin, setUserTypedWin] = useState(false);
+  const lastRawUrlWinRef = useRef(rawUrlWin);
+  useEffect(() => {
+    if (lastRawUrlWinRef.current !== rawUrlWin) {
+      lastRawUrlWinRef.current = rawUrlWin;
+      setUserTypedWin(false);
+      setSearch(effectiveUrlWin);
+      return;
+    }
+    if (!userTypedWin) setSearch(effectiveUrlWin);
+  }, [rawUrlWin, effectiveUrlWin, userTypedWin]);
   if (!list.length) return null;
   const searchTerms = search
     .trim()
@@ -2253,7 +2353,7 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                       query: new URLSearchParams({
                         champ: pkTopC[0],
                         ...(pkTopC[1] && pkTopC[1] !== pkTopC[0] ? { vs: pkTopC[1] } : {}),
-                        ...(pkTopP[0] ? { player: pkTopP[0] } : {}),
+                        ...(pkTopP[0] ? { player: pkTopP[0], ...(pkTopP[1] && pkTopP[1] !== pkTopP[0] ? { vsplayer: pkTopP[1] } : {}) } : {}),
                         ...(teams[0]?.u ? { team: teams[0].u, ...(teams[1]?.u ? { vsteam: teams[1].u } : {}) } : {}),
                         league: "world-championship",
                         event: main.u,
@@ -2553,7 +2653,7 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                           query: new URLSearchParams({
                             champ: pkTopC[0],
                             ...(pkTopC[1] && pkTopC[1] !== pkTopC[0] ? { vs: pkTopC[1] } : {}),
-                            ...(pkTopP[0] ? { player: pkTopP[0] } : {}),
+                            ...(pkTopP[0] ? { player: pkTopP[0], ...(pkTopP[1] && pkTopP[1] !== pkTopP[0] ? { vsplayer: pkTopP[1] } : {}) } : {}),
                             team: top2[0].u,
                             ...(top2[1] ? { vsteam: top2[1].u } : {}),
                             league: "world-championship",
@@ -3086,7 +3186,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                   query: new URLSearchParams({
                     champ: bpTopC[0],
                     ...(bpTopC[1] && bpTopC[1] !== bpTopC[0] ? { vs: bpTopC[1] } : {}),
-                    ...(bpTopP[0] ? { player: bpTopP[0] } : {}),
+                    ...(bpTopP[0] ? { player: bpTopP[0], ...(bpTopP[1] && bpTopP[1] !== bpTopP[0] ? { vsplayer: bpTopP[1] } : {}) } : {}),
                     ...(teams[0]?.u ? { team: teams[0].u, ...(teams[1]?.u ? { vsteam: teams[1].u } : {}) } : {}),
                     league: INTL[kind].league,
                     event: main.u,
@@ -3267,7 +3367,7 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                           query: new URLSearchParams({
                             champ: bpTopC[0],
                             ...(bpTopC[1] && bpTopC[1] !== bpTopC[0] ? { vs: bpTopC[1] } : {}),
-                            ...(bpTopP[0] ? { player: bpTopP[0] } : {}),
+                            ...(bpTopP[0] ? { player: bpTopP[0], ...(bpTopP[1] && bpTopP[1] !== bpTopP[0] ? { vsplayer: bpTopP[1] } : {}) } : {}),
                             team: top2[0].u,
                             ...(top2[1] ? { vsteam: top2[1].u } : {}),
                             league: INTL[kind].league,

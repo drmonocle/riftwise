@@ -10,7 +10,7 @@ import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
 import { winRate } from "../../stats";
-import { bare, downloadEventCsv, downloadStagesCsv, loadAliases, loadHubEvent, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, downloadEventCsv, downloadStagesCsv, loadAliases, loadHubEvent, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
@@ -176,28 +176,111 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
     ...(key ? { tab: key } : {}),
     ...(routeQuery ? { query: routeQuery } : {}),
   });
+  const qTokens = useMemo(
+    () =>
+      (urlParams.get("q") || "")
+        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [urlParams],
+  );
+  const urlTeams = useMemo(() => {
+    const out: string[] = [];
+    const push = (raw?: string | null) => {
+      if (!raw?.trim()) return;
+      const key = raw.trim().toLowerCase();
+      const s = resolveTeamAlias(aliases.data?.team[key] || raw.trim()) || prettySlug(raw.trim());
+      if (s && !out.includes(s)) out.push(s);
+    };
+    push(urlParams.get("team"));
+    push(urlParams.get("vs") || urlParams.get("vsteam"));
+    const allEvTeams = [...(e.results || []), ...(e.teams || []), ...(e.rosters || [])];
+    for (const tok of qTokens) {
+      const n = normText(tok);
+      const matched = allEvTeams.find((t) => matchesEventTeam(t, n));
+      if (matched) push(tSlug(matched.t, matched.u));
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlParams, qTokens, aliases.data, e.results, e.teams, e.rosters, teamPlayerTextBySlug]);
+  const urlChamps = useMemo(() => {
+    const out: string[] = [];
+    const pushExplicit = (raw?: string | null) => {
+      if (!raw?.trim()) return;
+      for (const part of raw.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)) {
+        const s = resolveChampSlug(part.trim());
+        if (s && !out.includes(s)) out.push(s);
+      }
+    };
+    pushExplicit(urlParams.get("champ"));
+    pushExplicit(urlParams.get("vschamp"));
+    for (const tok of qTokens) {
+      const matched = (e.champs || []).find((c) => sameChamp(c.c, tok) || matchesChampSearch(c.c, tok));
+      if (matched) {
+        const s = resolveChampSlug(matched.c);
+        if (s && !out.includes(s)) out.push(s);
+      }
+    }
+    return out;
+  }, [urlParams, qTokens, e.champs]);
+  const urlPlayers = useMemo(() => {
+    const out: string[] = [];
+    const push = (raw?: string | null) => {
+      if (!raw?.trim()) return;
+      const s = resolvePlayerSlug(raw.trim()) || prettySlug(raw.trim());
+      if (s && !out.includes(s)) out.push(s);
+    };
+    push(urlParams.get("player"));
+    push(urlParams.get("vsplayer"));
+    const allEvPlayers: { n: string; u?: string | null }[] = [
+      ...(e.players || []),
+      ...(e.leaders?.kda || []),
+      ...(e.overview?.mvp || []),
+      ...(e.rosters || []).flatMap((r) => r.p.map(([n, u]) => ({ n, u }))),
+    ];
+    for (const tok of qTokens) {
+      if ((e.champs || []).some((c) => sameChamp(c.c, tok))) continue;
+      const n = normText(tok);
+      const matched = allEvPlayers.find((p) => {
+        const ps = pSlug(p.n, p.u);
+        const hay = normText(`${p.n} ${p.u || ""} ${ps}`);
+        return hay.includes(n) || (bare(n).length >= 2 && bare(hay).includes(bare(n)));
+      });
+      if (matched) push(pSlug(matched.n, matched.u));
+    }
+    return out;
+  }, [urlParams, qTokens, e.champs, e.players, e.leaders, e.overview, e.rosters]);
   const evTopTeams = Array.from(
     new Set(
       [
+        ...urlTeams,
         ...(!resultsHidden && e.results ? e.results.map((r) => tSlug(r.t, r.u)) : []),
         ...(e.teams || []).map((t) => tSlug(t.t, t.u)),
       ].filter(Boolean),
     ),
   ).slice(0, 2);
-  const evTopChamps = !resultsHidden
-    ? Array.from(new Set((e.champs || []).map((c) => resolveChampSlug(c.c)).filter(Boolean))).slice(0, 2)
-    : [];
-  const evTopPlayers = !resultsHidden
-    ? Array.from(
-        new Set(
-          [
-            ...(e.leaders?.kda || []).map((r) => pSlug(r.n, r.u)),
-            ...(e.players || []).map((p) => pSlug(p.n, p.u)),
-            ...(e.overview?.mvp || []).map((m) => pSlug(m.n, m.u)),
-          ].filter(Boolean),
-        ),
-      ).slice(0, 2)
-    : [];
+  const evTopChamps = Array.from(
+    new Set(
+      [
+        ...urlChamps,
+        ...(!resultsHidden ? (e.champs || []).map((c) => resolveChampSlug(c.c)) : []),
+      ].filter(Boolean),
+    ),
+  ).slice(0, 2);
+  const evTopPlayers = Array.from(
+    new Set(
+      [
+        ...urlPlayers,
+        ...(!resultsHidden
+          ? [
+              ...(e.leaders?.kda || []).map((r) => pSlug(r.n, r.u)),
+              ...(e.players || []).map((p) => pSlug(p.n, p.u)),
+              ...(e.overview?.mvp || []).map((m) => pSlug(m.n, m.u)),
+            ]
+          : []),
+      ].filter(Boolean),
+    ),
+  ).slice(0, 2);
   return (
     <div>
       <EntityHero
@@ -753,6 +836,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       p: `e:${e.u}`,
                       ...(rivalSlug ? { q: rivalSlug } : {}),
                       ...(evTopChamps[0] ? { champ: evTopChamps[0] } : {}),
+                      ...(evTopChamps[1] && evTopChamps[1] !== evTopChamps[0] ? { vschamp: evTopChamps[1] } : {}),
                     }).toString();
                     return (
                     <tr key={i} className="border-t border-rw-border first:border-0">
@@ -766,7 +850,10 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                               ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                               team: ts,
                               ...(rivalSlug ? { vs: rivalSlug } : {}),
+                              ...(evTopPlayers[0] ? { player: evTopPlayers[0] } : {}),
+                              ...(evTopPlayers[1] && evTopPlayers[1] !== evTopPlayers[0] ? { vsplayer: evTopPlayers[1] } : {}),
                               ...(evTopChamps[0] ? { champ: evTopChamps[0] } : {}),
+                              ...(evTopChamps[1] && evTopChamps[1] !== evTopChamps[0] ? { vschamp: evTopChamps[1] } : {}),
                             }).toString(),
                           }}
                           className="hover:text-rw-accent hover:underline"
@@ -1074,7 +1161,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
 
       {((on("champions") && e.champs && e.champs.length > 0) || (on("teams") && e.teams && e.teams.length > 0)) && (
         <div className={tabbed ? "rw-span" : "grid gap-3 md:grid-cols-2"}>
-          {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} full={tabbed} initialSearch={champParam} />}
+          {on("champions") && e.champs && e.champs.length > 0 && <EventChamps e={e} full={tabbed} initialSearch={champParam} topTeams={evTopTeams} topPlayers={evTopPlayers} />}
           {on("teams") && e.teams && e.teams.length > 0 && (() => {
             const tq = normText(teamSearch);
             const tTerms = tq ? tq.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
@@ -1300,6 +1387,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                         p: `e:${e.u}`,
                         ...(rivalSlug ? { q: rivalSlug } : {}),
                         ...(evTopChamps[0] ? { champ: evTopChamps[0] } : {}),
+                        ...(evTopChamps[1] && evTopChamps[1] !== evTopChamps[0] ? { vschamp: evTopChamps[1] } : {}),
                       }).toString();
                       const tFinderQ = new URLSearchParams({
                         event: e.u,
@@ -1307,7 +1395,10 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                         ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? { year: (e.start || e.end || "").slice(0, 4) } : {}),
                         team: ts,
                         ...(rivalSlug ? { vs: rivalSlug } : {}),
+                        ...(ftPlayers[0] ? { player: ftPlayers[0] } : {}),
+                        ...(ftPlayers[1] && ftPlayers[1] !== ftPlayers[0] ? { vsplayer: ftPlayers[1] } : {}),
                         ...(evTopChamps[0] ? { champ: evTopChamps[0] } : {}),
+                        ...(evTopChamps[1] && evTopChamps[1] !== evTopChamps[0] ? { vschamp: evTopChamps[1] } : {}),
                       }).toString();
                       return (
                     <tr key={t.t} className="border-t border-rw-border">
@@ -2516,7 +2607,10 @@ export const Standings: React.FC<{
                           ...(yr ? { year: yr } : {}),
                           team: ts,
                           ...(rivalSlug ? { vs: rivalSlug } : {}),
+                          ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                          ...(topPlayers[1] && topPlayers[1] !== topPlayers[0] ? { vsplayer: topPlayers[1] } : {}),
                           ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                          ...(topChamps[1] && topChamps[1] !== topChamps[0] ? { vschamp: topChamps[1] } : {}),
                         }).toString(),
                       }}
                       className="hover:opacity-90"
@@ -2552,7 +2646,10 @@ export const Standings: React.FC<{
                           ...(yr ? { year: yr } : {}),
                           team: ts,
                           ...(rivalSlug ? { vs: rivalSlug } : {}),
+                          ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                          ...(topPlayers[1] && topPlayers[1] !== topPlayers[0] ? { vsplayer: topPlayers[1] } : {}),
                           ...(topChamps[0] ? { champ: topChamps[0] } : {}),
+                          ...(topChamps[1] && topChamps[1] !== topChamps[0] ? { vschamp: topChamps[1] } : {}),
                         }).toString(),
                       }}
                       className="hover:opacity-90"
@@ -2891,7 +2988,13 @@ const CopyEventPost: React.FC<{ e: HubEvent }> = ({ e }) => {
   );
 };
 
-const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: string }> = ({ e, full, initialSearch = "" }) => {
+const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: string; topTeams?: string[]; topPlayers?: string[] }> = ({
+  e,
+  full,
+  initialSearch = "",
+  topTeams = [],
+  topPlayers = [],
+}) => {
   const games = e.statsGames || 0;
   const allChamps = useMemo(() => e.champs || [], [e.champs]);
   const effectiveInitialSearch = useMemo(() => {
@@ -2933,6 +3036,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
   const evTeams = Array.from(
     new Set(
       [
+        ...topTeams,
         ...(e.results || []).map((r) => tSlug(r.t, r.u)),
         ...(e.teams || []).map((t) => tSlug(t.t, t.u)),
       ].filter(Boolean),
@@ -2941,6 +3045,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
   const evPlayers = Array.from(
     new Set(
       [
+        ...topPlayers,
         ...(e.leaders?.kda || []).map((r) => pSlug(r.n, r.u)),
         ...(e.players || []).map((p) => pSlug(p.n, p.u)),
       ].filter(Boolean),
@@ -3157,6 +3262,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
             const pickPct = games ? Math.min(100, (c.p / games) * 100) : 0;
             const banPct = games ? Math.min(Math.max(0, 100 - pickPct), (c.b / games) * 100) : 0;
             const cSlug = resolveChampSlug(c.c);
+            const vsC = c0 && cSlug !== c0 ? c0 : c1 && cSlug !== c1 ? c1 : "";
             const cFinderQ = (mode: "champ" | "ban") =>
               new URLSearchParams({
                 event: e.u,
@@ -3165,7 +3271,9 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
                 ...(evTeams[0] ? { team: evTeams[0] } : {}),
                 ...(evTeams[1] && evTeams[1] !== evTeams[0] ? { vs: evTeams[1] } : {}),
                 ...(evPlayers[0] ? { player: evPlayers[0] } : {}),
+                ...(evPlayers[1] && evPlayers[1] !== evPlayers[0] ? { vsplayer: evPlayers[1] } : {}),
                 [mode]: cSlug,
+                ...(mode === "champ" && vsC ? { vschamp: vsC } : {}),
               }).toString();
             return (
               <tr key={c.c} className="border-t border-rw-border">
@@ -3176,9 +3284,10 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
                     query={new URLSearchParams({
                       p: `e:${e.u}`,
                       ...(evPlayers[0] ? { player: evPlayers[0] } : {}),
+                      ...(evPlayers[1] && evPlayers[1] !== evPlayers[0] ? { vsplayer: evPlayers[1] } : {}),
                       ...(evTeams[0] ? { team: evTeams[0] } : {}),
                       ...(evTeams[1] && evTeams[1] !== evTeams[0] ? { vs: evTeams[1] } : {}),
-                      ...(c0 && cSlug !== c0 ? { vschamp: c0 } : c1 && cSlug !== c1 ? { vschamp: c1 } : {}),
+                      ...(vsC ? { vschamp: vsC } : {}),
                     }).toString()}
                   />
                 </td>
