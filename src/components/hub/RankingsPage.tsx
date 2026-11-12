@@ -95,7 +95,10 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     const qs = next.toString();
     navigateHub({ kind: "rankings", ...(qs ? { query: qs } : {}) }, { replace: true });
   };
-  const urlQ = q.get("q") || q.get("team") || q.get("teams") || "";
+  const urlQ =
+    q.get("q") ||
+    q.get("teams") ||
+    [q.get("team"), q.get("vs") || q.get("vsteam"), q.get("player"), q.get("vsplayer")].filter(Boolean).join(",");
   const [search, setSearch] = useState(urlQ);
   useEffect(() => {
     setSearch(urlQ);
@@ -105,6 +108,10 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     const next = new URLSearchParams(q);
     next.delete("team");
     next.delete("teams");
+    next.delete("vs");
+    next.delete("vsteam");
+    next.delete("player");
+    next.delete("vsplayer");
     if (!v.trim()) next.delete("q");
     else next.set("q", v.trim());
     const qs = next.toString();

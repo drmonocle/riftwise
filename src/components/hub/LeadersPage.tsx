@@ -63,7 +63,11 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const autoMin = Math.max(1, Math.ceil(Math.max(0, ...inRole.map((p) => p.g)) * 0.3));
   const minG = q.has("min") ? Math.max(1, Number(q.get("min")) || 1) : autoMin;
   const rows = useMemo(() => inRole.filter((p) => p.g >= minG), [inRole, minG]);
-  const urlSearch = q.get("q") || q.get("champ") || "";
+  const urlSearch =
+    q.get("q") ||
+    [q.get("player"), q.get("vsplayer"), q.get("team"), q.get("vs") || q.get("vsteam"), q.get("champ"), q.get("vschamp")]
+      .filter(Boolean)
+      .join(",");
   const [search, setSearch] = useState(urlSearch);
   useEffect(() => {
     setSearch(urlSearch);
@@ -513,7 +517,20 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(shownRows[1]?.c?.[0] && resolveChampSlug(shownRows[1].c[0]) !== resolveChampSlug((q.get("champ") || shownRows[0].c![0])!)
                         ? { vs: resolveChampSlug(shownRows[1].c[0]) }
                         : {}),
+                      ...(shownRows[0]?.u || shownRows[0]?.n
+                        ? { player: shownRows[0].u || resolvePlayerSlug(shownRows[0].n) || prettySlug(shownRows[0].n) }
+                        : {}),
+                      ...(shownRows[1] && (shownRows[1].u || resolvePlayerSlug(shownRows[1].n) || prettySlug(shownRows[1].n)) !== (shownRows[0].u || resolvePlayerSlug(shownRows[0].n) || prettySlug(shownRows[0].n))
+                        ? { vsplayer: shownRows[1].u || resolvePlayerSlug(shownRows[1].n) || prettySlug(shownRows[1].n) }
+                        : {}),
+                      ...(shownRows[0]?.tu || shownRows[0]?.t
+                        ? { team: shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t) }
+                        : {}),
+                      ...(shownRows[1] && (shownRows[1].tu || shownRows[1].t) && (shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t)) !== (shownRows[0].tu || resolveTeamAlias(shownRows[0].t, aliases.data?.team) || prettySlug(shownRows[0].t))
+                        ? { vsteam: shownRows[1].tu || resolveTeamAlias(shownRows[1].t, aliases.data?.team) || prettySlug(shownRows[1].t) }
+                        : {}),
                       ...(role || shownRows[0].r ? { role: role || shownRows[0].r } : {}),
+                      ...(league ? { league } : {}),
                       ...(event ? { event } : year ? { patch: `y${year}`, year } : {}),
                     }).toString(),
                   }}
@@ -806,7 +823,20 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
                               resolveChampSlug(top2[1].c[0]) !== resolveChampSlug((q.get("champ") || top2[0]!.c![0])!)
                                 ? { vs: resolveChampSlug(top2[1].c[0]) }
                                 : {}),
+                              ...(top2[0]?.u || top2[0]?.n
+                                ? { player: top2[0].u || resolvePlayerSlug(top2[0].n) || prettySlug(top2[0].n) }
+                                : {}),
+                              ...(top2[1] && (top2[1].u || resolvePlayerSlug(top2[1].n) || prettySlug(top2[1].n)) !== (top2[0].u || resolvePlayerSlug(top2[0].n) || prettySlug(top2[0].n))
+                                ? { vsplayer: top2[1].u || resolvePlayerSlug(top2[1].n) || prettySlug(top2[1].n) }
+                                : {}),
+                              ...(top2[0]?.tu || top2[0]?.t
+                                ? { team: top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t) }
+                                : {}),
+                              ...(top2[1] && (top2[1].tu || top2[1].t) && (top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t)) !== (top2[0].tu || resolveTeamAlias(top2[0].t, aliases.data?.team) || prettySlug(top2[0].t))
+                                ? { vsteam: top2[1].tu || resolveTeamAlias(top2[1].t, aliases.data?.team) || prettySlug(top2[1].t) }
+                                : {}),
                               ...(role || top2[0]?.r ? { role: role || top2[0].r } : {}),
+                              ...(league ? { league } : {}),
                               ...(event ? { event } : year ? { patch: `y${year}`, year } : {}),
                             }).toString() || undefined,
                         }}

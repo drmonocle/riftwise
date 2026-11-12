@@ -233,27 +233,33 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       key: "g",
       label: tl("Games"),
       value: (t) => t[2],
-      render: (t) => (
-        <div className="min-w-[4.25rem] space-y-0.5">
-          <HubLink
-            to={{
-              kind: "finder",
-              query: new URLSearchParams({
-                team: teamRowSlug(t),
-                ...(t[6] ? { league: resolveLeagueSlug(t[6]) || t[6] } : {}),
-                ...(since !== "all" ? { year: since } : {}),
-              }).toString(),
-            }}
-            className="tabular-nums text-rw-text hover:text-rw-accent hover:underline block"
-            title={tl("Game finder")}
-          >
-            {fmtNum(t[2])}
-          </HubLink>
-          <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
-            <div className="h-full rounded-full bg-rw-accent/65" style={{ width: `${Math.max(4, Math.round(((t[2] || 0) / maxGames) * 100))}%` }} />
+      render: (t) => {
+        const u = teamRowSlug(t);
+        const otherTeam = words.length > 0 ? list.find((x) => teamRowSlug(x) !== u && (x[6] || "") === (t[6] || "")) || list.find((x) => teamRowSlug(x) !== u) : undefined;
+        const rivalSlug = otherTeam ? teamRowSlug(otherTeam) : "";
+        return (
+          <div className="min-w-[4.25rem] space-y-0.5">
+            <HubLink
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  team: u,
+                  ...(rivalSlug ? { vs: rivalSlug } : {}),
+                  ...(t[6] ? { league: resolveLeagueSlug(t[6]) || t[6] } : {}),
+                  ...(since !== "all" ? { year: since } : {}),
+                }).toString(),
+              }}
+              className="tabular-nums text-rw-text hover:text-rw-accent hover:underline block"
+              title={tl("Game finder")}
+            >
+              {fmtNum(t[2])}
+            </HubLink>
+            <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+              <div className="h-full rounded-full bg-rw-accent/65" style={{ width: `${Math.max(4, Math.round(((t[2] || 0) / maxGames) * 100))}%` }} />
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
       className: "tabular-nums",
     },
     {
@@ -299,6 +305,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                 kind: "items",
                 query: new URLSearchParams({
                   team: u,
+                  ...(rivalSlug ? { vs: rivalSlug } : {}),
                   ...(yr ? { year: yr } : {}),
                   ...(t[6] ? { league: resolveLeagueSlug(t[6]) || t[6] } : {}),
                 }).toString(),
@@ -312,7 +319,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
                 kind: "finder",
                 query: new URLSearchParams({
                   team: u,
-                  ...(rivalSlug && words.length > 0 ? { vs: rivalSlug } : {}),
+                  ...(rivalSlug ? { vs: rivalSlug } : {}),
                   ...(yr ? { year: yr } : {}),
                   ...(t[6] ? { league: resolveLeagueSlug(t[6]) || t[6] } : {}),
                 }).toString(),
@@ -748,28 +755,37 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       key: "g",
       label: tl("Games"),
       value: (p) => p[3],
-      render: (p) => (
-        <div className="min-w-[4.25rem] space-y-0.5">
-          <HubLink
-            to={{
-              kind: "finder",
-              query: new URLSearchParams({
-                player: playerRowSlug(p),
-                ...(p[2] ? { team: teamSlugOf(p[2]) } : {}),
-                ...(ROLE_OF[p[5]] ? { role: ROLE_OF[p[5]] } : {}),
-                ...(since !== "all" ? { year: since } : {}),
-              }).toString(),
-            }}
-            className="tabular-nums text-rw-text hover:text-rw-accent hover:underline block"
-            title={tl("Game finder")}
-          >
-            {fmtNum(p[3])}
-          </HubLink>
-          <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
-            <div className="h-full rounded-full bg-rw-accent/65" style={{ width: `${Math.max(4, Math.round(((p[3] || 0) / maxGames) * 100))}%` }} />
+      render: (p) => {
+        const u = playerRowSlug(p);
+        const pTeamSlug = p[2] ? teamSlugOf(p[2]) : "";
+        const otherPlayer = words.length > 0 ? list.find((x) => playerRowSlug(x) !== u && x[5] === p[5]) || list.find((x) => playerRowSlug(x) !== u) : undefined;
+        const rivalPlayerSlug = otherPlayer ? playerRowSlug(otherPlayer) : "";
+        const rivalTeamSlug = otherPlayer?.[2] && teamSlugOf(otherPlayer[2]) !== pTeamSlug ? teamSlugOf(otherPlayer[2]) : "";
+        return (
+          <div className="min-w-[4.25rem] space-y-0.5">
+            <HubLink
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  player: u,
+                  ...(rivalPlayerSlug ? { vsplayer: rivalPlayerSlug } : {}),
+                  ...(pTeamSlug ? { team: pTeamSlug } : {}),
+                  ...(rivalTeamSlug ? { vs: rivalTeamSlug } : {}),
+                  ...(ROLE_OF[p[5]] ? { role: ROLE_OF[p[5]] } : {}),
+                  ...(since !== "all" ? { year: since } : {}),
+                }).toString(),
+              }}
+              className="tabular-nums text-rw-text hover:text-rw-accent hover:underline block"
+              title={tl("Game finder")}
+            >
+              {fmtNum(p[3])}
+            </HubLink>
+            <div className="h-1 rounded-full bg-rw-raised overflow-hidden" aria-hidden="true">
+              <div className="h-full rounded-full bg-rw-accent/65" style={{ width: `${Math.max(4, Math.round(((p[3] || 0) / maxGames) * 100))}%` }} />
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
       className: "tabular-nums",
     },
     {
@@ -801,6 +817,7 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
         const otherPlayer = list.find((x) => playerRowSlug(x) !== u && x[5] === p[5]) || list.find((x) => playerRowSlug(x) !== u);
         const rivalPlayerSlug = otherPlayer ? playerRowSlug(otherPlayer) : "";
         const teamSlug = p[2] ? teamSlugOf(p[2]) : "";
+        const rivalTeamSlug = otherPlayer?.[2] && teamSlugOf(otherPlayer[2]) !== teamSlug ? teamSlugOf(otherPlayer[2]) : "";
         const yr = since !== "all" ? since : undefined;
         return (
           <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">
@@ -809,11 +826,11 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
             </HubLink>
             {teamSlug && (
               <>
-                <HubLink to={{ kind: "prep", a: teamSlug, ...(yr ? { period: `y${yr}` } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
+                <HubLink to={{ kind: "prep", a: teamSlug, ...(rivalTeamSlug ? { b: rivalTeamSlug } : {}), ...(yr ? { period: `y${yr}` } : {}) }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Match prep")}
                 </HubLink>
                 <HubLink
-                  to={{ kind: "draft", query: `teams=${encodeURIComponent(teamSlug)}${ROLE_OF[p[5]] ? `&role=${encodeURIComponent(ROLE_OF[p[5]])}` : ""}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}` }}
+                  to={{ kind: "draft", query: `teams=${encodeURIComponent([teamSlug, rivalTeamSlug].filter(Boolean).join(","))}${ROLE_OF[p[5]] ? `&role=${encodeURIComponent(ROLE_OF[p[5]])}` : ""}${yr ? `&p=y${encodeURIComponent(yr)}` : ""}` }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Draft board")}
@@ -825,8 +842,9 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                 kind: "finder",
                 query: new URLSearchParams({
                   player: u,
-                  ...(rivalPlayerSlug && words.length > 0 ? { vsplayer: rivalPlayerSlug } : {}),
+                  ...(rivalPlayerSlug ? { vsplayer: rivalPlayerSlug } : {}),
                   ...(teamSlug ? { team: teamSlug } : {}),
+                  ...(rivalTeamSlug ? { vs: rivalTeamSlug } : {}),
                   ...(ROLE_OF[p[5]] ? { role: ROLE_OF[p[5]] } : {}),
                   ...(yr ? { year: yr } : {}),
                 }).toString(),
@@ -840,7 +858,9 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
                 kind: "items",
                 query: new URLSearchParams({
                   player: u,
+                  ...(rivalPlayerSlug ? { vsplayer: rivalPlayerSlug } : {}),
                   ...(teamSlug ? { team: teamSlug } : {}),
+                  ...(rivalTeamSlug ? { vs: rivalTeamSlug } : {}),
                   ...(ROLE_OF[p[5]] ? { role: ROLE_OF[p[5]] } : {}),
                   ...(yr ? { year: yr } : {}),
                 }).toString(),
