@@ -587,7 +587,7 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
               key: `top-p-${p.u}-${c.c}`,
               route: { kind: "player" as const, slug: p.u, tab: "champions" as const, query: `champ=${encodeURIComponent(resolveChampSlug(c.c))}` },
               label: `${p.name} · ${champName(c.c)}`,
-              sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, p.g)}) · KDA ${fmtN(c.kda)}`,
+              sub: `${c.g}G · ${c.w}W-${c.g - c.w}L (${winRate(c.w, c.g)}) · KDA ${fmtN(c.kda)}`,
               icon: <ChampIcon name={c.c} size={16} />,
               fillText: `${p.name} ${champName(c.c)}`,
             })),

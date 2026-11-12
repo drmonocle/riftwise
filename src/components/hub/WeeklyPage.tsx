@@ -182,7 +182,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((s) => normText(s.trim()))
     .filter(Boolean);
-  const shownResults = rTerms.length
+  const matchedResults = rTerms.length
     ? w.results.filter((r) => {
         const hay = normText(`${r.a} ${r.au || ""} ${r.b} ${r.bu || ""} ${r.t} ${r.e || ""} ${r.st || ""}`);
         const hayBare = bare(hay);
@@ -207,6 +207,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
         });
       })
     : w.results;
+  const shownResults = matchedResults.length === 0 && urlQ && resultFilter === urlQ ? w.results : matchedResults;
   return (
     <div className="rw-page">
       <div className={`rw-span ${card}`}>

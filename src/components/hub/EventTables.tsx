@@ -112,14 +112,20 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => normText(s))
       .filter(Boolean);
-    return players.filter(
-      (p) =>
-        (role === "All" || p.r === role) &&
-        (!regular || p.g >= minG || maxG < 3) &&
-        (!terms.length || terms.some((term) => matchEventPlayer(p, term))),
-    );
+    const matchRows = (useRole: string, useRegular: boolean, useTerms: string[]) =>
+      players.filter(
+        (p) =>
+          (useRole === "All" || p.r === useRole) &&
+          (!useRegular || p.g >= minG || maxG < 3) &&
+          (!useTerms.length || useTerms.some((term) => matchEventPlayer(p, term))),
+      );
+    let res = matchRows(role, regular, terms);
+    if (res.length === 0 && regular && terms.length > 0) res = matchRows(role, false, terms);
+    if (res.length === 0 && role !== "All" && terms.length > 0) res = matchRows("All", false, terms);
+    if (res.length === 0 && terms.length > 0 && search === effectiveInitialSearch) res = matchRows(role, regular, []);
+    return res;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [players, role, regular, minG, maxG, search, aliases.data]);
+  }, [players, role, regular, minG, maxG, search, effectiveInitialSearch, aliases.data]);
   if (players.length === 0) return null;
   const evYr = /^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? (e.start || e.end || "").slice(0, 4) : "";
   const evLg = e.lu ? resolveLeagueSlug(e.lu) : "";

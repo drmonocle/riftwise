@@ -39,32 +39,37 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
   const tSlug = (t: string, u?: string | null) => u || resolveTeamAlias(t) || prettySlug(t);
   const pSlug = (n: string, u?: string | null) => u || resolvePlayerSlug(n) || prettySlug(n);
   const allRegular = s.players.filter((p) => p.g >= minG);
-  const regular = terms.length
-    ? allRegular.filter((p) => {
-        const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""} ${p.r || ""} ${p.r ? roleName(p.r) : ""}`);
-        const hayBare = bare(hay);
-        const canonTeam = resolveTeamAlias(p.tu || p.t || "");
-        return terms.some((term) => {
-          const canonRole = normalizeRole(term);
-          const ta = searchAlias(term);
-          return (
-            hay.includes(term) ||
-            (term.length >= 2 && hayBare.includes(bare(term))) ||
-            (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
-            (p.u ? resolvePlayerSlug(term) === p.u : false) ||
-            (canonTeam ? resolveTeamAlias(term) === canonTeam : false) ||
-            (canonRole && p.r ? p.r === canonRole : false) ||
-            (p.c || []).some((c) => matchesChampSearch(c, term))
-          );
-        });
-      })
-    : allRegular;
+  const matchPlayer = (p: EventPlayer) => {
+    const hay = normText(`${p.n} ${p.u || ""} ${p.t} ${p.tu || ""} ${p.r || ""} ${p.r ? roleName(p.r) : ""}`);
+    const hayBare = bare(hay);
+    const canonTeam = resolveTeamAlias(p.tu || p.t || "");
+    return terms.some((term) => {
+      const canonRole = normalizeRole(term);
+      const ta = searchAlias(term);
+      return (
+        hay.includes(term) ||
+        (term.length >= 2 && hayBare.includes(bare(term))) ||
+        (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
+        (p.u ? resolvePlayerSlug(term) === p.u : false) ||
+        (canonTeam ? resolveTeamAlias(term) === canonTeam : false) ||
+        (canonRole && p.r ? p.r === canonRole : false) ||
+        (p.c || []).some((c) => matchesChampSearch(c, term))
+      );
+    });
+  };
+  const matchedRegular = terms.length ? allRegular.filter(matchPlayer) : allRegular;
+  const matchedAnyPlayer = terms.length && matchedRegular.length === 0 ? s.players.filter(matchPlayer) : matchedRegular;
+  const regular = matchedAnyPlayer.length > 0 ? matchedAnyPlayer : allRegular;
+  const matchedTeamSlugs = new Set(
+    matchedAnyPlayer.map((p) => resolveTeamAlias(p.tu || p.t || "")).filter(Boolean),
+  );
   const allTeams = [...s.teamStats].sort((a, b) => b.w / Math.max(1, b.g) - a.w / Math.max(1, a.g) || b.g - a.g);
-  const teams = terms.length
+  const matchedTeams = terms.length
     ? allTeams.filter((t) => {
         const hay = normText(`${t.t} ${t.u || ""}`);
         const hayBare = bare(hay);
         const canonTeam = resolveTeamAlias(t.u || t.t);
+        if (canonTeam && matchedTeamSlugs.has(canonTeam)) return true;
         return terms.some((term) => {
           const ta = searchAlias(term);
           return (
@@ -76,6 +81,7 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
         });
       })
     : allTeams;
+  const teams = matchedTeams.length > 0 ? matchedTeams : allTeams;
   const headerTeams = teams.length >= 1 ? teams : allTeams;
   const topTeams = Array.from(
     new Set([...teams, ...allTeams].map((t) => tSlug(t.t, t.u)).filter(Boolean)),

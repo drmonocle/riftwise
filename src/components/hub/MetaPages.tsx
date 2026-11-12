@@ -98,7 +98,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
           .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
           .map((s) => normText(s.trim()))
           .filter(Boolean);
-        const filtered = terms.length
+        const matched = terms.length
           ? rows.filter((p) =>
               terms.some(
                 (term) =>
@@ -109,6 +109,7 @@ export const PatchesPanel: React.FC<{ query?: string }> = ({ query }) => {
               ),
             )
           : rows;
+        const filtered = matched.length === 0 && urlQ && q === urlQ ? rows : matched;
         return (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -651,12 +652,12 @@ export const LeaguesPanel: React.FC<{ query?: string }> = ({ query }) => {
           className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-rw-text placeholder-rw-muted flex-1 min-w-[10rem]"
         />
       </div>
-      <Page state={state}>{(rows: LeagueRow[]) => <LeagueLists rows={rows} scope={scope} q={q} onSetQ={handleSetQ} />}</Page>
+      <Page state={state}>{(rows: LeagueRow[]) => <LeagueLists rows={rows} scope={scope} q={q} urlQ={urlQ} onSetQ={handleSetQ} />}</Page>
     </div>
   );
 };
 
-const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string; onSetQ?: (q: string) => void }> = ({ rows, scope, q, onSetQ }) => {
+const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string; urlQ?: string; onSetQ?: (q: string) => void }> = ({ rows, scope, q, urlQ = "", onSetQ }) => {
   const groups = useMemo(() => {
     const terms = q
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -686,17 +687,23 @@ const LeagueLists: React.FC<{ rows: LeagueRow[]; scope: LeagueScope; q: string; 
     const newest = rows.reduce((m, l) => (l.to && l.to > m ? l.to : m), "");
     const isCurrent = (l: LeagueRow) => !!l.to && l.to >= newest;
     const intl = (l: LeagueRow) => (l.r || "").toLowerCase() === "international";
-    const list = rows.filter(match);
+    const matched = rows.filter(match);
+    const list = matched.length === 0 && urlQ && q === urlQ ? rows : matched;
     if (scope === "all") return [{ key: "all", title: "", rows: list }];
-    if (scope === "past") return [{ key: "past", title: "", rows: list.filter((l) => l.pr && !isCurrent(l)) }];
+    if (scope === "past") {
+      const pastRows = list.filter((l) => l.pr && !isCurrent(l));
+      return [{ key: "past", title: "", rows: pastRows.length ? pastRows : list }];
+    }
     const now = list.filter(isCurrent);
-    return [
+    const currentGroups = [
       // the big internationals (Worlds, MSI, First Stand...); show events and invitationals go with the others
       { key: "intl", title: tl("International events"), rows: now.filter((l) => intl(l) && l.pr) },
       { key: "main", title: tl("Main leagues"), rows: now.filter((l) => l.pr && !intl(l)) },
       { key: "other", title: tl("Other leagues this year"), rows: now.filter((l) => !l.pr), limit: 40 },
     ].filter((g) => g.rows.length);
-  }, [rows, scope, q]);
+    if (currentGroups.length === 0 && list.length > 0) return [{ key: "all", title: "", rows: list }];
+    return currentGroups;
+  }, [rows, scope, q, urlQ]);
   if (!groups.length) return <p className="text-xs text-rw-sub py-4 text-center">{tl("No leagues match.")}</p>;
   return (
     <div className="space-y-3">
@@ -1394,7 +1401,7 @@ const LeagueEventsSection: React.FC<{
       .filter(Boolean);
     if (!terms.length) return events;
     const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
-    return events.filter((e) => {
+    const matched = events.filter((e) => {
       const hay = normText(`${e.n} ${e.u} ${e.w || ""} ${e.wu || ""} ${e.y || ""}`);
       const hayBare = bare(hay);
       const winCanon = e.wu || e.w ? resolveTeamAlias(e.wu || e.w || "") : "";
@@ -1411,7 +1418,8 @@ const LeagueEventsSection: React.FC<{
         );
       });
     });
-  }, [events, evSearch]);
+    return matched.length === 0 && qParam && evSearch === qParam ? events : matched;
+  }, [events, evSearch, qParam]);
   const singleEvSlug = evSearch.trim() && shownEvents.length === 1 ? shownEvents[0].u : "";
   const wTeams = useMemo(
     () =>

@@ -124,24 +124,32 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => normText(s.trim()))
       .filter(Boolean);
-    return rows.filter((t) => {
-      if (region && t[6] !== region) return false;
-      if (since !== "all" && (t[3] || "") < since) return false;
-      if (!terms.length) return true;
-      const u = teamRowSlug(t).toLowerCase();
-      const rowCanon = resolveTeamAlias(u, aliases.data?.team) || resolveTeamAlias(t[0], aliases.data?.team);
-      const rowRegCanon = t[6] ? resolveRegionFilter(t[6]) : null;
-      const hay = normText(`${t[0]} | ${t[1] || ""} | ${t[3] || ""} | ${t[4]} | ${t[5]} | ${t[6] || ""} | ${t[6] ? regionName(t[6], t[6]) : ""}`);
-      const hayBare = bare(hay);
-      return terms.some((term) => {
-        const qAlias = searchAlias(term);
-        if (hay.includes(term) || (term.length >= 2 && hayBare.includes(bare(term)))) return true;
-        if (qAlias && (hay.includes(qAlias) || (bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias))))) return true;
-        if (rowRegCanon && (resolveRegionFilter(term) === rowRegCanon || (qAlias && resolveRegionFilter(qAlias) === rowRegCanon))) return true;
-        const canonTeam = aliases.data?.team[term] || resolveTeamAlias(term, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "") || prettySlug(term);
-        return Boolean(canonTeam && (canonTeam === u || (rowCanon && canonTeam === rowCanon)));
+    const matchRows = (useRegion: string, useSince: string, useTerms: string[]) =>
+      rows.filter((t) => {
+        if (useRegion && t[6] !== useRegion) return false;
+        if (useSince !== "all" && (t[3] || "") < useSince) return false;
+        if (!useTerms.length) return true;
+        const u = teamRowSlug(t).toLowerCase();
+        const rowCanon = resolveTeamAlias(u, aliases.data?.team) || resolveTeamAlias(t[0], aliases.data?.team);
+        const rowRegCanon = t[6] ? resolveRegionFilter(t[6]) : null;
+        const hay = normText(`${t[0]} | ${t[1] || ""} | ${t[3] || ""} | ${t[4]} | ${t[5]} | ${t[6] || ""} | ${t[6] ? regionName(t[6], t[6]) : ""}`);
+        const hayBare = bare(hay);
+        return useTerms.some((term) => {
+          const qAlias = searchAlias(term);
+          if (hay.includes(term) || (term.length >= 2 && hayBare.includes(bare(term)))) return true;
+          if (qAlias && (hay.includes(qAlias) || (bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias))))) return true;
+          if (rowRegCanon && (resolveRegionFilter(term) === rowRegCanon || (qAlias && resolveRegionFilter(qAlias) === rowRegCanon))) return true;
+          const canonTeam = aliases.data?.team[term] || resolveTeamAlias(term, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "") || prettySlug(term);
+          return Boolean(canonTeam && (canonTeam === u || (rowCanon && canonTeam === rowCanon)));
+        });
       });
-    });
+    let res = matchRows(region, since, terms);
+    if (res.length === 0 && since !== "all") res = matchRows(region, "all", terms);
+    if (res.length === 0 && region && terms.length > 0) res = matchRows("", "all", terms);
+    if (res.length === 0 && terms.length > 0) res = matchRows(region, since, []);
+    if (res.length === 0 && since !== "all") res = matchRows(region, "all", []);
+    if (res.length === 0) res = rows;
+    return res;
   }, [rows, region, since, words, aliases.data]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((t) => t[2] || 0)), [list]);
   const columns: Column<SearchTeamRow>[] = [
@@ -628,29 +636,37 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => normText(s.trim()))
       .filter(Boolean);
-    return rows.filter((p) => {
-      if (role && ROLE_OF[p[5]] !== role) return false;
-      if (since !== "all" && (p[4] || "") < since) return false;
-      if (!terms.length) return true;
-      const u = playerRowSlug(p);
-      const pRole = ROLE_OF[p[5]] || "";
-      const pTeamSlug = p[2] ? teamSlugOf(p[2]) : "";
-      const hay = normText(`${p[0]} | ${u} | ${p[2]} | ${p[4] || ""} | ${pRole} | ${pRole ? roleName(pRole) : ""} | ${p[6]}`);
-      const hayBare = bare(hay);
-      return terms.some((term) => {
-        const qAlias = searchAlias(term);
-        return (
-          hay.includes(term) ||
-          Boolean(qAlias && hay.includes(qAlias)) ||
-          resolvePlayerSlug(term) === u ||
-          Boolean(qAlias && resolvePlayerSlug(qAlias) === u) ||
-          (pRole && (ROLE_ALIASES[term] === pRole || normalizeRole(term) === pRole || Boolean(qAlias && normalizeRole(qAlias) === pRole))) ||
-          (pTeamSlug && (teamSlugOf(term) === pTeamSlug || Boolean(qAlias && teamSlugOf(qAlias) === pTeamSlug))) ||
-          (term.length >= 2 && hayBare.includes(bare(term))) ||
-          Boolean(qAlias && bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias)))
-        );
+    const matchRows = (useRole: string, useSince: string, useTerms: string[]) =>
+      rows.filter((p) => {
+        if (useRole && ROLE_OF[p[5]] !== useRole) return false;
+        if (useSince !== "all" && (p[4] || "") < useSince) return false;
+        if (!useTerms.length) return true;
+        const u = playerRowSlug(p);
+        const pRole = ROLE_OF[p[5]] || "";
+        const pTeamSlug = p[2] ? teamSlugOf(p[2]) : "";
+        const hay = normText(`${p[0]} | ${u} | ${p[2]} | ${p[4] || ""} | ${pRole} | ${pRole ? roleName(pRole) : ""} | ${p[6]}`);
+        const hayBare = bare(hay);
+        return useTerms.some((term) => {
+          const qAlias = searchAlias(term);
+          return (
+            hay.includes(term) ||
+            Boolean(qAlias && hay.includes(qAlias)) ||
+            resolvePlayerSlug(term) === u ||
+            Boolean(qAlias && resolvePlayerSlug(qAlias) === u) ||
+            (pRole && (ROLE_ALIASES[term] === pRole || normalizeRole(term) === pRole || Boolean(qAlias && normalizeRole(qAlias) === pRole))) ||
+            (pTeamSlug && (teamSlugOf(term) === pTeamSlug || Boolean(qAlias && teamSlugOf(qAlias) === pTeamSlug))) ||
+            (term.length >= 2 && hayBare.includes(bare(term))) ||
+            Boolean(qAlias && bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias)))
+          );
+        });
       });
-    });
+    let res = matchRows(role, since, terms);
+    if (res.length === 0 && since !== "all") res = matchRows(role, "all", terms);
+    if (res.length === 0 && role && terms.length > 0) res = matchRows("", "all", terms);
+    if (res.length === 0 && terms.length > 0) res = matchRows(role, since, []);
+    if (res.length === 0 && since !== "all") res = matchRows(role, "all", []);
+    if (res.length === 0) res = rows;
+    return res;
   }, [rows, role, since, words, aliases.data]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((p) => p[3] || 0)), [list]);
   const columns: Column<SearchPlayerRow>[] = [

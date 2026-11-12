@@ -22,10 +22,11 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
   const today = new Date().toISOString().slice(0, 10);
   const odds = useMemo(() => (ratings.data ? playoffOdds(e, ratings.data, today) : null), [e, ratings.data, today]);
   const [pick, setPick] = useState<number | null>(null);
-  const [search, setSearch] = useState(() => {
+  const urlSearch = useMemo(() => {
     const qp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
     return qp.get("q") || qp.get("team") || qp.get("vs") || "";
-  });
+  }, []);
+  const [search, setSearch] = useState(urlSearch);
   const [hidden, reveal] = useHidden(`playoffs:${e.u}`, e.end);
   if (!odds) return null;
   const cut = pick != null && odds.cuts.includes(pick) ? pick : odds.cut;
@@ -36,9 +37,13 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((s) => normText(searchAlias(s.trim())))
     .filter(Boolean);
-  const filteredRows = terms.length
+  const matchedRows = terms.length
     ? rows.filter((r) => {
-        const hay = normText(`${r.name} ${r.u}`);
+        const teamPlayersHay = (e.players || [])
+          .filter((p) => (p.tu || (p.t ? resolveTeamAlias(p.t) || prettySlug(p.t) : "")) === r.u)
+          .map((p) => `${p.n} ${p.u || ""}`)
+          .join(" ");
+        const hay = normText(`${r.name} ${r.u} ${teamPlayersHay}`);
         const hayBare = bare(hay);
         const rCanon = resolveTeamAlias(r.u) || resolveTeamAlias(r.name);
         return terms.some((q) => {
@@ -48,6 +53,7 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
         });
       })
     : rows;
+  const filteredRows = matchedRows.length === 0 && urlSearch && search === urlSearch ? rows : matchedRows;
   const unrated = odds.rows.filter((r) => r.unrated).length;
   const evChamps = Array.from(new Set((e.champs || []).map((c) => resolveChampSlug(c.c)).filter(Boolean))).slice(0, 2);
   const topTeam0 = filteredRows[0]?.u || "";

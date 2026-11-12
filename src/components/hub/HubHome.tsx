@@ -1561,42 +1561,42 @@ export const EventsBrowse: React.FC<{ year?: string; query?: string; meta: HubMe
           className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-rw-text placeholder-rw-muted flex-1 min-w-[10rem]"
         />
       </div>
-      <Page state={state}>{(list) => <EventsTable list={list} scope={scope} q={q} year={y} onSetQ={handleSetQ} />}</Page>
+      <Page state={state}>{(list) => <EventsTable list={list} scope={scope} q={q} urlQ={urlQ} year={y} onSetQ={handleSetQ} />}</Page>
     </div>
   );
 };
 
-const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: string; year?: string; onSetQ?: (q: string) => void }> = ({ list, scope, q, year, onSetQ }) => {
+const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: string; urlQ?: string; year?: string; onSetQ?: (q: string) => void }> = ({ list, scope, q, urlQ = "", year, onSetQ }) => {
   const rows = useMemo(() => {
     const qq = normText(q);
     const terms = qq ? qq.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
-    return list.filter((e) => {
-      if (terms.length) {
-        const lgSlug = e.l ? resolveLeagueSlug(e.l) : "";
-        const winSlug = e.wu || e.w ? resolveTeamAlias(e.wu || e.w || "") : "";
-        const regCanon = e.r ? resolveRegionFilter(e.r) : null;
-        const hay = normText(`${e.n} ${e.l || ""} ${lgSlug} ${e.r || ""} ${e.w || ""} ${e.wu || ""} ${winSlug} ${e.u || ""}`);
-        return terms.some((t) => {
-          const qAlias = searchAlias(t);
-          const resolvedT = resolveLeagueSlug(qAlias || t);
-          const canonTeam = resolveTeamAlias(qAlias || t);
-          const canonReg = resolveRegionFilter(t);
-          return (
-            hay.includes(t) ||
-            (qAlias !== null && hay.includes(qAlias)) ||
-            (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
-            (resolvedT && lgSlug === resolvedT) ||
-            Boolean(winSlug && canonTeam && canonTeam === winSlug) ||
-            Boolean(regCanon && canonReg && canonReg === regCanon) ||
-            resolveEventSlug(qAlias || t) === e.u ||
-            matchesPeriodEvent(e.u, e.n, t)
-          );
-        });
-      }
-      if (e.p) return false; // stages are listed on their event's page
-      return scope === "all" || (e.lv === "Primary" && !e.q);
+    const defaultFilter = (e: EventListItem) => !e.p && (scope === "all" || (e.lv === "Primary" && !e.q));
+    if (!terms.length) return list.filter(defaultFilter);
+    const matched = list.filter((e) => {
+      const lgSlug = e.l ? resolveLeagueSlug(e.l) : "";
+      const winSlug = e.wu || e.w ? resolveTeamAlias(e.wu || e.w || "") : "";
+      const regCanon = e.r ? resolveRegionFilter(e.r) : null;
+      const hay = normText(`${e.n} ${e.l || ""} ${lgSlug} ${e.r || ""} ${e.w || ""} ${e.wu || ""} ${winSlug} ${e.u || ""}`);
+      return terms.some((t) => {
+        const qAlias = searchAlias(t);
+        const resolvedT = resolveLeagueSlug(qAlias || t);
+        const canonTeam = resolveTeamAlias(qAlias || t);
+        const canonReg = resolveRegionFilter(t);
+        return (
+          hay.includes(t) ||
+          (qAlias !== null && hay.includes(qAlias)) ||
+          (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+          (resolvedT && lgSlug === resolvedT) ||
+          Boolean(winSlug && canonTeam && canonTeam === winSlug) ||
+          Boolean(regCanon && canonReg && canonReg === regCanon) ||
+          resolveEventSlug(qAlias || t) === e.u ||
+          matchesPeriodEvent(e.u, e.n, t)
+        );
+      });
     });
-  }, [list, scope, q]);
+    if (matched.length === 0 && urlQ && q === urlQ) return list.filter(defaultFilter);
+    return matched;
+  }, [list, scope, q, urlQ]);
   if (rows.length === 0) return <p className="text-xs text-rw-sub py-6 text-center">{tl("No tournaments match.")}</p>;
   const maxG = Math.max(1, ...rows.map((e) => e.g || 0));
   return (
