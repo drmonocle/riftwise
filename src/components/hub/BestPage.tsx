@@ -51,10 +51,15 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
   // filters on the list itself (also synced to the address): tiers, games with a VOD, a team
   const urlTiers = q.get("tier") || "";
   const urlVod = q.get("vod") === "1";
+  const urlVs = q.get("vs") || q.get("vsteam") || "";
+  const urlPlayer = q.get("player") ? q.get("player")! : "";
+  const urlVsPlayer = q.get("vsplayer") ? q.get("vsplayer")! : "";
+  const urlChamp = q.get("champ") ? q.get("champ")! : "";
+  const urlVsChamp = q.get("vschamp") ? q.get("vschamp")! : "";
   const urlTeam =
-    q.get("team") && q.get("vs") && !/\s+vs\.?\s+|\s+v\s+/i.test(q.get("team")!)
-      ? `${q.get("team")} vs ${q.get("vs")}`
-      : q.get("team") || q.get("q") || q.get("vs") || rawEvent || "";
+    q.get("team") && urlVs && !/\s+vs\.?\s+|\s+v\s+/i.test(q.get("team")!)
+      ? `${q.get("team")} vs ${urlVs}`
+      : q.get("team") || q.get("q") || urlVs || rawEvent || "";
   const userTypedRef = useRef(false);
   const lastUrlTeamRef = useRef(urlTeam);
   const [tiers, setTiers] = useState<Set<string>>(() => new Set(urlTiers.split(",").filter(Boolean)));
@@ -238,6 +243,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                       to={{
                         kind: "counters",
                         query: new URLSearchParams({
+                          ...(urlChamp ? { champ: urlChamp, ...(urlVsChamp && urlVsChamp !== urlChamp ? { vs: urlVsChamp } : {}) } : {}),
+                          ...(urlPlayer ? { player: urlPlayer, ...(urlVsPlayer && urlVsPlayer !== urlPlayer ? { vsplayer: urlVsPlayer } : {}) } : {}),
                           ...(a ? { team: a } : {}),
                           ...(b && b !== a ? { vsteam: b } : {}),
                           ...(league ? { league } : {}),
@@ -268,6 +275,9 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(league ? { scope: league, league } : {}),
                           ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : {}),
                           ...(r0Year ? { key: `y${r0Year}`, year: r0Year } : {}),
+                          ...(a ? { team: a, ...(b && b !== a ? { vs: b } : {}) } : {}),
+                          ...(urlPlayer ? { player: urlPlayer, ...(urlVsPlayer && urlVsPlayer !== urlPlayer ? { vsplayer: urlVsPlayer } : {}) } : {}),
+                          ...(urlChamp ? { q: [urlChamp, urlVsChamp].filter(Boolean).join(",") } : {}),
                         }).toString(),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -281,6 +291,9 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(league ? { scope: league, league } : {}),
                           ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : {}),
                           ...(r0Year ? { key: `y${r0Year}`, year: r0Year } : {}),
+                          ...(a ? { team: a, ...(b && b !== a ? { vs: b } : {}) } : {}),
+                          ...(urlPlayer ? { player: urlPlayer, ...(urlVsPlayer && urlVsPlayer !== urlPlayer ? { vsplayer: urlVsPlayer } : {}) } : {}),
+                          ...(urlChamp ? { q: [urlChamp, urlVsChamp].filter(Boolean).join(",") } : {}),
                         }).toString(),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -294,6 +307,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                           ...(league ? { league } : {}),
                           ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : {}),
                           ...(r0Year ? { year: r0Year } : {}),
+                          ...(urlChamp ? { champ: urlChamp } : {}),
                           ...(a && b ? { q: `${a},${b}` } : a ? { q: a } : {}),
                         }).toString(),
                       }}
@@ -307,6 +321,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           ...(a ? { team: a } : {}),
                           ...(b ? { vs: b } : {}),
+                          ...(urlPlayer ? { player: urlPlayer, ...(urlVsPlayer && urlVsPlayer !== urlPlayer ? { vsplayer: urlVsPlayer } : {}) } : {}),
+                          ...(urlChamp ? { champ: urlChamp, ...(urlVsChamp && urlVsChamp !== urlChamp ? { vschamp: urlVsChamp } : {}) } : {}),
                           ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : {}),
                           ...(r0Year ? { year: r0Year } : {}),
                           ...(league ? { league } : {}),
@@ -322,6 +338,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                         query: new URLSearchParams({
                           team: a,
                           vs: b,
+                          ...(urlPlayer ? { player: urlPlayer, ...(urlVsPlayer && urlVsPlayer !== urlPlayer ? { vsplayer: urlVsPlayer } : {}) } : {}),
+                          ...(urlChamp ? { champ: urlChamp, ...(urlVsChamp && urlVsChamp !== urlChamp ? { vschamp: urlVsChamp } : {}) } : {}),
                           ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : r0Year ? { year: r0Year } : {}),
                           ...(league ? { league } : {}),
                         }).toString(),
@@ -451,7 +469,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
             onChange={(e) => {
               userTypedRef.current = true;
               setTeam(e.target.value);
-              setQ({ team: e.target.value || undefined, q: undefined, vs: undefined, event: undefined });
+              setQ({ team: e.target.value || undefined, q: undefined, vs: undefined, vsteam: undefined, event: undefined });
             }}
             placeholder={tl("Filter by team")}
             aria-label={tl("Filter by team")}
@@ -558,6 +576,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                       ...(league ? { scope: league, league } : {}),
                       ...(fEv ? { event: fEv } : {}),
                       ...(fYr ? { key: `y${fYr}`, year: fYr } : {}),
+                      team: sa,
+                      ...(sb && sb !== sa ? { vs: sb } : {}),
+                      ...(urlPlayer ? { player: urlPlayer, ...(urlVsPlayer && urlVsPlayer !== urlPlayer ? { vsplayer: urlVsPlayer } : {}) } : {}),
+                      ...(urlChamp ? { q: [urlChamp, urlVsChamp].filter(Boolean).join(",") } : {}),
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -630,7 +652,7 @@ const Team: React.FC<{ name: string; u?: string | null; won: boolean; period?: s
   const tQ =
     new URLSearchParams({
       ...(period ? { p: period } : {}),
-      ...(vs ? { q: vs } : {}),
+      ...(vs ? { vs, q: vs } : {}),
     }).toString() || undefined;
   return (
     <span className={`inline-flex items-center gap-1 ${won ? "font-bold text-rw-teal" : "text-rw-text"}`}>

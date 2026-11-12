@@ -159,7 +159,13 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
   const route = useHubRoute();
   const urlQ = useMemo(() => {
     const qp = new URLSearchParams(route.kind === "weekly" && "query" in route ? route.query || "" : "");
-    return qp.get("q") || qp.get("team") || qp.get("vs") || qp.get("league") || qp.get("event") || "";
+    return (
+      qp.get("q") ||
+      [qp.get("team"), qp.get("vs") || qp.get("vsteam")].filter((v, idx, arr): v is string => Boolean(v) && arr.indexOf(v) === idx).join(",") ||
+      qp.get("league") ||
+      qp.get("event") ||
+      ""
+    );
   }, [route]);
   const userTypedRef = useRef(false);
   const lastUrlQRef = useRef(urlQ);
@@ -233,7 +239,20 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 : w.best[0]
                   ? { team: teamSlug(w.best[0].a), vs: teamSlug(w.best[0].b) }
                   : {}),
+              ...(w.players?.[0]
+                ? {
+                    player: w.players[0].u || playerSlug(w.players[0].n),
+                    ...(w.players[1] &&
+                    (w.players[1].u || playerSlug(w.players[1].n)) !== (w.players[0].u || playerSlug(w.players[0].n))
+                      ? { vsplayer: w.players[1].u || playerSlug(w.players[1].n) }
+                      : {}),
+                  }
+                : {}),
               ...(w.champs?.[0]?.[0] ? { champ: resolveChampSlug(w.champs[0][0]) } : {}),
+              ...(w.champs?.[1]?.[0] &&
+              resolveChampSlug(w.champs[1][0]) !== (w.champs?.[0]?.[0] ? resolveChampSlug(w.champs[0][0]) : "")
+                ? { vschamp: resolveChampSlug(w.champs[1][0]) }
+                : {}),
             }).toString();
             return (
               <>
@@ -346,10 +365,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   <HubLink
                     to={{
                       kind: "champions",
-                      ...((wy || wChamps)
+                      ...((wy || wChamps || ta || wp0)
                         ? {
                             query: new URLSearchParams({
                               ...(wy ? { key: `y${wy}`, year: wy } : {}),
+                              ...(ta ? { team: ta, ...(tb && tb !== ta ? { vs: tb } : {}) } : {}),
+                              ...(wp0 ? { player: wp0, ...(wp1 ? { vsplayer: wp1 } : {}) } : {}),
                               ...(wChamps ? { q: wChamps } : {}),
                             }).toString(),
                           }
@@ -362,10 +383,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   <HubLink
                     to={{
                       kind: "tiers",
-                      ...((wy || wChamps)
+                      ...((wy || wChamps || ta || wp0)
                         ? {
                             query: new URLSearchParams({
                               ...(wy ? { key: `y${wy}`, year: wy } : {}),
+                              ...(ta ? { team: ta, ...(tb && tb !== ta ? { vs: tb } : {}) } : {}),
+                              ...(wp0 ? { player: wp0, ...(wp1 ? { vsplayer: wp1 } : {}) } : {}),
                               ...(wChamps ? { q: wChamps } : {}),
                             }).toString(),
                           }
@@ -590,6 +613,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             slug: teamSlug(u.w),
                             query: new URLSearchParams({
                               ...(u.e ? { p: `e:${u.e}` } : wy ? { p: `y${wy}` } : {}),
+                              vs: teamSlug(u.l),
                               q: teamSlug(u.l),
                             }).toString(),
                           }}
@@ -610,6 +634,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             slug: teamSlug(u.l),
                             query: new URLSearchParams({
                               ...(u.e ? { p: `e:${u.e}` } : wy ? { p: `y${wy}` } : {}),
+                              vs: teamSlug(u.w),
                               q: teamSlug(u.w),
                             }).toString(),
                           }}
@@ -772,14 +797,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <HubLink
                           to={{
                             kind: "tiers",
-                            ...((mvLg || wy)
-                              ? {
-                                  query: new URLSearchParams({
-                                    ...(mvLg ? { scope: mvLg, league: mvLg } : {}),
-                                    ...(wy ? { key: `y${wy}`, year: wy } : {}),
-                                  }).toString(),
-                                }
-                              : {}),
+                            query: new URLSearchParams({
+                              ...(mvLg ? { scope: mvLg, league: mvLg } : {}),
+                              ...(wy ? { key: `y${wy}`, year: wy } : {}),
+                              team: w.movers[0].u,
+                              ...(w.movers[1] && w.movers[1].u !== w.movers[0].u ? { vs: w.movers[1].u } : {}),
+                            }).toString(),
                           }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
@@ -830,7 +853,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       const rivalMoverSlug = rivalMover?.u || "";
                       const moverTeamQ = new URLSearchParams({
                         ...(wy ? { p: `y${wy}` } : {}),
-                        ...(rivalMoverSlug ? { q: rivalMoverSlug } : {}),
+                        ...(rivalMoverSlug ? { vs: rivalMoverSlug, q: rivalMoverSlug } : {}),
                       }).toString();
                       const moverPairQ = [m.u, rivalMoverSlug].filter(Boolean).join(",");
                       return (
@@ -1075,6 +1098,8 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             query:
                               new URLSearchParams({
                                 ...(wy ? { key: `y${wy}`, year: wy } : {}),
+                                ...(tm ? { team: tm, ...(tm2 ? { vs: tm2 } : {}) } : {}),
+                                ...(pl ? { player: pl, ...(pl2 ? { vsplayer: pl2 } : {}) } : {}),
                                 ...(recChamps ? { q: recChamps } : {}),
                               }).toString() || undefined,
                           }}
@@ -1304,6 +1329,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           slug: teamSlug(b.a),
                           query: new URLSearchParams({
                             ...(b.e ? { p: `e:${b.e}` } : wy ? { p: `y${wy}` } : {}),
+                            vs: teamSlug(b.b),
                             q: teamSlug(b.b),
                           }).toString(),
                         }}
@@ -1321,6 +1347,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           slug: teamSlug(b.b),
                           query: new URLSearchParams({
                             ...(b.e ? { p: `e:${b.e}` } : wy ? { p: `y${wy}` } : {}),
+                            vs: teamSlug(b.a),
                             q: teamSlug(b.a),
                           }).toString(),
                         }}
@@ -1517,6 +1544,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             query:
                               new URLSearchParams({
                                 ...(wy ? { key: `y${wy}`, year: wy } : {}),
+                                ...(pwT0 ? { team: pwT0, ...(pwT1 ? { vs: pwT1 } : {}) } : {}),
+                                player: pwP0,
+                                ...(pwP1 ? { vsplayer: pwP1 } : {}),
                                 ...(w.players[0].r ? { role: w.players[0].r } : {}),
                                 ...(pwChamps ? { q: pwChamps } : {}),
                               }).toString() || undefined,
@@ -1581,20 +1611,26 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               <ol className="text-xs space-y-1.5">
                 {w.players.map((p, i) => {
                   const pSlug = p.u || playerSlug(p.n);
+                  const peerPlayer = w.players?.find((x) => (x.u || playerSlug(x.n)) !== pSlug);
+                  const peerPSlug = peerPlayer ? peerPlayer.u || playerSlug(peerPlayer.n) : "";
                   const tSlug = p.t ? teamSlug(p.t) : "";
                   const oppSlug = p.best?.opp ? teamSlug(p.best.opp) : "";
                   const cSlug = p.best?.c ? resolveChampSlug(p.best.c) : "";
+                  const peerCSlug = peerPlayer?.best?.c && resolveChampSlug(peerPlayer.best.c) !== cSlug ? resolveChampSlug(peerPlayer.best.c) : "";
                   const pQ =
                     new URLSearchParams({
                       ...(wy ? { p: `y${wy}` } : {}),
                       ...(tSlug ? { team: tSlug } : {}),
-                      ...(oppSlug ? { q: oppSlug } : {}),
+                      ...(oppSlug ? { vs: oppSlug, q: oppSlug } : {}),
+                      ...(peerPSlug ? { vsplayer: peerPSlug } : {}),
                       ...(p.r ? { role: p.r } : {}),
                       ...(cSlug ? { champ: cSlug } : {}),
+                      ...(peerCSlug ? { vschamp: peerCSlug } : {}),
                     }).toString() || undefined;
                   const tQ =
                     new URLSearchParams({
                       ...(wy ? { p: `y${wy}` } : {}),
+                      ...(oppSlug && oppSlug !== tSlug ? { vs: oppSlug } : {}),
                       q: [pSlug, oppSlug].filter(Boolean).join(","),
                     }).toString() || undefined;
                   return (
@@ -1749,11 +1785,28 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <HubLink
                           to={{
                             kind: "items",
-                            query: `champ=${encodeURIComponent(resolveChampSlug(w.champs[0][0]))}${
-                              w.champs[1]?.[0] && resolveChampSlug(w.champs[1][0]) !== resolveChampSlug(w.champs[0][0])
-                                ? `&vschamp=${encodeURIComponent(resolveChampSlug(w.champs[1][0]))}`
-                                : ""
-                            }${wy ? `&year=${encodeURIComponent(wy)}` : ""}`,
+                            query: new URLSearchParams({
+                              champ: resolveChampSlug(w.champs[0][0]),
+                              ...(w.champs[1]?.[0] && resolveChampSlug(w.champs[1][0]) !== resolveChampSlug(w.champs[0][0])
+                                ? { vschamp: resolveChampSlug(w.champs[1][0]) }
+                                : {}),
+                              ...(w.players?.[0]
+                                ? {
+                                    player: w.players[0].u || playerSlug(w.players[0].n),
+                                    ...(w.players[1] &&
+                                    (w.players[1].u || playerSlug(w.players[1].n)) !== (w.players[0].u || playerSlug(w.players[0].n))
+                                      ? { vsplayer: w.players[1].u || playerSlug(w.players[1].n) }
+                                      : {}),
+                                  }
+                                : {}),
+                              ...(w.upsets[0]
+                                ? {
+                                    team: teamSlug(w.upsets[0].w),
+                                    ...(teamSlug(w.upsets[0].l) !== teamSlug(w.upsets[0].w) ? { vs: teamSlug(w.upsets[0].l) } : {}),
+                                  }
+                                : {}),
+                              ...(wy ? { year: wy } : {}),
+                            }).toString(),
                           }}
                           className="text-rw-accent hover:underline font-semibold"
                         >
@@ -1764,6 +1817,21 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             kind: "tiers",
                             query: new URLSearchParams({
                               ...(wy ? { key: `y${wy}`, year: wy } : {}),
+                              ...(w.upsets[0]
+                                ? {
+                                    team: teamSlug(w.upsets[0].w),
+                                    ...(teamSlug(w.upsets[0].l) !== teamSlug(w.upsets[0].w) ? { vs: teamSlug(w.upsets[0].l) } : {}),
+                                  }
+                                : {}),
+                              ...(w.players?.[0]
+                                ? {
+                                    player: w.players[0].u || playerSlug(w.players[0].n),
+                                    ...(w.players[1] &&
+                                    (w.players[1].u || playerSlug(w.players[1].n)) !== (w.players[0].u || playerSlug(w.players[0].n))
+                                      ? { vsplayer: w.players[1].u || playerSlug(w.players[1].n) }
+                                      : {}),
+                                  }
+                                : {}),
                               ...(pbChamps ? { q: pbChamps } : {}),
                             }).toString(),
                           }}
@@ -1776,6 +1844,11 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             kind: "draft",
                             query:
                               new URLSearchParams({
+                                ...(w.upsets[0]
+                                  ? {
+                                      teams: `${teamSlug(w.upsets[0].w)}${teamSlug(w.upsets[0].l) !== teamSlug(w.upsets[0].w) ? `,${teamSlug(w.upsets[0].l)}` : ""}`,
+                                    }
+                                  : {}),
                                 ...(pbChamps ? { champ: pbChamps } : {}),
                                 ...(wy ? { p: `y${wy}` } : {}),
                               }).toString() || undefined,
@@ -1789,6 +1862,21 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             kind: "champions",
                             query: new URLSearchParams({
                               ...(wy ? { key: `y${wy}`, year: wy } : {}),
+                              ...(w.upsets[0]
+                                ? {
+                                    team: teamSlug(w.upsets[0].w),
+                                    ...(teamSlug(w.upsets[0].l) !== teamSlug(w.upsets[0].w) ? { vs: teamSlug(w.upsets[0].l) } : {}),
+                                  }
+                                : {}),
+                              ...(w.players?.[0]
+                                ? {
+                                    player: w.players[0].u || playerSlug(w.players[0].n),
+                                    ...(w.players[1] &&
+                                    (w.players[1].u || playerSlug(w.players[1].n)) !== (w.players[0].u || playerSlug(w.players[0].n))
+                                      ? { vsplayer: w.players[1].u || playerSlug(w.players[1].n) }
+                                      : {}),
+                                  }
+                                : {}),
                               ...(pbChamps ? { q: pbChamps } : {}),
                             }).toString(),
                           }}
@@ -1802,11 +1890,28 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   <HubLink
                     to={{
                       kind: "finder",
-                      query: `champ=${encodeURIComponent(resolveChampSlug(w.champs[0][0]))}${
-                        w.champs[1]?.[0] && resolveChampSlug(w.champs[1][0]) !== resolveChampSlug(w.champs[0][0])
-                          ? `&vschamp=${encodeURIComponent(resolveChampSlug(w.champs[1][0]))}`
-                          : ""
-                      }${wy ? `&year=${encodeURIComponent(wy)}` : ""}`,
+                      query: new URLSearchParams({
+                        champ: resolveChampSlug(w.champs[0][0]),
+                        ...(w.champs[1]?.[0] && resolveChampSlug(w.champs[1][0]) !== resolveChampSlug(w.champs[0][0])
+                          ? { vschamp: resolveChampSlug(w.champs[1][0]) }
+                          : {}),
+                        ...(w.players?.[0]
+                          ? {
+                              player: w.players[0].u || playerSlug(w.players[0].n),
+                              ...(w.players[1] &&
+                              (w.players[1].u || playerSlug(w.players[1].n)) !== (w.players[0].u || playerSlug(w.players[0].n))
+                                ? { vsplayer: w.players[1].u || playerSlug(w.players[1].n) }
+                                : {}),
+                            }
+                          : {}),
+                        ...(w.upsets[0]
+                          ? {
+                              team: teamSlug(w.upsets[0].w),
+                              ...(teamSlug(w.upsets[0].l) !== teamSlug(w.upsets[0].w) ? { vs: teamSlug(w.upsets[0].l) } : {}),
+                            }
+                          : {}),
+                        ...(wy ? { year: wy } : {}),
+                      }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
@@ -2066,14 +2171,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         <HubLink
                           to={{
                             kind: "tiers",
-                            ...((shownResults[0].e || wy)
-                              ? {
-                                  query: new URLSearchParams({
-                                    ...(shownResults[0].e ? { event: shownResults[0].e } : {}),
-                                    ...(wy ? { key: `y${wy}`, year: wy } : {}),
-                                  }).toString(),
-                                }
-                              : {}),
+                            query: new URLSearchParams({
+                              team: shownResults[0].au,
+                              ...(shownResults[0].bu !== shownResults[0].au ? { vs: shownResults[0].bu } : {}),
+                              ...(shownResults[0].e ? { event: shownResults[0].e } : {}),
+                              ...(wy ? { key: `y${wy}`, year: wy } : {}),
+                            }).toString(),
                           }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
@@ -2136,11 +2239,11 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                         : undefined;
                   const resQA = new URLSearchParams({
                     ...(resPeriod ? { p: resPeriod } : {}),
-                    ...(slugB ? { q: slugB } : {}),
+                    ...(slugB ? { vs: slugB, q: slugB } : {}),
                   }).toString() || undefined;
                   const resQB = new URLSearchParams({
                     ...(resPeriod ? { p: resPeriod } : {}),
-                    ...(slugA ? { q: slugA } : {}),
+                    ...(slugA ? { vs: slugA, q: slugA } : {}),
                   }).toString() || undefined;
                   return (
                   <li key={r.g} className="flex items-center gap-2 py-1 min-w-0">

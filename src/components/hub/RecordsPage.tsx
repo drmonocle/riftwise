@@ -307,7 +307,7 @@ const PentakillRecords: React.FC<{
           {mostRows.map((x, i) => {
             const pSlug = x.u || resolvePlayerSlug(x.n);
             const rivalSlug = mostRows.map((m) => m.u || resolvePlayerSlug(m.n)).find((s) => Boolean(s) && s !== pSlug);
-            const pQuery = rivalSlug ? `q=${encodeURIComponent(rivalSlug)}` : undefined;
+            const pQuery = rivalSlug ? `vsplayer=${encodeURIComponent(rivalSlug)}&q=${encodeURIComponent(rivalSlug)}` : undefined;
             return (
             <li key={i} className="space-y-0.5 min-w-0">
               <div className="flex justify-between gap-2 min-w-0">
@@ -501,6 +501,16 @@ const PentakillRecords: React.FC<{
                         query: new URLSearchParams({
                           ...(r0Ev ? { event: r0Ev } : {}),
                           ...(r0Year ? { key: `y${r0Year}`, year: r0Year } : {}),
+                          ...(aSlug ? { team: aSlug, ...(bSlug && bSlug !== aSlug ? { vs: bSlug } : {}) } : {}),
+                          ...(recentRows[0]
+                            ? {
+                                player: recentRows[0].u || resolvePlayerSlug(recentRows[0].n),
+                                ...(recentRows[1] &&
+                                (recentRows[1].u || resolvePlayerSlug(recentRows[1].n)) !== (recentRows[0].u || resolvePlayerSlug(recentRows[0].n))
+                                  ? { vsplayer: recentRows[1].u || resolvePlayerSlug(recentRows[1].n) }
+                                  : {}),
+                              }
+                            : {}),
                           ...(rChamps ? { q: rChamps } : {}),
                         }).toString() || undefined,
                       }}
@@ -579,17 +589,17 @@ const PentaRow: React.FC<{
   const pLinkQuery = new URLSearchParams({
     ...(x.c ? { champ: resolveChampSlug(x.c) } : {}),
     ...(aSlug ? { team: aSlug } : {}),
-    ...(bSlug && bSlug !== aSlug ? { q: bSlug } : {}),
+    ...(bSlug && bSlug !== aSlug ? { vs: bSlug, q: bSlug } : {}),
     ...(pPeriod ? { p: pPeriod } : {}),
   }).toString();
   const aTeamQ = new URLSearchParams({
     ...(pPeriod ? { p: pPeriod } : {}),
-    ...(bSlug && bSlug !== aSlug ? { q: bSlug } : {}),
+    ...(bSlug && bSlug !== aSlug ? { vs: bSlug, q: bSlug } : {}),
     ...(x.c ? { champ: resolveChampSlug(x.c) } : {}),
   }).toString();
   const bTeamQ = new URLSearchParams({
     ...(pPeriod ? { p: pPeriod } : {}),
-    ...(aSlug ? { q: aSlug } : {}),
+    ...(aSlug ? { vs: aSlug, q: aSlug } : {}),
     ...(x.c ? { champ: resolveChampSlug(x.c) } : {}),
   }).toString();
   return (
@@ -802,6 +812,8 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
                     query: new URLSearchParams({
                       key: `y${label}`,
                       year: label,
+                      ...(cfTeam ? { team: cfTeam, ...(cfVs && cfVs !== cfTeam ? { vs: cfVs } : {}) } : {}),
+                      ...(cfPlayer ? { player: cfPlayer, ...(cfVsPlayer ? { vsplayer: cfVsPlayer } : {}) } : {}),
                       ...(cfChamps ? { q: cfChamps } : {}),
                     }).toString(),
                   }}
@@ -815,6 +827,8 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
                     query: new URLSearchParams({
                       key: `y${label}`,
                       year: label,
+                      ...(cfTeam ? { team: cfTeam, ...(cfVs && cfVs !== cfTeam ? { vs: cfVs } : {}) } : {}),
+                      ...(cfPlayer ? { player: cfPlayer, ...(cfVsPlayer ? { vsplayer: cfVsPlayer } : {}) } : {}),
                       ...(cfChamps ? { q: cfChamps } : {}),
                     }).toString(),
                   }}
@@ -1002,7 +1016,14 @@ export const RecordsPanel: React.FC = () => {
   const q = new URLSearchParams(route.kind === "records" && "query" in route ? route.query || "" : "");
   // all time, or one year (its own file; team streaks, titles and career totals are all-time only)
   const year = q.get("year") || "all";
-  const urlQ = q.get("q") || q.get("team") || q.get("player") || q.get("champ") || q.get("event") || q.get("league") || "";
+  const urlQ =
+    q.get("q") ||
+    [q.get("team"), q.get("vs") || q.get("vsteam"), q.get("player"), q.get("vsplayer"), q.get("champ"), q.get("vschamp")]
+      .filter((v, idx, arr): v is string => Boolean(v) && arr.indexOf(v) === idx)
+      .join(",") ||
+    q.get("event") ||
+    q.get("league") ||
+    "";
   const userTypedRef = useRef(false);
   const lastUrlQRef = useRef(urlQ);
   const [search, setSearch] = useState(urlQ);
@@ -1018,8 +1039,12 @@ export const RecordsPanel: React.FC = () => {
   const setRecordsUrl = (nextYear: string, nextQ: string) => {
     const next = new URLSearchParams(q);
     next.delete("team");
+    next.delete("vs");
+    next.delete("vsteam");
     next.delete("player");
+    next.delete("vsplayer");
     next.delete("champ");
+    next.delete("vschamp");
     next.delete("event");
     next.delete("league");
     if (!nextYear || nextYear === "all") next.delete("year");
@@ -1235,14 +1260,12 @@ export const RecordsPanel: React.FC = () => {
                           <HubLink
                             to={{
                               kind: "tiers",
-                              ...((g0Ev || g0Yr)
-                                ? {
-                                    query: new URLSearchParams({
-                                      ...(g0Ev ? { event: g0Ev } : {}),
-                                      ...(g0Yr ? { key: `y${g0Yr}`, year: g0Yr } : {}),
-                                    }).toString(),
-                                  }
-                                : {}),
+                              query: new URLSearchParams({
+                                team: wSlug,
+                                ...(lSlug && lSlug !== wSlug ? { vs: lSlug } : {}),
+                                ...(g0Ev ? { event: g0Ev } : {}),
+                                ...(g0Yr ? { key: `y${g0Yr}`, year: g0Yr } : {}),
+                              }).toString(),
                             }}
                             className="text-rw-sub hover:text-rw-accent hover:underline"
                           >
@@ -1313,7 +1336,7 @@ export const RecordsPanel: React.FC = () => {
                             slug: wSlug,
                             query: new URLSearchParams({
                               ...(gPeriod ? { p: gPeriod } : {}),
-                              ...(lSlug ? { q: lSlug } : {}),
+                              ...(lSlug ? { vs: lSlug, q: lSlug } : {}),
                             }).toString() || undefined,
                           }}
                           title={g.w}
@@ -1344,7 +1367,7 @@ export const RecordsPanel: React.FC = () => {
                             slug: lSlug,
                             query: new URLSearchParams({
                               ...(gPeriod ? { p: gPeriod } : {}),
-                              ...(wSlug ? { q: wSlug } : {}),
+                              ...(wSlug ? { vs: wSlug, q: wSlug } : {}),
                             }).toString() || undefined,
                           }}
                           title={lName}
@@ -1514,6 +1537,9 @@ export const RecordsPanel: React.FC = () => {
                               query: new URLSearchParams({
                                 ...(p0Ev ? { event: p0Ev } : {}),
                                 ...(p0Yr ? { key: `y${p0Yr}`, year: p0Yr } : {}),
+                                player: p0Slug,
+                                ...(p1Slug && p1Slug !== p0Slug ? { vsplayer: p1Slug } : {}),
+                                ...(opp0 ? { team: opp0, ...(opp1 && opp1 !== opp0 ? { vs: opp1 } : {}) } : {}),
                                 ...(pChamps ? { q: pChamps } : {}),
                               }).toString() || undefined,
                             }}
@@ -1591,15 +1617,22 @@ export const RecordsPanel: React.FC = () => {
                   const barPct = Math.max(8, Math.min(100, Math.round((p.v / maxV) * 100)));
                   const pPeriod = p.e ? `e:${p.e}` : /^\d{4}/.test(p.date || "") ? `y${p.date.slice(0, 4)}` : "";
                   const pSlug = p.u || resolvePlayerSlug(p.pl);
+                  const peerRow = rows.find((x) => (x.u || resolvePlayerSlug(x.pl)) !== pSlug) || rows.find((x) => x !== p);
+                  const peerPSlug = peerRow ? peerRow.u || resolvePlayerSlug(peerRow.pl) : "";
+                  const peerCSlug = peerRow?.c && resolveChampSlug(peerRow.c) !== (p.c ? resolveChampSlug(p.c) : "") ? resolveChampSlug(peerRow.c) : "";
                   const oppSlug = p.opp ? resolveTeamAlias(p.opp, aliases.data?.team) || prettySlug(p.opp) : "";
                   const pChampQuery = new URLSearchParams({
                     ...(pSlug ? { player: pSlug } : {}),
+                    ...(peerPSlug && peerPSlug !== pSlug ? { vsplayer: peerPSlug } : {}),
+                    ...(peerCSlug ? { vschamp: peerCSlug } : {}),
                     ...(oppSlug ? { vs: oppSlug } : {}),
                     ...(pPeriod ? { p: pPeriod } : {}),
                   }).toString();
                   const pProfileQuery = new URLSearchParams({
                     ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
-                    ...(oppSlug ? { q: oppSlug } : {}),
+                    ...(peerCSlug ? { vschamp: peerCSlug } : {}),
+                    ...(oppSlug ? { vs: oppSlug, q: oppSlug } : {}),
+                    ...(peerPSlug && peerPSlug !== pSlug ? { vsplayer: peerPSlug } : {}),
                     ...(pPeriod ? { p: pPeriod } : {}),
                   }).toString();
                   const oppTeamQuery = new URLSearchParams({
@@ -1790,7 +1823,16 @@ export const RecordsPanel: React.FC = () => {
                       {tl("Game finder")} →
                     </HubLink>
                     <HubLink
-                      to={{ kind: "tiers" }}
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
+                          player: rows[0].u || resolvePlayerSlug(rows[0].pl),
+                          ...(rows[1] &&
+                          (rows[1].u || resolvePlayerSlug(rows[1].pl)) !== (rows[0].u || resolvePlayerSlug(rows[0].pl))
+                            ? { vsplayer: rows[1].u || resolvePlayerSlug(rows[1].pl) }
+                            : {}),
+                        }).toString(),
+                      }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Pro tier list")} →
@@ -1816,7 +1858,7 @@ export const RecordsPanel: React.FC = () => {
                 {rows.map((p, i) => {
                   const pSlug = p.u || resolvePlayerSlug(p.pl);
                   const rivalSlug = rows.map((x) => x.u || resolvePlayerSlug(x.pl)).find((s) => Boolean(s) && s !== pSlug);
-                  const pQuery = rivalSlug ? `q=${encodeURIComponent(rivalSlug)}` : undefined;
+                  const pQuery = rivalSlug ? `vsplayer=${encodeURIComponent(rivalSlug)}&q=${encodeURIComponent(rivalSlug)}` : undefined;
                   return (
                   <li key={i} className="space-y-0.5 min-w-0">
                     <div className="flex justify-between gap-2 min-w-0">
@@ -2065,7 +2107,17 @@ export const RecordsPanel: React.FC = () => {
                         {tl("Game finder")} →
                       </HubLink>
                       <HubLink
-                        to={{ kind: "tiers" }}
+                        to={{
+                          kind: "tiers",
+                          query: new URLSearchParams({
+                            team: streakRows[0].u || resolveTeamAlias(streakRows[0].team, aliases.data?.team) || prettySlug(streakRows[0].team),
+                            ...(streakRows[1] &&
+                            (streakRows[1].u || resolveTeamAlias(streakRows[1].team, aliases.data?.team) || prettySlug(streakRows[1].team)) !==
+                              (streakRows[0].u || resolveTeamAlias(streakRows[0].team, aliases.data?.team) || prettySlug(streakRows[0].team))
+                              ? { vs: streakRows[1].u || resolveTeamAlias(streakRows[1].team, aliases.data?.team) || prettySlug(streakRows[1].team) }
+                              : {}),
+                          }).toString(),
+                        }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Pro tier list")} →
@@ -2132,7 +2184,7 @@ export const RecordsPanel: React.FC = () => {
                       const endYr = /^\d{4}/.test(t.date || "") ? (t.date || "").slice(0, 4) : "";
                       const tQuery = new URLSearchParams({
                         ...(endYr ? { p: `y${endYr}` } : {}),
-                        ...(rivalSlug ? { q: rivalSlug } : {}),
+                        ...(rivalSlug ? { vs: rivalSlug, q: rivalSlug } : {}),
                       }).toString();
                       return (
                       <li key={i} className="space-y-0.5 min-w-0">
@@ -2269,7 +2321,17 @@ export const RecordsPanel: React.FC = () => {
                         {tl("Power rankings")} →
                       </HubLink>
                       <HubLink
-                        to={{ kind: "tiers" }}
+                        to={{
+                          kind: "tiers",
+                          query: new URLSearchParams({
+                            team: titleRecordRows[0].u || resolveTeamAlias(titleRecordRows[0].team, aliases.data?.team) || prettySlug(titleRecordRows[0].team),
+                            ...(titleRecordRows[1] &&
+                            (titleRecordRows[1].u || resolveTeamAlias(titleRecordRows[1].team, aliases.data?.team) || prettySlug(titleRecordRows[1].team)) !==
+                              (titleRecordRows[0].u || resolveTeamAlias(titleRecordRows[0].team, aliases.data?.team) || prettySlug(titleRecordRows[0].team))
+                              ? { vs: titleRecordRows[1].u || resolveTeamAlias(titleRecordRows[1].team, aliases.data?.team) || prettySlug(titleRecordRows[1].team) }
+                              : {}),
+                          }).toString(),
+                        }}
                         className="text-rw-sub hover:text-rw-accent hover:underline"
                       >
                         {tl("Pro tier list")} →
@@ -2317,7 +2379,7 @@ export const RecordsPanel: React.FC = () => {
                       const rivalSlug = titleRecordRows
                         .map((x) => x.u || resolveTeamAlias(x.team, aliases.data?.team) || prettySlug(x.team))
                         .find((s) => Boolean(s) && s !== tSlug);
-                      const tQuery = rivalSlug ? `q=${encodeURIComponent(rivalSlug)}` : undefined;
+                      const tQuery = rivalSlug ? `vs=${encodeURIComponent(rivalSlug)}&q=${encodeURIComponent(rivalSlug)}` : undefined;
                       return (
                       <li key={i} className="space-y-0.5 min-w-0">
                         <div className="flex justify-between gap-2 min-w-0">
@@ -2386,7 +2448,12 @@ export const TitlesPanel: React.FC = () => {
   const kindParam = q.get("kind") as (typeof TITLE_FILTERS)[number]["key"] | null;
   const kind: (typeof TITLE_FILTERS)[number]["key"] =
     kindParam && TITLE_FILTERS.some((f) => f.key === kindParam) ? kindParam : "International";
-  const urlQ = q.get("q") || q.get("team") || q.get("event") || q.get("league") || "";
+  const urlQ =
+    q.get("q") ||
+    [q.get("team"), q.get("vs") || q.get("vsteam")].filter((v, idx, arr): v is string => Boolean(v) && arr.indexOf(v) === idx).join(",") ||
+    q.get("event") ||
+    q.get("league") ||
+    "";
   const userTypedRef = useRef(false);
   const lastUrlQRef = useRef(urlQ);
   const [search, setSearch] = useState(urlQ);
@@ -2590,7 +2657,7 @@ export const TitlesPanel: React.FC = () => {
                               ? {
                                   query: new URLSearchParams({
                                     ...(tYr ? { year: tYr } : {}),
-                                    ...(tQ ? { q: w0Slug } : {}),
+                                    ...(tQ ? { q: tQ } : {}),
                                   }).toString(),
                                 }
                               : {}),
@@ -2619,14 +2686,12 @@ export const TitlesPanel: React.FC = () => {
                         <HubLink
                           to={{
                             kind: "tiers",
-                            ...((tYr || tEv)
-                              ? {
-                                  query: new URLSearchParams({
-                                    ...(tEv ? { event: tEv } : {}),
-                                    ...(tYr ? { key: `y${tYr}`, year: tYr } : {}),
-                                  }).toString(),
-                                }
-                              : {}),
+                            query: new URLSearchParams({
+                              team: w0Slug,
+                              ...(l0Slug && l0Slug !== w0Slug ? { vs: l0Slug } : {}),
+                              ...(tEv ? { event: tEv } : {}),
+                              ...(tYr ? { key: `y${tYr}`, year: tYr } : {}),
+                            }).toString(),
                           }}
                           className="text-rw-sub hover:text-rw-accent hover:underline"
                         >
@@ -2692,11 +2757,11 @@ export const TitlesPanel: React.FC = () => {
                     const evQuery = [wSlug, lSlug].filter(Boolean).length ? `q=${encodeURIComponent([wSlug, lSlug].filter(Boolean).join(","))}` : undefined;
                     const wTeamQ = new URLSearchParams({
                       ...(xPeriod ? { p: xPeriod } : {}),
-                      ...(lSlug ? { q: lSlug } : {}),
+                      ...(lSlug ? { vs: lSlug, q: lSlug } : {}),
                     }).toString();
                     const lTeamQ = new URLSearchParams({
                       ...(xPeriod ? { p: xPeriod } : {}),
-                      ...(wSlug ? { q: wSlug } : {}),
+                      ...(wSlug ? { vs: wSlug, q: wSlug } : {}),
                     }).toString();
                     return (
                     <tr
