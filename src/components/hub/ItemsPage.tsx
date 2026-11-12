@@ -701,9 +701,11 @@ const PlayerItemsView: React.FC<{
                     champ: resolveChampSlug(champ || g[0][2]),
                     ...(vschamp ? { vs: vschamp } : {}),
                     player: slug,
+                    ...(vsplayer && vsplayer !== slug ? { vsplayer } : {}),
                     ...(primaryTeam ? { team: primaryTeam } : {}),
                     ...(primaryVs && primaryVs !== primaryTeam ? { vsteam: primaryVs } : {}),
                     ...(role ? { role } : {}),
+                    ...(league ? { league } : {}),
                     ...(event ? { event } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
                   }).toString(),
                 }}
@@ -866,9 +868,11 @@ const PlayerItemsView: React.FC<{
                     champ: resolveChampSlug(champ || list[0][1][0][2]),
                     ...(vschamp ? { vs: vschamp } : {}),
                     player: slug,
+                    ...(vsplayer && vsplayer !== slug ? { vsplayer } : {}),
                     ...(listTeam ? { team: listTeam } : {}),
                     ...(listVs && listVs !== listTeam ? { vsteam: listVs } : {}),
                     ...(role ? { role } : {}),
+                    ...(league ? { league } : {}),
                     ...(event ? { event } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
                   }).toString(),
                 }}
@@ -1019,7 +1023,7 @@ const PlayerItemsView: React.FC<{
         <HubLink
           to={{
             kind: "finder",
-            query: `player=${encodeURIComponent(slug)}${vsplayer ? `&vsplayer=${encodeURIComponent(vsplayer)}` : ""}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${vs ? `&vs=${encodeURIComponent(vs)}` : ""}${team ? `&team=${encodeURIComponent(team)}` : ""}`,
+            query: `player=${encodeURIComponent(slug)}${vsplayer ? `&vsplayer=${encodeURIComponent(vsplayer)}` : ""}${champ ? `&champ=${encodeURIComponent(champ)}` : ""}${vschamp ? `&vschamp=${encodeURIComponent(vschamp)}` : ""}${role ? `&role=${encodeURIComponent(role)}` : ""}${year ? `&year=${encodeURIComponent(year)}` : ""}${event ? `&event=${encodeURIComponent(event)}` : ""}${patch ? `&patch=${encodeURIComponent(patch)}` : ""}${vs ? `&vs=${encodeURIComponent(vs)}` : ""}${team ? `&team=${encodeURIComponent(team)}` : ""}${league ? `&league=${encodeURIComponent(league)}` : ""}`,
           }}
           className="text-rw-muted hover:text-rw-accent hover:underline"
           title={tl("Game finder")}
@@ -1087,12 +1091,14 @@ const PlayerItemsView: React.FC<{
                               ...(vsplayer ? { vsplayer } : {}),
                               item: resolveItemSlug(it),
                               champ: resolveChampSlug(c),
+                              ...(vschamp && vschamp !== resolveChampSlug(c) ? { vschamp } : {}),
                               ...(role ? { role } : {}),
                               ...(year ? { year } : {}),
                               ...(event ? { event } : {}),
                               ...(patch ? { patch } : {}),
                               ...(vs ? { vs } : {}),
                               ...(team ? { team } : {}),
+                              ...(league ? { league } : {}),
                             }).toString(),
                           }}
                           title={`${name} · ${itemName(it)} · ${champName(c)}`}
@@ -1254,9 +1260,15 @@ const ItemPlayersView: React.FC<{
                           ? { vs: resolveChampSlug(it.c[1][0]) }
                           : {}),
                       ...(filteredPlayers[0] ? { player: filteredPlayers[0][1] || filteredPlayers[0][0] } : {}),
+                      ...(filteredPlayers[1] &&
+                      (filteredPlayers[1][1] || filteredPlayers[1][0]) !==
+                        (filteredPlayers[0]?.[1] || filteredPlayers[0]?.[0])
+                        ? { vsplayer: filteredPlayers[1][1] || filteredPlayers[1][0] }
+                        : {}),
                       ...(topTeamA ? { team: topTeamA } : {}),
                       ...(topTeamB && topTeamB !== topTeamA ? { vsteam: topTeamB } : {}),
                       ...(role ? { role } : {}),
+                      ...(league ? { league } : {}),
                       ...(event ? { event } : patch ? { patch } : {}),
                     }).toString(),
                   }}
@@ -1706,9 +1718,11 @@ const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: Sear
                         champ,
                         ...(vschamp ? { vs: vschamp } : {}),
                         ...(topA ? { player: topA } : {}),
+                        ...(topB && topB !== topA ? { vsplayer: topB } : {}),
                         ...(topTeamA ? { team: topTeamA } : {}),
                         ...(topTeamB && topTeamB !== topTeamA ? { vsteam: topTeamB } : {}),
                         ...(role ? { role } : {}),
+                        ...(league ? { league } : {}),
                         ...(event ? { event } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
                       }).toString(),
                     }}
@@ -2078,9 +2092,11 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
                           ? { vs: resolveChampSlug(y.c[1][0]) }
                           : {}),
                       ...(topA ? { player: topA } : {}),
+                      ...(topB && topB !== topA ? { vsplayer: topB } : {}),
                       ...(topTeamA ? { team: topTeamA } : {}),
                       ...(topTeamB && topTeamB !== topTeamA ? { vsteam: topTeamB } : {}),
                       ...(role ? { role } : {}),
+                      ...(league ? { league } : {}),
                       ...(event ? { event } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
                     }).toString(),
                   }}
@@ -2452,6 +2468,7 @@ const ItemStats: React.FC<{
                   ...(team ? { team } : {}),
                   ...(vs && vs !== team ? { vsteam: vs } : {}),
                   ...(role ? { role } : {}),
+                  ...(league ? { league } : {}),
                   ...(event ? { event } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
                 }).toString() || undefined,
               }}

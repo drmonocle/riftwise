@@ -130,7 +130,11 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
     [isLeague, rawScope, key, leagues.length, evSlug, canonEvSlug],
   );
   const block = isLeague ? lgBlock.data : state.data?.[scope] || state.data?.all;
-  const urlChampFilter = q.get("champ") || q.get("q") || "";
+  const urlChampFilter = q.get("q") || [q.get("champ"), q.get("vschamp")].filter(Boolean).join(",");
+  const urlTeam = q.get("team") || "";
+  const urlVsTeam = q.get("vs") || q.get("vsteam") || "";
+  const urlPlayer = q.get("player") || "";
+  const urlVsPlayer = q.get("vsplayer") || "";
   const [champFilter, setChampFilter] = useState(urlChampFilter);
   useEffect(() => {
     setChampFilter(urlChampFilter);
@@ -201,6 +205,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                         }),
                     ...(role ? { role } : {}),
                     ...(champFilter.trim() ? { q: champFilter.trim() } : {}),
+                    ...(urlTeam ? { team: urlTeam } : {}),
+                    ...(urlVsTeam ? { vs: urlVsTeam } : {}),
+                    ...(urlPlayer ? { player: urlPlayer } : {}),
+                    ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
                   }).toString(),
                 }}
                 className="font-semibold text-rw-accent hover:underline"
@@ -210,12 +218,17 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               <HubLink
                 to={{
                   kind: "counters",
-                  ...(topChamp || role
+                  ...(topChamp || role || isLeague || urlPlayer || urlTeam
                     ? {
                         query: new URLSearchParams({
                           ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
                           ...(secondChamp ? { vs: resolveChampSlug(secondChamp.c) } : {}),
                           ...(role || topChamp?.role ? { role: role || topChamp!.role! } : {}),
+                          ...(isLeague ? { league: rawScope } : {}),
+                          ...(urlPlayer ? { player: urlPlayer } : {}),
+                          ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
+                          ...(urlTeam ? { team: urlTeam } : {}),
+                          ...(urlVsTeam ? { vsteam: urlVsTeam } : {}),
                           ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { patch: key, year: key.slice(1) } : {}),
                         }).toString(),
                       }
@@ -236,6 +249,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                         : key.startsWith("y")
                           ? { p: key }
                           : {}),
+                    ...(urlTeam || urlVsTeam ? { teams: [urlTeam, urlVsTeam].filter(Boolean).join(",") } : {}),
                     ...(topChamp ? { champ: [topChamp, secondChamp].filter(Boolean).map((c) => resolveChampSlug(c!.c)).join(",") } : {}),
                     ...(role || topChamp?.role ? { role: role || topChamp!.role! } : {}),
                   }).toString() || undefined,
@@ -252,6 +266,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     ...(secondChamp ? { vschamp: resolveChampSlug(secondChamp.c) } : {}),
                     ...(role || topChamp?.role ? { role: role || topChamp!.role! } : {}),
                     ...(isLeague ? { league: rawScope } : {}),
+                    ...(urlPlayer ? { player: urlPlayer } : {}),
+                    ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
+                    ...(urlTeam ? { team: urlTeam } : {}),
+                    ...(urlVsTeam ? { vs: urlVsTeam } : {}),
                     ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
                     ...(key.startsWith("p") ? { patch: key.slice(1) } : {}),
                     ...(canonEvSlug ? { event: canonEvSlug } : {}),
@@ -283,6 +301,20 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     ...(canonEvSlug ? { event: canonEvSlug } : {}),
                     ...(role || topChamp?.role ? { role: role || topChamp!.role! } : {}),
                     ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
+                    ...(urlPlayer || urlVsPlayer || urlTeam || urlVsTeam || secondChamp
+                      ? {
+                          q: [
+                            urlPlayer,
+                            urlVsPlayer,
+                            urlTeam,
+                            urlVsTeam,
+                            topChamp ? resolveChampSlug(topChamp.c) : "",
+                            secondChamp ? resolveChampSlug(secondChamp.c) : "",
+                          ]
+                            .filter(Boolean)
+                            .join(","),
+                        }
+                      : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -292,7 +324,16 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
               <HubLink
                 to={{
                   kind: "rankings",
-                  ...(isLeague ? { query: `league=${encodeURIComponent(rawScope)}` } : {}),
+                  ...((isLeague || urlTeam || urlVsTeam || urlPlayer || urlVsPlayer)
+                    ? {
+                        query: new URLSearchParams({
+                          ...(isLeague ? { league: rawScope } : {}),
+                          ...(urlTeam || urlVsTeam || urlPlayer || urlVsPlayer
+                            ? { q: [urlTeam, urlVsTeam, urlPlayer, urlVsPlayer].filter(Boolean).join(",") }
+                            : {}),
+                        }).toString(),
+                      }
+                    : {}),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
               >
@@ -307,7 +348,11 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     ...(canonEvSlug ? { event: canonEvSlug } : {}),
                     ...(role ? { role } : topChamp?.role ? { role: topChamp.role } : {}),
                     ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
-                    ...(champFilter.trim() && secondChamp ? { vschamp: resolveChampSlug(secondChamp.c) } : {}),
+                    ...(secondChamp ? { vschamp: resolveChampSlug(secondChamp.c) } : {}),
+                    ...(urlTeam ? { team: urlTeam } : {}),
+                    ...(urlVsTeam ? { vs: urlVsTeam } : {}),
+                    ...(urlPlayer ? { player: urlPlayer } : {}),
+                    ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
                   }).toString(),
                 }}
                 className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -350,7 +395,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
             value={champFilter}
             onChange={(e) => {
               setChampFilter(e.target.value);
-              set({ q: e.target.value.trim() || undefined, champ: undefined });
+              set({ q: e.target.value.trim() || undefined, champ: undefined, vschamp: undefined });
             }}
             placeholder={tl("Search champions…")}
             aria-label={tl("Search champions…")}
@@ -441,6 +486,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                   ...(role ? { role } : {}),
                   ...(topChamp ? { champ: resolveChampSlug(topChamp.c) } : {}),
                   ...(secondChamp ? { vschamp: resolveChampSlug(secondChamp.c) } : {}),
+                  ...(urlTeam ? { team: urlTeam } : {}),
+                  ...(urlVsTeam ? { vs: urlVsTeam } : {}),
+                  ...(urlPlayer ? { player: urlPlayer } : {}),
+                  ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
                 }).toString(),
               }}
               className="hover:text-rw-accent hover:underline"
@@ -468,6 +517,11 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                             champ: resolveChampSlug(byRole.get(r)![0].c),
                             ...(byRole.get(r)![1] ? { vs: resolveChampSlug(byRole.get(r)![1].c) } : {}),
                             role: r,
+                            ...(isLeague ? { league: rawScope } : {}),
+                            ...(urlPlayer ? { player: urlPlayer } : {}),
+                            ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
+                            ...(urlTeam ? { team: urlTeam } : {}),
+                            ...(urlVsTeam ? { vsteam: urlVsTeam } : {}),
                             ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { patch: key, year: key.slice(1) } : {}),
                           }).toString(),
                         }}
@@ -493,6 +547,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                               }),
                           role: r,
                           ...(champFilter.trim() ? { q: champFilter.trim() } : {}),
+                          ...(urlTeam ? { team: urlTeam } : {}),
+                          ...(urlVsTeam ? { vs: urlVsTeam } : {}),
+                          ...(urlPlayer ? { player: urlPlayer } : {}),
+                          ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -507,6 +565,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                           ...(byRole.get(r)![1] ? { vschamp: resolveChampSlug(byRole.get(r)![1].c) } : {}),
                           role: r,
                           ...(isLeague ? { league: rawScope } : {}),
+                          ...(urlPlayer ? { player: urlPlayer } : {}),
+                          ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
+                          ...(urlTeam ? { team: urlTeam } : {}),
+                          ...(urlVsTeam ? { vs: urlVsTeam } : {}),
                           ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
                           ...(key.startsWith("p") ? { patch: key.slice(1) } : {}),
                           ...(canonEvSlug ? { event: canonEvSlug } : {}),
@@ -527,6 +589,7 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                               : key.startsWith("y")
                                 ? { p: key }
                                 : {}),
+                          ...(urlTeam || urlVsTeam ? { teams: [urlTeam, urlVsTeam].filter(Boolean).join(",") } : {}),
                           champ: byRole
                             .get(r)!
                             .slice(0, 2)
@@ -545,12 +608,19 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                         query: new URLSearchParams({
                           role: r,
                           champ: resolveChampSlug(byRole.get(r)![0].c),
-                          ...(byRole.get(r)![1]
+                          ...((byRole.get(r)![1] || urlPlayer || urlVsPlayer || urlTeam || urlVsTeam)
                             ? {
-                                q: byRole
-                                  .get(r)!
-                                  .slice(0, 2)
-                                  .map((c) => resolveChampSlug(c.c))
+                                q: [
+                                  urlPlayer,
+                                  urlVsPlayer,
+                                  urlTeam,
+                                  urlVsTeam,
+                                  ...byRole
+                                    .get(r)!
+                                    .slice(0, 2)
+                                    .map((c) => resolveChampSlug(c.c)),
+                                ]
+                                  .filter(Boolean)
                                   .join(","),
                               }
                             : {}),
@@ -573,6 +643,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                           ...(isLeague ? { league: rawScope } : {}),
                           ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                           ...(canonEvSlug ? { event: canonEvSlug } : {}),
+                          ...(urlTeam ? { team: urlTeam } : {}),
+                          ...(urlVsTeam ? { vs: urlVsTeam } : {}),
+                          ...(urlPlayer ? { player: urlPlayer } : {}),
+                          ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
                         }).toString(),
                       }}
                       className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -582,7 +656,16 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                     <HubLink
                       to={{
                         kind: "rankings",
-                        ...(isLeague ? { query: `league=${encodeURIComponent(rawScope)}` } : {}),
+                        ...((isLeague || urlTeam || urlVsTeam || urlPlayer || urlVsPlayer)
+                          ? {
+                              query: new URLSearchParams({
+                                ...(isLeague ? { league: rawScope } : {}),
+                                ...(urlTeam || urlVsTeam || urlPlayer || urlVsPlayer
+                                  ? { q: [urlTeam, urlVsTeam, urlPlayer, urlVsPlayer].filter(Boolean).join(",") }
+                                  : {}),
+                              }).toString(),
+                            }
+                          : {}),
                       }}
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -635,6 +718,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                       ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { p: `p:${key.slice(1)}` } : key.startsWith("y") ? { p: key } : {}),
                                       role: r,
                                       ...(peerCSlug ? { vschamp: peerCSlug } : {}),
+                                      ...(urlTeam ? { team: urlTeam } : {}),
+                                      ...(urlVsTeam ? { vs: urlVsTeam } : {}),
+                                      ...(urlPlayer ? { player: urlPlayer } : {}),
+                                      ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
                                     }).toString(),
                                   }}
                                   className="flex items-center gap-2 font-semibold text-rw-text hover:text-rw-accent"
@@ -647,11 +734,15 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                     kind: "finder",
                                     query: new URLSearchParams({
                                       champ: resolveChampSlug(c.c),
-                                      ...(champFilter.trim() && peerCSlug ? { vschamp: peerCSlug } : {}),
+                                      ...(peerCSlug ? { vschamp: peerCSlug } : {}),
                                       role: r,
                                       ...(isLeague ? { league: rawScope } : {}),
                                       ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                                       ...(canonEvSlug ? { event: canonEvSlug } : {}),
+                                      ...(urlTeam ? { team: urlTeam } : {}),
+                                      ...(urlVsTeam ? { vs: urlVsTeam } : {}),
+                                      ...(urlPlayer ? { player: urlPlayer } : {}),
+                                      ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
                                     }).toString(),
                                   }}
                                   className="text-[11px] font-mono tabular-nums text-rw-sub hover:text-rw-accent hover:underline"
@@ -671,6 +762,11 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                       champ: resolveChampSlug(c.c),
                                       ...(peerCSlug ? { vs: peerCSlug } : {}),
                                       role: r,
+                                      ...(isLeague ? { league: rawScope } : {}),
+                                      ...(urlPlayer ? { player: urlPlayer } : {}),
+                                      ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
+                                      ...(urlTeam ? { team: urlTeam } : {}),
+                                      ...(urlVsTeam ? { vsteam: urlVsTeam } : {}),
                                       ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { patch: key, year: key.slice(1) } : {}),
                                     }).toString(),
                                   }}
@@ -686,6 +782,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                       ...(peerCSlug ? { vschamp: peerCSlug } : {}),
                                       role: r,
                                       ...(isLeague ? { league: rawScope } : {}),
+                                      ...(urlPlayer ? { player: urlPlayer } : {}),
+                                      ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
+                                      ...(urlTeam ? { team: urlTeam } : {}),
+                                      ...(urlVsTeam ? { vs: urlVsTeam } : {}),
                                       ...(key.startsWith("y") ? { year: key.slice(1) } : rawYear ? { year: rawYear } : {}),
                                       ...(key.startsWith("p") ? { patch: key.slice(1) } : {}),
                                       ...(canonEvSlug ? { event: canonEvSlug } : {}),
@@ -701,11 +801,15 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                       kind: "finder",
                                       query: new URLSearchParams({
                                         champ: resolveChampSlug(c.c),
-                                        ...(champFilter.trim() && peerCSlug ? { vschamp: peerCSlug } : {}),
+                                        ...(peerCSlug ? { vschamp: peerCSlug } : {}),
                                         role: r,
                                         ...(isLeague ? { league: rawScope } : {}),
                                         ...(key.startsWith("p") ? { patch: key.slice(1) } : key.startsWith("y") ? { year: key.slice(1) } : {}),
                                         ...(canonEvSlug ? { event: canonEvSlug } : {}),
+                                        ...(urlTeam ? { team: urlTeam } : {}),
+                                        ...(urlVsTeam ? { vs: urlVsTeam } : {}),
+                                        ...(urlPlayer ? { player: urlPlayer } : {}),
+                                        ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
                                       }).toString(),
                                     }}
                                     className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline font-mono tabular-nums"
@@ -732,6 +836,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
                                   ...(canonEvSlug ? { event: canonEvSlug } : key.startsWith("p") ? { p: `p:${key.slice(1)}` } : key.startsWith("y") ? { p: key } : {}),
                                   role: r,
                                   ...(peerCSlug ? { vschamp: peerCSlug } : {}),
+                                  ...(urlTeam ? { team: urlTeam } : {}),
+                                  ...(urlVsTeam ? { vs: urlVsTeam } : {}),
+                                  ...(urlPlayer ? { player: urlPlayer } : {}),
+                                  ...(urlVsPlayer ? { vsplayer: urlVsPlayer } : {}),
                                 }).toString(),
                               }}
                               className="block rounded hover:ring-1 hover:ring-rw-accent"
