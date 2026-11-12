@@ -417,6 +417,10 @@ const PentakillRecords: React.FC<{
                         kind: "items",
                         query: new URLSearchParams({
                           player: recentRows[0].u || resolvePlayerSlug(recentRows[0].n),
+                          ...(recentRows[1] &&
+                          (recentRows[1].u || resolvePlayerSlug(recentRows[1].n)) !== (recentRows[0].u || resolvePlayerSlug(recentRows[0].n))
+                            ? { vsplayer: recentRows[1].u || resolvePlayerSlug(recentRows[1].n) }
+                            : {}),
                           champ: resolveChampSlug(recentRows[0].c),
                           ...(recentRows[1]?.c && resolveChampSlug(recentRows[1].c) !== resolveChampSlug(recentRows[0].c)
                             ? { vschamp: resolveChampSlug(recentRows[1].c) }
@@ -476,6 +480,13 @@ const PentakillRecords: React.FC<{
                             ...(recentRows[1]?.c && resolveChampSlug(recentRows[1].c) !== resolveChampSlug(recentRows[0].c)
                               ? { vs: resolveChampSlug(recentRows[1].c) }
                               : {}),
+                            player: recentRows[0].u || resolvePlayerSlug(recentRows[0].n),
+                            ...(recentRows[1] &&
+                            (recentRows[1].u || resolvePlayerSlug(recentRows[1].n)) !== (recentRows[0].u || resolvePlayerSlug(recentRows[0].n))
+                              ? { vsplayer: recentRows[1].u || resolvePlayerSlug(recentRows[1].n) }
+                              : {}),
+                            ...(aSlug ? { team: aSlug } : {}),
+                            ...(bSlug && bSlug !== aSlug ? { vsteam: bSlug } : {}),
                             ...(r0Ev ? { event: r0Ev } : r0Year ? { patch: `y${r0Year}`, year: r0Year } : {}),
                           }).toString(),
                         }}
@@ -778,6 +789,11 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
             const cfTeam = year.game.fastest[0]?.w ? resolveTeamAlias(year.game.fastest[0].w) || prettySlug(year.game.fastest[0].w) : "";
             const cfVs = all.game.fastest[0]?.w ? resolveTeamAlias(all.game.fastest[0].w) || prettySlug(all.game.fastest[0].w) : "";
             const cfPlayer = year.player.kills[0]?.pl ? year.player.kills[0].u || resolvePlayerSlug(year.player.kills[0].pl) : "";
+            const cfVsPlayer =
+              all.player.kills[0]?.pl &&
+              (all.player.kills[0].u || resolvePlayerSlug(all.player.kills[0].pl)) !== cfPlayer
+                ? all.player.kills[0].u || resolvePlayerSlug(all.player.kills[0].pl)
+                : "";
             return (
               <>
                 <HubLink
@@ -813,8 +829,12 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
                       year: label,
                       ...(cfTeam ? { team: cfTeam } : {}),
                       ...(cfVs && cfVs !== cfTeam ? { vs: cfVs } : {}),
-                      ...(cfPlayer ? { player: cfPlayer } : {}),
+                      ...(cfPlayer ? { player: cfPlayer, ...(cfVsPlayer ? { vsplayer: cfVsPlayer } : {}) } : {}),
                       ...(year.player.kills[0]?.c ? { champ: resolveChampSlug(year.player.kills[0].c) } : {}),
+                      ...(all.player.kills[0]?.c &&
+                      resolveChampSlug(all.player.kills[0].c) !== (year.player.kills[0]?.c ? resolveChampSlug(year.player.kills[0].c) : "")
+                        ? { vschamp: resolveChampSlug(all.player.kills[0].c) }
+                        : {}),
                     }).toString(),
                   }}
                   className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -856,7 +876,16 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(year.player.kills[0].c))}${all.player.kills[0]?.c && all.player.kills[0].c !== year.player.kills[0].c ? `&vs=${encodeURIComponent(resolveChampSlug(all.player.kills[0].c))}` : ""}&patch=y${encodeURIComponent(label)}&year=${encodeURIComponent(label)}`,
+                        query: new URLSearchParams({
+                          champ: resolveChampSlug(year.player.kills[0].c),
+                          ...(all.player.kills[0]?.c && resolveChampSlug(all.player.kills[0].c) !== resolveChampSlug(year.player.kills[0].c)
+                            ? { vs: resolveChampSlug(all.player.kills[0].c) }
+                            : {}),
+                          ...(cfPlayer ? { player: cfPlayer, ...(cfVsPlayer ? { vsplayer: cfVsPlayer } : {}) } : {}),
+                          ...(cfTeam ? { team: cfTeam, ...(cfVs && cfVs !== cfTeam ? { vsteam: cfVs } : {}) } : {}),
+                          patch: `y${label}`,
+                          year: label,
+                        }).toString(),
                       }}
                       className="text-rw-sub hover:text-rw-accent hover:underline"
                     >
@@ -871,7 +900,7 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
                             ? { vschamp: resolveChampSlug(all.player.kills[0].c) }
                             : {}),
                           year: label,
-                          ...(cfPlayer ? { player: cfPlayer } : {}),
+                          ...(cfPlayer ? { player: cfPlayer, ...(cfVsPlayer ? { vsplayer: cfVsPlayer } : {}) } : {}),
                           ...(cfTeam ? { team: cfTeam } : {}),
                           ...(cfVs && cfVs !== cfTeam ? { vs: cfVs } : {}),
                         }).toString(),
@@ -974,9 +1003,17 @@ export const RecordsPanel: React.FC = () => {
   // all time, or one year (its own file; team streaks, titles and career totals are all-time only)
   const year = q.get("year") || "all";
   const urlQ = q.get("q") || q.get("team") || q.get("player") || q.get("champ") || q.get("event") || q.get("league") || "";
+  const userTypedRef = useRef(false);
+  const lastUrlQRef = useRef(urlQ);
   const [search, setSearch] = useState(urlQ);
   useEffect(() => {
-    setSearch(urlQ);
+    if (lastUrlQRef.current !== urlQ) {
+      lastUrlQRef.current = urlQ;
+      userTypedRef.current = false;
+    }
+    if (!userTypedRef.current) {
+      setSearch(urlQ);
+    }
   }, [urlQ]);
   const setRecordsUrl = (nextYear: string, nextQ: string) => {
     const next = new URLSearchParams(q);
@@ -1428,6 +1465,9 @@ export const RecordsPanel: React.FC = () => {
                                 player: p0Slug,
                                 ...(p1Slug && p1Slug !== p0Slug ? { vsplayer: p1Slug } : {}),
                                 champ: resolveChampSlug(rows[0].c),
+                                ...(rows[1]?.c && resolveChampSlug(rows[1].c) !== resolveChampSlug(rows[0].c)
+                                  ? { vschamp: resolveChampSlug(rows[1].c) }
+                                  : {}),
                                 ...(opp0 ? { vs: opp0 } : {}),
                                 ...(p0Ev ? { event: p0Ev } : p0Yr ? { year: p0Yr } : {}),
                               }).toString(),
@@ -1444,6 +1484,9 @@ export const RecordsPanel: React.FC = () => {
                                 ...(rows[1]?.c && resolveChampSlug(rows[1].c) !== resolveChampSlug(rows[0].c)
                                   ? { vs: resolveChampSlug(rows[1].c) }
                                   : {}),
+                                player: p0Slug,
+                                ...(p1Slug && p1Slug !== p0Slug ? { vsplayer: p1Slug } : {}),
+                                ...(opp0 ? { team: opp0, ...(opp1 && opp1 !== opp0 ? { vsteam: opp1 } : {}) } : {}),
                                 ...(p0Ev ? { event: p0Ev } : p0Yr ? { patch: `y${p0Yr}`, year: p0Yr } : {}),
                               }).toString(),
                             }}
@@ -1891,6 +1934,7 @@ export const RecordsPanel: React.FC = () => {
                   type="search"
                   value={search}
                   onChange={(e) => {
+                    userTypedRef.current = true;
                     setSearch(e.target.value);
                     setRecordsUrl(year, e.target.value);
                   }}
@@ -2343,9 +2387,17 @@ export const TitlesPanel: React.FC = () => {
   const kind: (typeof TITLE_FILTERS)[number]["key"] =
     kindParam && TITLE_FILTERS.some((f) => f.key === kindParam) ? kindParam : "International";
   const urlQ = q.get("q") || q.get("team") || q.get("event") || q.get("league") || "";
+  const userTypedRef = useRef(false);
+  const lastUrlQRef = useRef(urlQ);
   const [search, setSearch] = useState(urlQ);
   useEffect(() => {
-    setSearch(urlQ);
+    if (lastUrlQRef.current !== urlQ) {
+      lastUrlQRef.current = urlQ;
+      userTypedRef.current = false;
+    }
+    if (!userTypedRef.current) {
+      setSearch(urlQ);
+    }
   }, [urlQ]);
   const setTitleUrl = (nextKind: string, nextQ: string) => {
     const next = new URLSearchParams();
@@ -2375,6 +2427,7 @@ export const TitlesPanel: React.FC = () => {
           type="search"
           value={search}
           onChange={(e) => {
+            userTypedRef.current = true;
             setSearch(e.target.value);
             setTitleUrl(kind, e.target.value);
           }}

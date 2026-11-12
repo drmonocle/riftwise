@@ -3,11 +3,11 @@
  * team's chance to finish first and in the top N. The cut line is the viewer's choice: leagues send different
  * numbers of teams to their playoffs. Hidden like the standings in spoiler mode (the records are results).
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { tl } from "../../i18n";
 import { bare, loadRatings, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { searchAlias } from "../../searchAliases";
-import { hubShareUrl } from "../../hub/route";
+import { currentHubRoute, hubShareUrl } from "../../hub/route";
 import type { HubEvent } from "../../hub/types";
 import { playoffOdds } from "../../hub/playoffOdds";
 import { chanceShade } from "../SwissStandings";
@@ -22,38 +22,54 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
   const today = new Date().toISOString().slice(0, 10);
   const odds = useMemo(() => (ratings.data ? playoffOdds(e, ratings.data, today) : null), [e, ratings.data, today]);
   const [pick, setPick] = useState<number | null>(null);
+  const nowRoute = currentHubRoute();
+  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
   const urlSearch = useMemo(() => {
-    const qp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    const qp = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
     return qp.get("q") || qp.get("team") || qp.get("vs") || "";
-  }, []);
+  }, [routeQuery]);
+  const userTypedRef = useRef(false);
+  const lastUrlSearchRef = useRef(urlSearch);
   const [search, setSearch] = useState(urlSearch);
+  useEffect(() => {
+    if (lastUrlSearchRef.current !== urlSearch) {
+      lastUrlSearchRef.current = urlSearch;
+      userTypedRef.current = false;
+    }
+    if (!userTypedRef.current) {
+      setSearch(urlSearch);
+    }
+  }, [urlSearch]);
   const [hidden, reveal] = useHidden(`playoffs:${e.u}`, e.end);
   if (!odds) return null;
   const cut = pick != null && odds.cuts.includes(pick) ? pick : odds.cut;
   const ci = odds.cuts.indexOf(cut);
   const rows = [...odds.rows].sort((a, b) => b.top[ci] - a.top[ci] || b.first - a.first || b.sw - a.sw);
+  const rowMatchesTerm = (r: (typeof rows)[number], q: string) => {
+    const teamPlayersHay = (e.players || [])
+      .filter((p) => (p.tu || (p.t ? resolveTeamAlias(p.t) || prettySlug(p.t) : "")) === r.u)
+      .map((p) => `${p.n} ${p.u || ""}`)
+      .join(" ");
+    const hay = normText(`${r.name} ${r.u} ${teamPlayersHay}`);
+    const hayBare = bare(hay);
+    const rCanon = resolveTeamAlias(r.u) || resolveTeamAlias(r.name);
+    if (hay.includes(q) || (q.length >= 2 && hayBare.includes(bare(q)))) return true;
+    const qCanon = resolveTeamAlias(q);
+    return Boolean(qCanon && (qCanon === r.u || (rCanon && qCanon === rCanon)));
+  };
   const terms = search
     .trim()
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((s) => normText(searchAlias(s.trim())))
     .filter(Boolean);
-  const matchedRows = terms.length
-    ? rows.filter((r) => {
-        const teamPlayersHay = (e.players || [])
-          .filter((p) => (p.tu || (p.t ? resolveTeamAlias(p.t) || prettySlug(p.t) : "")) === r.u)
-          .map((p) => `${p.n} ${p.u || ""}`)
-          .join(" ");
-        const hay = normText(`${r.name} ${r.u} ${teamPlayersHay}`);
-        const hayBare = bare(hay);
-        const rCanon = resolveTeamAlias(r.u) || resolveTeamAlias(r.name);
-        return terms.some((q) => {
-          if (hay.includes(q) || (q.length >= 2 && hayBare.includes(bare(q)))) return true;
-          const qCanon = resolveTeamAlias(q);
-          return Boolean(qCanon && (qCanon === r.u || (rCanon && qCanon === rCanon)));
-        });
-      })
+  const activeTerms =
+    !userTypedRef.current && urlSearch && search === urlSearch
+      ? terms.filter((t) => rows.some((r) => rowMatchesTerm(r, t)))
+      : terms;
+  const matchedRows = activeTerms.length
+    ? rows.filter((r) => activeTerms.some((q) => rowMatchesTerm(r, q)))
     : rows;
-  const filteredRows = matchedRows.length === 0 && urlSearch && search === urlSearch ? rows : matchedRows;
+  const filteredRows = matchedRows.length === 0 && !userTypedRef.current && urlSearch && search === urlSearch ? rows : matchedRows;
   const unrated = odds.rows.filter((r) => r.unrated).length;
   const evChamps = Array.from(new Set((e.champs || []).map((c) => resolveChampSlug(c.c)).filter(Boolean))).slice(0, 2);
   const topTeam0 = filteredRows[0]?.u || "";
@@ -81,11 +97,14 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
           <RevealButton onReveal={reveal} small />
         ) : (
           <span className="flex flex-wrap items-center gap-2">
-            {rows.length > 6 && (
+            {(rows.length > 6 || Boolean(search.trim())) && (
               <input
                 type="search"
                 value={search}
-                onChange={(ev) => setSearch(ev.target.value)}
+                onChange={(ev) => {
+                  userTypedRef.current = true;
+                  setSearch(ev.target.value);
+                }}
                 placeholder={tl("Filter by name or team…")}
                 aria-label={tl("Filter by name or team…")}
                 data-nocapture="1"
@@ -147,6 +166,9 @@ export const PlayoffChances: React.FC<{ e: HubEvent }> = ({ e }) => {
                       query: new URLSearchParams({
                         champ: evChamps[0],
                         ...(evChamps[1] ? { vs: evChamps[1] } : {}),
+                        ...(teamPlayers[0] ? { player: teamPlayers[0], ...(teamPlayers[1] && teamPlayers[1] !== teamPlayers[0] ? { vsplayer: teamPlayers[1] } : {}) } : {}),
+                        ...(filteredRows[0] ? { team: filteredRows[0].u, ...(filteredRows[1] && filteredRows[1].u !== filteredRows[0].u ? { vsteam: filteredRows[1].u } : {}) } : {}),
+                        ...(e.lu ? { league: resolveLeagueSlug(e.lu) || e.lu } : {}),
                         event: e.u,
                         ...(/^\d{4}$/.test((e.start || e.end || "").slice(0, 4))
                           ? { patch: `y${(e.start || e.end || "").slice(0, 4)}`, year: (e.start || e.end || "").slice(0, 4) }

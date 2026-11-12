@@ -4,7 +4,7 @@
  * all time or by year and league. Every row opens the match page at that game.
  * Address: /stats/best?view=series&year=2025&league=lol-champions-korea
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { PlayCircle } from "lucide-react";
 import { tl, tn, tc, stageLabel, fmtDec } from "../../i18n";
 import { bare, loadAliases, loadBest, loadBestIndex, normText, prettySlug, resolveEventSlug, resolveLeagueSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
@@ -55,6 +55,8 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
     q.get("team") && q.get("vs") && !/\s+vs\.?\s+|\s+v\s+/i.test(q.get("team")!)
       ? `${q.get("team")} vs ${q.get("vs")}`
       : q.get("team") || q.get("q") || q.get("vs") || rawEvent || "";
+  const userTypedRef = useRef(false);
+  const lastUrlTeamRef = useRef(urlTeam);
   const [tiers, setTiers] = useState<Set<string>>(() => new Set(urlTiers.split(",").filter(Boolean)));
   const [vodOnly, setVodOnly] = useState(urlVod);
   const [team, setTeam] = useState(urlTeam);
@@ -65,7 +67,13 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
     setVodOnly(urlVod);
   }, [urlVod]);
   useEffect(() => {
-    setTeam(urlTeam);
+    if (lastUrlTeamRef.current !== urlTeam) {
+      lastUrlTeamRef.current = urlTeam;
+      userTypedRef.current = false;
+    }
+    if (!userTypedRef.current) {
+      setTeam(urlTeam);
+    }
   }, [urlTeam]);
 
   const setQ = (patch: Record<string, string | undefined>) => {
@@ -225,6 +233,21 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                       className="text-rw-accent hover:underline font-semibold"
                     >
                       {tl("Compare")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "counters",
+                        query: new URLSearchParams({
+                          ...(a ? { team: a } : {}),
+                          ...(b && b !== a ? { vsteam: b } : {}),
+                          ...(league ? { league } : {}),
+                          ...(canonEv && teamTerms.length > 0 ? { event: canonEv } : {}),
+                          ...(r0Year ? { patch: `y${r0Year}`, year: r0Year } : {}),
+                        }).toString(),
+                      }}
+                      className="text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Counters")} →
                     </HubLink>
                     <HubLink
                       to={{
@@ -426,6 +449,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
             type="search"
             value={team}
             onChange={(e) => {
+              userTypedRef.current = true;
               setTeam(e.target.value);
               setQ({ team: e.target.value || undefined, q: undefined, vs: undefined, event: undefined });
             }}
@@ -475,6 +499,21 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                   className="text-rw-sub hover:text-rw-accent hover:underline"
                 >
                   {tl("Compare")} →
+                </HubLink>
+                <HubLink
+                  to={{
+                    kind: "counters",
+                    query: new URLSearchParams({
+                      team: sa,
+                      vsteam: sb,
+                      ...(league ? { league } : {}),
+                      ...(fEv ? { event: fEv } : {}),
+                      ...(fYr ? { patch: `y${fYr}`, year: fYr } : {}),
+                    }).toString(),
+                  }}
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Counters")} →
                 </HubLink>
                 <HubLink
                   to={{

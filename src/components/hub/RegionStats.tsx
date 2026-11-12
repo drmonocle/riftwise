@@ -3,7 +3,7 @@
  * and games won, the record against other regions, the best finish and (all years) titles and finals, plus the region
  * against region records. From the event's lines files (each team's region and final place, builds from 2026-10-23 on).
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { tl, regionName } from "../../i18n";
 import type { EventLines } from "../../hub/worldsFacts";
 import { normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, searchAlias } from "../../hub/data";
@@ -273,7 +273,7 @@ const RegionTrend: React.FC<{
                 query: new URLSearchParams({
                   champ: cA,
                   ...(cB ? { vs: cB } : {}),
-                  ...(pA ? { player: pA } : {}),
+                  ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
                   ...(tA ? { team: tA, ...(tB && tB !== tA ? { vsteam: tB } : {}) } : {}),
                   league: intlLeague,
                 }).toString(),
@@ -479,7 +479,7 @@ const RegionTrend: React.FC<{
                             league: intlLeague,
                             year: y,
                             ...(wl[2] ? { team: wl[2], ...(vsTopTeam && vsTopTeam !== wl[2] ? { vs: vsTopTeam } : {}) } : {}),
-                            ...(pA ? { player: pA } : {}),
+                            ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
                             ...(cA ? { champ: cA } : {}),
                           }).toString(),
                         }}
@@ -558,29 +558,32 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
       );
     });
   };
-  const [pairSearch, setPairSearch] = useState(() => {
+  const rawPairUrlSearch = useMemo(() => {
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    const raw = p.get("region") || p.get("pair") || "";
-    if (!raw.trim() || !pairs.length) return "";
-    const terms = raw
+    return p.get("region") || p.get("pair") || p.get("q") || "";
+  }, [routeQuery]);
+  const effectivePairUrlSearch = useMemo(() => {
+    if (!rawPairUrlSearch.trim() || !pairs.length) return "";
+    const terms = rawPairUrlSearch
       .trim()
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => normText(s.trim()))
       .filter(Boolean);
-    return terms.length && pairs.some((row) => matchesPairRow(row, terms)) ? raw : "";
-  });
+    const matchingTerms = terms.filter((t) => pairs.some((row) => matchesPairRow(row, [t])));
+    return matchingTerms.join(",");
+  }, [rawPairUrlSearch, pairs, topTeamByRegion]);
+  const userTypedRef = useRef(false);
+  const lastPairUrlSearchRef = useRef(rawPairUrlSearch);
+  const [pairSearch, setPairSearch] = useState(() => effectivePairUrlSearch);
   useEffect(() => {
-    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
-    const v = p.get("region") || p.get("pair") || "";
-    if (v && pairs.length) {
-      const terms = v
-        .trim()
-        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
-        .map((s) => normText(s.trim()))
-        .filter(Boolean);
-      if (terms.length && pairs.some((row) => matchesPairRow(row, terms))) setPairSearch(v);
+    if (lastPairUrlSearchRef.current !== rawPairUrlSearch) {
+      lastPairUrlSearchRef.current = rawPairUrlSearch;
+      userTypedRef.current = false;
     }
-  }, [routeQuery, pairs]);
+    if (!userTypedRef.current) {
+      setPairSearch(effectivePairUrlSearch);
+    }
+  }, [rawPairUrlSearch, effectivePairUrlSearch]);
   const pairTerms = useMemo(
     () =>
       pairSearch
@@ -627,7 +630,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
-                    ...(pA ? { player: pA } : {}),
+                    ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
                     ...(topRegTeamA ? { team: topRegTeamA, ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { vsteam: topRegTeamB } : {}) } : {}),
                     league: intlLeague,
                     ...(singleYear ? { patch: `y${singleYear}`, year: singleYear } : {}),
@@ -999,7 +1002,7 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     query: new URLSearchParams({
                       champ: cA,
                       ...(cB ? { vs: cB } : {}),
-                      ...(pA ? { player: pA } : {}),
+                      ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
                       ...(pairTeamA ? { team: pairTeamA, ...(pairTeamB && pairTeamB !== pairTeamA ? { vsteam: pairTeamB } : {}) } : {}),
                       league: intlLeague,
                       ...(singleYear ? { patch: `y${singleYear}`, year: singleYear } : {}),
@@ -1181,7 +1184,10 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 <input
                   type="search"
                   value={pairSearch}
-                  onChange={(e) => setPairSearch(e.target.value)}
+                  onChange={(e) => {
+                    userTypedRef.current = true;
+                    setPairSearch(e.target.value);
+                  }}
                   placeholder={tl("Filter by name or team…")}
                   aria-label={tl("Filter by name or team…")}
                   data-nocapture="1"

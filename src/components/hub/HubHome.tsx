@@ -3,7 +3,7 @@
  * watch), the event that is on, four ways in (tournaments, teams, players, champions), the power rankings, what is
  * on the line tonight, the week's storylines and the analyst tools. Also the tournament browser (EventsBrowse).
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { HomeStorylines } from "./Storylines";
 import { AtStakeToday } from "./AtStake";
 import type { AppSettings, Match } from "../../types";
@@ -1366,6 +1366,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
                         kind: "finder",
                         query: new URLSearchParams({
                           player: pSlug,
+                          ...(rivalPSlug ? { vsplayer: rivalPSlug } : {}),
                           ...(tSlug ? { team: tSlug } : {}),
                           ...(rNorm ? { role: rNorm } : {}),
                           ...(potmYr ? { year: potmYr } : {}),
@@ -1499,11 +1500,19 @@ export const EventsBrowse: React.FC<{ year?: string; query?: string; meta: HubMe
   const state = useLoad(() => loadEventsOfYear(y), [y]);
   const urlScope: "main" | "all" = qp.get("scope") === "all" ? "all" : "main";
   const urlQ = qp.get("q") || qp.get("league") || qp.get("team") || qp.get("region") || qp.get("event") || "";
+  const userTypedRef = useRef(false);
+  const lastUrlQRef = useRef(urlQ);
   const [scope, setScope] = useState<"main" | "all">(urlScope);
   const [q, setQ] = useState(urlQ);
   useEffect(() => {
     setScope(urlScope);
-    setQ(urlQ);
+    if (lastUrlQRef.current !== urlQ) {
+      lastUrlQRef.current = urlQ;
+      userTypedRef.current = false;
+    }
+    if (!userTypedRef.current) {
+      setQ(urlQ);
+    }
   }, [urlScope, urlQ]);
   const syncUrl = (nextScope: "main" | "all", nextQ: string) => {
     const next = new URLSearchParams(query || "");
@@ -1520,6 +1529,7 @@ export const EventsBrowse: React.FC<{ year?: string; query?: string; meta: HubMe
     navigateHub({ kind: "tournaments", ...(year ? { year } : qYear ? { year: qYear } : {}), ...(qs ? { query: qs } : {}) }, { replace: true });
   };
   const handleSetQ = (nextQ: string) => {
+    userTypedRef.current = true;
     setQ(nextQ);
     syncUrl(scope, nextQ);
   };
@@ -1572,28 +1582,29 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
     const terms = qq ? qq.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
     const defaultFilter = (e: EventListItem) => !e.p && (scope === "all" || (e.lv === "Primary" && !e.q));
     if (!terms.length) return list.filter(defaultFilter);
-    const matched = list.filter((e) => {
+    const matchesEventTerm = (e: EventListItem, t: string) => {
       const lgSlug = e.l ? resolveLeagueSlug(e.l) : "";
       const winSlug = e.wu || e.w ? resolveTeamAlias(e.wu || e.w || "") : "";
       const regCanon = e.r ? resolveRegionFilter(e.r) : null;
       const hay = normText(`${e.n} ${e.l || ""} ${lgSlug} ${e.r || ""} ${e.w || ""} ${e.wu || ""} ${winSlug} ${e.u || ""}`);
-      return terms.some((t) => {
-        const qAlias = searchAlias(t);
-        const resolvedT = resolveLeagueSlug(qAlias || t);
-        const canonTeam = resolveTeamAlias(qAlias || t);
-        const canonReg = resolveRegionFilter(t);
-        return (
-          hay.includes(t) ||
-          (qAlias !== null && hay.includes(qAlias)) ||
-          (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
-          (resolvedT && lgSlug === resolvedT) ||
-          Boolean(winSlug && canonTeam && canonTeam === winSlug) ||
-          Boolean(regCanon && canonReg && canonReg === regCanon) ||
-          resolveEventSlug(qAlias || t) === e.u ||
-          matchesPeriodEvent(e.u, e.n, t)
-        );
-      });
-    });
+      const qAlias = searchAlias(t);
+      const resolvedT = resolveLeagueSlug(qAlias || t);
+      const canonTeam = resolveTeamAlias(qAlias || t);
+      const canonReg = resolveRegionFilter(t);
+      return (
+        hay.includes(t) ||
+        (qAlias !== null && hay.includes(qAlias)) ||
+        (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+        Boolean(resolvedT && lgSlug === resolvedT) ||
+        Boolean(winSlug && canonTeam && canonTeam === winSlug) ||
+        Boolean(regCanon && canonReg && canonReg === regCanon) ||
+        resolveEventSlug(qAlias || t) === e.u ||
+        matchesPeriodEvent(e.u, e.n, t)
+      );
+    };
+    const activeTerms = urlQ && q === urlQ ? terms.filter((t) => list.some((e) => matchesEventTerm(e, t))) : terms;
+    if (!activeTerms.length) return urlQ && q === urlQ ? list.filter(defaultFilter) : [];
+    const matched = list.filter((e) => activeTerms.some((t) => matchesEventTerm(e, t)));
     if (matched.length === 0 && urlQ && q === urlQ) return list.filter(defaultFilter);
     return matched;
   }, [list, scope, q, urlQ]);

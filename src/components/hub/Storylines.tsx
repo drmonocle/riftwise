@@ -2,7 +2,7 @@
  * Storylines: milestones within reach, streaks, unbeaten runs (worked out by each stats build into the team / player files and
  * hub/notes.json), written out as sentences a caster can read on air. Spoiler mode hides them while they use fresh games.
  */
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { champName } from "../../champions";
@@ -373,18 +373,23 @@ export const OwnStorylines: React.FC<{
   notes?: Notes;
   spoilerKey: string;
   share?: string;
-  who?: { kind: "team" | "player"; slug: string; team?: string; opp?: string; role?: string };
+  who?: { kind: "team" | "player"; slug: string; team?: string; opp?: string; player?: string; vsPlayer?: string; role?: string };
 }> = ({ notes, spoilerKey, share, who }) =>
   notes && notes.list.length ? (
     <StoryList
-      lines={notes.list.map((nt, i) => ({
-        key: String(i),
-        text: noteText(nt, who),
-        plain: notePlainText(nt),
-        champ: nt.c,
-        team: who?.team || (who?.kind === "team" ? who.slug : undefined),
-        asOf: notes.asOf,
-      }))}
+      lines={notes.list.map((nt, i) => {
+        const ntSlug = nt.c ? resolveChampSlug(nt.c) : "";
+        const otherChampNote = notes.list.find((x, j) => j !== i && x.c && resolveChampSlug(x.c) !== ntSlug);
+        const vsChamp = otherChampNote?.c ? resolveChampSlug(otherChampNote.c) : undefined;
+        return {
+          key: String(i),
+          text: noteText(nt, who ? { ...who, ...(vsChamp ? { vsChamp } : {}) } : undefined),
+          plain: notePlainText(nt),
+          champ: nt.c,
+          team: who?.team || (who?.kind === "team" ? who.slug : undefined),
+          asOf: notes.asOf,
+        };
+      })}
       spoilerKey={spoilerKey}
       share={share}
       right={
@@ -398,6 +403,8 @@ export const OwnStorylines: React.FC<{
               const rawNoteEv = notes.list.find((nt) => nt.e)?.e;
               const noteEv = rawNoteEv ? resolveEventSlug(rawNoteEv) : undefined;
               const whoOppSlug = who.opp ? resolveTeamAlias(who.opp) || prettySlug(who.opp) : "";
+              const whoPlayerSlug = who.player ? resolvePlayerSlug(who.player) || prettySlug(who.player) : "";
+              const whoVsPlayerSlug = who.vsPlayer ? resolvePlayerSlug(who.vsPlayer) || prettySlug(who.vsPlayer) : "";
               return who.kind === "team" ? (
                 <>
                   <HubLink
@@ -445,6 +452,7 @@ export const OwnStorylines: React.FC<{
                           ...(noteChamps[1] ? { vs: resolveChampSlug(noteChamps[1]) } : {}),
                           team: who.slug,
                           ...(whoOppSlug && whoOppSlug !== who.slug ? { vsteam: whoOppSlug } : {}),
+                          ...(whoPlayerSlug ? { player: whoPlayerSlug, ...(whoVsPlayerSlug && whoVsPlayerSlug !== whoPlayerSlug ? { vsplayer: whoVsPlayerSlug } : {}) } : {}),
                           ...(noteYr ? { patch: `y${noteYr}`, year: String(noteYr) } : {}),
                           ...(noteEv ? { event: noteEv } : {}),
                         }).toString(),
@@ -460,6 +468,7 @@ export const OwnStorylines: React.FC<{
                       query: new URLSearchParams({
                         team: who.slug,
                         ...(whoOppSlug && whoOppSlug !== who.slug ? { vs: whoOppSlug } : {}),
+                        ...(whoPlayerSlug ? { player: whoPlayerSlug, ...(whoVsPlayerSlug && whoVsPlayerSlug !== whoPlayerSlug ? { vsplayer: whoVsPlayerSlug } : {}) } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
                         ...(noteChamps[1] ? { vschamp: resolveChampSlug(noteChamps[1]) } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
@@ -476,6 +485,7 @@ export const OwnStorylines: React.FC<{
                       query: new URLSearchParams({
                         team: who.slug,
                         ...(whoOppSlug && whoOppSlug !== who.slug ? { vs: whoOppSlug } : {}),
+                        ...(whoPlayerSlug ? { player: whoPlayerSlug, ...(whoVsPlayerSlug && whoVsPlayerSlug !== whoPlayerSlug ? { vsplayer: whoVsPlayerSlug } : {}) } : {}),
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
@@ -519,7 +529,7 @@ export const OwnStorylines: React.FC<{
                         ...(noteYr ? { year: String(noteYr) } : {}),
                         ...(noteEv ? { event: noteEv } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
-                        q: [who.slug, whoOppSlug && whoOppSlug !== who.slug ? whoOppSlug : ""].filter(Boolean).join(","),
+                        q: [who.slug, whoOppSlug && whoOppSlug !== who.slug ? whoOppSlug : "", whoPlayerSlug, whoVsPlayerSlug && whoVsPlayerSlug !== whoPlayerSlug ? whoVsPlayerSlug : ""].filter(Boolean).join(","),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -562,7 +572,13 @@ export const OwnStorylines: React.FC<{
                     );
                   })()}
                   <HubLink
-                    to={{ kind: "compare", mode: "player", a: who.slug, ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}) }}
+                    to={{
+                      kind: "compare",
+                      mode: "player",
+                      a: who.slug,
+                      ...(whoVsPlayerSlug && whoVsPlayerSlug !== who.slug ? { b: whoVsPlayerSlug } : {}),
+                      ...(noteYr ? { period: `y${noteYr}` } : noteEv ? { period: `e:${noteEv}` } : {}),
+                    }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
                   >
                     {tl("Compare")} →
@@ -575,6 +591,7 @@ export const OwnStorylines: React.FC<{
                           champ: resolveChampSlug(noteChamp),
                           ...(noteChamps[1] ? { vs: resolveChampSlug(noteChamps[1]) } : {}),
                           player: who.slug,
+                          ...(whoVsPlayerSlug && whoVsPlayerSlug !== who.slug ? { vsplayer: whoVsPlayerSlug } : {}),
                           ...(who.team ? { team: resolveTeamAlias(who.team) || prettySlug(who.team) } : {}),
                           ...(whoOppSlug ? { vsteam: whoOppSlug } : {}),
                           ...(who.role ? { role: who.role } : {}),
@@ -592,6 +609,7 @@ export const OwnStorylines: React.FC<{
                       kind: "items",
                       query: new URLSearchParams({
                         player: who.slug,
+                        ...(whoVsPlayerSlug && whoVsPlayerSlug !== who.slug ? { vsplayer: whoVsPlayerSlug } : {}),
                         ...(who.team ? { team: resolveTeamAlias(who.team) || prettySlug(who.team) } : {}),
                         ...(whoOppSlug ? { vs: whoOppSlug } : {}),
                         ...(who.role ? { role: who.role } : {}),
@@ -610,6 +628,7 @@ export const OwnStorylines: React.FC<{
                       kind: "finder",
                       query: new URLSearchParams({
                         player: who.slug,
+                        ...(whoVsPlayerSlug && whoVsPlayerSlug !== who.slug ? { vsplayer: whoVsPlayerSlug } : {}),
                         ...(who.team ? { team: resolveTeamAlias(who.team) || prettySlug(who.team) } : {}),
                         ...(whoOppSlug ? { vs: whoOppSlug } : {}),
                         ...(who.role ? { role: who.role } : {}),
@@ -631,7 +650,7 @@ export const OwnStorylines: React.FC<{
                         ...(noteEv ? { event: noteEv } : {}),
                         ...(who.role ? { role: who.role } : {}),
                         ...(noteChamp ? { champ: resolveChampSlug(noteChamp) } : {}),
-                        q: [who.slug, who.team ? resolveTeamAlias(who.team) || prettySlug(who.team) : "", whoOppSlug].filter(Boolean).join(","),
+                        q: [who.slug, whoVsPlayerSlug && whoVsPlayerSlug !== who.slug ? whoVsPlayerSlug : "", who.team ? resolveTeamAlias(who.team) || prettySlug(who.team) : "", whoOppSlug].filter(Boolean).join(","),
                       }).toString(),
                     }}
                     className="text-rw-sub hover:text-rw-accent hover:underline"
@@ -683,34 +702,49 @@ export const OwnStorylines: React.FC<{
 /** Stats home: the most notable storylines of teams and players who played in the last 30 days. */
 export const HomeStorylines: React.FC = () => {
   const state = useLoad(() => load<GlobalNote[]>("hub/notes.json"), []);
-  const [search, setSearch] = useState("");
+  const route = currentHubRoute();
+  const urlSearch = (() => {
+    if (!("query" in route) || !route.query) return "";
+    const params = new URLSearchParams(route.query);
+    return params.get("storylines")?.trim() || params.get("notes")?.trim() || "";
+  })();
+  const [search, setSearch] = useState(urlSearch);
+  const userTypedRef = useRef(false);
   // more of them as the window gets wider: 8 in one column, 6 more for each column after
   const cols = useColumns();
   const all = state.data || [];
+  const matchesTerm = (r: GlobalNote, t: string) => {
+    const hay = normText(`${r.name} ${r.u} ${r.c || ""} ${r.c ? champName(r.c) : ""} ${r.e || ""} ${notePlainText(r)}`);
+    const hayBare = bare(hay);
+    const rTeam = r.t === "team" ? resolveTeamAlias(r.u || r.name) : "";
+    const rPlayer = r.t === "player" ? r.u || resolvePlayerSlug(r.name) : "";
+    const tb = bare(t);
+    const ta = searchAlias(t);
+    const qTeam = rTeam ? resolveTeamAlias(t) : "";
+    const qPlayer = rPlayer ? resolvePlayerSlug(t) : "";
+    return (
+      hay.includes(t) ||
+      (tb.length >= 2 && hayBare.includes(tb)) ||
+      (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
+      (r.c ? matchesChampSearch(r.c, t) : false) ||
+      Boolean(qTeam && qTeam === rTeam) ||
+      Boolean(qPlayer && qPlayer === rPlayer) ||
+      Boolean(r.e && matchesPeriodEvent(r.e, undefined, t))
+    );
+  };
+  useEffect(() => {
+    if (!userTypedRef.current && urlSearch && all.length > 0) {
+      const uTerms = urlSearch.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean);
+      const matchingTerms = uTerms.filter((t) => all.some((r) => matchesTerm(r, t)));
+      setSearch(matchingTerms.length > 0 ? matchingTerms.join(",") : "");
+    }
+  }, [urlSearch, all]);
   const q = normText(search);
-  const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
+  const rawTerms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
+  const activeTerms = rawTerms.filter((t) => all.some((r) => matchesTerm(r, t)));
+  const terms = activeTerms.length > 0 ? activeTerms : rawTerms;
   const rows = terms.length
-    ? all.filter((r) => {
-        const hay = normText(`${r.name} ${r.u} ${r.c || ""} ${r.c ? champName(r.c) : ""} ${r.e || ""} ${notePlainText(r)}`);
-        const hayBare = bare(hay);
-        const rTeam = r.t === "team" ? resolveTeamAlias(r.u || r.name) : "";
-        const rPlayer = r.t === "player" ? r.u || resolvePlayerSlug(r.name) : "";
-        return terms.some((t) => {
-          const tb = bare(t);
-          const ta = searchAlias(t);
-          const qTeam = rTeam ? resolveTeamAlias(t) : "";
-          const qPlayer = rPlayer ? resolvePlayerSlug(t) : "";
-          return (
-            hay.includes(t) ||
-            (tb.length >= 2 && hayBare.includes(tb)) ||
-            (ta ? hay.includes(ta) || hayBare.includes(bare(ta)) : false) ||
-            (r.c ? matchesChampSearch(r.c, t) : false) ||
-            Boolean(qTeam && qTeam === rTeam) ||
-            Boolean(qPlayer && qPlayer === rPlayer) ||
-            Boolean(r.e && matchesPeriodEvent(r.e, undefined, t))
-          );
-        });
-      })
+    ? all.filter((r) => terms.some((t) => matchesTerm(r, t)))
     : all.slice(0, 8 + (cols - 1) * 6);
   if (!all.length) return null;
   return (
@@ -1157,7 +1191,10 @@ export const HomeStorylines: React.FC = () => {
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                userTypedRef.current = true;
+                setSearch(e.target.value);
+              }}
               placeholder={tl("Filter by name or team…")}
               aria-label={tl("Filter by name or team…")}
               data-nocapture="1"
@@ -1178,7 +1215,7 @@ export const HomeStorylines: React.FC = () => {
         const whoQuery = new URLSearchParams({
           ...(r.y ? { p: `y${r.y}` } : r.e ? { p: `e:${resolveEventSlug(r.e)}` } : {}),
           ...(cSlug ? { champ: cSlug } : {}),
-          ...(vsTeamSlug ? { q: vsTeamSlug } : cSlug ? { q: cSlug } : {}),
+          ...(vsTeamSlug || vsPlayerSlug ? { q: [vsTeamSlug, vsPlayerSlug].filter(Boolean).join(",") } : cSlug ? { q: cSlug } : {}),
         }).toString();
         return {
           key: `${entitySlug}-${i}`,

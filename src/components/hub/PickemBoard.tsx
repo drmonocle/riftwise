@@ -4,11 +4,12 @@
  * not yet played count, and a pick can't change once its match is done: the server stamps each one. An entrant can
  * hide their name: the row and score stay, shown as a hidden player to everyone else.
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { EyeOff, LogIn, Trophy, UserMinus, Upload } from "lucide-react";
 import { tl, tn } from "../../i18n";
 import { pickemBoard, submitPickem, leavePickem, hidePickem, syncAccount, SYNC_EVENT, SyncError, type PickemBoard as Board, type PickemPick, type PickemRow, type PickemTeam } from "../../sync";
 import { normText, searchAlias } from "../../hub/data";
+import { currentHubRoute } from "../../hub/route";
 import { Section, HubLink } from "./ui";
 import { BroadcastCardButton, listCard } from "./BroadcastCard";
 import { OPEN_TAB_EVENT } from "../../a11y";
@@ -74,15 +75,55 @@ export const PickemBoard: React.FC<{
     setBusy(false);
   };
 
-  const [search, setSearch] = useState("");
   const rows = board?.rows || [];
   const bare = (s: string) => normText(s).replace(/[^a-z0-9\u00c0-\uffff]/g, "");
-  const q = normText(searchAlias(search.trim()));
-  const qBare = bare(q);
-  const filteredRows = q
+  const nowRoute = currentHubRoute();
+  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
+  const rawUrlSearch = useMemo(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return p.get("q") || p.get("player") || p.get("name") || "";
+  }, [routeQuery]);
+  const effectiveUrlSearch = useMemo(() => {
+    if (!rawUrlSearch.trim() || !rows.length) return "";
+    const terms = rawUrlSearch
+      .trim()
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(searchAlias(s.trim())))
+      .filter(Boolean);
+    const matchingTerms = terms.filter((t) => {
+      const tBare = bare(t);
+      return rows.some((r) => {
+        const hay = normText(shownName(r));
+        return hay.includes(t) || (tBare.length >= 2 && bare(hay).includes(tBare));
+      });
+    });
+    return matchingTerms.join(",");
+  }, [rawUrlSearch, rows]);
+  const userTypedRef = useRef(false);
+  const lastUrlSearchRef = useRef(rawUrlSearch);
+  const [search, setSearch] = useState(() => effectiveUrlSearch);
+  useEffect(() => {
+    if (lastUrlSearchRef.current !== rawUrlSearch) {
+      lastUrlSearchRef.current = rawUrlSearch;
+      userTypedRef.current = false;
+    }
+    if (!userTypedRef.current) {
+      setSearch(effectiveUrlSearch);
+    }
+  }, [rawUrlSearch, effectiveUrlSearch]);
+  const qTerms = search
+    .trim()
+    .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+    .map((s) => normText(searchAlias(s.trim())))
+    .filter(Boolean);
+  const filteredRows = qTerms.length
     ? rows.filter((r) => {
         const hay = normText(shownName(r));
-        return hay.includes(q) || (qBare.length >= 2 && bare(hay).includes(qBare));
+        const hayBare = bare(hay);
+        return qTerms.some((q) => {
+          const qBare = bare(q);
+          return hay.includes(q) || (qBare.length >= 2 && hayBare.includes(qBare));
+        });
       })
     : rows;
   const me = board?.me;
@@ -283,11 +324,14 @@ export const PickemBoard: React.FC<{
               </>
             );
           })()}
-          {rows.length > 8 && (
+          {(rows.length > 8 || Boolean(search.trim())) && (
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                userTypedRef.current = true;
+                setSearch(e.target.value);
+              }}
               placeholder={tl("Filter by name or team…")}
               aria-label={tl("Filter by name or team…")}
               data-nocapture="1"
@@ -382,7 +426,7 @@ export const PickemBoard: React.FC<{
           return (
             <ol className="text-xs divide-y divide-rw-border border border-rw-border rounded-lg overflow-hidden">
               {filteredRows.map((r, i) => renderRow(r, i))}
-              {me && !filteredRows.some((r) => r.me) && (!q || normText(shownName(me)).includes(q) || (qBare.length >= 2 && bare(shownName(me)).includes(qBare))) && renderRow(me, "me", true)}
+              {me && !filteredRows.some((r) => r.me) && (qTerms.length === 0 || qTerms.some((q) => { const qBare = bare(q); return normText(shownName(me)).includes(q) || (qBare.length >= 2 && bare(shownName(me)).includes(qBare)); })) && renderRow(me, "me", true)}
             </ol>
           );
         })()

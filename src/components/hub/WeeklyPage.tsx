@@ -4,7 +4,7 @@
  * night by the stats build (hub/weekly.json). An overview card for X and "Copy for Reddit" (Markdown) make the
  * weekly post with no writing.
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ClipboardCopy, Check } from "lucide-react";
 import { tl, tn, locale, roleName } from "../../i18n";
 import { champName } from "../../champions";
@@ -161,11 +161,20 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
     const qp = new URLSearchParams(route.kind === "weekly" && "query" in route ? route.query || "" : "");
     return qp.get("q") || qp.get("team") || qp.get("vs") || qp.get("league") || qp.get("event") || "";
   }, [route]);
+  const userTypedRef = useRef(false);
+  const lastUrlQRef = useRef(urlQ);
   const [resultFilter, setResultFilter] = useState(urlQ);
   useEffect(() => {
-    setResultFilter(urlQ);
+    if (lastUrlQRef.current !== urlQ) {
+      lastUrlQRef.current = urlQ;
+      userTypedRef.current = false;
+    }
+    if (!userTypedRef.current) {
+      setResultFilter(urlQ);
+    }
   }, [urlQ]);
   const updateResultFilter = (val: string) => {
+    userTypedRef.current = true;
     setResultFilter(val);
     const next = new URLSearchParams();
     if (val.trim()) next.set("q", val.trim());
@@ -182,32 +191,35 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((s) => normText(s.trim()))
     .filter(Boolean);
-  const matchedResults = rTerms.length
-    ? w.results.filter((r) => {
-        const hay = normText(`${r.a} ${r.au || ""} ${r.b} ${r.bu || ""} ${r.t} ${r.e || ""} ${r.st || ""}`);
-        const hayBare = bare(hay);
-        const rowTeams = [r.au, r.a, r.bu, r.b]
-          .filter((tn): tn is string => Boolean(tn))
-          .map((tn) => resolveTeamAlias(tn, aliases.data?.team));
-        const rowLg = resolveLeagueSlug(r.e || r.t || "");
-        return rTerms.some((t) => {
-          const qAlias = searchAlias(t);
-          if (
-            hay.includes(t) ||
-            (t.length >= 2 && hayBare.includes(bare(t))) ||
-            (qAlias && (hay.includes(qAlias) || (bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias)))))
-          )
-            return true;
-          const canonTeam = resolveTeamAlias(t, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "");
-          if (canonTeam && rowTeams.includes(canonTeam)) return true;
-          const canonLg = resolveLeagueSlug(t) || (qAlias ? resolveLeagueSlug(qAlias) : "");
-          if (canonLg && canonLg === rowLg) return true;
-          if (matchesPeriodEvent(r.e || "", r.t || "", t) || Boolean(qAlias && matchesPeriodEvent(r.e || "", r.t || "", qAlias))) return true;
-          return false;
-        });
-      })
+  const resultMatchesTerm = (r: HubWeekly["results"][number], t: string) => {
+    const hay = normText(`${r.a} ${r.au || ""} ${r.b} ${r.bu || ""} ${r.t} ${r.e || ""} ${r.st || ""}`);
+    const hayBare = bare(hay);
+    const rowTeams = [r.au, r.a, r.bu, r.b]
+      .filter((tn): tn is string => Boolean(tn))
+      .map((tn) => resolveTeamAlias(tn, aliases.data?.team));
+    const rowLg = resolveLeagueSlug(r.e || r.t || "");
+    const qAlias = searchAlias(t);
+    if (
+      hay.includes(t) ||
+      (t.length >= 2 && hayBare.includes(bare(t))) ||
+      (qAlias && (hay.includes(qAlias) || (bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias)))))
+    )
+      return true;
+    const canonTeam = resolveTeamAlias(t, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "");
+    if (canonTeam && rowTeams.includes(canonTeam)) return true;
+    const canonLg = resolveLeagueSlug(t) || (qAlias ? resolveLeagueSlug(qAlias) : "");
+    if (canonLg && canonLg === rowLg) return true;
+    if (matchesPeriodEvent(r.e || "", r.t || "", t) || Boolean(qAlias && matchesPeriodEvent(r.e || "", r.t || "", qAlias))) return true;
+    return false;
+  };
+  const activeRTerms =
+    !userTypedRef.current && urlQ && resultFilter === urlQ
+      ? rTerms.filter((t) => w.results.some((r) => resultMatchesTerm(r, t)))
+      : rTerms;
+  const matchedResults = activeRTerms.length
+    ? w.results.filter((r) => activeRTerms.some((t) => resultMatchesTerm(r, t)))
     : w.results;
-  const shownResults = matchedResults.length === 0 && urlQ && resultFilter === urlQ ? w.results : matchedResults;
+  const shownResults = matchedResults.length === 0 && !userTypedRef.current && urlQ && resultFilter === urlQ ? w.results : matchedResults;
   return (
     <div className="rw-page">
       <div className={`rw-span ${card}`}>
@@ -405,10 +417,12 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                   <HubLink
                     to={{
                       kind: "counters",
-                      ...(c0s || wy
+                      ...(c0s || ta || wp0 || wy
                         ? {
                             query: new URLSearchParams({
                               ...(c0s ? { champ: c0s, ...(c1s ? { vs: c1s } : {}) } : {}),
+                              ...(wp0 ? { player: wp0, ...(wp1 ? { vsplayer: wp1 } : {}) } : {}),
+                              ...(ta ? { team: ta, ...(tb && tb !== ta ? { vsteam: tb } : {}) } : {}),
                               ...(wy ? { patch: `y${wy}`, year: wy } : {}),
                             }).toString(),
                           }
@@ -975,7 +989,13 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           <HubLink
                             to={{
                               kind: "counters",
-                              query: `champ=${encodeURIComponent(ch)}${ch2 ? `&vs=${encodeURIComponent(ch2)}` : ""}${wy ? `&patch=y${encodeURIComponent(wy)}&year=${encodeURIComponent(wy)}` : ""}`,
+                              query: new URLSearchParams({
+                                champ: ch,
+                                ...(ch2 ? { vs: ch2 } : {}),
+                                ...(pl ? { player: pl, ...(pl2 ? { vsplayer: pl2 } : {}) } : {}),
+                                ...(tm ? { team: tm, ...(tm2 ? { vsteam: tm2 } : {}) } : {}),
+                                ...(wy ? { patch: `y${wy}`, year: wy } : {}),
+                              }).toString(),
                             }}
                             className="text-rw-sub hover:text-rw-accent hover:underline"
                           >
@@ -1435,7 +1455,15 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           <HubLink
                             to={{
                               kind: "counters",
-                              query: `champ=${encodeURIComponent(pwC0)}${pwC1 ? `&vs=${encodeURIComponent(pwC1)}` : ""}${w.players[0].r ? `&role=${encodeURIComponent(w.players[0].r)}` : ""}${wy ? `&patch=y${encodeURIComponent(wy)}&year=${encodeURIComponent(wy)}` : ""}`,
+                              query: new URLSearchParams({
+                                champ: pwC0,
+                                ...(pwC1 ? { vs: pwC1 } : {}),
+                                player: pwP0,
+                                ...(pwP1 ? { vsplayer: pwP1 } : {}),
+                                ...(pwT0 ? { team: pwT0, ...(pwT1 ? { vsteam: pwT1 } : {}) } : {}),
+                                ...(w.players[0].r ? { role: w.players[0].r } : {}),
+                                ...(wy ? { patch: `y${wy}`, year: wy } : {}),
+                              }).toString(),
                             }}
                             className="text-rw-accent hover:underline font-semibold"
                           >
@@ -1690,7 +1718,28 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           <HubLink
                             to={{
                               kind: "counters",
-                              query: `champ=${encodeURIComponent(resolveChampSlug(w.champs[0][0]))}${w.champs[1] ? `&vs=${encodeURIComponent(resolveChampSlug(w.champs[1][0]))}` : ""}${wy ? `&patch=y${encodeURIComponent(wy)}&year=${encodeURIComponent(wy)}` : ""}`,
+                              query: new URLSearchParams({
+                                champ: resolveChampSlug(w.champs[0][0]),
+                                ...(w.champs[1]?.[0] && resolveChampSlug(w.champs[1][0]) !== resolveChampSlug(w.champs[0][0])
+                                  ? { vs: resolveChampSlug(w.champs[1][0]) }
+                                  : {}),
+                                ...(w.players?.[0]
+                                  ? {
+                                      player: w.players[0].u || playerSlug(w.players[0].n),
+                                      ...(w.players[1] &&
+                                      (w.players[1].u || playerSlug(w.players[1].n)) !== (w.players[0].u || playerSlug(w.players[0].n))
+                                        ? { vsplayer: w.players[1].u || playerSlug(w.players[1].n) }
+                                        : {}),
+                                    }
+                                  : {}),
+                                ...(w.upsets[0]
+                                  ? {
+                                      team: teamSlug(w.upsets[0].w),
+                                      ...(teamSlug(w.upsets[0].l) !== teamSlug(w.upsets[0].w) ? { vsteam: teamSlug(w.upsets[0].l) } : {}),
+                                    }
+                                  : {}),
+                                ...(wy ? { patch: `y${wy}`, year: wy } : {}),
+                              }).toString(),
                             }}
                             className="text-rw-accent hover:underline font-semibold"
                           >

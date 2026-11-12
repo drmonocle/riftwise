@@ -4,11 +4,12 @@
  * leagues by default; every league one click away. The build only sees a move once the player has played for the
  * new club, so announced transfers show up with their first game.
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { tl, roleName } from "../../i18n";
 import { bare, loadLeagues, loadMoves, normText, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { normalizeRole } from "../../hub/champAgg";
+import { currentHubRoute } from "../../hub/route";
 import { searchAlias } from "../../searchAliases";
 import { fmtDate, HubLink, hubShareUrl, PlayerLink, PlayerPhoto, TeamLink, TeamLogo, useLoad } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -17,10 +18,54 @@ export const RosterMoves: React.FC = () => {
   const moves = useLoad(loadMoves, []);
   const leagues = useLoad(loadLeagues, []);
   const [all, setAll] = useState(false);
-  const [search, setSearch] = useState("");
   const top = useMemo(() => new Set((leagues.data || []).filter((l) => l.pr).map((l) => l.u)), [leagues.data]);
   const name = useMemo(() => new Map((leagues.data || []).map((l) => [l.u, l.s || l.l])), [leagues.data]);
   const [shown, setShown] = useState(25);
+  const nowRoute = currentHubRoute();
+  const routeQuery = "query" in nowRoute ? nowRoute.query : undefined;
+  const rawUrlQ = useMemo(() => {
+    const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
+    return p.get("q") || p.get("player") || p.get("team") || p.get("vs") || "";
+  }, [routeQuery]);
+  const matchesMoveTerm = (m: NonNullable<typeof moves.data>["list"][number], t: string) => {
+    const hay = normText(`${m.n} ${m.u} ${m.r || ""} ${m.r ? roleName(m.r) : ""} ${m.from.n} ${m.from.u} ${m.to.n} ${m.to.u} ${m.lu ? name.get(m.lu) || m.lu : ""}`);
+    const hayBare = bare(hay);
+    const fromCanon = resolveTeamAlias(m.from.u || m.from.n);
+    const toCanon = resolveTeamAlias(m.to.u || m.to.n);
+    const lgCanon = m.lu ? resolveLeagueSlug(m.lu) : "";
+    const roleCanon = m.r ? normalizeRole(m.r) : null;
+    if (hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t)))) return true;
+    if (resolvePlayerSlug(t) === m.u) return true;
+    const canonTeam = resolveTeamAlias(t);
+    if (canonTeam && (canonTeam === fromCanon || canonTeam === toCanon)) return true;
+    const canonLg = resolveLeagueSlug(t);
+    if (lgCanon && canonLg && canonLg === lgCanon) return true;
+    const canonRole = normalizeRole(t);
+    if (roleCanon && canonRole && canonRole === roleCanon) return true;
+    return false;
+  };
+  const effectiveUrlQ = useMemo(() => {
+    const rows = moves.data?.list || [];
+    if (!rawUrlQ.trim() || !rows.length) return "";
+    const rawTerms = rawUrlQ
+      .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+      .map((s) => normText(searchAlias(s.trim())))
+      .filter(Boolean);
+    const matchingTerms = rawTerms.filter((t) => rows.some((m) => matchesMoveTerm(m, t)));
+    return matchingTerms.join(",");
+  }, [rawUrlQ, moves.data, name]);
+  const userTypedRef = useRef(false);
+  const lastUrlQRef = useRef(rawUrlQ);
+  const [search, setSearch] = useState(() => effectiveUrlQ);
+  useEffect(() => {
+    if (lastUrlQRef.current !== rawUrlQ) {
+      lastUrlQRef.current = rawUrlQ;
+      userTypedRef.current = false;
+    }
+    if (!userTypedRef.current) {
+      setSearch(effectiveUrlQ);
+    }
+  }, [rawUrlQ, effectiveUrlQ]);
   if (!moves.data || !moves.data.list.length) return null;
   const terms = search
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -28,28 +73,7 @@ export const RosterMoves: React.FC = () => {
     .filter(Boolean);
   const list = moves.data.list.filter((m) => {
     if (!all && !terms.length && !(m.lu && top.has(m.lu))) return false;
-    if (terms.length) {
-      const hay = normText(`${m.n} ${m.u} ${m.r || ""} ${m.r ? roleName(m.r) : ""} ${m.from.n} ${m.from.u} ${m.to.n} ${m.to.u} ${m.lu ? name.get(m.lu) || m.lu : ""}`);
-      const hayBare = bare(hay);
-      const fromCanon = resolveTeamAlias(m.from.u || m.from.n);
-      const toCanon = resolveTeamAlias(m.to.u || m.to.n);
-      const lgCanon = m.lu ? resolveLeagueSlug(m.lu) : "";
-      const roleCanon = m.r ? normalizeRole(m.r) : null;
-      if (
-        !terms.some((t) => {
-          if (hay.includes(t) || (t.length >= 2 && hayBare.includes(bare(t)))) return true;
-          if (resolvePlayerSlug(t) === m.u) return true;
-          const canonTeam = resolveTeamAlias(t);
-          if (canonTeam && (canonTeam === fromCanon || canonTeam === toCanon)) return true;
-          const canonLg = resolveLeagueSlug(t);
-          if (lgCanon && canonLg && canonLg === lgCanon) return true;
-          const canonRole = normalizeRole(t);
-          if (roleCanon && canonRole && canonRole === roleCanon) return true;
-          return false;
-        })
-      )
-        return false;
-    }
+    if (terms.length && !terms.some((t) => matchesMoveTerm(m, t))) return false;
     return true;
   });
   return (
@@ -62,7 +86,10 @@ export const RosterMoves: React.FC = () => {
           <input
             type="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              userTypedRef.current = true;
+              setSearch(e.target.value);
+            }}
             placeholder={tl("Filter by name or team…")}
             aria-label={tl("Filter by name or team…")}
             className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-40"
@@ -253,12 +280,35 @@ export const RosterMoves: React.FC = () => {
                 </>
               )}
               {p0Slug && (
-                <HubLink
-                  to={{ kind: "compare", mode: "player", a: p0Slug, ...(twoPlayers ? { b: p1Slug } : {}), ...(yr0 ? { period: `y${yr0}` } : {}) }}
-                  className="text-rw-sub hover:text-rw-accent hover:underline"
-                >
-                  {tl("Compare")} →
-                </HubLink>
+                <>
+                  <HubLink
+                    to={{ kind: "compare", mode: "player", a: p0Slug, ...(twoPlayers ? { b: p1Slug } : {}), ...(yr0 ? { period: `y${yr0}` } : {}) }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: new URLSearchParams({
+                        player: p0Slug,
+                        ...(twoPlayers ? { vsplayer: p1Slug } : {}),
+                        ...(to0Slug ? { team: to0Slug } : {}),
+                        ...(twoPlayers && to1Slug && to1Slug !== to0Slug
+                          ? { vsteam: to1Slug }
+                          : from0Slug && from0Slug !== to0Slug
+                            ? { vsteam: from0Slug }
+                            : {}),
+                        ...(role0 ? { role: role0 } : {}),
+                        ...(lg0 ? { league: lg0 } : {}),
+                        ...(yr0 ? { patch: `y${yr0}`, year: yr0 } : {}),
+                      }).toString(),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                </>
               )}
               <CopyMovesPost
                 sub={all ? tl("All leagues") : tl("Top leagues")}
@@ -397,6 +447,23 @@ export const RosterMoves: React.FC = () => {
                 className="text-rw-muted hover:text-rw-accent hover:underline"
               >
                 {tl("Draft board")}
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    player: pSlug,
+                    ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                    team: toSlug,
+                    ...(fromSlug && fromSlug !== toSlug ? { vsteam: fromSlug } : {}),
+                    ...(mRole ? { role: mRole } : {}),
+                    ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
+                    ...(myr ? { patch: `y${myr}`, year: myr } : {}),
+                  }).toString(),
+                }}
+                className="text-rw-muted hover:text-rw-accent hover:underline"
+              >
+                {tl("Counters")}
               </HubLink>
               <HubLink
                 to={{
