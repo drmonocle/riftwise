@@ -279,6 +279,26 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                     >
                       {tl("Item history")} →
                     </HubLink>
+                    {topChamps[0] && (
+                      <HubLink
+                        to={{
+                          kind: "counters",
+                          query: new URLSearchParams({
+                            champ: topChamps[0],
+                            ...(topChamps[1] ? { vs: topChamps[1] } : {}),
+                            team: a,
+                            vsteam: b,
+                            ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                            ...(lg ? { league: lg } : {}),
+                            ...(p ? { patch: p } : {}),
+                            ...(yr ? { year: yr } : {}),
+                          }).toString(),
+                        }}
+                        className="text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Counters")} →
+                      </HubLink>
+                    )}
                   </>
                 );
               })()}
@@ -454,6 +474,26 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 >
                   {tl("Item history")} →
                 </HubLink>
+                {topChamps[0] && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: new URLSearchParams({
+                        champ: topChamps[0],
+                        ...(topChamps[1] ? { vs: topChamps[1] } : {}),
+                        team: a,
+                        vsteam: b,
+                        ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                        ...(lg ? { league: lg } : {}),
+                        ...(p ? { patch: p } : {}),
+                        ...(yr ? { year: yr } : {}),
+                      }).toString(),
+                    }}
+                    className="text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")} →
+                  </HubLink>
+                )}
                 <HubLink
                   to={{
                     kind: "finder",
@@ -686,6 +726,26 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 >
                   {tl("Item history")}
                 </HubLink>
+                {mChamps[0] && (
+                  <HubLink
+                    to={{
+                      kind: "counters",
+                      query: new URLSearchParams({
+                        champ: mChamps[0],
+                        ...(mChamps[1] ? { vs: mChamps[1] } : {}),
+                        team: t1Slug,
+                        vsteam: t2Slug,
+                        ...(mPlayers[0] ? { player: mPlayers[0], ...(mPlayers[1] ? { vsplayer: mPlayers[1] } : {}) } : {}),
+                        ...(mRole ? { role: mRole } : {}),
+                        ...(m.leagueSlug || m.leagueName ? { league: resolveLeagueSlug(m.leagueSlug || m.leagueName) } : {}),
+                        ...(mYr && /^\d{4}$/.test(mYr) ? { patch: `y${mYr}`, year: mYr } : {}),
+                      }).toString(),
+                    }}
+                    className="px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] text-rw-muted hover:text-rw-accent hover:border-rw-accent/60 transition-colors"
+                  >
+                    {tl("Counters")}
+                  </HubLink>
+                )}
                 <HubLink
                   to={{
                     kind: "finder",

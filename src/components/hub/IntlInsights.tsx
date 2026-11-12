@@ -172,7 +172,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
-                    ...(pA ? { player: pA } : {}),
+                    ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
                     ...(up.games[0]?.winner
                       ? {
                           team: teamSlug(up.games[0].winner),
@@ -477,7 +477,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
-                    ...(pA ? { player: pA } : {}),
+                    ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
                     ...(cb[0]?.winner
                       ? {
                           team: teamSlug(cb[0].winner),
@@ -774,7 +774,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
-                    ...(pA ? { player: pA } : {}),
+                    ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
                     ...(sorted[0]
                       ? {
                           team: sorted[0].u || teamSlug(sorted[0].team),
@@ -1148,7 +1148,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
-                    ...(pA ? { player: pA } : {}),
+                    ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
                     ...(u0 ? { team: u0, ...(u1 ? { vsteam: u1 } : {}) } : {}),
                     league: intlLeague,
                     ...(singleYear ? { patch: `y${singleYear}`, year: singleYear } : {}),
@@ -1339,7 +1339,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
-                    ...(pA ? { player: pA } : {}),
+                    ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
                     ...(fin.mostReached[0]?.u
                       ? {
                           team: fin.mostReached[0].u,
@@ -1739,7 +1739,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
-                    ...(tPlayers[0] ? { player: tPlayers[0] } : {}),
+                    ...(tPlayers[0] ? { player: tPlayers[0], ...(tPlayers[1] ? { vsplayer: tPlayers[1] } : {}) } : {}),
                     ...(tTeams[0] ? { team: tTeams[0], ...(tTeams[1] ? { vsteam: tTeams[1] } : {}) } : {}),
                     league: intlLeague,
                   }).toString(),
@@ -1979,7 +1979,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                   query: new URLSearchParams({
                     champ: cA,
                     ...(cB ? { vs: cB } : {}),
-                    ...(pA ? { player: pA } : {}),
+                    ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
                     ...(u0 ? { team: u0, ...(u1 ? { vsteam: u1 } : {}) } : {}),
                     league: intlLeague,
                   }).toString(),
@@ -2231,7 +2231,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                           query: new URLSearchParams({
                             champ: c0,
                             ...(c1 ? { vs: c1 } : {}),
-                            ...(pA ? { player: pA } : {}),
+                            ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
                             ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vsteam: topTeams[1] } : {}) } : {}),
                             league: intlLeague,
                             ...(latestYr ? { patch: `y${latestYr}`, year: latestYr } : {}),
@@ -2559,7 +2559,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     query: new URLSearchParams({
                       champ: cA,
                       ...(cB ? { vs: cB } : {}),
-                      ...(pA ? { player: pA } : {}),
+                      ...(pA ? { player: pA, ...(pB ? { vsplayer: pB } : {}) } : {}),
                       ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vsteam: topTeams[1] } : {}) } : {}),
                       league: intlLeague,
                     }).toString(),

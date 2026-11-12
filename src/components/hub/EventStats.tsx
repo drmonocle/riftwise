@@ -3,7 +3,7 @@
  * the draft. Used by the Worlds / MSI / First Stand stats tab and by every tournament page with a lines file (the
  * stats build writes one for those events, so the cards appear and update with the data, nothing to set up per event).
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { tl } from "../../i18n";
 import { bare, loadEventLines, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
@@ -82,12 +82,23 @@ export const FactGroups: React.FC<{
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
     const raw = p.get("q") || p.get("team") || p.get("player") || p.get("champ") || p.get("vs") || "";
     if (!raw.trim()) return "";
-    return filterFactsByQuery(facts, raw).length > 0 ? raw : "";
+    if (filterFactsByQuery(facts, raw).length > 0) return raw;
+    const rawTerms = raw.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean);
+    const matchingTerms = rawTerms.filter((t) => filterFactsByQuery(facts, t).length > 0);
+    return matchingTerms.join(",");
   }, [routeQuery, facts]);
   const [search, setSearch] = useState(effectiveUrlSearch);
+  const userTyped = useRef(false);
+  const prevRouteQuery = useRef(routeQuery);
   useEffect(() => {
-    setSearch(effectiveUrlSearch);
-  }, [effectiveUrlSearch]);
+    if (prevRouteQuery.current !== routeQuery) {
+      prevRouteQuery.current = routeQuery;
+      userTyped.current = false;
+    }
+    if (!userTyped.current) {
+      setSearch(effectiveUrlSearch);
+    }
+  }, [routeQuery, effectiveUrlSearch]);
   const titles: Record<Group, string> = {
     event: tl("The event"),
     teams: tl("Teams"),
@@ -203,6 +214,7 @@ export const FactGroups: React.FC<{
                         ? { vs: topTeams[0] }
                         : {}),
                     ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                    ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                     ...(topTeams[0] ? { team: topTeams[0] } : {}),
                     ...(topTeams[1] ? { vsteam: topTeams[1] } : {}),
                     ...(normLg ? { league: normLg } : {}),
@@ -377,7 +389,10 @@ export const FactGroups: React.FC<{
           <input
             type="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              userTyped.current = true;
+              setSearch(e.target.value);
+            }}
             placeholder={tl("Filter by name or team…")}
             aria-label={tl("Filter by name or team…")}
             className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1 text-xs text-rw-text w-48"
@@ -556,6 +571,7 @@ export const FactCard: React.FC<{
                         champ: effChamps[0],
                         ...(effChamps[1] ? { vs: effChamps[1] } : {}),
                         player: cardPlayers[0],
+                        ...(cardPlayers[1] ? { vsplayer: cardPlayers[1] } : {}),
                         ...(effTeams[0] ? { team: effTeams[0] } : {}),
                         ...(effTeams[1] ? { vsteam: effTeams[1] } : {}),
                         ...(normLg ? { league: normLg } : {}),
@@ -714,7 +730,7 @@ export const FactCard: React.FC<{
                       query: new URLSearchParams({
                         champ: effChamps[0],
                         ...(effChamps[1] ? { vs: effChamps[1] } : {}),
-                        ...(effPlayers[0] ? { player: effPlayers[0] } : {}),
+                        ...(effPlayers[0] ? { player: effPlayers[0], ...(effPlayers[1] ? { vsplayer: effPlayers[1] } : {}) } : {}),
                         team: cardTeams[0],
                         ...(cardTeams[1] ? { vsteam: cardTeams[1] } : {}),
                         ...(normLg ? { league: normLg } : {}),
@@ -817,7 +833,7 @@ export const FactCard: React.FC<{
                     query: new URLSearchParams({
                       champ: cardChamps[0],
                       ...(cardChamps[1] ? { vs: cardChamps[1] } : {}),
-                      ...(effPlayers[0] ? { player: effPlayers[0] } : {}),
+                      ...(effPlayers[0] ? { player: effPlayers[0], ...(effPlayers[1] ? { vsplayer: effPlayers[1] } : {}) } : {}),
                       ...(effTeams[0] ? { team: effTeams[0] } : {}),
                       ...(effTeams[1] ? { vsteam: effTeams[1] } : {}),
                       ...(normLg ? { league: normLg } : {}),
@@ -979,7 +995,7 @@ export const FactCard: React.FC<{
                       query: new URLSearchParams({
                         champ: effChamps[0],
                         ...(effChamps[1] ? { vs: effChamps[1] } : {}),
-                        ...(effPlayers[0] ? { player: effPlayers[0] } : {}),
+                        ...(effPlayers[0] ? { player: effPlayers[0], ...(effPlayers[1] ? { vsplayer: effPlayers[1] } : {}) } : {}),
                         ...(effTeams[0] ? { team: effTeams[0] } : {}),
                         ...(effTeams[1] ? { vsteam: effTeams[1] } : {}),
                         ...(normLg ? { league: normLg } : {}),

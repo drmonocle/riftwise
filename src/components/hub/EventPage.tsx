@@ -3,7 +3,7 @@
  * (results and prize money, the bracket, standings), Matches (every series by stage), Stats (leaders, player and team
  * tables, the stat cards), Champions and Teams (rosters).
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Trophy, MapPin, CalendarDays, Coins, Download, Sparkles, ClipboardCopy } from "lucide-react";
 import { BracketBoard, type BracketColumn } from "../BracketBoard";
 import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
@@ -141,13 +141,20 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
     const tq = normText(qParam);
     const tTerms = tq ? tq.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
     if (!tTerms.length || !e.teams?.length) return "";
-    return e.teams.some((t) => tTerms.some((term) => matchesEventTeam(t, term))) ? qParam : "";
+    const matchingTerms = tTerms.filter((term) => e.teams!.some((t) => matchesEventTeam(t, term)));
+    return matchingTerms.length === tTerms.length ? qParam : matchingTerms.join(",");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qParam, e.teams, aliases.data, teamPlayerTextBySlug]);
   const [teamSearch, setTeamSearch] = useState(effectiveTeamSearch);
+  const teamUserTyped = useRef(false);
+  const lastQParam = useRef(qParam);
   useEffect(() => {
-    setTeamSearch(effectiveTeamSearch);
-  }, [effectiveTeamSearch]);
+    if (lastQParam.current !== qParam) {
+      lastQParam.current = qParam;
+      teamUserTyped.current = false;
+    }
+    if (!teamUserTyped.current) setTeamSearch(effectiveTeamSearch);
+  }, [qParam, effectiveTeamSearch]);
   const lists = (e.stages || []).filter((s) => s.kind === "list");
   // the tabs this tournament has something for; one with two parts or fewer stays one page
   const tabs: PageTab[] = [
@@ -393,6 +400,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                           champ: evTopChamps[0],
                           ...(evTopChamps[1] ? { vs: evTopChamps[1] } : {}),
                           ...(evTopPlayers[0] ? { player: evTopPlayers[0] } : {}),
+                          ...(evTopPlayers[1] ? { vsplayer: evTopPlayers[1] } : {}),
                           ...(evTopTeams[0] ? { team: evTopTeams[0] } : {}),
                           ...(evTopTeams[1] ? { vsteam: evTopTeams[1] } : {}),
                           ...(e.lu ? { league: e.lu } : {}),
@@ -604,6 +612,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                             champ: evTopChamps[0],
                             ...(evTopChamps[1] ? { vs: evTopChamps[1] } : {}),
                             ...(evTopPlayers[0] ? { player: evTopPlayers[0] } : {}),
+                            ...(evTopPlayers[1] ? { vsplayer: evTopPlayers[1] } : {}),
                             ...(e.results[0] ? { team: tSlug(e.results[0].t, e.results[0].u) } : {}),
                             ...(e.results[1] ? { vsteam: tSlug(e.results[1].t, e.results[1].u) } : {}),
                             ...(e.lu ? { league: e.lu } : {}),
@@ -927,6 +936,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       champ: evTopChamps[0],
                       ...(evTopChamps[1] ? { vs: evTopChamps[1] } : {}),
                       ...(evTopPlayers[0] ? { player: evTopPlayers[0] } : {}),
+                      ...(evTopPlayers[1] ? { vsplayer: evTopPlayers[1] } : {}),
                       ...(evTopTeams[0] ? { team: evTopTeams[0] } : {}),
                       ...(evTopTeams[1] ? { vsteam: evTopTeams[1] } : {}),
                       ...(e.lu ? { league: e.lu } : {}),
@@ -1098,7 +1108,10 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                       <input
                         type="search"
                         value={teamSearch}
-                        onChange={(ev) => setTeamSearch(ev.target.value)}
+                        onChange={(ev) => {
+                          teamUserTyped.current = true;
+                          setTeamSearch(ev.target.value);
+                        }}
                         placeholder={tl("Filter by name or team…")}
                         aria-label={tl("Filter by name or team…")}
                         data-nocapture="1"
@@ -1170,6 +1183,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                                 champ: evTopChamps[0],
                                 ...(evTopChamps[1] ? { vs: evTopChamps[1] } : {}),
                                 ...(ftPlayers[0] ? { player: ftPlayers[0] } : {}),
+                                ...(ftPlayers[1] ? { vsplayer: ftPlayers[1] } : {}),
                                 ...(ft0 ? { team: ft0 } : {}),
                                 ...(ft1 ? { vsteam: ft1 } : {}),
                                 ...(e.lu ? { league: e.lu } : {}),
@@ -1745,6 +1759,7 @@ export const Bracket: React.FC<{
                       champ: topChamps[0],
                       ...(topChamps[1] ? { vs: topChamps[1] } : {}),
                       ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                      ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                       team: fTeamA,
                       ...(fTeamB ? { vsteam: fTeamB } : {}),
                       ...(leagueSlug ? { league: leagueSlug } : {}),
@@ -1933,13 +1948,22 @@ const StageLists: React.FC<{
   const effectiveInitialSearch = useMemo(() => {
     if (!initialSearch.trim()) return "";
     const allSeries = stages.flatMap((s) => s.series);
-    return filterSeries(allSeries, initialSearch, stageBySeriesMap).length > 0 ? initialSearch : "";
+    if (filterSeries(allSeries, initialSearch, stageBySeriesMap).length > 0) return initialSearch;
+    const rawTerms = initialSearch.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean);
+    const matchingTerms = rawTerms.filter((t) => filterSeries(allSeries, t, stageBySeriesMap).length > 0);
+    return matchingTerms.join(",");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSearch, stages, stageBySeriesMap, aliases.data, teamPlayerTextBySlug]);
   const [search, setSearch] = useState(effectiveInitialSearch);
+  const userTyped = useRef(false);
+  const lastInitial = useRef(initialSearch);
   useEffect(() => {
-    setSearch(effectiveInitialSearch);
-  }, [effectiveInitialSearch]);
+    if (lastInitial.current !== initialSearch) {
+      lastInitial.current = initialSearch;
+      userTyped.current = false;
+    }
+    if (!userTyped.current) setSearch(effectiveInitialSearch);
+  }, [initialSearch, effectiveInitialSearch]);
   const isHidden = useHiddenCheck();
   const st = stages[Math.min(i, stages.length - 1)];
   // "Top rated": every stage's series, best first (results still hidden by spoiler mode stay out, so the order gives
@@ -2016,6 +2040,7 @@ const StageLists: React.FC<{
                       champ: topChamps[0],
                       ...(topChamps[1] ? { vs: topChamps[1] } : {}),
                       ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                      ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                       team: s0First,
                       ...(s0Second ? { vsteam: s0Second } : {}),
                       ...(leagueSlug ? { league: leagueSlug } : {}),
@@ -2117,7 +2142,10 @@ const StageLists: React.FC<{
           <input
             type="search"
             value={search}
-            onChange={(ev) => setSearch(ev.target.value)}
+            onChange={(ev) => {
+              userTyped.current = true;
+              setSearch(ev.target.value);
+            }}
             placeholder={tl("Filter by name or team…")}
             aria-label={tl("Filter by name or team…")}
             className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
@@ -2257,6 +2285,7 @@ export const Standings: React.FC<{
                         champ: topChamps[0],
                         ...(topChamps[1] ? { vs: topChamps[1] } : {}),
                         ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                        ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                         team: tSlug(rows[0].t, rows[0].u),
                         ...(rows[1] ? { vsteam: tSlug(rows[1].t, rows[1].u) } : {}),
                         ...(leagueSlug ? { league: leagueSlug } : {}),
@@ -2640,6 +2669,7 @@ const Leaders: React.FC<{ e: HubEvent }> = ({ e }) => {
                       champ: topChamps[0],
                       ...(topChamps[1] ? { vs: topChamps[1] } : {}),
                       ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                      ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                       ...(topTeams[0] ? { team: topTeams[0] } : {}),
                       ...(topTeams[1] ? { vsteam: topTeams[1] } : {}),
                       ...(e.lu ? { league: e.lu } : {}),
@@ -2870,12 +2900,19 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
       .map((s) => normText(searchAlias(s.trim())))
       .filter(Boolean);
     if (!terms.length) return "";
-    return allChamps.some((c) => terms.some((t) => matchesChampSearch(c.c, t))) ? initialSearch : "";
+    const matchingTerms = terms.filter((t) => allChamps.some((c) => matchesChampSearch(c.c, t)));
+    return matchingTerms.length === terms.length ? initialSearch : matchingTerms.join(",");
   }, [allChamps, initialSearch]);
   const [search, setSearch] = useState(effectiveInitialSearch);
+  const userTyped = useRef(false);
+  const lastInitial = useRef(initialSearch);
   useEffect(() => {
-    setSearch(effectiveInitialSearch);
-  }, [effectiveInitialSearch]);
+    if (lastInitial.current !== initialSearch) {
+      lastInitial.current = initialSearch;
+      userTyped.current = false;
+    }
+    if (!userTyped.current) setSearch(effectiveInitialSearch);
+  }, [initialSearch, effectiveInitialSearch]);
   const [showAll, setShowAll] = useState(false);
   const rows = useMemo(() => {
     const terms = search
@@ -2937,7 +2974,10 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
             <input
               type="search"
               value={search}
-              onChange={(ev) => setSearch(ev.target.value)}
+              onChange={(ev) => {
+                userTyped.current = true;
+                setSearch(ev.target.value);
+              }}
               placeholder={tl("Search champions…")}
               aria-label={tl("Search champions…")}
               className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-36"
@@ -2971,6 +3011,7 @@ const EventChamps: React.FC<{ e: HubEvent; full?: boolean; initialSearch?: strin
                     champ: c0,
                     ...(c1 ? { vs: c1 } : {}),
                     ...(evPlayers[0] ? { player: evPlayers[0] } : {}),
+                    ...(evPlayers[1] ? { vsplayer: evPlayers[1] } : {}),
                     ...(evTeams[0] ? { team: evTeams[0] } : {}),
                     ...(evTeams[1] ? { vsteam: evTeams[1] } : {}),
                     ...(e.lu ? { league: e.lu } : {}),

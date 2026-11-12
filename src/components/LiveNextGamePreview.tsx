@@ -407,6 +407,33 @@ export const LiveNextGamePreview: React.FC<{
             >
               {tl("Item history")} →
             </HubLink>
+            {draftIntel.rolesA[0]?.open[0]?.c && (
+              <HubLink
+                to={{
+                  kind: "counters",
+                  query: new URLSearchParams({
+                    champ: resolveChampSlug(draftIntel.rolesA[0].open[0].c),
+                    ...(draftIntel.rolesB[0]?.open[0]?.c ? { vs: resolveChampSlug(draftIntel.rolesB[0].open[0].c) } : {}),
+                    role: ROLE_LABELS[0],
+                    team: draftIntel.slugA,
+                    vsteam: draftIntel.slugB,
+                    ...(draftIntel.rolesA[0]?.player ? { player: playerSlug(draftIntel.rolesA[0].player, draftIntel.rolesA[0].u) } : {}),
+                    ...(draftIntel.rolesB[0]?.player ? { vsplayer: playerSlug(draftIntel.rolesB[0].player, draftIntel.rolesB[0].u) } : {}),
+                    ...(resolveLeagueSlug(match.leagueSlug || match.leagueName) ? { league: resolveLeagueSlug(match.leagueSlug || match.leagueName) } : {}),
+                    ...(draftIntel.period.startsWith("p:")
+                      ? { patch: draftIntel.period.slice(2) }
+                      : draftIntel.period.startsWith("y") && draftIntel.period.length === 5
+                        ? { patch: draftIntel.period, year: draftIntel.period.slice(1) }
+                        : draftIntel.period.startsWith("e:")
+                          ? { event: draftIntel.period.slice(2) }
+                          : {}),
+                  }).toString(),
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+              >
+                {tl("Counters")} →
+              </HubLink>
+            )}
             <HubLink
               to={{
                 kind: "rankings",
@@ -780,6 +807,11 @@ export const LiveNextGamePreview: React.FC<{
                             champ: resolveChampSlug(ra.open[0].c),
                             vs: resolveChampSlug(rb.open[0].c),
                             role: rLabel,
+                            team: draftIntel.slugA,
+                            vsteam: draftIntel.slugB,
+                            ...(ra.player ? { player: playerSlug(ra.player, ra.u) } : {}),
+                            ...(rb.player ? { vsplayer: playerSlug(rb.player, rb.u) } : {}),
+                            ...(resolveLeagueSlug(match.leagueSlug || match.leagueName) ? { league: resolveLeagueSlug(match.leagueSlug || match.leagueName) } : {}),
                             ...(draftIntel.period.startsWith("p:")
                               ? { patch: draftIntel.period.slice(2) }
                               : draftIntel.period.startsWith("y") && draftIntel.period.length === 5

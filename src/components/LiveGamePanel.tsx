@@ -417,6 +417,31 @@ export const LiveGamePanel: React.FC<{ match: Match; showStats: boolean; only?: 
                 >
                   {tl("Item history")}
                 </button>
+                {cA && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigateHub({
+                        kind: "counters",
+                        query: new URLSearchParams({
+                          champ: cA,
+                          ...(cB ? { vs: cB } : {}),
+                          ...(lm0 ? { role: ROLE_LABEL[lm0.role] || lm0.role } : {}),
+                          team: teamSlug(left.name, left.code),
+                          vsteam: teamSlug(right.name, right.code),
+                          ...(pA ? { player: pA } : {}),
+                          ...(pB ? { vsplayer: pB } : {}),
+                          ...(lg ? { league: lg } : {}),
+                          ...(patchNum ? { patch: patchNum } : yr ? { patch: `y${yr}` } : {}),
+                          ...(yr ? { year: yr } : {}),
+                        }).toString(),
+                      });
+                    }}
+                    className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -928,7 +953,18 @@ const Players: React.FC<{ left: SideInfo; right: SideInfo; details: LiveDetailsP
                       onClick={() =>
                         navigateHub({
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(l[i].meta!.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(r[i].meta!.championId)))}&role=${encodeURIComponent(ROLE_LABEL[role])}${patch ? `&patch=${encodeURIComponent(patch)}` : year ? `&patch=y${encodeURIComponent(year)}` : ""}`,
+                          query: new URLSearchParams({
+                            champ: resolveChampSlug(champNameById(l[i].meta!.championId)),
+                            vs: resolveChampSlug(champNameById(r[i].meta!.championId)),
+                            role: ROLE_LABEL[role],
+                            team: teamSlug(left.name, left.code),
+                            vsteam: teamSlug(right.name, right.code),
+                            player: playerSlug(playerName(l[i].meta!.summonerName)),
+                            vsplayer: playerSlug(playerName(r[i].meta!.summonerName)),
+                            ...(league ? { league } : {}),
+                            ...(patch ? { patch } : year ? { patch: `y${year}` } : {}),
+                            ...(year ? { year } : {}),
+                          }).toString(),
                         })
                       }
                       className="block w-full text-[9px] normal-case text-rw-muted hover:text-rw-accent hover:underline mt-0.5"
@@ -1457,6 +1493,31 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                 >
                   {tl("Item history")}
                 </button>
+                {cA && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigateHub({
+                        kind: "counters",
+                        query: new URLSearchParams({
+                          champ: cA,
+                          ...(cB ? { vs: cB } : {}),
+                          ...(lm0 ? { role: ROLE_LABEL[lm0.role] || lm0.role } : {}),
+                          team: teamSlug(left.name, left.code),
+                          vsteam: teamSlug(right.name, right.code),
+                          ...(pA ? { player: pA } : {}),
+                          ...(pB ? { vsplayer: pB } : {}),
+                          ...(lg ? { league: lg } : {}),
+                          ...(patchNum ? { patch: patchNum } : yr ? { patch: `y${yr}` } : {}),
+                          ...(yr ? { year: yr } : {}),
+                        }).toString(),
+                      });
+                    }}
+                    className="text-[10px] font-semibold text-rw-sub hover:text-rw-accent hover:underline"
+                  >
+                    {tl("Counters")}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -1631,9 +1692,21 @@ const DraftOnly: React.FC<{ match: Match; win: LiveWindow; number: number; start
                     type="button"
                     onClick={() => {
                       const patchNum = meta.patchVersion ? meta.patchVersion.split(".").slice(0, 2).join(".") : "";
+                      const lg = resolveLeagueSlug(match.leagueSlug || match.leagueName);
                       navigateHub({
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(resolveChampSlug(champNameById(p.championId)))}&vs=${encodeURIComponent(resolveChampSlug(champNameById(q.championId)))}&role=${encodeURIComponent(ROLE_LABEL[p.role] || p.role)}${patchNum ? `&patch=${encodeURIComponent(patchNum)}` : yr ? `&patch=y${encodeURIComponent(yr)}` : ""}`,
+                        query: new URLSearchParams({
+                          champ: resolveChampSlug(champNameById(p.championId)),
+                          vs: resolveChampSlug(champNameById(q.championId)),
+                          role: ROLE_LABEL[p.role] || p.role,
+                          team: teamSlug(left.name, left.code),
+                          vsteam: teamSlug(right.name, right.code),
+                          player: playerSlug(playerName(p.summonerName)),
+                          vsplayer: playerSlug(playerName(q.summonerName)),
+                          ...(lg ? { league: lg } : {}),
+                          ...(patchNum ? { patch: patchNum } : yr ? { patch: `y${yr}` } : {}),
+                          ...(yr ? { year: yr } : {}),
+                        }).toString(),
                       });
                     }}
                     className="text-[8px] text-rw-sub hover:text-rw-accent hover:underline text-center"

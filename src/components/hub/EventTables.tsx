@@ -1,5 +1,5 @@
 /** gol.gg-style stat tables for one tournament: every player and every team, sortable by any column. */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { tl, roleName } from "../../i18n";
 import { bare, loadAliases, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { hubShareUrl } from "../../hub/route";
@@ -94,16 +94,23 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
       .map((s) => normText(s))
       .filter(Boolean);
     if (!terms.length || !players.length) return "";
-    return players.some((p) => terms.some((t) => matchEventPlayer(p, t))) ? initialSearch : "";
+    const matchingTerms = terms.filter((t) => players.some((p) => matchEventPlayer(p, t)));
+    return matchingTerms.length === terms.length ? initialSearch : matchingTerms.join(",");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSearch, players, aliases.data]);
   const [search, setSearch] = useState(effectiveInitialSearch);
+  const userTyped = useRef(false);
+  const lastInitial = useRef(initialSearch);
   useEffect(() => {
     setRole(validRole);
   }, [validRole]);
   useEffect(() => {
-    setSearch(effectiveInitialSearch);
-  }, [effectiveInitialSearch]);
+    if (lastInitial.current !== initialSearch) {
+      lastInitial.current = initialSearch;
+      userTyped.current = false;
+    }
+    if (!userTyped.current) setSearch(effectiveInitialSearch);
+  }, [initialSearch, effectiveInitialSearch]);
   const maxG = Math.max(0, ...players.map((p) => p.g));
   const [regular, setRegular] = useState(true);
   const minG = Math.max(2, Math.ceil(maxG * 0.4));
@@ -455,6 +462,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                       champ: topChamps[0],
                       ...(topChamps[1] ? { vs: topChamps[1] } : {}),
                       ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                      ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                       ...(topTeams[0] ? { team: topTeams[0] } : {}),
                       ...(topTeams[1] ? { vsteam: topTeams[1] } : {}),
                       ...(activeRole ? { role: activeRole } : {}),
@@ -622,7 +630,10 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
         <input
           type="search"
           value={search}
-          onChange={(ev) => setSearch(ev.target.value)}
+          onChange={(ev) => {
+            userTyped.current = true;
+            setSearch(ev.target.value);
+          }}
           placeholder={tl("Filter by name or team…")}
           aria-label={tl("Filter by name or team…")}
           className="bg-rw-bg border border-rw-border rounded px-2 py-1 text-[11px] text-rw-text w-40"
@@ -706,6 +717,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                         ? { vs: topChamps[1] }
                         : {}),
                     player: pSlug(rows[0].n, rows[0].u),
+                    ...(pSlug(rows[1].n, rows[1].u) !== pSlug(rows[0].n, rows[0].u)
+                      ? { vsplayer: pSlug(rows[1].n, rows[1].u) }
+                      : {}),
                     ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
                     ...(rows[1].t && rows[1].t !== rows[0].t ? { vsteam: tSlug(rows[1].t, rows[1].tu) } : {}),
                     ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
@@ -814,6 +828,7 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
                     champ: topChamps[0],
                     ...(topChamps[1] ? { vs: topChamps[1] } : {}),
                     player: pSlug(rows[0].n, rows[0].u),
+                    ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                     ...(rows[0].t ? { team: tSlug(rows[0].t, rows[0].tu) } : {}),
                     ...(topTeams[1] ? { vsteam: topTeams[1] } : {}),
                     ...(role !== "All" ? { role } : rows[0].r ? { role: rows[0].r } : {}),
@@ -898,13 +913,20 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
       .map((s) => normText(s))
       .filter(Boolean);
     if (!terms.length || !teams.length) return "";
-    return teams.some((t) => terms.some((term) => matchEventTeamStats(t, term))) ? initialSearch : "";
+    const matchingTerms = terms.filter((term) => teams.some((t) => matchEventTeamStats(t, term)));
+    return matchingTerms.length === terms.length ? initialSearch : matchingTerms.join(",");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSearch, teams, aliases.data, teamPlayerTextBySlug]);
   const [search, setSearch] = useState(effectiveInitialSearch);
+  const userTyped = useRef(false);
+  const lastInitial = useRef(initialSearch);
   useEffect(() => {
-    setSearch(effectiveInitialSearch);
-  }, [effectiveInitialSearch]);
+    if (lastInitial.current !== initialSearch) {
+      lastInitial.current = initialSearch;
+      userTyped.current = false;
+    }
+    if (!userTyped.current) setSearch(effectiveInitialSearch);
+  }, [initialSearch, effectiveInitialSearch]);
   const rows = useMemo(() => {
     const terms = search
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
@@ -1190,6 +1212,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                       champ: evChamps[0],
                       ...(evChamps[1] ? { vs: evChamps[1] } : {}),
                       ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                      ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
                       team: topTeam0,
                       ...(topTeam1 ? { vsteam: topTeam1 } : {}),
                       ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
@@ -1340,7 +1363,10 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
           <input
             type="search"
             value={search}
-            onChange={(ev) => setSearch(ev.target.value)}
+            onChange={(ev) => {
+              userTyped.current = true;
+              setSearch(ev.target.value);
+            }}
             placeholder={tl("Filter by name or team…")}
             aria-label={tl("Filter by name or team…")}
             className="bg-rw-bg border border-rw-border rounded px-2 py-1 text-[11px] text-rw-text w-44"
@@ -1394,6 +1420,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                         champ: evChamps[0],
                         ...(evChamps[1] ? { vs: evChamps[1] } : {}),
                         ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                        ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
                         team: pair[0],
                         vsteam: pair[1],
                         ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),
@@ -1484,6 +1511,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
                         champ: evChamps[0],
                         ...(evChamps[1] ? { vs: evChamps[1] } : {}),
                         ...(teamPlayers[0] ? { player: teamPlayers[0] } : {}),
+                        ...(teamPlayers[1] ? { vsplayer: teamPlayers[1] } : {}),
                         team: topTeam0,
                         ...(topTeam1 ? { vsteam: topTeam1 } : {}),
                         ...(e.lu ? { league: resolveLeagueSlug(e.lu) } : {}),

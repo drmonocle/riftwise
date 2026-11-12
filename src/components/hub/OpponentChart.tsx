@@ -6,7 +6,7 @@
  *   zoom into a single split/tournament (e.g. LEC 2026 Versus, Worlds, EMEA Masters) with one click.
  * - Inline visual Win % and KDA bars (`WinBar`, `KdaBar`) for instant stat recognition across tables.
  */
-import React, { useEffect, useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { tl, tc, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
 import { bare, loadPlayerGames, loadPlayerGames2y, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
@@ -580,6 +580,12 @@ const ColoredOpponentGraph: React.FC<{
                         query: new URLSearchParams({
                           champ: c0Slug,
                           ...(c1Slug ? { vs: c1Slug } : {}),
+                          ...(subjectPlayerSlug ? { player: subjectPlayerSlug } : {}),
+                          ...(vsPlayerSlug && vsPlayerSlug !== subjectPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
+                          team: subjectTeamSlug || resolveOppSlug(active.opp, active.u),
+                          ...(subjectTeamSlug && subjectTeamSlug !== resolveOppSlug(active.opp, active.u)
+                            ? { vsteam: resolveOppSlug(active.opp, active.u) }
+                            : {}),
                           ...(subjectRole ? { role: subjectRole } : {}),
                           ...(period && /^y:?(\d{4})$/.test(period)
                             ? { patch: `y${/^y:?(\d{4})$/.exec(period)![1]}`, year: /^y:?(\d{4})$/.exec(period)![1] }
@@ -810,17 +816,17 @@ export const PlayerOpponents: React.FC<{
     const p = new URLSearchParams(routeQuery ?? (typeof window !== "undefined" ? window.location.search : ""));
     return p.get("vs") || p.get("opp") || p.get("vsteam") || p.get("champ") || p.get("q") || "";
   }, [routeQuery]);
-  const urlSearchValid = useMemo(() => {
+  const effectiveUrlSearch = useMemo(() => {
     const q = normText(urlSearch);
     const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
-    if (!terms.length) return false;
-    return opps.some((o) => {
-      const hay = normText(`${o.opp} ${o.u || ""} ${o.champs.map((c) => `${c.c} ${champName(c.c)}`).join(" ")}`);
-      const hayBare = bare(hay);
-      const canonOpp = resolveTeamAlias(o.u || o.opp);
-      return terms.some((t) => {
-        const tb = bare(t);
-        const ta = searchAlias(t);
+    if (!terms.length) return "";
+    const matchingTerms = terms.filter((t) => {
+      const tb = bare(t);
+      const ta = searchAlias(t);
+      return opps.some((o) => {
+        const hay = normText(`${o.opp} ${o.u || ""} ${o.champs.map((c) => `${c.c} ${champName(c.c)}`).join(" ")}`);
+        const hayBare = bare(hay);
+        const canonOpp = resolveTeamAlias(o.u || o.opp);
         return (
           hay.includes(t) ||
           (tb.length >= 2 && hayBare.includes(tb)) ||
@@ -830,11 +836,18 @@ export const PlayerOpponents: React.FC<{
         );
       });
     });
+    return matchingTerms.length === terms.length ? urlSearch : matchingTerms.join(",");
   }, [urlSearch, opps]);
-  const [search, setSearch] = useState(() => (urlSearchValid ? urlSearch : ""));
+  const [search, setSearch] = useState(() => effectiveUrlSearch);
+  const userTyped = useRef(false);
+  const lastUrlSearch = useRef(urlSearch);
   useEffect(() => {
-    setSearch(urlSearchValid ? urlSearch : "");
-  }, [urlSearch, urlSearchValid]);
+    if (lastUrlSearch.current !== urlSearch) {
+      lastUrlSearch.current = urlSearch;
+      userTyped.current = false;
+    }
+    if (!userTyped.current) setSearch(effectiveUrlSearch);
+  }, [urlSearch, effectiveUrlSearch]);
   const [showAll, setShowAll] = useState(false);
   const [selectedOpp, setSelectedOpp] = useState<string | null>(null);
 
@@ -1023,6 +1036,8 @@ export const PlayerOpponents: React.FC<{
                       query: new URLSearchParams({
                         champ: topChamp,
                         ...(secondChamp ? { vs: secondChamp } : {}),
+                        player: slug,
+                        ...(subTeam ? { team: subTeam, vsteam: opp0Slug } : { team: opp0Slug, vsteam: opp1Slug }),
                         ...(primaryRole ? { role: primaryRole } : {}),
                         ...(yr ? { patch: `y${yr}`, year: yr } : ev ? { event: ev } : activeP.startsWith("p:") ? { patch: activeP.slice(2) } : {}),
                       }).toString(),
@@ -1142,6 +1157,9 @@ export const PlayerOpponents: React.FC<{
                       query: new URLSearchParams({
                         champ: topChamp,
                         ...(secondChamp ? { vs: secondChamp } : {}),
+                        player: slug,
+                        team: teamA,
+                        ...(teamB ? { vsteam: teamB } : {}),
                         ...(primaryRole ? { role: primaryRole } : {}),
                         ...(yr ? { patch: `y${yr}`, year: yr } : ev ? { event: ev } : activeP.startsWith("p:") ? { patch: activeP.slice(2) } : {}),
                       }).toString(),
@@ -1313,9 +1331,15 @@ export const PlayerOpponents: React.FC<{
                     kind: "counters",
                     ...(topChamp
                       ? {
-                          query: `champ=${encodeURIComponent(topChamp)}${
-                            secondChamp ? `&vs=${encodeURIComponent(secondChamp)}` : ""
-                          }${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${ev ? `&event=${encodeURIComponent(ev)}` : ""}${yr ? `&patch=y${encodeURIComponent(yr)}&year=${encodeURIComponent(yr)}` : activeP.startsWith("p:") ? `&patch=${encodeURIComponent(activeP.slice(2))}` : ""}`,
+                          query: new URLSearchParams({
+                            champ: topChamp,
+                            ...(secondChamp ? { vs: secondChamp } : {}),
+                            player: slug,
+                            ...(teamA ? { team: teamA, ...(teamB ? { vsteam: teamB } : {}) } : {}),
+                            ...(primaryRole ? { role: primaryRole } : {}),
+                            ...(ev ? { event: ev } : {}),
+                            ...(yr ? { patch: `y${yr}`, year: yr } : activeP.startsWith("p:") ? { patch: activeP.slice(2) } : {}),
+                          }).toString(),
                         }
                       : {}),
                   }}
@@ -1547,6 +1571,9 @@ export const PlayerOpponents: React.FC<{
                           query: new URLSearchParams({
                             champ: expC0,
                             ...(expC1 ? { vs: expC1 } : {}),
+                            player: slug,
+                            team: teamA,
+                            ...(teamB ? { vsteam: teamB } : {}),
                             ...(primaryRole ? { role: primaryRole } : {}),
                             ...(yr ? { patch: `y${yr}`, year: yr } : ev ? { event: ev } : (period || scope)?.startsWith("p:") ? { patch: (period || scope)!.slice(2) } : {}),
                           }).toString(),
@@ -1714,7 +1741,10 @@ export const PlayerOpponents: React.FC<{
           <input
             type="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              userTyped.current = true;
+              setSearch(e.target.value);
+            }}
             placeholder={tl("Filter by team")}
             aria-label={tl("Filter by team")}
             className="w-full sm:w-64 bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1 text-xs text-rw-text placeholder:text-rw-muted focus:border-rw-accent outline-none"
@@ -1935,17 +1965,17 @@ export const TeamOpponentsChart: React.FC<{
     const oppTeam = rawTeam && resolveTeamAlias(rawTeam) !== resolveTeamAlias(teamSlug) ? rawTeam : "";
     return p.get("vs") || p.get("opp") || p.get("vsteam") || oppTeam || p.get("q") || "";
   }, [routeQuery, teamSlug]);
-  const urlSearchValid = useMemo(() => {
+  const effectiveUrlSearch = useMemo(() => {
     const q = normText(urlSearch);
     const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
-    if (!terms.length) return false;
-    return opps.some((o) => {
-      const hay = normText(`${o.n} ${o.u || ""}`);
-      const hayBare = bare(hay);
-      const canonOpp = resolveTeamAlias(o.u || o.n);
-      return terms.some((t) => {
-        const tb = bare(t);
-        const ta = searchAlias(t);
+    if (!terms.length) return "";
+    const matchingTerms = terms.filter((t) => {
+      const tb = bare(t);
+      const ta = searchAlias(t);
+      return opps.some((o) => {
+        const hay = normText(`${o.n} ${o.u || ""}`);
+        const hayBare = bare(hay);
+        const canonOpp = resolveTeamAlias(o.u || o.n);
         return (
           hay.includes(t) ||
           (tb.length >= 2 && hayBare.includes(tb)) ||
@@ -1954,11 +1984,18 @@ export const TeamOpponentsChart: React.FC<{
         );
       });
     });
+    return matchingTerms.length === terms.length ? urlSearch : matchingTerms.join(",");
   }, [urlSearch, opps]);
-  const [search, setSearch] = useState(() => (urlSearchValid ? urlSearch : ""));
+  const [search, setSearch] = useState(() => effectiveUrlSearch);
+  const userTyped = useRef(false);
+  const lastUrlSearch = useRef(urlSearch);
   useEffect(() => {
-    setSearch(urlSearchValid ? urlSearch : "");
-  }, [urlSearch, urlSearchValid]);
+    if (lastUrlSearch.current !== urlSearch) {
+      lastUrlSearch.current = urlSearch;
+      userTyped.current = false;
+    }
+    if (!userTyped.current) setSearch(effectiveUrlSearch);
+  }, [urlSearch, effectiveUrlSearch]);
   const [showAll, setShowAll] = useState(false);
 
   const chartOpps = useMemo(() => {
@@ -2027,7 +2064,10 @@ export const TeamOpponentsChart: React.FC<{
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                userTyped.current = true;
+                setSearch(e.target.value);
+              }}
               placeholder={tl("Filter by name or team…")}
               aria-label={tl("Filter by name or team…")}
               data-nocapture="1"
@@ -2080,7 +2120,11 @@ export const TeamOpponentsChart: React.FC<{
                 <HubLink
                   to={{
                     kind: "counters",
-                    ...(opp0Yr ? { query: `patch=y${encodeURIComponent(opp0Yr)}&year=${encodeURIComponent(opp0Yr)}` } : {}),
+                    query: new URLSearchParams({
+                      team: teamSlug,
+                      ...(opp0Slug ? { vsteam: opp0Slug } : {}),
+                      ...(opp0Yr ? { patch: `y${opp0Yr}`, year: opp0Yr } : {}),
+                    }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 >
@@ -2192,7 +2236,10 @@ export const TeamOpponentsChart: React.FC<{
           <input
             type="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              userTyped.current = true;
+              setSearch(e.target.value);
+            }}
             placeholder={tl("Filter by team")}
             aria-label={tl("Filter by team")}
             className="w-full sm:w-64 bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1 text-xs text-rw-text placeholder:text-rw-muted focus:border-rw-accent outline-none"
@@ -2425,18 +2472,18 @@ export const TeamPeriodOpponents: React.FC<{
     const oppTeam = rawTeam && resolveTeamAlias(rawTeam) !== resolveTeamAlias(teamSlug) ? rawTeam : "";
     return p.get("vs") || p.get("opp") || p.get("vsteam") || oppTeam || p.get("champ") || p.get("q") || "";
   }, [routeQuery, teamSlug]);
-  const urlSearchValid = useMemo(() => {
+  const effectiveUrlSearch = useMemo(() => {
     const q = normText(urlSearch);
     const terms = q ? q.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => normText(s)).filter(Boolean) : [];
-    if (!terms.length) return false;
-    return opps.some((o) => {
-      const oppChamps = o.games.flatMap((g) => g[20] || []);
-      const hay = normText(`${o.opp} ${o.u || ""} ${oppChamps.map((c) => `${c} ${champName(c)}`).join(" ")}`);
-      const hayBare = bare(hay);
-      const canonOpp = resolveTeamAlias(o.u || o.opp);
-      return terms.some((t) => {
-        const tb = bare(t);
-        const ta = searchAlias(t);
+    if (!terms.length) return "";
+    const matchingTerms = terms.filter((t) => {
+      const tb = bare(t);
+      const ta = searchAlias(t);
+      return opps.some((o) => {
+        const oppChamps = o.games.flatMap((g) => g[20] || []);
+        const hay = normText(`${o.opp} ${o.u || ""} ${oppChamps.map((c) => `${c} ${champName(c)}`).join(" ")}`);
+        const hayBare = bare(hay);
+        const canonOpp = resolveTeamAlias(o.u || o.opp);
         return (
           hay.includes(t) ||
           (tb.length >= 2 && hayBare.includes(tb)) ||
@@ -2446,11 +2493,18 @@ export const TeamPeriodOpponents: React.FC<{
         );
       });
     });
+    return matchingTerms.length === terms.length ? urlSearch : matchingTerms.join(",");
   }, [urlSearch, opps]);
-  const [search, setSearch] = useState(() => (urlSearchValid ? urlSearch : ""));
+  const [search, setSearch] = useState(() => effectiveUrlSearch);
+  const userTyped = useRef(false);
+  const lastUrlSearch = useRef(urlSearch);
   useEffect(() => {
-    setSearch(urlSearchValid ? urlSearch : "");
-  }, [urlSearch, urlSearchValid]);
+    if (lastUrlSearch.current !== urlSearch) {
+      lastUrlSearch.current = urlSearch;
+      userTyped.current = false;
+    }
+    if (!userTyped.current) setSearch(effectiveUrlSearch);
+  }, [urlSearch, effectiveUrlSearch]);
 
   const hasGd15 = useMemo(() => opps.some((o) => o.gd15 != null), [opps]);
   const activeMetric = metric === "gd15" && !hasGd15 ? "wr" : metric;
@@ -2513,7 +2567,10 @@ export const TeamPeriodOpponents: React.FC<{
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                userTyped.current = true;
+                setSearch(e.target.value);
+              }}
               placeholder={tl("Filter by name or team…")}
               aria-label={tl("Filter by name or team…")}
               data-nocapture="1"
@@ -2588,6 +2645,9 @@ export const TeamPeriodOpponents: React.FC<{
                       query: new URLSearchParams({
                         champ: topChamp,
                         ...(secChamp ? { vs: secChamp } : {}),
+                        ...(rosterSlugs?.[0] ? { player: rosterSlugs[0], ...(rosterSlugs[1] ? { vsplayer: rosterSlugs[1] } : {}) } : {}),
+                        team: teamSlug,
+                        ...(opp0Slug ? { vsteam: opp0Slug } : {}),
                         ...(period && /^y\d{4}$/.test(period)
                           ? { patch: period, year: period.slice(1) }
                           : period?.startsWith("e:")
@@ -2804,6 +2864,9 @@ export const TeamPeriodOpponents: React.FC<{
                           query: new URLSearchParams({
                             champ: expChamp,
                             ...(expSecChamp ? { vs: expSecChamp } : {}),
+                            ...(rosterSlugs?.[0] ? { player: rosterSlugs[0], ...(rosterSlugs[1] ? { vsplayer: rosterSlugs[1] } : {}) } : {}),
+                            team: teamSlug,
+                            ...(expSlug ? { vsteam: expSlug } : {}),
                             ...(period && /^y\d{4}$/.test(period)
                               ? { patch: period, year: period.slice(1) }
                               : period?.startsWith("e:")

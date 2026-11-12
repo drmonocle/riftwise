@@ -126,7 +126,10 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 query: new URLSearchParams({
                   champ: topChampsList[0],
                   ...(topChampsList[1] ? { vs: topChampsList[1] } : {}),
+                  ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                  ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vsteam: topTeams[1] } : {}) } : {}),
                   ...(qRole ? { role: qRole } : {}),
+                  league: lgSlug,
                   patch: `y${year}`,
                   year,
                 }).toString(),
@@ -428,7 +431,11 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                               query: new URLSearchParams({
                                 champ: spChampsList[0],
                                 ...(spChampsList[1] ? { vs: spChampsList[1] } : {}),
+                                player: spP0,
+                                ...(spP1 ? { vsplayer: spP1 } : {}),
+                                ...(spTeam0 ? { team: spTeam0, ...(spTeam1 ? { vsteam: spTeam1 } : {}) } : {}),
                                 ...(regular[0].r ? { role: regular[0].r } : {}),
+                                league: lgSlug,
                                 patch: `y${year}`,
                                 year,
                               }).toString(),

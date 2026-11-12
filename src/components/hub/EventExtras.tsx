@@ -1,5 +1,5 @@
 /** Tournament page extras: quick facts, team rosters (with subs and coaches), records between regions. */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Flame, Crown, Timer, Swords } from "lucide-react";
 import { tl, tk, roleName, regionName } from "../../i18n";
 import { bare, loadAliases, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveRegionFilter, resolveTeamAlias, searchAlias } from "../../hub/data";
@@ -229,6 +229,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                         champ: pentaChamps[0],
                         ...(pentaChamps[1] ? { vs: pentaChamps[1] } : {}),
                         ...(topPlayers[0] ? { player: topPlayers[0] } : {}),
+                        ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}),
                         ...(featTeams[0] ? { team: featTeams[0] } : {}),
                         ...(featTeams[1] ? { vsteam: featTeams[1] } : {}),
                         ...(normLg ? { league: normLg } : {}),
@@ -651,6 +652,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                           champ: pentaChamps[0],
                           ...(pentaChamps[1] ? { vs: pentaChamps[1] } : {}),
                           player: pentaPlayers[0],
+                          ...(pentaPlayers[1] ? { vsplayer: pentaPlayers[1] } : {}),
                           ...(featGame?.a ? { team: tSlug(featGame.a) } : featTeams[0] ? { team: featTeams[0] } : {}),
                           ...(featGame?.b && tSlug(featGame.b) !== tSlug(featGame.a)
                             ? { vsteam: tSlug(featGame.b) }
@@ -927,6 +929,7 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
                           champ: pentaChamps[0],
                           ...(pentaChamps[1] ? { vs: pentaChamps[1] } : {}),
                           player: mvpPlayers[0],
+                          ...(mvpPlayers[1] ? { vsplayer: mvpPlayers[1] } : {}),
                           ...(featTeams[0] ? { team: featTeams[0] } : {}),
                           ...(featTeams[1] ? { vsteam: featTeams[1] } : {}),
                           ...(normLg ? { league: normLg } : {}),
@@ -1149,12 +1152,23 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
   const aliases = useLoad(loadAliases, []);
   const effectiveInitialSearch = useMemo(() => {
     if (!initialSearch.trim()) return "";
-    return rosters.some((t) => matchEventRoster(t, initialSearch, aliases.data?.team)) ? initialSearch : "";
+    if (rosters.some((t) => matchEventRoster(t, initialSearch, aliases.data?.team))) return initialSearch;
+    const rawTerms = initialSearch.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i).map((s) => s.trim()).filter(Boolean);
+    const matchingTerms = rawTerms.filter((term) => rosters.some((t) => matchEventRoster(t, term, aliases.data?.team)));
+    return matchingTerms.join(",");
   }, [initialSearch, rosters, aliases.data]);
   const [search, setSearch] = useState(effectiveInitialSearch);
+  const userTyped = useRef(false);
+  const prevInitSearch = useRef(initialSearch);
   useEffect(() => {
-    setSearch(effectiveInitialSearch);
-  }, [effectiveInitialSearch]);
+    if (prevInitSearch.current !== initialSearch) {
+      prevInitSearch.current = initialSearch;
+      userTyped.current = false;
+    }
+    if (!userTyped.current) {
+      setSearch(effectiveInitialSearch);
+    }
+  }, [initialSearch, effectiveInitialSearch]);
   const q = normText(search);
   const yr = year && /^\d{4}$/.test(year) ? year : eventSlug && /\d{4}/.test(eventSlug) ? /\d{4}/.exec(eventSlug)![0] : undefined;
   const filteredRosters = useMemo(() => {
@@ -1200,7 +1214,10 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                userTyped.current = true;
+                setSearch(e.target.value);
+              }}
               placeholder={tl("Filter by name or team…")}
               aria-label={tl("Filter by name or team…")}
               className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text w-40"
@@ -1627,6 +1644,7 @@ export const RegionalRecords: React.FC<{ e: HubEvent; hidden?: boolean }> = ({
                   champ: regChamps[0],
                   ...(regChamps[1] ? { vs: regChamps[1] } : {}),
                   ...(regPlayers[0] ? { player: regPlayers[0] } : {}),
+                  ...(regPlayers[1] ? { vsplayer: regPlayers[1] } : {}),
                   ...(topTeamA ? { team: topTeamA } : {}),
                   ...(topTeamB && topTeamB !== topTeamA ? { vsteam: topTeamB } : {}),
                   ...(lgSlug ? { league: lgSlug } : {}),

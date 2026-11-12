@@ -522,6 +522,7 @@ export const DraftTendencies: React.FC<{
                           champ: topOpenerSlugs[0],
                           ...(topOpenerSlugs[1] ? { vs: topOpenerSlugs[1] } : {}),
                           ...(rosterSlugs?.[0] ? { player: rosterSlugs[0] } : {}),
+                          ...(rosterSlugs?.[1] && rosterSlugs[1] !== rosterSlugs?.[0] ? { vsplayer: rosterSlugs[1] } : {}),
                           ...(resolvedSlug ? { team: resolvedSlug } : {}),
                           ...(oppSlug ? { vsteam: oppSlug } : {}),
                           ...(d.firstRole[0] ? { role: ROLES[d.firstRole[0][0]] } : {}),
