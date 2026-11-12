@@ -166,11 +166,34 @@ const PlayerView: React.FC<{
       ...(q ? { query: q } : {}),
     };
   };
+  const matchesPlayerEvent = (x: HubPlayer["events"][number], term: string) => {
+    const hay = `${normText(x.en)} ${normText(x.e || "")} ${normText(x.t || "")} ${x.date || ""} ${(x.c || []).map((c) => `${normText(champName(c))} ${normText(c)}`).join(" ")}`;
+    const hayBare = bare(hay);
+    const canonTeam = resolveTeamAlias(x.tu || x.t || "");
+    const qAlias = searchAlias(term);
+    return (
+      hay.includes(term) ||
+      (qAlias !== null && hay.includes(qAlias)) ||
+      (bare(term).length >= 2 && hayBare.includes(bare(term))) ||
+      (canonTeam ? resolveTeamAlias(qAlias || term) === canonTeam || resolveTeamAlias(term) === canonTeam : false) ||
+      matchesPeriodEvent(x.e || "", x.en || "", term) ||
+      (x.c || []).some((c) => matchesChampSearch(c, term))
+    );
+  };
+  const validEventQ = useMemo(() => {
+    const rawTerms = [rawEvent, ...qParam.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)]
+      .map((x) => normText(x || ""))
+      .filter(Boolean);
+    const uniq = [...new Set(rawTerms)];
+    if (!uniq.length || !p.events.length) return "";
+    const matching = uniq.filter((term) => p.events.some((ev) => matchesPlayerEvent(ev, term)));
+    return matching.join(", ");
+  }, [qParam, rawEvent, p.events]); // eslint-disable-line react-hooks/exhaustive-deps
   const [allEvents, setAllEvents] = useState(false);
-  const [eventSearch, setEventSearch] = useState(qParam);
+  const [eventSearch, setEventSearch] = useState(validEventQ);
   useEffect(() => {
-    setEventSearch(qParam);
-  }, [qParam]);
+    setEventSearch(validEventQ);
+  }, [validEventQ]);
   const [champPeriod, setChampPeriod] = useState<PeriodKey>(pParam || "all");
   useEffect(() => {
     if (pParam) setChampPeriod(pParam);
@@ -211,22 +234,7 @@ const PlayerView: React.FC<{
     .map((x) => normText(x))
     .filter(Boolean);
   const filteredEvents = eventTerms.length
-    ? p.events.filter((x) => {
-        const hay = `${normText(x.en)} ${normText(x.e || "")} ${normText(x.t || "")} ${x.date || ""} ${(x.c || []).map((c) => `${normText(champName(c))} ${normText(c)}`).join(" ")}`;
-        const hayBare = bare(hay);
-        const canonTeam = resolveTeamAlias(x.tu || x.t || "");
-        return eventTerms.some((term) => {
-          const qAlias = searchAlias(term);
-          return (
-            hay.includes(term) ||
-            (qAlias !== null && hay.includes(qAlias)) ||
-            (bare(term).length >= 2 && hayBare.includes(bare(term))) ||
-            (canonTeam ? resolveTeamAlias(qAlias || term) === canonTeam : false) ||
-            matchesPeriodEvent(x.e || "", x.en || "", term) ||
-            (x.c || []).some((c) => matchesChampSearch(c, term))
-          );
-        });
-      })
+    ? p.events.filter((x) => eventTerms.some((term) => matchesPlayerEvent(x, term)))
     : p.events;
   const events = allEvents || eventTerms.length ? filteredEvents : filteredEvents.slice(0, 12);
   // the section cards leave out what spoiler mode hides
@@ -2105,9 +2113,9 @@ const PlayerChampionsTab: React.FC<{
       .map((x) => normText(x))
       .filter(Boolean);
     if (!rawTerms.length) return "";
-    const matching = rawTerms.filter((t) => p.champs.some((c) => matchesChampSearch(c.c, t)));
+    const matching = rawTerms.filter((t) => champs.some((c) => matchesChampSearch(c.c, t)));
     return matching.join(", ");
-  }, [initialSearch, p.champs]);
+  }, [initialSearch, champs]);
   const [search, setSearch] = useState(validInitialSearch);
   useEffect(() => {
     setSearch(validInitialSearch);

@@ -150,17 +150,50 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
   // the champion's roles in order of how often it's played there, with matchups in either list
   const roleKeys = mainRoles.filter((r) => (c.matchups?.[r]?.length || 0) > 0 || (c.matchups12?.[r]?.length || 0) > 0);
   const [muRole, setMuRole] = useState(() => (qRole && roleKeys.includes(qRole) ? qRole : roleKeys[0] || ""));
-  const [muSearch, setMuSearch] = useState(qVs);
-  const [duoSearch, setDuoSearch] = useState("");
-  const [playerSearch, setPlayerSearch] = useState(qFilter);
-  const [recentSearch, setRecentSearch] = useState(qFilter);
-  // this meta (last 12 months) first when there is one
-  const [muRecentPick, setMuRecent] = useState(() =>
-    qSpan === "all" ? false : qSpan === "12m" ? true : Object.keys(c.matchups12 || {}).length > 0,
+  const vsTerms = useMemo(
+    () =>
+      qVs
+        .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
+        .map((t) => normText(t))
+        .filter(Boolean),
+    [qVs],
   );
+  const mu12HasVs = useMemo(
+    () =>
+      vsTerms.length > 0 &&
+      (c.matchups12?.[muRole] || []).some(([oc]) => vsTerms.some((t) => matchesChampSearch(oc, t))),
+    [vsTerms, c.matchups12, muRole],
+  );
+  const muAllHasVs = useMemo(
+    () =>
+      vsTerms.length > 0 &&
+      (c.matchups?.[muRole] || []).some(([oc]) => vsTerms.some((t) => matchesChampSearch(oc, t))),
+    [vsTerms, c.matchups, muRole],
+  );
+  const resolveInitialMuRecent = () => {
+    if (qSpan === "all") return false;
+    if (qSpan === "12m") return true;
+    if (vsTerms.length > 0 && !mu12HasVs && muAllHasVs) return false;
+    return Object.keys(c.matchups12 || {}).length > 0;
+  };
+  // this meta (last 12 months) first when there is one
+  const [muRecentPick, setMuRecent] = useState(resolveInitialMuRecent);
   // the last 12 months have no matchups in this role: show all time
   const muRecent = muRecentPick && (c.matchups12?.[muRole]?.length || 0) > 0;
   const muRows = ((muRecent ? c.matchups12 : c.matchups) || {})[muRole] || [];
+  const validMuSearch = useMemo(() => {
+    if (!vsTerms.length) return "";
+    const activeRows = ((muRecent ? c.matchups12 : c.matchups) || {})[muRole] || [];
+    const matching = vsTerms.filter((t) => activeRows.some(([oc]) => matchesChampSearch(oc, t)));
+    return matching.join(", ");
+  }, [vsTerms, muRecent, c.matchups12, c.matchups, muRole]);
+  const validDuoSearch = useMemo(() => {
+    if (!vsTerms.length || !c.duos?.length) return "";
+    const matching = vsTerms.filter((t) => (c.duos || []).some(([pc]) => matchesChampSearch(pc, t)));
+    return matching.join(", ");
+  }, [vsTerms, c.duos]);
+  const [muSearch, setMuSearch] = useState(validMuSearch);
+  const [duoSearch, setDuoSearch] = useState(validDuoSearch);
   const muLane = muRows.some((m) => m.length > 3);
   const laneNow = (muRecent ? c.lane12 : c.lane)?.[muRole];
   const showDuos = mainRoles.some((r) => r === "Bot" || r === "Support") && (c.duos || []).length > 0;
@@ -171,7 +204,100 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
     return [...counts.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).map(([r]) => r);
   }, [c.builds, c.recent]);
   const [buildRole, setBuildRole] = useState(() => (qRole && buildRoles.includes(qRole) ? qRole : ""));
-  const [playersRecent, setPlayersRecent] = useState(() => qSpan === "12m");
+  const recentPlayersList = useMemo(() => {
+    if (c.players12 && c.players12.length > 0) return c.players12;
+    const byP = new Map<string, { n: string; u: string | null; g: number; w: number; k: number; d: number; a: number }>();
+    for (const r of c.recent) {
+      const key = r.u || r.n.toLowerCase();
+      const cur = byP.get(key) || { n: r.n, u: r.u, g: 0, w: 0, k: 0, d: 0, a: 0 };
+      cur.g++;
+      cur.w += r.win ? 1 : 0;
+      cur.k += r.k;
+      cur.d += r.d;
+      cur.a += r.a;
+      byP.set(key, cur);
+    }
+    return [...byP.values()]
+      .sort((a, b) => b.g - a.g || b.w - a.w)
+      .map((p) => ({ n: p.n, u: p.u, g: p.g, w: p.w, kda: Number(((p.k + p.a) / Math.max(p.d, 1)).toFixed(2)) }));
+  }, [c.players12, c.recent]);
+  const teamSlug = (n: string) => resolveTeamAlias(n, aliases.data?.team) || prettySlug(n);
+  const cSlug = c.u || resolveChampSlug(c.name);
+  const matchesChampPlayerRow = (p: { n: string; u: string | null }, t: string) => {
+    const qAlias = searchAlias(t);
+    const pSlug = p.u || resolvePlayerSlug(p.n);
+    const pTeam = teamByPlayer.get(p.u || p.n) || "";
+    const hay = `${normText(p.n)} ${normText(p.u || "")} ${normText(pTeam)}`;
+    const canonTeam = resolveTeamAlias(aliases.data?.team[t] || t, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "") || prettySlug(t);
+    const pTeamSlug = pTeam ? teamSlug(pTeam) : "";
+    return (
+      hay.includes(t) ||
+      Boolean(qAlias && hay.includes(qAlias)) ||
+      (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+      Boolean(qAlias && bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias))) ||
+      (!!t && resolvePlayerSlug(t) === pSlug) ||
+      Boolean(qAlias && resolvePlayerSlug(qAlias) === pSlug) ||
+      Boolean(pTeamSlug && canonTeam === pTeamSlug)
+    );
+  };
+  const matchesChampRecentGame = (r: (typeof c.recent)[number], t: string) => {
+    const qAlias = searchAlias(t);
+    const pSlug = r.u || resolvePlayerSlug(r.n);
+    const hay = normText(`${r.n} ${r.u || ""} ${r.team || ""} ${r.opp || ""} ${r.en || ""} ${r.r || ""} ${r.date || ""}`);
+    const canonTeam = resolveTeamAlias(aliases.data?.team[t] || t, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "") || prettySlug(t);
+    const rTeamSlug = r.team ? teamSlug(r.team) : "";
+    const rOppSlug = r.opp ? teamSlug(r.opp) : "";
+    const qRoleTerm = normalizeRole(t) || (qAlias ? normalizeRole(qAlias) : null);
+    return (
+      hay.includes(t) ||
+      Boolean(qAlias && hay.includes(qAlias)) ||
+      (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
+      Boolean(qAlias && bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias))) ||
+      (!!t && resolvePlayerSlug(t) === pSlug) ||
+      Boolean(qAlias && resolvePlayerSlug(qAlias) === pSlug) ||
+      Boolean(rTeamSlug && canonTeam === rTeamSlug) ||
+      Boolean(rOppSlug && canonTeam === rOppSlug) ||
+      Boolean(r.r && qRoleTerm && qRoleTerm === normalizeRole(r.r)) ||
+      Boolean(r.en && (matchesPeriodEvent(prettySlug(r.en), r.en, t) || (qAlias ? matchesPeriodEvent(prettySlug(r.en), r.en, qAlias) : false))) ||
+      Boolean((r.it || []).some((it) => matchesItemSearch(it, itemName(it), t) || Boolean(qAlias && matchesItemSearch(it, itemName(it), qAlias)))) ||
+      Boolean(r.ks && (normText(runeName(r.ks)).includes(t) || normText(r.ks).includes(t) || Boolean(qAlias && normText(runeName(r.ks)).includes(qAlias)))) ||
+      Boolean((r.sp || []).some((sp) => normText(spellName(sp)).includes(t) || normText(sp).includes(t) || Boolean(qAlias && normText(spellName(sp)).includes(qAlias))))
+    );
+  };
+  const candidateTerms = useMemo(() => {
+    const raw = [
+      qParams.get("player"),
+      qParams.get("vsplayer"),
+      qParams.get("team"),
+      qParams.get("vsteam"),
+      qVsTeam,
+      qParams.get("event"),
+      ...(qParams.get("q") || "").split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i),
+    ]
+      .map((x) => normText(x || ""))
+      .filter(Boolean);
+    return [...new Set(raw)];
+  }, [query, qVsTeam]); // eslint-disable-line react-hooks/exhaustive-deps
+  const playerMatchesAll = useMemo(
+    () => candidateTerms.filter((t) => c.players.some((p) => matchesChampPlayerRow(p, t))),
+    [candidateTerms, c.players, teamByPlayer, aliases.data], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const playerMatches12 = useMemo(
+    () => candidateTerms.filter((t) => recentPlayersList.some((p) => matchesChampPlayerRow(p, t))),
+    [candidateTerms, recentPlayersList, teamByPlayer, aliases.data], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const resolveInitialPlayersRecent = () => {
+    if (qSpan === "12m") return true;
+    if (qSpan === "all") return false;
+    if (candidateTerms.length > 0 && playerMatchesAll.length === 0 && playerMatches12.length > 0) return true;
+    return false;
+  };
+  const [playersRecent, setPlayersRecent] = useState(resolveInitialPlayersRecent);
+  const validPlayerSearch = useMemo(
+    () => (playersRecent ? playerMatches12 : playerMatchesAll).join(", "),
+    [playersRecent, playerMatches12, playerMatchesAll],
+  );
+  const [playerSearch, setPlayerSearch] = useState(validPlayerSearch);
   const resolveInitialUsed = (): { kind: "item" | "key" | "spells"; v: string } | null => {
     if (qItem) {
       const target = resolveItemSlug(qItem);
@@ -194,21 +320,40 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
   };
   // a build part picked in "Pro builds": the latest games narrow to the ones that used it
   const [usedOnly, setUsed] = useState<{ kind: "item" | "key" | "spells"; v: string } | null>(resolveInitialUsed);
+  const usedIn = (r: (typeof c.recent)[number]) =>
+    (!buildRole || !r.r || r.r === buildRole) &&
+    (!usedOnly ||
+      (usedOnly.kind === "item"
+        ? (r.it || []).includes(usedOnly.v)
+        : usedOnly.kind === "key"
+          ? r.ks === usedOnly.v
+          : [...(r.sp || [])].sort().join(" + ") === usedOnly.v.split(" + ").sort().join(" + ")));
+  const validRecentSearch = useMemo(() => {
+    if (!candidateTerms.length) return "";
+    const pool = c.recent.filter(usedIn);
+    const matching = candidateTerms.filter((t) => pool.some((r) => matchesChampRecentGame(r, t)));
+    return matching.join(", ");
+  }, [candidateTerms, c.recent, buildRole, usedOnly, aliases.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [recentSearch, setRecentSearch] = useState(validRecentSearch);
+  useEffect(() => {
+    setMuSearch(validMuSearch);
+  }, [validMuSearch]);
+  useEffect(() => {
+    setDuoSearch(validDuoSearch);
+  }, [validDuoSearch]);
+  useEffect(() => {
+    setPlayerSearch(validPlayerSearch);
+  }, [validPlayerSearch]);
+  useEffect(() => {
+    setRecentSearch(validRecentSearch);
+  }, [validRecentSearch]);
   useEffect(() => {
     if (qRole && roleKeys.includes(qRole)) setMuRole(qRole);
     else if (!qRole && roleKeys[0]) setMuRole(roleKeys[0]);
     if (qRole && buildRoles.includes(qRole)) setBuildRole(qRole);
     else if (!qRole) setBuildRole("");
-    setMuSearch(qVs);
-    setPlayerSearch(qFilter);
-    setRecentSearch(qFilter);
-    if (qSpan === "all") {
-      setMuRecent(false);
-      setPlayersRecent(false);
-    } else if (qSpan === "12m") {
-      setMuRecent(true);
-      setPlayersRecent(true);
-    }
+    setMuRecent(resolveInitialMuRecent());
+    setPlayersRecent(resolveInitialPlayersRecent());
     if (qItem || qKeystone) setUsed(resolveInitialUsed());
   }, [qRole, qVs, qFilter, qSpan, qItem, qKeystone, c.u]); // eslint-disable-line react-hooks/exhaustive-deps
   const syncChampRole = (r: string) => {
@@ -248,78 +393,10 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
     return { since: c.builds.since, g: rg.length, items: toList(itMap, 18), keys: toList(ksMap, 6), spells: toList(spMap, 6) };
   }, [c.builds, c.recent, buildRole]);
   const items = useMemo(() => (activeBuilds?.items || []).filter(([it]) => isFinishedItem(it)).slice(0, 8), [activeBuilds, ddReady]); // eslint-disable-line react-hooks/exhaustive-deps
-  const recentPlayersList = useMemo(() => {
-    if (c.players12 && c.players12.length > 0) return c.players12;
-    const byP = new Map<string, { n: string; u: string | null; g: number; w: number; k: number; d: number; a: number }>();
-    for (const r of c.recent) {
-      const key = r.u || r.n.toLowerCase();
-      const cur = byP.get(key) || { n: r.n, u: r.u, g: 0, w: 0, k: 0, d: 0, a: 0 };
-      cur.g++;
-      cur.w += r.win ? 1 : 0;
-      cur.k += r.k;
-      cur.d += r.d;
-      cur.a += r.a;
-      byP.set(key, cur);
-    }
-    return [...byP.values()]
-      .sort((a, b) => b.g - a.g || b.w - a.w)
-      .map((p) => ({ n: p.n, u: p.u, g: p.g, w: p.w, kda: Number(((p.k + p.a) / Math.max(p.d, 1)).toFixed(2)) }));
-  }, [c.players12, c.recent]);
   const pickUsed = (kind: "item" | "key" | "spells", v: string) => {
     setUsed((u) => (u && u.kind === kind && u.v === v ? null : { kind, v }));
     window.setTimeout(() => document.getElementById("champ-latest")?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
   };
-  const teamSlug = (n: string) => resolveTeamAlias(n, aliases.data?.team) || prettySlug(n);
-  const cSlug = c.u || resolveChampSlug(c.name);
-  const matchesChampPlayerRow = (p: { n: string; u: string | null }, t: string) => {
-    const qAlias = searchAlias(t);
-    const pSlug = p.u || resolvePlayerSlug(p.n);
-    const pTeam = teamByPlayer.get(p.u || p.n) || "";
-    const hay = `${normText(p.n)} ${normText(p.u || "")} ${normText(pTeam)}`;
-    const canonTeam = resolveTeamAlias(aliases.data?.team[t] || t, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "") || prettySlug(t);
-    const pTeamSlug = pTeam ? teamSlug(pTeam) : "";
-    return (
-      hay.includes(t) ||
-      Boolean(qAlias && hay.includes(qAlias)) ||
-      (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
-      Boolean(qAlias && bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias))) ||
-      (!!t && resolvePlayerSlug(t) === pSlug) ||
-      Boolean(qAlias && resolvePlayerSlug(qAlias) === pSlug) ||
-      Boolean(pTeamSlug && canonTeam === pTeamSlug)
-    );
-  };
-  const matchesChampRecentGame = (r: (typeof c.recent)[number], t: string) => {
-    const qAlias = searchAlias(t);
-    const pSlug = r.u || resolvePlayerSlug(r.n);
-    const hay = normText(`${r.n} ${r.u || ""} ${r.team || ""} ${r.opp || ""} ${r.en || ""} ${r.r || ""} ${r.date || ""}`);
-    const canonTeam = resolveTeamAlias(aliases.data?.team[t] || t, aliases.data?.team) || (qAlias ? resolveTeamAlias(qAlias, aliases.data?.team) : "") || prettySlug(t);
-    const rTeamSlug = r.team ? teamSlug(r.team) : "";
-    const rOppSlug = r.opp ? teamSlug(r.opp) : "";
-    const qRole = normalizeRole(t) || (qAlias ? normalizeRole(qAlias) : null);
-    return (
-      hay.includes(t) ||
-      Boolean(qAlias && hay.includes(qAlias)) ||
-      (bare(t).length >= 2 && bare(hay).includes(bare(t))) ||
-      Boolean(qAlias && bare(qAlias).length >= 2 && bare(hay).includes(bare(qAlias))) ||
-      (!!t && resolvePlayerSlug(t) === pSlug) ||
-      Boolean(qAlias && resolvePlayerSlug(qAlias) === pSlug) ||
-      Boolean(rTeamSlug && canonTeam === rTeamSlug) ||
-      Boolean(rOppSlug && canonTeam === rOppSlug) ||
-      Boolean(r.r && qRole && qRole === normalizeRole(r.r)) ||
-      Boolean(r.en && (matchesPeriodEvent(prettySlug(r.en), r.en, t) || (qAlias ? matchesPeriodEvent(prettySlug(r.en), r.en, qAlias) : false))) ||
-      Boolean((r.it || []).some((it) => matchesItemSearch(it, itemName(it), t) || Boolean(qAlias && matchesItemSearch(it, itemName(it), qAlias)))) ||
-      Boolean(r.ks && (normText(runeName(r.ks)).includes(t) || normText(r.ks).includes(t) || Boolean(qAlias && normText(runeName(r.ks)).includes(qAlias)))) ||
-      Boolean((r.sp || []).some((sp) => normText(spellName(sp)).includes(t) || normText(sp).includes(t) || Boolean(qAlias && normText(spellName(sp)).includes(qAlias))))
-    );
-  };
-  const usedIn = (r: (typeof c.recent)[number]) =>
-    (!buildRole || !r.r || r.r === buildRole) &&
-    (!usedOnly ||
-      (usedOnly.kind === "item"
-        ? (r.it || []).includes(usedOnly.v)
-        : usedOnly.kind === "key"
-          ? r.ks === usedOnly.v
-          : [...(r.sp || [])].sort().join(" + ") === usedOnly.v.split(" + ").sort().join(" + ")));
   const usedName = usedOnly ? (usedOnly.kind === "item" ? itemName(usedOnly.v) : usedOnly.kind === "key" ? runeName(usedOnly.v) : usedOnly.v.split(" + ").map(spellName).join(" + ")) : "";
   const pickRow = (on: boolean) =>
     `flex items-center gap-2 min-w-0 w-full text-left rounded px-1 -mx-1 hover:bg-rw-raised ${on ? "ring-1 ring-rw-accent bg-rw-accent/10" : ""}`;

@@ -108,32 +108,40 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
   const pChamp = urlParams.get("champ") ? resolveChampSlug(urlParams.get("champ")!) : "";
   const pPlayer = urlParams.get("player") ? resolvePlayerSlug(urlParams.get("player")!) : "";
   const qParam = urlParams.get("q") || urlParams.get("vs") || urlParams.get("team") || urlParams.get("event") || "";
+  const matchesTeamEvent = (x: HubTeam["events"][number], term: string) => {
+    const hay = `${normText(x.en)} ${normText(x.e || "")} ${normText(x.as || "")} ${x.date || ""}`;
+    const hayBare = bare(hay);
+    const canonAs = resolveTeamAlias(x.as || t.u);
+    const qAlias = searchAlias(term);
+    return (
+      hay.includes(term) ||
+      (bare(term).length >= 2 && hayBare.includes(bare(term))) ||
+      Boolean(qAlias && (hay.includes(normText(qAlias)) || (bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias))))) ||
+      (canonAs ? resolveTeamAlias(qAlias || term) === canonAs || resolveTeamAlias(term) === canonAs : false) ||
+      matchesPeriodEvent(x.e || "", x.en || "", term)
+    );
+  };
+  const validEventQ = useMemo(() => {
+    const rawTerms = [urlParams.get("event"), ...qParam.split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)]
+      .map((x) => normText(x || ""))
+      .filter(Boolean);
+    const uniq = [...new Set(rawTerms)];
+    if (!uniq.length || !t.events.length) return "";
+    const matching = uniq.filter((term) => t.events.some((ev) => matchesTeamEvent(ev, term)));
+    return matching.join(", ");
+  }, [qParam, urlParams.get("event"), t.events, t.u]); // eslint-disable-line react-hooks/exhaustive-deps
   const [allEvents, setAllEvents] = useState(false);
-  const [eventSearch, setEventSearch] = useState(qParam);
+  const [eventSearch, setEventSearch] = useState(validEventQ);
   useEffect(() => {
-    setEventSearch(qParam);
-  }, [qParam]);
+    setEventSearch(validEventQ);
+  }, [validEventQ]);
   const [recentHidden, revealRecent] = useHidden(`team-recent:${t.u}`, t.recent[0]?.date);
   const eventTerms = eventSearch
     .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
     .map((x) => normText(x))
     .filter(Boolean);
   const filteredEvents = eventTerms.length
-    ? t.events.filter((x) => {
-        const hay = `${normText(x.en)} ${normText(x.e || "")} ${normText(x.as || "")} ${x.date || ""}`;
-        const hayBare = bare(hay);
-        const canonAs = resolveTeamAlias(x.as || t.u);
-        return eventTerms.some((term) => {
-          const qAlias = searchAlias(term);
-          return (
-            hay.includes(term) ||
-            (bare(term).length >= 2 && hayBare.includes(bare(term))) ||
-            Boolean(qAlias && (hay.includes(normText(qAlias)) || (bare(qAlias).length >= 2 && hayBare.includes(bare(qAlias))))) ||
-            (canonAs ? resolveTeamAlias(qAlias || term) === canonAs || resolveTeamAlias(term) === canonAs : false) ||
-            matchesPeriodEvent(x.e || "", x.en || "", term)
-          );
-        });
-      })
+    ? t.events.filter((x) => eventTerms.some((term) => matchesTeamEvent(x, term)))
     : t.events;
   const events = allEvents || eventTerms.length ? filteredEvents : filteredEvents.slice(0, 15);
   // the section cards leave out what spoiler mode hides
@@ -1951,10 +1959,9 @@ const TeamChampionsTab: React.FC<{
       .map((x) => normText(x))
       .filter(Boolean);
     if (!rawTerms.length) return "";
-    const allKnown = [...t.champs.map((x) => x.c), ...t.bans.map((x) => x.c), ...(t.bansVs || []).map((x) => x.c)];
-    const matching = rawTerms.filter((term) => allKnown.some((c) => matchesChampSearch(c, term)));
+    const matching = rawTerms.filter((term) => champs.some((c) => matchesChampSearch(c.c, term)));
     return matching.join(", ");
-  }, [initialSearch, t.champs, t.bans, t.bansVs]);
+  }, [initialSearch, champs]);
   const [search, setSearch] = useState(validInitialSearch);
   useEffect(() => {
     setSearch(validInitialSearch);

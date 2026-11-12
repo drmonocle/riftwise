@@ -26,7 +26,7 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const q = new URLSearchParams(query || "");
   const rawSlug = q.get("champ") || "";
   const slug = rawSlug ? resolveChampSlug(rawSlug) : "";
-  const vsParam = q.get("vs") || "";
+  const vsParam = q.get("vs") || q.get("vschamp") || "";
   const role = normalizeRole(q.get("role"));
   const spanParam = q.get("span") || "";
   const evParam = q.get("event") ? resolveEventSlug(q.get("event")!) : "";
@@ -109,19 +109,36 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   const sel = "bg-rw-bg border border-rw-border rounded px-2 py-1 text-xs text-rw-text";
   const rawChamp = data.data?.m.c || "";
   const cName = rawChamp ? champName(rawChamp) : "";
-  const topTeam = data.data?.ch?.recent?.[0]?.team
-    ? resolveTeamAlias(data.data.ch.recent[0].team) || prettySlug(data.data.ch.recent[0].team)
-    : "";
-  const topOpp = data.data?.ch?.recent?.[0]?.opp
-    ? resolveTeamAlias(data.data.ch.recent[0].opp) || prettySlug(data.data.ch.recent[0].opp)
-    : "";
-  const topPlayer =
-    data.data?.ch?.players?.[0]?.u ||
-    (data.data?.ch?.players?.[0]?.n ? resolvePlayerSlug(data.data.ch.players[0].n) : "");
-  const secPlayer =
-    data.data?.ch?.players?.[1]?.u ||
-    (data.data?.ch?.players?.[1]?.n ? resolvePlayerSlug(data.data.ch.players[1].n) : "");
-  const leaderQ = [topPlayer, secPlayer, topTeam, topOpp].filter(Boolean).slice(0, 2).join(",");
+  const urlTeam = q.get("team") ? resolveTeamAlias(q.get("team")!) || prettySlug(q.get("team")!) : "";
+  const urlVsTeam = q.get("vsteam") ? resolveTeamAlias(q.get("vsteam")!) || prettySlug(q.get("vsteam")!) : "";
+  const urlPlayer = q.get("player") ? resolvePlayerSlug(q.get("player")!) : "";
+  const urlVsPlayer = q.get("vsplayer") ? resolvePlayerSlug(q.get("vsplayer")!) : "";
+  const teamCandidates = [
+    ...new Set(
+      [
+        urlTeam,
+        urlVsTeam,
+        data.data?.ch?.recent?.[0]?.team ? resolveTeamAlias(data.data.ch.recent[0].team) || prettySlug(data.data.ch.recent[0].team) : "",
+        data.data?.ch?.recent?.[0]?.opp ? resolveTeamAlias(data.data.ch.recent[0].opp) || prettySlug(data.data.ch.recent[0].opp) : "",
+      ].filter(Boolean),
+    ),
+  ];
+  const topTeam = teamCandidates[0] || "";
+  const topOpp = teamCandidates[1] || "";
+  const playerCandidates = [
+    ...new Set(
+      [
+        urlPlayer,
+        urlVsPlayer,
+        data.data?.ch?.players?.[0]?.u || (data.data?.ch?.players?.[0]?.n ? resolvePlayerSlug(data.data.ch.players[0].n) : ""),
+        data.data?.ch?.players?.[1]?.u || (data.data?.ch?.players?.[1]?.n ? resolvePlayerSlug(data.data.ch.players[1].n) : ""),
+      ].filter(Boolean),
+    ),
+  ];
+  const topPlayer = playerCandidates[0] || "";
+  const secPlayer = playerCandidates[1] || "";
+  const leaderQ = [...new Set([topPlayer, secPlayer, topTeam, topOpp].filter(Boolean))].join(",");
+  const cPeriod = evParam ? `e:${evParam}` : patchParam ? `p:${patchParam}` : yearParam ? `y${yearParam}` : undefined;
   const finderLink = (opp: string, n: number | string, roleIdx?: number) => {
     const rStr = roleIdx != null && roleIdx >= 0 ? ROLES[roleIdx] : role || "";
     return rawChamp ? (
@@ -475,6 +492,33 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
               >
                 {tl("Champions")} →
               </HubLink>
+              {topTeam && (
+                <>
+                  <HubLink
+                    to={{
+                      kind: "prep",
+                      a: topTeam,
+                      ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                      ...(cPeriod ? { period: cPeriod } : {}),
+                    }}
+                    className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
+                  >
+                    {tl("Match prep")} →
+                  </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: topTeam,
+                      ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                      ...(cPeriod ? { period: cPeriod } : {}),
+                    }}
+                    className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
+                  >
+                    {tl("Compare")} →
+                  </HubLink>
+                </>
+              )}
               <HubLink
                 to={{
                   kind: "draft",
@@ -774,6 +818,33 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           >
                             {tl("Pro tier list")} →
                           </HubLink>
+                          {topTeam && (
+                            <>
+                              <HubLink
+                                to={{
+                                  kind: "prep",
+                                  a: topTeam,
+                                  ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                                  ...(cPeriod ? { period: cPeriod } : {}),
+                                }}
+                                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Match prep")} →
+                              </HubLink>
+                              <HubLink
+                                to={{
+                                  kind: "compare",
+                                  mode: "team",
+                                  a: topTeam,
+                                  ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                                  ...(cPeriod ? { period: cPeriod } : {}),
+                                }}
+                                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Compare")} →
+                              </HubLink>
+                            </>
+                          )}
                           <HubLink
                             to={{
                               kind: "draft",
@@ -1044,6 +1115,33 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     >
                       {tl("Pro tier list")} →
                     </HubLink>
+                    {topTeam && (
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: topTeam,
+                            ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                            ...(cPeriod ? { period: cPeriod } : {}),
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "compare",
+                            mode: "team",
+                            a: topTeam,
+                            ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                            ...(cPeriod ? { period: cPeriod } : {}),
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Compare")} →
+                        </HubLink>
+                      </>
+                    )}
                     <HubLink
                       to={{
                         kind: "draft",
@@ -1235,6 +1333,33 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                     >
                       {tl("Pro tier list")} →
                     </HubLink>
+                    {topTeam && (
+                      <>
+                        <HubLink
+                          to={{
+                            kind: "prep",
+                            a: topTeam,
+                            ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                            ...(cPeriod ? { period: cPeriod } : {}),
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Match prep")} →
+                        </HubLink>
+                        <HubLink
+                          to={{
+                            kind: "compare",
+                            mode: "team",
+                            a: topTeam,
+                            ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                            ...(cPeriod ? { period: cPeriod } : {}),
+                          }}
+                          className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                        >
+                          {tl("Compare")} →
+                        </HubLink>
+                      </>
+                    )}
                     <HubLink
                       to={{
                         kind: "draft",
@@ -1438,6 +1563,33 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                   >
                     {tl("Pro tier list")} →
                   </HubLink>
+                  {topTeam && (
+                    <>
+                      <HubLink
+                        to={{
+                          kind: "prep",
+                          a: topTeam,
+                          ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                          ...(cPeriod ? { period: cPeriod } : {}),
+                        }}
+                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Match prep")} →
+                      </HubLink>
+                      <HubLink
+                        to={{
+                          kind: "compare",
+                          mode: "team",
+                          a: topTeam,
+                          ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                          ...(cPeriod ? { period: cPeriod } : {}),
+                        }}
+                        className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                      >
+                        {tl("Compare")} →
+                      </HubLink>
+                    </>
+                  )}
                   <HubLink
                     to={{
                       kind: "draft",
@@ -1612,6 +1764,33 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           >
                             {tl("Pro tier list")} →
                           </HubLink>
+                          {topTeam && (
+                            <>
+                              <HubLink
+                                to={{
+                                  kind: "prep",
+                                  a: topTeam,
+                                  ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                                  ...(cPeriod ? { period: cPeriod } : {}),
+                                }}
+                                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Match prep")} →
+                              </HubLink>
+                              <HubLink
+                                to={{
+                                  kind: "compare",
+                                  mode: "team",
+                                  a: topTeam,
+                                  ...(topOpp && topOpp !== topTeam ? { b: topOpp } : {}),
+                                  ...(cPeriod ? { period: cPeriod } : {}),
+                                }}
+                                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
+                              >
+                                {tl("Compare")} →
+                              </HubLink>
+                            </>
+                          )}
                           <HubLink
                             to={{
                               kind: "draft",
@@ -1806,6 +1985,7 @@ export const CountersLink: React.FC<{
   vs?: string;
   role?: string;
   player?: string;
+  vsplayer?: string;
   team?: string;
   vsteam?: string;
   patch?: string;
@@ -1817,6 +1997,7 @@ export const CountersLink: React.FC<{
   vs,
   role,
   player,
+  vsplayer,
   team,
   vsteam,
   patch,
@@ -1831,6 +2012,7 @@ export const CountersLink: React.FC<{
         champ: slug,
         ...(vs && vs !== slug ? { vs } : {}),
         ...(player ? { player } : {}),
+        ...(vsplayer && vsplayer !== player ? { vsplayer } : {}),
         ...(team ? { team } : {}),
         ...(vsteam && vsteam !== team ? { vsteam } : {}),
         ...(role ? { role } : {}),
