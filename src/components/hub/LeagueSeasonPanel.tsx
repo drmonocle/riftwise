@@ -146,7 +146,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 league: lgSlug,
                 year,
                 ...(qRole ? { role: qRole } : {}),
-                ...(topChampsList[0] ? { champ: topChampsList[0] } : {}),
+                ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                ...(topChampsList[0] ? { champ: topChampsList[0], ...(topChampsList[1] ? { vschamp: topChampsList[1] } : {}) } : {}),
                 ...(topPlayers.length || topTeams.length
                   ? { q: [...topPlayers, ...topTeams].join(",") }
                   : {}),
@@ -165,6 +167,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 key: `y${year}`,
                 year,
                 ...(qRole ? { role: qRole } : {}),
+                ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                ...(topChampsList[0] ? { champ: topChampsList[0], ...(topChampsList[1] ? { vschamp: topChampsList[1] } : {}) } : {}),
                 ...(seasonChamps ? { q: seasonChamps } : {}),
               }).toString(),
             }}
@@ -181,6 +186,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                 key: `y${year}`,
                 year,
                 ...(qRole ? { role: qRole } : {}),
+                ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                ...(topChampsList[0] ? { champ: topChampsList[0], ...(topChampsList[1] ? { vschamp: topChampsList[1] } : {}) } : {}),
                 ...(seasonChamps ? { q: seasonChamps } : {}),
               }).toString(),
             }}
@@ -193,6 +201,11 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               kind: "rankings",
               query: new URLSearchParams({
                 league: lgSlug,
+                year,
+                ...(qRole ? { role: qRole } : {}),
+                ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                ...(topChampsList[0] ? { champ: topChampsList[0], ...(topChampsList[1] ? { vschamp: topChampsList[1] } : {}) } : {}),
                 ...(topTeams.length >= 1 ? { q: topTeams.join(",") } : {}),
               }).toString(),
             }}
@@ -206,6 +219,10 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               query: new URLSearchParams({
                 league: lgSlug,
                 year,
+                ...(qRole ? { role: qRole } : {}),
+                ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                ...(topChampsList[0] ? { champ: topChampsList[0], ...(topChampsList[1] ? { vschamp: topChampsList[1] } : {}) } : {}),
                 ...(topTeams.length >= 1 ? { q: topTeams.join(",") } : {}),
               }).toString(),
             }}
@@ -259,6 +276,13 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                   a: topTeams[0],
                   ...(topTeams[1] ? { b: topTeams[1] } : {}),
                   period: `y${year}`,
+                  query: new URLSearchParams({
+                    league: lgSlug,
+                    year,
+                    ...(qRole ? { role: qRole } : {}),
+                    ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                    ...(topChampsList[0] ? { champ: topChampsList[0], ...(topChampsList[1] ? { vschamp: topChampsList[1] } : {}) } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline"
               >
@@ -267,7 +291,15 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               <HubLink
                 to={{
                   kind: "draft",
-                  query: `teams=${encodeURIComponent(topTeams.join(","))}${`&p=y${encodeURIComponent(year)}`}${qRole ? `&role=${encodeURIComponent(qRole)}` : ""}${seasonChamps ? `&champ=${encodeURIComponent(seasonChamps)}` : ""}`,
+                  query: new URLSearchParams({
+                    teams: topTeams.join(","),
+                    p: `y${year}`,
+                    league: lgSlug,
+                    year,
+                    ...(qRole ? { role: qRole } : {}),
+                    ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                    ...(seasonChamps ? { champ: seasonChamps } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline"
               >
@@ -280,6 +312,13 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                   a: topTeams[0],
                   ...(topTeams[1] ? { b: topTeams[1] } : {}),
                   period: `y${year}`,
+                  query: new URLSearchParams({
+                    league: lgSlug,
+                    year,
+                    ...(qRole ? { role: qRole } : {}),
+                    ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                    ...(topChampsList[0] ? { champ: topChampsList[0], ...(topChampsList[1] ? { vschamp: topChampsList[1] } : {}) } : {}),
+                  }).toString(),
                 }}
                 className="text-rw-accent hover:underline"
               >
@@ -336,10 +375,16 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                   topChampsList.find((c) => c !== myChamp);
                 const teamQ = new URLSearchParams({
                   p: `y${year}`,
+                  league: lgSlug,
+                  year,
+                  ...(vsTeamU && vsTeamU !== myTeamU ? { vs: vsTeamU } : {}),
+                  ...(myPU ? { player: myPU } : {}),
+                  ...(vsPU && vsPU !== myPU ? { vsplayer: vsPU } : {}),
+                  ...(myChamp ? { champ: myChamp } : {}),
+                  ...(vsChamp && vsChamp !== myChamp ? { vschamp: vsChamp } : {}),
                   ...([vsTeamU && vsTeamU !== myTeamU ? vsTeamU : "", myPU].some(Boolean)
                     ? { q: [vsTeamU && vsTeamU !== myTeamU ? vsTeamU : "", myPU].filter(Boolean).join(",") }
                     : {}),
-                  ...(myChamp ? { champ: myChamp } : {}),
                 }).toString();
                 return (
                   <li key={t.u || t.t} className="flex items-center justify-between gap-2 min-w-0">
@@ -452,6 +497,13 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                             a: spP0,
                             ...(spP1 ? { b: spP1 } : {}),
                             period: `y${year}`,
+                            query: new URLSearchParams({
+                              league: lgSlug,
+                              year,
+                              ...(regular[0].r ? { role: regular[0].r } : {}),
+                              ...(spTeam0 ? { team: spTeam0, ...(spTeam1 ? { vs: spTeam1 } : {}) } : {}),
+                              ...(spChampsList[0] ? { champ: spChampsList[0], ...(spChampsList[1] ? { vschamp: spChampsList[1] } : {}) } : {}),
+                            }).toString(),
                           }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
@@ -474,6 +526,13 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                                 a: spTeam0,
                                 ...(spTeam1 ? { b: spTeam1 } : {}),
                                 period: `y${year}`,
+                                query: new URLSearchParams({
+                                  league: lgSlug,
+                                  year,
+                                  ...(regular[0].r ? { role: regular[0].r } : {}),
+                                  ...(spP0 ? { player: spP0, ...(spP1 ? { vsplayer: spP1 } : {}) } : {}),
+                                  ...(spChampsList[0] ? { champ: spChampsList[0], ...(spChampsList[1] ? { vschamp: spChampsList[1] } : {}) } : {}),
+                                }).toString(),
                               }}
                               className="text-[11px] font-semibold text-rw-accent hover:underline"
                             >
@@ -482,7 +541,15 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                             <HubLink
                               to={{
                                 kind: "draft",
-                                query: `teams=${encodeURIComponent(spTeam0)}${spTeam1 ? `,${encodeURIComponent(spTeam1)}` : ""}&p=y${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}${spChamps ? `&champ=${encodeURIComponent(spChamps)}` : ""}`,
+                                query: new URLSearchParams({
+                                  teams: `${spTeam0}${spTeam1 ? `,${spTeam1}` : ""}`,
+                                  p: `y${year}`,
+                                  league: lgSlug,
+                                  year,
+                                  ...(regular[0].r ? { role: regular[0].r } : {}),
+                                  ...(spP0 ? { player: spP0, ...(spP1 ? { vsplayer: spP1 } : {}) } : {}),
+                                  ...(spChamps ? { champ: spChamps } : {}),
+                                }).toString(),
                               }}
                               className="text-[11px] font-semibold text-rw-accent hover:underline"
                             >
@@ -502,7 +569,17 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                         <HubLink
                           to={{
                             kind: "tiers",
-                            query: `scope=${encodeURIComponent(lgSlug)}&league=${encodeURIComponent(lgSlug)}&key=y${encodeURIComponent(year)}&year=${encodeURIComponent(year)}${regular[0].r ? `&role=${encodeURIComponent(regular[0].r)}` : ""}${spChamps ? `&q=${encodeURIComponent(spChamps)}` : ""}`,
+                            query: new URLSearchParams({
+                              scope: lgSlug,
+                              league: lgSlug,
+                              key: `y${year}`,
+                              year,
+                              ...(regular[0].r ? { role: regular[0].r } : {}),
+                              ...(spTeam0 ? { team: spTeam0, ...(spTeam1 ? { vs: spTeam1 } : {}) } : {}),
+                              ...(spP0 ? { player: spP0, ...(spP1 ? { vsplayer: spP1 } : {}) } : {}),
+                              ...(spChampsList[0] ? { champ: spChampsList[0], ...(spChampsList[1] ? { vschamp: spChampsList[1] } : {}) } : {}),
+                              ...(spChamps ? { q: spChamps } : {}),
+                            }).toString(),
                           }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
                         >
@@ -515,7 +592,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                               league: lgSlug,
                               year,
                               ...(regular[0].r ? { role: regular[0].r } : {}),
-                              ...(spChampsList[0] ? { champ: spChampsList[0] } : {}),
+                              ...(spTeam0 ? { team: spTeam0, ...(spTeam1 ? { vs: spTeam1 } : {}) } : {}),
+                              ...(spP0 ? { player: spP0, ...(spP1 ? { vsplayer: spP1 } : {}) } : {}),
+                              ...(spChampsList[0] ? { champ: spChampsList[0], ...(spChampsList[1] ? { vschamp: spChampsList[1] } : {}) } : {}),
                               q: [spP0, spP1, spTeam0, spTeam1].filter(Boolean).join(","),
                             }).toString(),
                           }}
@@ -528,11 +607,17 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                             kind: "rankings",
                             query: new URLSearchParams({
                               league: lgSlug,
+                              year,
+                              ...(regular[0].r ? { role: regular[0].r } : {}),
                               ...(spTeam0
                                 ? {
                                     q: `${spTeam0}${spTeam1 ? `,${spTeam1}` : ""}`,
+                                    team: spTeam0,
+                                    ...(spTeam1 ? { vs: spTeam1 } : {}),
                                   }
                                 : {}),
+                              ...(spP0 ? { player: spP0, ...(spP1 ? { vsplayer: spP1 } : {}) } : {}),
+                              ...(spChampsList[0] ? { champ: spChampsList[0], ...(spChampsList[1] ? { vschamp: spChampsList[1] } : {}) } : {}),
                             }).toString(),
                           }}
                           className="text-[11px] font-semibold text-rw-accent hover:underline"
@@ -587,7 +672,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                             year,
                             stat: m.key,
                             ...(qRole ? { role: qRole } : {}),
-                            ...(topChampsList[0] ? { champ: topChampsList[0] } : {}),
+                            ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                            ...(top[0] ? { player: pSlug(top[0].p.n, top[0].p.u), ...(top[1] ? { vsplayer: pSlug(top[1].p.n, top[1].p.u) } : {}) } : {}),
+                            ...(topChampsList[0] ? { champ: topChampsList[0], ...(topChampsList[1] ? { vschamp: topChampsList[1] } : {}) } : {}),
                             q: top.map(({ p }) => pSlug(p.n, p.u)).filter(Boolean).slice(0, 2).join(","),
                           }).toString(),
                         }}
@@ -613,13 +700,23 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                           const vsChamp = vsEntry?.c?.[0] ? resolveChampSlug(vsEntry.c[0]) : "";
                           const pQuery = new URLSearchParams({
                             p: `y${year}`,
-                            ...(vsPU && vsPU !== myPU ? { q: vsPU } : {}),
+                            league: lgSlug,
+                            year,
+                            ...(myTU ? { team: myTU } : {}),
+                            ...(vsTU && vsTU !== myTU ? { vs: vsTU } : {}),
+                            ...(vsPU && vsPU !== myPU ? { q: vsPU, vsplayer: vsPU } : {}),
                             ...(myChamp ? { champ: myChamp } : {}),
+                            ...(vsChamp && vsChamp !== myChamp ? { vschamp: vsChamp } : {}),
                           }).toString();
                           const tQuery = new URLSearchParams({
                             p: `y${year}`,
-                            ...(vsTU && vsTU !== myTU ? { q: vsTU } : {}),
+                            league: lgSlug,
+                            year,
+                            ...(myPU ? { player: myPU } : {}),
+                            ...(vsPU && vsPU !== myPU ? { vsplayer: vsPU } : {}),
+                            ...(vsTU && vsTU !== myTU ? { q: vsTU, vs: vsTU } : {}),
                             ...(myChamp ? { champ: myChamp } : {}),
+                            ...(vsChamp && vsChamp !== myChamp ? { vschamp: vsChamp } : {}),
                           }).toString();
                           return (
                             <li key={`${p.u || p.n}-${p.t}`} className="flex items-center justify-between gap-2 min-w-0">
@@ -693,7 +790,9 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
                     league: lgSlug,
                     year,
                     ...(qRole ? { role: qRole } : {}),
-                    ...(topChampsList[0] ? { champ: topChampsList[0] } : {}),
+                    ...(topTeams[0] ? { team: topTeams[0], ...(topTeams[1] ? { vs: topTeams[1] } : {}) } : {}),
+                    ...(topPlayers[0] ? { player: topPlayers[0], ...(topPlayers[1] ? { vsplayer: topPlayers[1] } : {}) } : {}),
+                    ...(topChampsList[0] ? { champ: topChampsList[0], ...(topChampsList[1] ? { vschamp: topChampsList[1] } : {}) } : {}),
                     ...(topPlayers.length || topTeams.length ? { q: [...topPlayers, ...topTeams].join(",") } : {}),
                   }).toString(),
                 }}

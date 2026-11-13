@@ -287,7 +287,16 @@ const RegionTrend: React.FC<{
           {tA && (
             <>
               <HubLink
-                to={{ kind: "prep", a: tA, ...(tB && tB !== tA ? { b: tB } : {}) }}
+                to={{
+                  kind: "prep",
+                  a: tA,
+                  ...(tB && tB !== tA ? { b: tB } : {}),
+                  query: new URLSearchParams({
+                    league: intlLeague,
+                    ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                    ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] font-semibold text-rw-accent hover:underline"
                 data-nocapture="1"
               >
@@ -298,6 +307,8 @@ const RegionTrend: React.FC<{
                   kind: "draft",
                   query: new URLSearchParams({
                     teams: tJoin || tA,
+                    league: intlLeague,
+                    ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
                     ...(cJoin ? { champ: cJoin } : {}),
                   }).toString(),
                 }}
@@ -307,7 +318,17 @@ const RegionTrend: React.FC<{
                 {tl("Draft board")} →
               </HubLink>
               <HubLink
-                to={{ kind: "compare", mode: "team", a: tA, ...(tB && tB !== tA ? { b: tB } : {}) }}
+                to={{
+                  kind: "compare",
+                  mode: "team",
+                  a: tA,
+                  ...(tB && tB !== tA ? { b: tB } : {}),
+                  query: new URLSearchParams({
+                    league: intlLeague,
+                    ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                    ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
+                  }).toString(),
+                }}
                 className="text-[11px] font-semibold text-rw-accent hover:underline"
                 data-nocapture="1"
               >
@@ -322,7 +343,14 @@ const RegionTrend: React.FC<{
             {tl("Tournaments")} →
           </HubLink>
           <HubLink
-            to={{ kind: "titles", ...(tJoin ? { query: `q=${encodeURIComponent(tJoin)}` } : {}) }}
+            to={{
+              kind: "titles",
+              query: new URLSearchParams({
+                league: intlLeague,
+                ...(tJoin ? { q: tJoin } : {}),
+                ...(tA ? { team: tA, ...(tB && tB !== tA ? { vs: tB } : {}) } : {}),
+              }).toString(),
+            }}
             className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
             data-nocapture="1"
           >
@@ -333,6 +361,9 @@ const RegionTrend: React.FC<{
               kind: "rankings",
               query: new URLSearchParams({
                 league: intlLeague,
+                ...(tA ? { team: tA, ...(tB && tB !== tA ? { vs: tB } : {}) } : {}),
+                ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                 ...(tpJoin ? { q: tpJoin } : {}),
               }).toString(),
             }}
@@ -377,6 +408,9 @@ const RegionTrend: React.FC<{
               query: new URLSearchParams({
                 scope: intlLeague,
                 league: intlLeague,
+                ...(tA ? { team: tA, ...(tB && tB !== tA ? { vs: tB } : {}) } : {}),
+                ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                 ...(cJoin ? { q: cJoin } : {}),
               }).toString(),
             }}
@@ -390,6 +424,9 @@ const RegionTrend: React.FC<{
               kind: "best",
               query: new URLSearchParams({
                 league: intlLeague,
+                ...(tA ? { team: tA, ...(tB && tB !== tA ? { vs: tB } : {}) } : {}),
+                ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                 ...(tpJoin ? { q: tpJoin } : {}),
               }).toString(),
             }}
@@ -403,7 +440,9 @@ const RegionTrend: React.FC<{
               kind: "leaders",
               query: new URLSearchParams({
                 league: intlLeague,
-                ...(cA ? { champ: cA } : {}),
+                ...(tA ? { team: tA, ...(tB && tB !== tA ? { vs: tB } : {}) } : {}),
+                ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                 ...(tpJoin ? { q: tpJoin } : {}),
               }).toString(),
             }}
@@ -480,7 +519,7 @@ const RegionTrend: React.FC<{
                             year: y,
                             ...(wl[2] ? { team: wl[2], ...(vsTopTeam && vsTopTeam !== wl[2] ? { vs: vsTopTeam } : {}) } : {}),
                             ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
-                            ...(cA ? { champ: cA } : {}),
+                            ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                           }).toString(),
                         }}
                         className={`block min-w-[2.5rem] rounded-sm px-1 py-0.5 tabular-nums text-rw-text hover:ring-1 hover:ring-rw-accent/60 ${wl[0] + wl[1] < 3 ? "opacity-45" : ""}`}
@@ -650,6 +689,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     a: topRegTeamA,
                     ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { b: topRegTeamB } : {}),
                     ...(singleYear ? { period: `y${singleYear}` } : {}),
+                    query: new URLSearchParams({
+                      league: intlLeague,
+                      ...(singleYear ? { year: singleYear } : {}),
+                      ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                      ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
+                    }).toString(),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -659,7 +704,13 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 <HubLink
                   to={{
                     kind: "draft",
-                    query: `teams=${encodeURIComponent(topRegTeamA)}${topRegTeamB && topRegTeamB !== topRegTeamA ? `,${encodeURIComponent(topRegTeamB)}` : ""}${cJoin ? `&champ=${encodeURIComponent(cJoin)}` : ""}${singleYear ? `&p=y${singleYear}` : ""}`,
+                    query: new URLSearchParams({
+                      teams: `${topRegTeamA}${topRegTeamB && topRegTeamB !== topRegTeamA ? `,${topRegTeamB}` : ""}`,
+                      league: intlLeague,
+                      ...(singleYear ? { p: `y${singleYear}`, year: singleYear } : {}),
+                      ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                      ...(cJoin ? { champ: cJoin } : {}),
+                    }).toString(),
                   }}
                   className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -673,6 +724,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     a: topRegTeamA,
                     ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { b: topRegTeamB } : {}),
                     ...(singleYear ? { period: `y${singleYear}` } : {}),
+                    query: new URLSearchParams({
+                      league: intlLeague,
+                      ...(singleYear ? { year: singleYear } : {}),
+                      ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                      ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
+                    }).toString(),
                   }}
                   className="text-[11px] font-semibold text-rw-accent hover:underline"
                   data-nocapture="1"
@@ -698,11 +755,17 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
             <HubLink
               to={{
                 kind: "titles",
-                ...(topRegTeamA
-                  ? {
-                      query: `q=${encodeURIComponent(`${topRegTeamA}${topRegTeamB && topRegTeamB !== topRegTeamA ? `,${topRegTeamB}` : ""}`)}`,
-                    }
-                  : {}),
+                query: new URLSearchParams({
+                  league: intlLeague,
+                  ...(singleYear ? { year: singleYear } : {}),
+                  ...(topRegTeamA
+                    ? {
+                        q: `${topRegTeamA}${topRegTeamB && topRegTeamB !== topRegTeamA ? `,${topRegTeamB}` : ""}`,
+                        team: topRegTeamA,
+                        ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { vs: topRegTeamB } : {}),
+                      }
+                    : {}),
+                }).toString(),
               }}
               className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
               data-nocapture="1"
@@ -714,6 +777,15 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 kind: "rankings",
                 query: new URLSearchParams({
                   league: intlLeague,
+                  ...(singleYear ? { year: singleYear } : {}),
+                  ...(topRegTeamA
+                    ? {
+                        team: topRegTeamA,
+                        ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { vs: topRegTeamB } : {}),
+                      }
+                    : {}),
+                  ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                   ...(regQParts.length ? { q: regQParts.join(",") } : {}),
                 }).toString(),
               }}
@@ -771,6 +843,14 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   scope: intlLeague,
                   league: intlLeague,
                   ...(singleYear ? { key: `y${singleYear}`, year: singleYear } : {}),
+                  ...(topRegTeamA
+                    ? {
+                        team: topRegTeamA,
+                        ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { vs: topRegTeamB } : {}),
+                      }
+                    : {}),
+                  ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                   ...(cJoin ? { q: cJoin } : {}),
                 }).toString(),
               }}
@@ -785,6 +865,14 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
+                  ...(topRegTeamA
+                    ? {
+                        team: topRegTeamA,
+                        ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { vs: topRegTeamB } : {}),
+                      }
+                    : {}),
+                  ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                   ...(regQParts.length ? { q: regQParts.join(",") } : {}),
                 }).toString(),
               }}
@@ -799,7 +887,14 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                 query: new URLSearchParams({
                   league: intlLeague,
                   ...(singleYear ? { year: singleYear } : {}),
-                  ...(cA ? { champ: cA } : {}),
+                  ...(topRegTeamA
+                    ? {
+                        team: topRegTeamA,
+                        ...(topRegTeamB && topRegTeamB !== topRegTeamA ? { vs: topRegTeamB } : {}),
+                      }
+                    : {}),
+                  ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                  ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                   ...(regQParts.length ? { q: regQParts.join(",") } : {}),
                 }).toString(),
               }}
@@ -945,7 +1040,10 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                           <HubLink
                             to={{
                               kind: "titles",
-                              ...(topTeamByRegion.get(r.code) ? { query: `q=${encodeURIComponent(topTeamByRegion.get(r.code)!)}` } : {}),
+                              query: new URLSearchParams({
+                                league: intlLeague,
+                                ...(regTeam ? { q: regTeam, team: regTeam, ...(vsRegTeam && vsRegTeam !== regTeam ? { vs: vsRegTeam } : {}) } : {}),
+                              }).toString(),
                             }}
                             className="inline-flex items-center justify-end gap-1.5 hover:underline"
                           >
@@ -967,7 +1065,10 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                           <HubLink
                             to={{
                               kind: "titles",
-                              ...(topTeamByRegion.get(r.code) ? { query: `q=${encodeURIComponent(topTeamByRegion.get(r.code)!)}` } : {}),
+                              query: new URLSearchParams({
+                                league: intlLeague,
+                                ...(regTeam ? { q: regTeam, team: regTeam, ...(vsRegTeam && vsRegTeam !== regTeam ? { vs: vsRegTeam } : {}) } : {}),
+                              }).toString(),
                             }}
                             className="inline-flex items-center justify-end gap-1.5 hover:text-rw-accent hover:underline"
                           >
@@ -1022,6 +1123,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                       a: pairTeamA,
                       ...(pairTeamB && pairTeamB !== pairTeamA ? { b: pairTeamB } : {}),
                       ...(singleYear ? { period: `y${singleYear}` } : {}),
+                      query: new URLSearchParams({
+                        league: intlLeague,
+                        ...(singleYear ? { year: singleYear } : {}),
+                        ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                        ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] font-semibold text-rw-accent hover:underline"
                     data-nocapture="1"
@@ -1031,7 +1138,13 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   <HubLink
                     to={{
                       kind: "draft",
-                      query: `teams=${encodeURIComponent(pairTeamA)}${pairTeamB && pairTeamB !== pairTeamA ? `,${encodeURIComponent(pairTeamB)}` : ""}${cJoin ? `&champ=${encodeURIComponent(cJoin)}` : ""}${singleYear ? `&p=y${singleYear}` : ""}`,
+                      query: new URLSearchParams({
+                        teams: `${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}`,
+                        league: intlLeague,
+                        ...(singleYear ? { p: `y${singleYear}`, year: singleYear } : {}),
+                        ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                        ...(cJoin ? { champ: cJoin } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     data-nocapture="1"
@@ -1045,6 +1158,12 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                       a: pairTeamA,
                       ...(pairTeamB && pairTeamB !== pairTeamA ? { b: pairTeamB } : {}),
                       ...(singleYear ? { period: `y${singleYear}` } : {}),
+                      query: new URLSearchParams({
+                        league: intlLeague,
+                        ...(singleYear ? { year: singleYear } : {}),
+                        ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                        ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
+                      }).toString(),
                     }}
                     className="text-[11px] font-semibold text-rw-accent hover:underline"
                     data-nocapture="1"
@@ -1070,11 +1189,17 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
               <HubLink
                 to={{
                   kind: "titles",
-                  ...(pairTeamA
-                    ? {
-                        query: `q=${encodeURIComponent(`${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}`)}`,
-                      }
-                    : {}),
+                  query: new URLSearchParams({
+                    league: intlLeague,
+                    ...(singleYear ? { year: singleYear } : {}),
+                    ...(pairTeamA
+                      ? {
+                          q: `${pairTeamA}${pairTeamB && pairTeamB !== pairTeamA ? `,${pairTeamB}` : ""}`,
+                          team: pairTeamA,
+                          ...(pairTeamB && pairTeamB !== pairTeamA ? { vs: pairTeamB } : {}),
+                        }
+                      : {}),
+                  }).toString(),
                 }}
                 className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                 data-nocapture="1"
@@ -1086,6 +1211,15 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   kind: "rankings",
                   query: new URLSearchParams({
                     league: intlLeague,
+                    ...(singleYear ? { year: singleYear } : {}),
+                    ...(pairTeamA
+                      ? {
+                          team: pairTeamA,
+                          ...(pairTeamB && pairTeamB !== pairTeamA ? { vs: pairTeamB } : {}),
+                        }
+                      : {}),
+                    ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                    ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                     ...(pairQParts.length ? { q: pairQParts.join(",") } : {}),
                   }).toString(),
                 }}
@@ -1143,6 +1277,14 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                     scope: intlLeague,
                     league: intlLeague,
                     ...(singleYear ? { key: `y${singleYear}`, year: singleYear } : {}),
+                    ...(pairTeamA
+                      ? {
+                          team: pairTeamA,
+                          ...(pairTeamB && pairTeamB !== pairTeamA ? { vs: pairTeamB } : {}),
+                        }
+                      : {}),
+                    ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                    ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                     ...(cJoin ? { q: cJoin } : {}),
                   }).toString(),
                 }}
@@ -1157,6 +1299,14 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     league: intlLeague,
                     ...(singleYear ? { year: singleYear } : {}),
+                    ...(pairTeamA
+                      ? {
+                          team: pairTeamA,
+                          ...(pairTeamB && pairTeamB !== pairTeamA ? { vs: pairTeamB } : {}),
+                        }
+                      : {}),
+                    ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                    ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                     ...(pairQParts.length ? { q: pairQParts.join(",") } : {}),
                   }).toString(),
                 }}
@@ -1171,7 +1321,14 @@ export const RegionStats: React.FC<{ files: (EventLines | null)[]; years: string
                   query: new URLSearchParams({
                     league: intlLeague,
                     ...(singleYear ? { year: singleYear } : {}),
-                    ...(cA ? { champ: cA } : {}),
+                    ...(pairTeamA
+                      ? {
+                          team: pairTeamA,
+                          ...(pairTeamB && pairTeamB !== pairTeamA ? { vs: pairTeamB } : {}),
+                        }
+                      : {}),
+                    ...(pA ? { player: pA, ...(pB && pB !== pA ? { vsplayer: pB } : {}) } : {}),
+                    ...(cA ? { champ: cA, ...(cB && cB !== cA ? { vschamp: cB } : {}) } : {}),
                     ...(pairQParts.length ? { q: pairQParts.join(",") } : {}),
                   }).toString(),
                 }}
