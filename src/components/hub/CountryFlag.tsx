@@ -14,19 +14,35 @@ export function countryName(cc: string | null | undefined): string {
   }
 }
 
+// Complete set of two-letter codes in public/flags/*.svg (verified by unit tests).
+export const FLAG_CODES: ReadonlySet<string> = new Set([
+  "ae", "al", "ar", "at", "au", "ba", "be", "bg", "bo", "br", "by", "ca", "ch", "cl", "cn", "co", "cr", "cy", "cz",
+  "de", "dk", "do", "dz", "ec", "ee", "eg", "es", "eu", "fi", "fr", "gb", "gr", "gt", "hk", "hn", "hr", "hu", "id",
+  "ie", "il", "in", "iq", "is", "it", "jo", "jp", "kr", "kw", "kz", "lb", "lt", "lu", "lv", "ma", "mn", "mo", "mt",
+  "mx", "my", "ni", "nl", "no", "nz", "om", "pa", "pe", "ph", "pl", "pr", "pt", "py", "qa", "ro", "rs", "ru", "sa",
+  "se", "sg", "si", "sk", "sv", "th", "tn", "tr", "tw", "ua", "us", "uy", "ve", "vn", "za",
+]);
+const FLAG_ALIASES: Record<string, string> = { uk: "gb", fx: "fr", su: "ru", yu: "rs" };
+const OBSOLETE_REGIONS = new Set(["AN", "BU", "CS", "DD", "FX", "NT", "SU", "TP", "UK", "YD", "YU", "ZR"]);
+
 // English country names as Leaguepedia writes them -> codes: the browser's own English list, plus the names it spells
 // differently ("Hong Kong SAR China", "Czechia"...)
 let codesByName: Map<string, string> | null = null;
 const LP_NAMES: Record<string, string> = {
   "hong kong": "HK", macau: "MO", macao: "MO", "czech republic": "CZ", turkey: "TR", "türkiye": "TR", england: "GB",
-  scotland: "GB", wales: "GB", "northern ireland": "GB", "republic of ireland": "IE", "south korea": "KR", korea: "KR",
-  "united states": "US", usa: "US", russia: "RU", vietnam: "VN", "ivory coast": "CI", "bosnia and herzegovina": "BA",
+  scotland: "GB", wales: "GB", "northern ireland": "GB", "united kingdom": "GB", "republic of ireland": "IE",
+  "south korea": "KR", korea: "KR", "united states": "US", usa: "US", france: "FR", russia: "RU", serbia: "RS",
+  vietnam: "VN", "ivory coast": "CI", "bosnia and herzegovina": "BA", moldova: "MD", "north macedonia": "MK",
 };
 /** Two-letter ISO country code for a Leaguepedia country name ("South Korea" -> "kr"), or null when unknown. */
 export function countryCode(name: string | null | undefined, cc?: string | null): string | null {
-  if (cc && /^[a-z]{2}$/i.test(cc.trim())) return cc.trim().toLowerCase();
+  if (cc && /^[a-z]{2}$/i.test(cc.trim())) {
+    const raw = cc.trim().toLowerCase();
+    return FLAG_ALIASES[raw] || raw;
+  }
   if (!name) return null;
   const key = name.trim().toLowerCase();
+  if (/^[a-z]{2}$/i.test(key)) return FLAG_ALIASES[key] || key;
   try {
     if (!codesByName) {
       codesByName = new Map();
@@ -34,8 +50,12 @@ export function countryCode(name: string | null | undefined, cc?: string | null)
       for (let a = 65; a <= 90; a++)
         for (let b = 65; b <= 90; b++) {
           const code = String.fromCharCode(a, b);
+          if (OBSOLETE_REGIONS.has(code)) continue;
           const n = en.of(code);
-          if (n && n !== code) codesByName.set(n.toLowerCase(), code);
+          if (n && n !== code) {
+            const nKey = n.toLowerCase();
+            if (FLAG_CODES.has(code.toLowerCase()) || !codesByName.has(nKey)) codesByName.set(nKey, code);
+          }
         }
     }
     const resolved = LP_NAMES[key] || codesByName.get(key);
@@ -43,6 +63,14 @@ export function countryCode(name: string | null | undefined, cc?: string | null)
   } catch {
     return LP_NAMES[key] ? LP_NAMES[key].toLowerCase() : null;
   }
+}
+
+/** Flag SVG code when public/flags/<code>.svg exists ("France" -> "fr"), else null. */
+export function flagCode(name: string | null | undefined, cc?: string | null): string | null {
+  const c = countryCode(name, cc);
+  if (!c) return null;
+  const norm = FLAG_ALIASES[c] || c;
+  return FLAG_CODES.has(norm) ? norm : null;
 }
 
 /**
@@ -58,10 +86,12 @@ export function localCountry(name: string | null | undefined, cc?: string | null
 
 export const CountryFlag: React.FC<{ cc: string | null | undefined; className?: string }> = ({ cc, className = "" }) => {
   if (!cc) return <span className="text-rw-muted">–</span>;
-  const name = countryName(cc);
+  const code = flagCode(cc);
+  const name = countryName(code || cc);
+  if (!code) return <span className="text-rw-muted" title={name || cc}>–</span>;
   return (
     <img
-      src={`/flags/${cc}.svg`}
+      src={`/flags/${code}.svg`}
       alt={name}
       title={name}
       width={20}

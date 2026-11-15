@@ -499,3 +499,42 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 		reply(w, 200, map[string]any{"ok": true})
 	})
 }
+
+// refreshPickem updates results.json for every active Pick'Em folder on disk so decided series are stored even when
+// nobody opens Pick'Em before Riot's rolling schedule window drops a finished match.
+func (s *Server) refreshPickem() {
+	entries, err := os.ReadDir(filepath.Join(s.st.dir, "pickem"))
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		name := e.Name()
+		if !e.IsDir() || !eventRe.MatchString(name) {
+			continue
+		}
+		pickemMu.Lock()
+		s.pickemResults(name, s.pickemTeams(name))
+		pickemMu.Unlock()
+	}
+}
+
+func (s *Server) startPickemRefresh(interval time.Duration, stop <-chan struct{}) {
+	go func() {
+		select {
+		case <-time.After(10 * time.Second):
+		case <-stop:
+			return
+		}
+		s.refreshPickem()
+		t := time.NewTicker(interval)
+		defer t.Stop()
+		for {
+			select {
+			case <-t.C:
+				s.refreshPickem()
+			case <-stop:
+				return
+			}
+		}
+	}()
+}

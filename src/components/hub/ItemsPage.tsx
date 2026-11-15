@@ -17,7 +17,7 @@ import { normalizeRole } from "../../hub/champAgg";
 import { matchesPeriodEvent } from "../../hub/period";
 import type { ItemIndexRow, PlayerGameRow, SearchPlayerRow } from "../../hub/types";
 import { navigateHub, hubShareUrl } from "../../hub/route";
-import { isFinishedItem, itemName, useDDragon } from "../../hub/ddragon";
+import { isFinishedItem, isTrinketItem, itemName, useDDragon } from "../../hub/ddragon";
 import { card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, Loading, PlayerLink, PlayerPhoto, ratingTextClass, Section, Stat, td, TeamLink, TeamLogo, th, useHiddenCheck, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
@@ -529,6 +529,14 @@ export const ItemsPage: React.FC<{ query?: string }> = ({ query }) => {
       </div>
       {player ? (
         <PlayerItemsView slug={player} name={who?.[0] || player} picks={resolvedPicks} champLabel={champLabel} scope={scope} itemTitle={itemRow?.[0]} onItem={(s) => set({ item: s })} />
+      ) : resolvedItem && items.data && !itemRow ? (
+        <Section title={prettySlug(resolvedItem) || resolvedItem}>
+          <p className="text-sm text-rw-text">
+            <span className="font-bold text-rw-red">{tl("No.")}</span> {tl("No pro game in the stats ended with this item.")}
+          </p>
+        </Section>
+      ) : resolvedItem && items.loading && isTrinketItem(resolvedItem) ? (
+        <Loading />
       ) : resolvedItem && champ ? (
         <ItemChampView picks={resolvedPicks} champLabel={champLabel} players={people.data?.players} onPlayer={(s) => set({ player: s })} initialSearch={vsplayer || team || q.get("q") || ""} />
       ) : resolvedItem && year ? (
@@ -1601,8 +1609,13 @@ const ItemPlayersView: React.FC<{
 /** One item on one champion: every player who finished a game with it on that champion (in a year, when one is picked). */
 const ItemChampView: React.FC<{ picks: Picks; champLabel: string; players?: SearchPlayerRow[]; onPlayer: (slug: string) => void; initialSearch?: string }> = ({ picks, champLabel, players, onPlayer, initialSearch = "" }) => {
   const { item, champ, vschamp, year, event, patch, vs, team, role, league } = picks;
-  const st = useLoad(() => loadHubItemChamp(item, champ), [item, champ]);
   const head = useLoad(() => loadHubItem(item), [item]);
+  const champSlug = resolveChampSlug(champ);
+  const hasChamp = !head.missing && (!head.data?.c || head.data.c.some(([c]) => resolveChampSlug(c) === champSlug));
+  const st = useLoad(
+    () => (head.loading ? new Promise<never>(() => {}) : hasChamp ? loadHubItemChamp(item, champ) : Promise.resolve(null)),
+    [item, champ, head.loading, hasChamp],
+  );
   const aliases = useLoad(loadAliases, []);
   const [all, setAll] = useState(false);
   const [search, setSearch] = useState(initialSearch);
@@ -1988,8 +2001,12 @@ const ItemYearView: React.FC<{ picks: Picks; players?: SearchPlayerRow[]; onPlay
   initialSearch = "",
 }) => {
   const { item, vschamp, year, event, patch, vs, team, role, league } = picks;
-  const st = useLoad(() => loadHubItemYear(item, year), [item, year]);
   const head = useLoad(() => loadHubItem(item), [item]);
+  const hasYear = !head.missing && (!head.data?.y || head.data.y.some(([yr]) => yr === year));
+  const st = useLoad(
+    () => (head.loading ? new Promise<never>(() => {}) : hasYear ? loadHubItemYear(item, year) : Promise.resolve(null)),
+    [item, year, head.loading, hasYear],
+  );
   const aliases = useLoad(loadAliases, []);
   const [search, setSearch] = useState(initialSearch);
   useEffect(() => {

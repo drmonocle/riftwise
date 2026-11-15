@@ -19,7 +19,7 @@ import { PeriodPicker, PlayerPeriodStats, QuickPeriods } from "./PeriodStats";
 import { BroadcastCardButton, SectionCard, playerCareerCardData } from "./BroadcastCard";
 import { PlayerRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
-import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
+import { CountryFlag, flagCode, localCountry } from "./CountryFlag";
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, Page, PlayerLink, PlayerPhoto, ratingTextClass, RevealButton, Section, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { EntityHero, heroBtn, heroLink } from "./EntityHero";
 import { useTeamLogo } from "../../hub/riotCatalog";
@@ -330,7 +330,7 @@ const PlayerView: React.FC<{
                   p.bio.real,
                   localCountry(p.bio.country, p.bio.cc) ? (
                     <span key="cc" className="inline-flex items-center gap-1">
-                      {countryCode(p.bio.country, p.bio.cc) && <CountryFlag cc={countryCode(p.bio.country, p.bio.cc)} />}
+                      {flagCode(p.bio.country, p.bio.cc) && <CountryFlag cc={flagCode(p.bio.country, p.bio.cc)} />}
                       {localCountry(p.bio.country, p.bio.cc)}
                     </span>
                   ) : null,

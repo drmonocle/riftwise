@@ -942,7 +942,10 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                 <HubLink
                   key={s.key}
                   to={s.route}
-                  onNavigate={done}
+                  onNavigate={() => {
+                    countSearch();
+                    done();
+                  }}
                   onMouseMove={(e) => {
                     if (e.clientX === lastMouse.current.x && e.clientY === lastMouse.current.y) return;
                     lastMouse.current = { x: e.clientX, y: e.clientY };
@@ -986,10 +989,8 @@ export const HubSearch: React.FC<{ autoFocus?: boolean; onDone?: () => void; big
                       key={h.kind + h.slug}
                       to={hitRoute(h)}
                       onNavigate={() => {
-                        setQ("");
-                        setPreview(null);
-                        setOpen(false);
-                        onDone?.();
+                        countSearch();
+                        done();
                       }}
                       onMouseMove={(e) => {
                         if (e.clientX === lastMouse.current.x && e.clientY === lastMouse.current.y) return;

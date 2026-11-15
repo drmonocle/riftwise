@@ -28,7 +28,7 @@ import {
   useLoad,
 } from "./ui";
 import { RegionFlag } from "./RegionStats";
-import { CountryFlag, localCountry } from "./CountryFlag";
+import { CountryFlag, flagCode, localCountry } from "./CountryFlag";
 import { STable } from "../STable";
 import { BroadcastCardButton, SectionCard, type CardData } from "./BroadcastCard";
 
@@ -1737,7 +1737,7 @@ export const EventRosters: React.FC<{ rosters: EventRoster[]; eventSlug?: string
                       {flag ? (
                         <>
                           {role ? " · " : ""}
-                          <CountryFlag cc={flag} />
+                          {flagCode(flag) && <CountryFlag cc={flagCode(flag)} />}
                           <span>{localCountry(flag)}</span>
                         </>
                       ) : null}

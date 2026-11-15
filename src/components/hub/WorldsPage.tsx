@@ -2715,6 +2715,15 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                 >
                   {tl("Player leaderboards")} →
                 </HubLink>
+                {live && (
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById("leaderboard")?.scrollIntoView({ behavior: "smooth" })}
+                    className="text-[11px] font-semibold text-rw-accent hover:underline"
+                  >
+                    {tl("Pick'Em leaderboard")} ↓
+                  </button>
+                )}
                 {Object.keys(swiss.rec).length > 0 && (
                   <BroadcastCardButton data={() => swissPicksCard(swiss.rec, byU, d.name)} name={`worlds-${year}-my-swiss`} label={tl("Overview card")} />
                 )}
@@ -2906,6 +2915,15 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
               >
                 {tl("Player leaderboards")} →
               </HubLink>
+              {live && (
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("leaderboard")?.scrollIntoView({ behavior: "smooth" })}
+                  className="text-[11px] font-semibold text-rw-accent hover:underline"
+                >
+                  {tl("Pick'Em leaderboard")} ↓
+                </button>
+              )}
               {swiss.done && ko && ko.qf.some((m) => m.w) && (
                 <BroadcastCardButton data={() => bracketPicksCard(ko, byU, d.name)} name={`worlds-${year}-my-bracket`} label={tl("Overview card")} />
               )}

@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Trophy, MapPin, CalendarDays, Coins, Download, Sparkles, ClipboardCopy } from "lucide-react";
 import { BracketBoard, type BracketColumn } from "../BracketBoard";
-import { CountryFlag, countryCode, localCountry } from "./CountryFlag";
+import { CountryFlag, flagCode, localCountry } from "./CountryFlag";
 import { tl, tn, tk, regionName, stageLabel, eventTitle } from "../../i18n";
 import { champName } from "../../champions";
 import { winRate } from "../../stats";
@@ -373,7 +373,7 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
             )}
             {(e.country || e.type) && (
               <span className="flex items-center gap-1">
-                {countryCode(e.country) ? <CountryFlag cc={countryCode(e.country)} /> : <MapPin className="w-3.5 h-3.5" />}
+                {flagCode(e.country) ? <CountryFlag cc={flagCode(e.country)} /> : <MapPin className="w-3.5 h-3.5" />}
                 {[localCountry(e.country), e.type === "Online" ? tl("Online") : e.type === "Offline" ? tl("On stage") : e.type].filter(Boolean).join(" · ")}
               </span>
             )}

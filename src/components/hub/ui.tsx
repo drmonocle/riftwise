@@ -311,26 +311,31 @@ export const HubLink: React.FC<{
   onNavigate,
   onMouseMove,
   children,
-}) => (
-  <a
-    href={IS_WEB ? hubPath(to) : "#"}
-    title={title}
-    style={style}
-    className={className ?? "text-rw-text hover:text-rw-accent hover:underline"}
-    onMouseEnter={() => prefetchSoon(to)}
-    onMouseMove={onMouseMove}
-    onFocus={() => prefetchSoon(to)}
-    onTouchStart={() => prefetchNow(to)}
-    onClick={(e) => {
-      if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
-      e.preventDefault();
-      navigateHub(to);
-      onNavigate?.();
-    }}
-  >
-    <InsideLinkContext.Provider value={true}>{children}</InsideLinkContext.Provider>
-  </a>
-);
+}) => {
+  const href = IS_WEB ? hubPath(to) : "#";
+  const nofollow = IS_WEB && href.includes("?") && !/\?g=\d+$/.test(href);
+  return (
+    <a
+      href={href}
+      rel={nofollow ? "nofollow" : undefined}
+      title={title}
+      style={style}
+      className={className ?? "text-rw-text hover:text-rw-accent hover:underline"}
+      onMouseEnter={() => prefetchSoon(to)}
+      onMouseMove={onMouseMove}
+      onFocus={() => prefetchSoon(to)}
+      onTouchStart={() => prefetchNow(to)}
+      onClick={(e) => {
+        if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
+        e.preventDefault();
+        navigateHub(to);
+        onNavigate?.();
+      }}
+    >
+      <InsideLinkContext.Provider value={true}>{children}</InsideLinkContext.Provider>
+    </a>
+  );
+};
 
 /** Team name, linked to its page when it has one (falls back to resolveTeamAlias(name) when u is omitted or empty). */
 export const TeamLink: React.FC<{ name: string; u?: string | null; query?: string; className?: string }> = ({ name, u, query, className }) => {

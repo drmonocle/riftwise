@@ -9,6 +9,7 @@ import { installWheelSideScroll } from "./wheelScroll";
 import { applyTheme } from "./theme";
 import { importMovedSettings } from "./move";
 import { STARTED_ON_HUB, URL_LANG, currentHubRoute } from "./hub/route";
+import { prefetchHubFile } from "./hub/slugs";
 import { prefetch } from "./stats";
 import { preloadDDragon } from "./hub/ddragon";
 import { preloadPageCode } from "./components/hub/pageCode";
@@ -29,14 +30,7 @@ if (IS_WEB && "serviceWorker" in navigator) {
 // own data file now, alongside the language file, instead of one after the other once the app has drawn. The
 // page then finds them already on their way (same module, same file cache). On a slow phone connection each of
 // those waits is a round trip of up to half a second, plus the download.
-const HUB_FILE_DIR: Partial<Record<string, string>> = {
-  player: "player",
-  team: "team",
-  event: "event",
-  match: "game",
-  champ: "champ",
-  league: "league",
-};
+const HUB_ENTITY_KINDS = new Set(["player", "team", "event", "match", "champ", "league"]);
 const HUB_KIND_PREFETCH: Partial<Record<string, string[]>> = {
   home: ["hub/home.json", "hub/meta.json", "hub/ratings.json", "hub/leagues.json", "hub/weekly.json"],
   tournaments: ["hub/meta.json"],
@@ -70,11 +64,11 @@ if (IS_WEB && STARTED_ON_HUB) {
   import("./components/views/StatsView").catch(() => {}); // a failure shows (and retries) where the page loads it
   const r = currentHubRoute();
   preloadPageCode(r.kind); // each stats page is its own download (pageCode.ts)
-  const dir = HUB_FILE_DIR[r.kind];
-  const files = [...(HUB_KIND_PREFETCH[r.kind] || []), ...(dir && "slug" in r ? [`hub/${dir}/${r.slug}.json`] : [])];
+  const slugFile = prefetchHubFile(r);
+  const files = [...(HUB_KIND_PREFETCH[r.kind] || []), ...(slugFile ? [slugFile] : [])];
   if (files.length > 0) prefetch(files);
   picturePage =
-    !!dir ||
+    HUB_ENTITY_KINDS.has(r.kind) ||
     r.kind === "home" ||
     r.kind === "champions" ||
     r.kind === "tiers" ||

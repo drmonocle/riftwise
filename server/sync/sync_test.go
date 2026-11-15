@@ -293,3 +293,49 @@ func TestPickemHide(t *testing.T) {
 		t.Fatalf("not shown again: %v", shown)
 	}
 }
+
+func TestPickemRefresh(t *testing.T) {
+	resetSched := func() {
+		pickemSched.mu.Lock()
+		pickemSched.at = time.Time{}
+		pickemSched.body = riotSched{}
+		pickemSched.mu.Unlock()
+	}
+	resetSched()
+	defer resetSched()
+
+	sched := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"events":[{
+			"type":"match",
+			"league":{"slug":"worlds"},
+			"startTime":"2026-11-14T19:00:00Z",
+			"state":"completed",
+			"blockName":"Knockout Stage",
+			"match":{"id":"115660540726095133","teams":[
+				{"code":"BLG","name":"Bilibili Gaming","result":{"outcome":"win","gameWins":3}},
+				{"code":"GEN","name":"Gen.G","result":{"outcome":"loss","gameWins":1}}
+			]}
+		}]}`))
+	}))
+	defer sched.Close()
+	prev := pickemScheduleURL
+	pickemScheduleURL = sched.URL
+	defer func() { pickemScheduleURL = prev }()
+
+	st, _ := openStore(t.TempDir())
+	s := newServer(st, loadOAuth(st.dir))
+	dir := s.pickemDir("worlds-2026")
+	_ = os.MkdirAll(dir, 0o755)
+	_ = writeJSON(filepath.Join(dir, "teams.json"), []pickemTeam{
+		{U: "bilibili-gaming", C: "BLG", N: "Bilibili Gaming"},
+		{U: "geng", C: "GEN", N: "Gen.G"},
+	})
+	s.refreshPickem()
+	var results []pickemResult
+	if err := readJSON(filepath.Join(dir, "results.json"), &results); err != nil {
+		t.Fatalf("read results: %v", err)
+	}
+	if len(results) != 1 || results[0].W != "bilibili-gaming" || !results[0].KO {
+		t.Fatalf("unexpected refreshed results: %+v", results)
+	}
+}

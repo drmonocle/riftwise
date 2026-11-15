@@ -36,20 +36,22 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
   const event = rawEvent ? resolveEventSlug(rawEvent) : "";
   const ev = useLoad(() => (event ? loadHubEvent(event) : Promise.resolve(null)), [event]);
   const eventLeagueGuess = event ? /^(.*?)-(?:20\d{2})(?:-|$)/.exec(event)?.[1] || "" : "";
-  const asked = q.get("league") || (event && (ev.data?.lu || eventLeagueGuess) ? ev.data?.lu || eventLeagueGuess : DEFAULT_LEAGUE);
+  const asked = q.get("league") || (event ? ev.data?.lu || (!ev.loading ? eventLeagueGuess : "") : DEFAULT_LEAGUE) || DEFAULT_LEAGUE;
   const league = aliases.data?.league[asked.toLowerCase()] || resolveLeagueSlug(asked);
   const row = leagues.data?.find((l) => l.u === league);
   const years = yearsOf(row);
   const evYear = event ? (ev.data?.year || (ev.data?.start || ev.data?.end || "").slice(0, 4) || (/(?:^|-)(20\d{2})(?:-|$)/.exec(event)?.[1] ?? "")) : "";
-  const askedYear = q.get("year") || (/^\d{4}$/.test(evYear) ? evYear : "");
+  const rawYear = (q.get("year") || "").trim();
+  const askedYear = (/^\d{4}$/.test(rawYear) ? rawYear : "") || (/^\d{4}$/.test(evYear) ? evYear : "");
   const year = (askedYear && (!row?.sy?.length || row.sy.includes(askedYear)) ? askedYear : "") || years[0] || row?.to || String(new Date().getFullYear());
   const role = normalizeRole(q.get("role"));
   const statParam = q.get("stat") || "";
   const statMetric = PLAYER_METRICS.find((m) => m.key === statParam);
-  const waitingForLeagues = !askedYear && league !== DEFAULT_LEAGUE && leagues.loading && !leagues.data;
+  const waitingForLeagues = (leagues.loading && !leagues.data) || (!!event && ev.loading);
+  const hasSeasonFile = !row?.sy || row.sy.includes(year);
   const season = useLoad(
-    () => (waitingForLeagues ? Promise.resolve(null) : loadLeagueSeason(league, year)),
-    [league, year, waitingForLeagues],
+    () => (waitingForLeagues || !hasSeasonFile ? Promise.resolve(null) : loadLeagueSeason(league, year)),
+    [league, year, waitingForLeagues, hasSeasonFile],
   );
   const set = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(query || "");

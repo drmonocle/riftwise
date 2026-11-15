@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.6.19" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "1.6.20" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -61,6 +61,26 @@ var kinds = map[string]string{"team": "team", "player": "player", "tournament": 
 var kindPath = map[string]string{"team": "team", "player": "player", "event": "tournament", "game": "match", "champ": "champion", "league": "league"}
 var legacyEntityPath = map[string]string{"event": "tournament", "champ": "champion", "game": "match"}
 
+var teamSlugAliases = map[string]string{
+	"geng-esports":           "geng",
+	"lyon-gaming":            "lyon",
+	"movistar-koi-2018-2024": "movistar-koi-2017-2024",
+	"bds":                    "shifters",
+	"team-bds":               "shifters",
+	"drx":                    "kiwoom-drx",
+	"kz":                     "kiwoom-drx",
+	"kingzone":               "kiwoom-drx",
+	"kingzone-dragonx":       "kiwoom-drx",
+	"lz":                     "kiwoom-drx",
+	"longzhu":                "kiwoom-drx",
+	"longzhu-gaming":         "kiwoom-drx",
+}
+
+var leagueSlugAliases = map[string]string{
+	"eulcs": "europe-league-championship-series",
+	"nalcs": "north-america-league-championship-series",
+}
+
 var playerSlugAliases = map[string]string{
 	"thebausffs":         "baus",
 	"bausffs":            "baus",
@@ -80,6 +100,10 @@ var reHexSuffix = regexp.MustCompile(`^(.*)-[0-9a-f]{5}$`)
 
 func resolveAliasSlug(kind, slug string) string {
 	switch kind {
+	case "team":
+		return teamSlugAliases[slug]
+	case "league":
+		return leagueSlugAliases[slug]
 	case "player":
 		return playerSlugAliases[slug]
 	case "event":
@@ -828,6 +852,13 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 		if !ok && to == "" {
 			to = s.resolveSlugFallback(kind, slug)
 		}
+		if !ok && to != "" {
+			s.mu.RLock()
+			if next := s.alias[kind][to]; next != "" {
+				to = next
+			}
+			s.mu.RUnlock()
+		}
 		if !ok && to != "" && to != slug && (kind == "team" || kind == "league" || kind == "event" || kind == "player" || kind == "game") {
 			target := langRoot + parts[0] + "/" + to + yearSuffix(parts)
 			if r.URL.RawQuery != "" {
@@ -896,6 +927,9 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	canonical := publicURL + path
 	if seg != "" {
 		canonical = publicURL + seg + "/" + path
+	}
+	if r.URL.RawQuery != "" {
+		index = false
 	}
 	if status == http.StatusOK {
 		if lang != "" {

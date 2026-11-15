@@ -721,6 +721,7 @@ def build(ctx) -> dict:
         return tp_m, tts_m, tc_m, facts_m, ev_m, tteam_m, regions_m, last, sum(p["stats"] for p in parts)
 
     kept = {}                          # stage -> its sums, for the whole-event page
+    child_won = {}                     # stage -> (winner, slug), fallback when parent TournamentResults omits 1st place
     champ_games = defaultdict(lambda: {"ev": {}, "g": []})  # (league slug, year) -> champion game log
     h2h_pairs = defaultdict(lambda: [0, 0])     # (code a, code b) sorted -> game wins of a, of b
     h2h_series = defaultdict(list)              # (code a, code b) -> [(date, event, wins a, wins b, Worlds/MSI/First Stand)]
@@ -1879,6 +1880,8 @@ def build(ctx) -> dict:
                 won = (q_rows[0]["t"], q_rows[0]["u"])
         if not won and end and end <= today:
             won = final_winner(stages)
+        if won:
+            child_won[op] = won
         events_by_year[event["year"]].append({
             "n": en, "u": eslug, "l": lg_ev, "r": info.get("Region"), "lv": info.get("TournamentLevel"),
             "st": start, "en": end, "g": event["games"], "q": event["q"], "sp": event["played"],
@@ -1942,6 +1945,13 @@ def build(ctx) -> dict:
                           "series": sum(p["series"] for p in parts)})
         out.json(f"event/{eslug}.json", {k: v for k, v in event.items() if v not in (None, [], {})})
         winner_row = next((r for r in res_out if r["p"] == "1"), None)
+        pwon = (winner_row["t"], winner_row["u"]) if winner_row else None
+        if not pwon and kids:
+            pick = next((c for c in reversed(kids) if c in child_won and not (lp_tourn.get(c) or {}).get("IsQualifier")), None)
+            if not pick:
+                pick = next((c for c in reversed(kids) if c in child_won), None)
+            if pick:
+                pwon = child_won[pick]
         events_by_year[event["year"]].append({
             "n": event["n"], "u": eslug, "l": info.get("League"), "r": info.get("Region"), "lv": info.get("TournamentLevel"),
             "st": event["start"], "en": event["end"], "g": event["games"], "q": 0, "kids": len(event["children"]),
@@ -1950,12 +1960,12 @@ def build(ctx) -> dict:
             # its stages' pages (Worlds page "all years": each stage's lines file without loading every event)
             "c": [c["u"] for c in event["children"]],
             **({"res": 1} if res_out else {}),
-            **({"w": winner_row["t"], "wu": winner_row["u"]} if winner_row else {}),
+            **({"w": pwon[0], "wu": pwon[1]} if pwon else {}),
         })
         recent = (event["end"] or "") >= recent_cut
         seo["event"].append((eslug, f"{event['n']} – results and stages | {SITE}",
                              f"{event['n']}: {', '.join(c['n'] for c in event['children'][:4])}."
-                             + (f" {winner_row['t']} won." if winner_row and not recent else "")
+                             + (f" {pwon[0]} won." if pwon and not recent else "")
                              + " Results, prize money and every stage.", 1 if event["games"] >= 4 else 0))
     print(f"hub: events and series done: {n_series_pages} series pages ({time.time() - t_stage:.0f}s)")
 

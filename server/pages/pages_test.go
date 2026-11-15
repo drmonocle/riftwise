@@ -655,3 +655,30 @@ func TestRiotMatchAndMarkdownRedirect(t *testing.T) {
 	}
 }
 
+func TestTeamAliasesAndQueryNoindex(t *testing.T) {
+	s := testSite(t)
+	for _, c := range [][2]string{
+		{"/riftwise/team/geng-esports", "/team/geng"},
+		{"/riftwise/team/lyon-gaming", "/team/lyon"},
+		{"/riftwise/team/movistar-koi-2018-2024", "/team/movistar-koi-2017-2024"},
+		{"/riftwise/team/bds", "/team/shifters"},
+		{"/riftwise/team/kz", "/team/kiwoom-drx"},
+		{"/riftwise/league/eulcs", "/league/europe-league-championship-series"},
+		{"/riftwise/league/nalcs", "/league/north-america-league-championship-series"},
+	} {
+		if w := get(s, c[0]); w.Code != http.StatusMovedPermanently || w.Header().Get("Location") != c[1] {
+			t.Errorf("%s -> %d %q, want 301 %q", c[0], w.Code, w.Header().Get("Location"), c[1])
+		}
+	}
+	if w := get(s, "/riftwise/stats/finder"); w.Code != 200 || strings.Contains(w.Body.String(), `content="noindex"`) || !strings.Contains(w.Body.String(), "hreflang") {
+		t.Errorf("queryless stats/finder should be indexed: %d", w.Code)
+	}
+	for _, p := range []string{"/riftwise/stats/finder?champ=ahri", "/riftwise/team/t1?tab=players"} {
+		w := get(s, p)
+		b := w.Body.String()
+		if w.Code != 200 || !strings.Contains(b, `content="noindex"`) || strings.Contains(b, "hreflang") {
+			t.Errorf("%s should be noindex without hreflang: %d", p, w.Code)
+		}
+	}
+}
+

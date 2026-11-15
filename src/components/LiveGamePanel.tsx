@@ -26,7 +26,7 @@ import {
   fetchLiveWindow,
   feedNow,
 } from "../liveGame";
-import { champIcon, champNameById, itemIconById, itemKeyById, itemLabelById, useDDragon } from "../hub/ddragon";
+import { champIcon, champNameById, isTrinketItem, itemIconById, itemKeyById, itemLabelById, useDDragon } from "../hub/ddragon";
 import { champName } from "../champions";
 import { useMatchRatings } from "../hub/matchRatings";
 import { gameStory } from "../gameStory";
@@ -1001,7 +1001,10 @@ const PlayerCells: React.FC<{
 }> = ({ p, opp, teamName, teamCode, oppTeamName, oppTeamCode, roleLabel, align, year, league, patch }) => {
   if (!p.meta || !p.frame) return <td className="py-1" />;
   const icon = champIcon(p.meta.championId);
-  const items = (p.det?.items || []).filter((id) => id > 0).slice(0, 7);
+  const items = (p.det?.items || [])
+    .slice(0, 7)
+    .map((id, slot) => ({ id, trinket: slot === 6 }))
+    .filter((x) => x.id > 0);
   const right = align === "right";
   const health = p.frame.maxHealth > 0 ? p.frame.currentHealth / p.frame.maxHealth : null;
   const pName = playerName(p.meta.summonerName);
@@ -1108,12 +1111,14 @@ const PlayerCells: React.FC<{
           </button>
           {items.length > 0 && (
             <div className={`flex flex-wrap gap-0.5 ${right ? "justify-end" : ""}`}>
-              {items.map((id, i) => {
+              {items.map(({ id, trinket }, i) => {
                 const src = itemIconById(id);
                 if (!src) return null;
                 const iKey = itemKeyById(id);
-                const iLabel = itemLabelById(id) || tl("Item history");
-                return iKey ? (
+                const label = itemLabelById(id);
+                const iLabel = label || tl("Item history");
+                const isTrinket = trinket || isTrinketItem(iKey, id);
+                return iKey && !isTrinket ? (
                   <button
                     key={`${id}-${i}`}
                     type="button"
@@ -1141,7 +1146,15 @@ const PlayerCells: React.FC<{
                     <img src={src} alt={iLabel} width={18} height={18} className="rounded" />
                   </button>
                 ) : (
-                  <img key={`${id}-${i}`} src={src} alt="" width={18} height={18} className="rounded" />
+                  <img
+                    key={`${id}-${i}`}
+                    src={src}
+                    alt={isTrinket ? (label || "") : ""}
+                    title={isTrinket ? (label || undefined) : undefined}
+                    width={18}
+                    height={18}
+                    className={`rounded ${isTrinket ? "opacity-75" : ""}`}
+                  />
                 );
               })}
             </div>

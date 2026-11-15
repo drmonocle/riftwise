@@ -23,10 +23,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // the app's version (package.json; npm run set-version), reported by the health check
-const version = "1.6.19"
+const version = "1.6.20"
 
 // siteURL is where a finished web sign-in lands (the provider's callback can still be the old address,
 // lolworlds.com/riftwise, as registered with Discord / Twitch: oauth.json publicBase).
@@ -53,6 +54,7 @@ func main() {
 		srv := newServer(st, loadOAuth(*dataDir))
 		log.Printf("riftwise-sync %s starting on %s, %d accounts, discord=%v twitch=%v", version, *addr, st.count(),
 			srv.oauth.enabled("discord"), srv.oauth.enabled("twitch"))
+		srv.startPickemRefresh(5*time.Minute, nil)
 		log.Fatal(srv.listen(*addr))
 	case "stats":
 		c := st.counts()

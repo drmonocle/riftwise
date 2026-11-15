@@ -1,5 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { searchAlias, isNonLatin } from "../searchAliases";
+import { isTrinketItem } from "../hub/ddragon";
+import { MissingFile } from "../stats";
 
 describe("native-script search", () => {
   it("maps well-known nicknames to roster names", () => {
@@ -50,7 +52,8 @@ describe("champion names", () => {
   });
 });
 
-import { matchesItemSearch, resolveItemSlug, searchHub, type HubIndex } from "../hub/data";
+import { loadHubSeries, loadLeagueSeason, matchesItemSearch, resolveItemSlug, resolveTeamAlias, searchHub, type HubIndex } from "../hub/data";
+import { prefetchHubFile, resolveLeagueSlug } from "../hub/slugs";
 describe("team search by old names and short names", () => {
   const index: HubIndex = {
     teams: [
@@ -88,5 +91,41 @@ describe("team search by old names and short names", () => {
     expect(matchesItemSearch("Blade of The Ruined King", "Blade of The Ruined King", "bork")).toBe(true);
     expect(matchesItemSearch("Infinity Edge", "Infinity Edge", "ie")).toBe(true);
     expect(matchesItemSearch("Infinity Edge", "Infinity Edge", "zhonya")).toBe(false);
+  });
+  it("resolves merged and rebranded team aliases", () => {
+    expect(resolveTeamAlias("kz")).toBe("kiwoom-drx");
+    expect(resolveTeamAlias("bds")).toBe("shifters");
+    expect(resolveTeamAlias("geng-esports")).toBe("geng");
+    expect(resolveTeamAlias("origen")).toBe("astralis");
+    expect(resolveTeamAlias("lyon-gaming")).toBe("lyon");
+    expect(resolveTeamAlias("movistar-koi-2018-2024")).toBe("movistar-koi-2017-2024");
+    expect(resolveLeagueSlug("european-masters")).toBe("european-masters");
+    expect(resolveLeagueSlug("eu-lcs")).toBe("europe-league-championship-series");
+    expect(resolveLeagueSlug("na-lcs")).toBe("north-america-league-championship-series");
+  });
+  it("identifies trinket items that have no finished-item stats page", () => {
+    expect(isTrinketItem("oracle-lens")).toBe(true);
+    expect(isTrinketItem("Scarecrow Effigy")).toBe(true);
+    expect(isTrinketItem("Stealth Ward", 3340)).toBe(true);
+    expect(isTrinketItem("Infinity Edge", 3031)).toBe(false);
+  });
+  it("rejects non-year league seasons and riot match slugs before fetching", async () => {
+    const spy = vi.spyOn(globalThis, "fetch");
+    try {
+      await expect(loadLeagueSeason("world-championship", "all")).rejects.toBeInstanceOf(MissingFile);
+      await expect(loadHubSeries("riot-123")).rejects.toBeInstanceOf(MissingFile);
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+  it("resolves aliases and skips riot match IDs in startup prefetch paths", () => {
+    expect(prefetchHubFile({ kind: "team", slug: "kz" })).toBe("hub/team/kiwoom-drx.json");
+    expect(prefetchHubFile({ kind: "team", slug: "bds" })).toBe("hub/team/shifters.json");
+    expect(prefetchHubFile({ kind: "team", slug: "lyon-gaming" })).toBe("hub/team/lyon.json");
+    expect(prefetchHubFile({ kind: "team", slug: "movistar-koi-2018-2024" })).toBe("hub/team/movistar-koi-2017-2024.json");
+    expect(prefetchHubFile({ kind: "league", slug: "lck" })).toBe("hub/league/lol-champions-korea.json");
+    expect(prefetchHubFile({ kind: "match", slug: "riot-12345" })).toBeNull();
+    expect(prefetchHubFile({ kind: "match", slug: "worlds-2025-finals-1" })).toBe("hub/game/worlds-2025-finals-1.json");
   });
 });

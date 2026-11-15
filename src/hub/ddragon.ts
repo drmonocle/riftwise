@@ -177,6 +177,35 @@ export function champIcon(name: string | undefined): string | null {
   return id ? `${DD}/${maps.v}/img/champion/${id}.png` : null;
 }
 
+/**
+ * Known trinket keys/ids (Leaguepedia records trinkets in a separate Trinket column, not the final
+ * inventory indexed under hub/items/, so UI links shouldn't send trinkets to /stats/items).
+ */
+const TRINKET_KEYS = new Set([
+  "oraclelens",
+  "oracleslens",
+  "wardingtotem",
+  "farsightalteration",
+  "scarecroweffigy",
+  "eyeoftheherald",
+  "stealthward",
+  "oraclealteration",
+  "oraclesalteration",
+  "sweepinglens",
+  "arcanesweeper",
+  "greaterstealthtotem",
+  "greatervisiontotem",
+  "farsightorb",
+  "scryingorb",
+]);
+const TRINKET_IDS = new Set([3330, 3340, 3341, 3345, 3348, 3361, 3362, 3363, 3364, 3513]);
+
+export function isTrinketItem(keyOrName: string | null | undefined, id?: number): boolean {
+  if (id !== undefined && TRINKET_IDS.has(id)) return true;
+  if (!keyOrName) return false;
+  return TRINKET_KEYS.has(norm(keyOrName));
+}
+
 /** True for finished items (worth showing in a build); unknown items (removed from the game) count as finished. */
 export function isFinishedItem(name: string): boolean {
   if (!maps) return true;

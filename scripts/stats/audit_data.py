@@ -18,10 +18,10 @@ from concurrent.futures import ThreadPoolExecutor
 WORLDS = {"2011": "Fnatic", "2012": "Taipei Assassins", "2013": "SK Telecom T1", "2014": "Samsung White",
           "2015": "SK Telecom T1", "2016": "SK Telecom T1", "2017": "Samsung Galaxy", "2018": "Invictus Gaming",
           "2019": "FunPlus Phoenix", "2020": "DAMWON Gaming", "2021": "EDward Gaming", "2022": "DRX", "2023": "T1",
-          "2024": "T1", "2025": "T1"}
+          "2024": "T1", "2025": "T1", "2026": "Bilibili Gaming"}
 MSI = {"2015": "EDward Gaming", "2016": "SK Telecom T1", "2017": "SK Telecom T1", "2018": "Royal Never Give Up",
        "2019": "G2 Esports", "2021": "Royal Never Give Up", "2022": "Royal Never Give Up", "2023": "JD Gaming",
-       "2024": "Gen.G", "2025": "Gen.G"}
+       "2024": "Gen.G", "2025": "Gen.G", "2026": "Hanwha Life Esports"}
 # a team's name changes over time: any of these counts as the same winner
 SAME = {"SK Telecom T1": {"SK Telecom T1", "SKT T1", "T1"}, "T1": {"T1", "SK Telecom T1"}, "DAMWON Gaming": {"DAMWON Gaming", "DWG KIA", "Dplus KIA", "Dplus Kia"},
         "DRX": {"DRX", "KIWOOM DRX", "Kiwoom DRX"}, "Gen.G": {"Gen.G", "Gen.G Esports"}, "Samsung Galaxy": {"Samsung Galaxy", "Gen.G"},

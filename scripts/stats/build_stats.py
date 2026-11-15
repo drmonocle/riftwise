@@ -647,15 +647,43 @@ def main() -> None:
     # Leaguepedia's series scores: an upper-bracket team can start a series 1-0 up, so the games played
     # (2-2) are not the result (3-2)
     official = {}
+    lp_finals = defaultdict(list)
+    today_utc = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
     if args.lp_db and os.path.exists(args.lp_db):
         try:
             lpc = sqlite3.connect(f"file:{args.lp_db}?mode=ro", uri=True, timeout=30)
-            for mid_, a_, b_, sa_, sb_ in lpc.execute(
-                    "SELECT MatchId, Team1, Team2, Team1Score, Team2Score FROM lp_match_schedule WHERE MatchId IS NOT NULL"):
+            for mid_, op_, tab_, a_, b_, sa_, sb_, win_, dt_, ff_, tb_ in lpc.execute(
+                    "SELECT MatchId, OverviewPage, Tab, Team1, Team2, Team1Score, Team2Score, Winner, "
+                    "DateTime_UTC, FF, IsTiebreaker FROM lp_match_schedule "
+                    "WHERE MatchId IS NOT NULL OR Tab IS NOT NULL"):
                 try:
-                    official[mid_] = (a_, b_, int(sa_), int(sb_))
+                    sa_i, sb_i = int(sa_), int(sb_)
                 except (TypeError, ValueError):
-                    pass
+                    sa_i = sb_i = None
+                if mid_ is not None and sa_i is not None and sb_i is not None:
+                    official[mid_] = (a_, b_, sa_i, sb_i)
+                if not (op_ and tab_ and a_ and b_ and dt_) or tb_ or not FINAL_STAGE.match(str(tab_).strip()):
+                    continue
+                if "tbd" in a_.lower() or "tbd" in b_.lower():
+                    continue
+                date_s = str(dt_)[:10]
+                if len(date_s) != 10 or date_s > today_utc:
+                    continue
+                wcol = str(win_ or "").strip()
+                if wcol in ("1", "2"):
+                    wside = int(wcol)
+                elif sa_i is not None and sb_i is not None and sa_i != sb_i:
+                    wside = 1 if sa_i > sb_i else 2
+                else:
+                    continue
+                if not ((sa_i is not None and sb_i is not None and (sa_i != sb_i or ff_)) or ff_):
+                    continue
+                w_raw, l_raw = (a_, b_) if wside == 1 else (b_, a_)
+                score_s = f"{max(sa_i, sb_i)}-{min(sa_i, sb_i)}" if (sa_i is not None and sb_i is not None and sa_i != sb_i) else "FF"
+                lp_finals[op_].append({
+                    "id": mid_ or "", "op": op_, "date": date_s,
+                    "w": canon_team(w_raw, date_s, op_), "l": canon_team(l_raw, date_s, op_), "score": score_s,
+                })
             lpc.close()
         except sqlite3.Error:
             pass
@@ -719,6 +747,20 @@ def main() -> None:
                            "l": l, "score": score, "fid": win_f})
             continue
         if not finals:
+            # Finals finished on Leaguepedia's schedule before every game's full scoreboard entered `matches`:
+            # still crown the champion so titles.json and latest.json stay current right after a final.
+            ops = {s["op"] for s in ss if s.get("op")}
+            lp_rows = [r for op_ in ops for r in lp_finals.get(op_, ())]
+            if lp_rows:
+                champ1 = first_place.get(ss[0]["op"]) or set()
+                won_by_1st = [r for r in lp_rows if len(champ1) == 1 and match_teams([next(iter(champ1))], r["w"], "")]
+                rf = max(won_by_1st or lp_rows, key=lambda x: (x["date"], x["id"]))
+                win_f = team_of(rf["w"], rf["date"], rf["op"])
+                if win_f in fr_name:
+                    titles.append({"t": tname, "date": rf["date"], "kind": kind, "w": fr_name[win_f], "as": rf["w"],
+                                   "s": tslug(win_f), "l": rf["l"], "score": rf["score"], "fid": win_f})
+                    checks["titles completed from Leaguepedia schedule (games pending in catalog)"] += 1
+                    continue
             checks["league events with no final in the catalog" if kind == "Regional" else f"no final found for {tname}"] += 1
             continue
         # The "Finals" tab can also hold a later decider (VCS 2019 Summer: a Worlds-spot match the day after the

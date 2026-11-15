@@ -4,5 +4,14 @@
 
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /*?*
+Allow: /match/*?g=
+Allow: /*.css?*
+Allow: /*.js?*
+Allow: /*.png?*
+Allow: /*.svg?*
+Allow: /*.webp?*
+Allow: /*.ico?*
 
 Sitemap: https://riftwise.gg/sitemap.xml

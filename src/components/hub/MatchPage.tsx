@@ -3606,27 +3606,9 @@ const PlayerRow: React.FC<{
               </HubLink>
             ))}
             {p.tr && (
-              <HubLink
-                to={{
-                  kind: "items",
-                  query: new URLSearchParams({
-                    item: resolveItemSlug(p.tr),
-                    ...(pS ? { player: pS } : {}),
-                    ...(oppS && oppS !== pS ? { vsplayer: oppS } : {}),
-                    ...(teamU ? { team: teamU } : {}),
-                    ...(oppU ? { vs: oppU } : {}),
-                    ...(p.r ? { role: normalizeRole(p.r) } : {}),
-                    ...(p.c ? { champ: resolveChampSlug(p.c) } : {}),
-                    ...(oppP?.c && oppP.c !== p.c ? { vschamp: resolveChampSlug(oppP.c) } : {}),
-                    ...(patch ? { patch } : {}),
-                    ...(eventSlug ? { event: eventSlug } : {}),
-                    ...(period && /^y\d{4}$/.test(period) ? { year: period.slice(1) } : {}),
-                  }).toString(),
-                }}
-                className="hover:opacity-80"
-              >
+              <span className="inline-flex opacity-70">
                 <ItemIcon name={p.tr} size={16} />
-              </HubLink>
+              </span>
             )}
           </span>
         )}

@@ -12,7 +12,8 @@ import { normText, searchAlias } from "../../hub/data";
 import { currentHubRoute } from "../../hub/route";
 import { Section, HubLink } from "./ui";
 import { BroadcastCardButton, listCard } from "./BroadcastCard";
-import { OPEN_TAB_EVENT } from "../../a11y";
+
+const LazySyncPanel = React.lazy(() => import("../SyncPanel").then((m) => ({ default: m.SyncPanel })));
 
 const btn =
   "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50 disabled:opacity-50";
@@ -27,6 +28,7 @@ export const PickemBoard: React.FC<{
 }> = ({ event, name, picks, teams }) => {
   const [board, setBoard] = useState<Board | null>(null);
   const [signedIn, setSignedIn] = useState(() => !!syncAccount());
+  const [showSignIn, setShowSignIn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -34,7 +36,9 @@ export const PickemBoard: React.FC<{
   useEffect(() => {
     refresh();
     const onSync = () => {
-      setSignedIn(!!syncAccount());
+      const ok = !!syncAccount();
+      setSignedIn(ok);
+      if (ok) setShowSignIn(false);
       refresh();
     };
     window.addEventListener(SYNC_EVENT, onSync);
@@ -366,7 +370,7 @@ export const PickemBoard: React.FC<{
               )}
             </>
           ) : (
-            <button type="button" className={btn} onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TAB_EVENT, { detail: "settings" }))}>
+            <button type="button" className={btn} aria-expanded={showSignIn} onClick={() => setShowSignIn((v) => !v)}>
               <LogIn className="w-3.5 h-3.5" />
               {tl("Sign in to enter")}
             </button>
@@ -377,6 +381,13 @@ export const PickemBoard: React.FC<{
       <p className="text-[11px] text-rw-muted">
         {tl("{event}: your Swiss and bracket picks against the results, scored for everyone who entered. 1 point per Swiss series, 2 per quarterfinal, 3 per semifinal, 4 for the final. Your sync username is shown.", { event: name })}
       </p>
+      {!signedIn && showSignIn && (
+        <div className="my-2 rounded-lg border border-rw-border bg-rw-card/60 p-3">
+          <React.Suspense fallback={null}>
+            <LazySyncPanel onOpenUrl={(u) => window.open(u, "_blank", "noopener,noreferrer")} />
+          </React.Suspense>
+        </div>
+      )}
       {me && (
         <label className="inline-flex items-center gap-2 text-xs text-rw-sub cursor-pointer">
           <input type="checkbox" checked={!!me.hidden} disabled={busy} onChange={(e) => hide(e.target.checked)} className="accent-[var(--rw-accent)]" />
