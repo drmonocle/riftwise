@@ -95,14 +95,11 @@
   "{n} player entered|{n} players entered": "{n} participante|{n} participantes",
   "{n} series decided|{n} series decided": "{n} série decidida|{n} séries decididas",
   "→ the current build's version": "→ a versão da compilação atual",
-
   "UPCOMING": "EM BREVE",
-
   "24/7 Stream": "Stream 24/7",
   "Schedule": "Agenda",
   "Stats": "Estatísticas",
   "Watchlist": "Minha lista",
-
   "24/7 Stream & S-Tier Banger Alerts": "Alertas do stream 24/7 e jogaços nível S",
   "24/7 Stream Marathon Schedule": "Agenda da maratona 24/7",
   "24/7 Stream Rebroadcasts (Twitch & YouTube)": "Reprises 24/7 (Twitch e YouTube)",
@@ -184,7 +181,6 @@
   "Windows 10 or 11. RiftWise isn't code-signed yet, so Windows SmartScreen may say \"Windows protected your PC\": click More info, then Run anyway. The download comes straight from GitHub.": "Windows 10 ou 11. O RiftWise ainda não tem assinatura digital, então o Windows SmartScreen pode dizer \"O Windows protegeu o computador\": clique em Mais informações e depois em Executar assim mesmo. O download vem direto do GitHub.",
   "YouTube ↗": "YouTube ↗",
   "{teams} teams · {players} players · {regions} regions · {leagues} leagues": "{teams} times · {players} jogadores · {regions} regiões · {leagues} ligas",
-
   "24/7 Stream Marathon": "Maratona 24/7",
   "Can't reach the data sources right now": "Não foi possível acessar as fontes de dados",
   "Connection problem · showing data from {time}": "Problema de conexão · dados das {time}",
@@ -227,7 +223,6 @@
   "You're offline. Live scores and schedules will come back when the connection does.": "Você está sem internet. Placares e agenda voltam quando a conexão voltar.",
   "{league} match is now live! (Bo{n})": "Partida do {league} ao vivo! (MD{n})",
   "{matchup} ({event}) is playing on the 24/7 stream!": "{matchup} ({event}) está passando no stream 24/7!",
-
   "24/7 stream · short break": "Stream 24/7 · pausa rápida",
   "A team you follow": "Um time que você segue",
   "Banger": "Jogaço",
@@ -256,7 +251,6 @@
   "started {time}": "começou às {time}",
   "team you follow": "time que você segue",
   "{n} match|{n} matches": "{n} partida|{n} partidas",
-
   "Active Watchlist": "Minha lista",
   "Check Riot API for roster transfers, trades, and new leagues": "Buscar na Riot transferências, trocas e ligas novas",
   "Check roster updates": "Buscar mudanças de elenco",
@@ -288,7 +282,6 @@
   "{n} Regions": "{n} regiões",
   "★ Follow All": "★ Seguir tudo",
   "★ International Events": "★ Torneios internacionais",
-
   "Add RiftWise to your home screen or desktop": "Adicione o RiftWise à tela inicial ou à área de trabalho",
   "Compact window": "Janela compacta",
   "Download RiftWise for Windows (free, about 4 MB, no installer)": "Baixar o RiftWise para Windows (grátis, uns 4 MB, sem instalação)",
@@ -309,7 +302,6 @@
   "{league} on air": "{league} no ar",
   "{n} live pro match. Click to view.|{n} live pro matches. Click to view.": "{n} partida pro ao vivo. Clique para ver.|{n} partidas pro ao vivo. Clique para ver.",
   "{title} · Click to view stream": "{title} · Clique para ver o stream",
-
   "Add match to Calendar (Google, Apple, Outlook, Yahoo)": "Adicionar partida à agenda (Google, Apple, Outlook, Yahoo)",
   "Add to Calendar": "Adicionar à agenda",
   "Added from RiftWise": "Adicionado pelo RiftWise",
@@ -321,7 +313,6 @@
   "Select Calendar Type": "Escolha sua agenda",
   "Watch live: {url}": "Assista ao vivo: {url}",
   "Yahoo Calendar": "Yahoo Agenda",
-
   "Against other teams": "Contra outros times",
   "All leagues": "Todas as ligas",
   "All of it counts here.": "Tudo conta aqui.",
@@ -422,7 +413,6 @@
   "{n} wins": "{n} vitórias",
   "{pct} win rate": "{pct} de winrate",
   "{pct} won": "{pct} vencidas",
-
   "All leagues…": "Todas as ligas…",
   "Choose a league above to see its official standings.": "Escolha uma liga acima para ver a classificação oficial.",
   "Choose any league": "Escolha qualquer liga",
@@ -447,12 +437,10 @@
   "Team": "Time",
   "Tournament": "Torneio",
   "Win%": "% V",
-
   "All-Time H2H · {games} games": "Confronto direto · {games} partidas",
   "All-time head-to-head: {a} {w1}-{w2} {b} ({games} games)": "Confronto direto histórico: {a} {w1}-{w2} {b} ({games} partidas)",
   "{summary} · tap for history": "{summary} · toque para ver o histórico",
   "{summary}. Show full history.": "{summary}. Ver histórico completo.",
-
   "All-time head-to-head": "Confronto direto histórico",
   "Close": "Fechar",
   "Couldn't load the match history right now.": "Não foi possível carregar o histórico agora.",
@@ -471,7 +459,6 @@
   "{n} games": "{n} partidas",
   "{n} games · all tournaments": "{n} partidas · todos os torneios",
   "{team} won": "{team} venceu",
-
   "Best of {n}": "Melhor de {n}",
   "Broadcast & Live Stream Channels": "Canais da transmissão ao vivo",
   "Calculating…": "Calculando…",
@@ -521,7 +508,6 @@
   "vs": "vs",
   "{date} at {time}": "{date} às {time}",
   "{time} late": "{time} de atraso",
-
   "Click star to follow player": "Clique na estrela para seguir o jogador",
   "Close team details": "Fechar detalhes do time",
   "Follow {name}": "Seguir {name}",
@@ -534,7 +520,6 @@
   "Unfollow {name}": "Parar de seguir {name}",
   "View on LoLEsports": "Ver no LoL Esports",
   "{team} team details": "Detalhes da {team}",
-
   "Click to reveal final score": "Clique para ver o placar final",
   "Click to reveal the live score": "Clique para ver o placar ao vivo",
   "Click to view {team} roster": "Clique para ver o elenco da {team}",
@@ -550,25 +535,20 @@
   "Tomorrow": "Amanhã",
   "Upcoming": "Próximas",
   "Yesterday": "Ontem",
-
   "Copy link to {a} vs {b}": "Copiar link de {a} vs {b}",
   "Copy this link:": "Copie este link:",
   "Link copied": "Link copiado",
-
   "LCK coverage, interviews and Korean scene reporting in English.": "Cobertura da LCK, entrevistas e notícias do cenário coreano (em inglês).",
   "Links to LoL Esports outlets. RiftWise does not show live headlines here.": "Links para sites de LoL Esports. O RiftWise não mostra manchetes ao vivo aqui.",
   "Match recaps, patch and meta coverage.": "Resumos de partidas, patches e meta.",
   "News Sources": "Fontes de notícias",
   "Official announcements, tournament formats, rulebook changes and schedules.": "Anúncios oficiais, formatos de torneio, mudanças de regulamento e agendas.",
   "Roster moves, transfer news and industry reporting.": "Mudanças de elenco, transferências e notícias do mercado.",
-
   "Oceanic leagues": "Ligas da Oceania",
-
   "Twitch 24/7: Airing Now": "Twitch 24/7: No ar",
   "Twitch 24/7: Offline": "Twitch 24/7: Offline",
   "Twitch 24/7: {details}": "Twitch 24/7: {details}",
   "Watch Live": "Assistir ao vivo",
-
   "{h}h {m}m": "{h} h {m} min",
   "{m}m": "{m} min",
   "Apple Calendar (.ics)": "Calendário da Apple (.ics)",
@@ -1994,7 +1974,6 @@
   "now {team}": "agora {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Campeão",
-
   "role::Top": "Topo",
   "role::Jungle": "Caçador",
   "role::Mid": "Meio",
@@ -2041,7 +2020,6 @@
   "region::OCEANIA": "Oceania",
   "region::AMERICAS": "Américas",
   "region::COMMONWEALTH OF INDEPENDENT STATES": "CEI",
-
   "Player rating": "Nota do jogador",
   "Every player in every game with a full scoreboard gets a rating from 0 to 10 for how well they played; 6 is an average game. It compares six numbers with players of the same role in the same year, so a support isn't judged on damage and old, slower games aren't held against new ones:": "Todo jogador, em toda partida com estatísticas completas, recebe uma nota de 0 a 10 pelo quanto jogou bem; 6 é uma partida média. Ela compara seis números com os de jogadores da mesma rota no mesmo ano, então um suporte não é julgado pelo dano e partidas antigas, mais lentas, não pesam contra as novas:",
   "Kill participation: 25% of the rating's form part.": "Participação em abates: 25% da parte de desempenho.",
@@ -2104,7 +2082,6 @@
   "Team records": "Recordes de times",
   "Player records": "Recordes de jogadores",
   "Most viewed this week": "Mais vistos da semana",
-
   "Has a pro ever built it? Item history": "Algum pro já fez esse item? Histórico de itens",
   "Item history": "Histórico de itens",
   "Has a pro ever built it? Pick a player and an item: every pro game they finished holding it. A player alone shows every item they've finished games with; an item alone, the players who built it most. From the final inventory of every pro game with a full scoreboard, so an item sold before the end doesn't count.": "Algum pro já fez esse item? Escolha um jogador e um item: todas as partidas profissionais que ele terminou com o item. Só um jogador mostra todos os itens com que ele já terminou partidas; só um item, os jogadores que mais o fizeram. Vem do inventário final de cada partida profissional com estatísticas completas, então um item vendido antes do fim não conta.",
@@ -2135,7 +2112,6 @@
   "To be decided": "A definir",
   "Floating team logos": "Logos de times flutuantes",
   "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Os logos dos times flutuam atrás da página; os atuais campeões do MSI e do First Stand têm um anel próprio. Desligado quando seu aparelho pede menos movimento.",
-
   "Only games on {champ} in {year}": "Só partidas de {champ} em {year}",
   "Only games on {champ}": "Só partidas de {champ}",
   "Only games in {year}": "Só partidas de {year}",
@@ -2149,21 +2125,16 @@
   "Match page": "Página da partida",
   "This round only": "Só esta rodada",
   "Every round": "Todas as rodadas",
-
   "Dragon": "Dragão",
   "Baron": "Barão",
-
   "Item stats": "Estatísticas de itens",
   "ended with it": "terminaram com ele",
   "{n} won": "{n} vitórias",
   "Most built on": "Mais feito em",
   "{n} players": "{n} jogadores",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "% de vitórias: as partidas que terminaram com o item no inventário de um jogador. Times vencedores completam mais itens, então a maioria fica acima de 50%.",
-
   "Every game on {champ}": "Todas as partidas de {champ}",
-
   "Pick a winner to play the rest out in the picker.": "Escolha um vencedor para jogar o resto no simulador.",
-
   "24/7 stream": "Stream 24/7",
   "30-day change": "Variação em 30 dias",
   "A matchup opens match prep, a draft board and a comparison. A player plus a champion opens their games on it. An item shows every pro who ever built it.": "Um confronto abre o pré-jogo, um quadro de draft e uma comparação. Um jogador mais um campeão abre as partidas dele com esse campeão. Um item mostra todos os pros que já o fizeram.",
@@ -2213,5 +2184,63 @@
   "team vs team": "time vs time",
   "the two compared over any period": "os dois comparados em qualquer período",
   "{n} live now": "{n} ao vivo agora",
-  "{n} match live now|{n} matches live now": "{n} partida ao vivo agora|{n} partidas ao vivo agora"
+  "{n} match live now|{n} matches live now": "{n} partida ao vivo agora|{n} partidas ao vivo agora",
+  "Player tier list": "Tier list de jogadores",
+  "Gold lead over the lane opponent at 10 minutes": "Vantagem de ouro sobre o oponente de rota aos 10 minutos",
+  "CS lead over the lane opponent at 10 minutes": "Vantagem de CS sobre o oponente de rota aos 10 minutos",
+  "XP lead over the lane opponent at 10 minutes": "Vantagem de XP sobre o oponente de rota aos 10 minutos",
+  "CTR%": "CTR%",
+  "Counter-pick rate (drafted after lane opponent)": "Taxa de counter-pick (escolhido após o oponente de rota)",
+  "KS%": "KS%",
+  "Share of team kills": "Participação nos abates da equipe",
+  "DTH%": "DTH%",
+  "Share of team deaths": "Participação nas mortes da equipe",
+  "Minimum games": "Jogos mínimos",
+  "Min. GP": "Mín. J",
+  "All games": "Todos os jogos",
+  "Result split": "Filtro por resultado",
+  "Losses": "Derrotas",
+  "Side split": "Filtro por lado",
+  "Stage": "Fase",
+  "All stages": "Todas as fases",
+  "Loading split…": "Carregando filtro…",
+  "Reset split": "Redefinir filtro",
+  "Early game leads": "Vantagens no início de jogo",
+  "Series view": "Visão da série",
+  "Scoreboard": "Placar",
+  "All stats matrix": "Matriz completa de stats",
+  "Series summary": "Resumo da série",
+  "Team tier list": "Tier list de equipes",
+  "Return to pool": "Voltar ao grupo",
+  "Copy Markdown": "Copiar Markdown",
+  "Drag cards into S–D tiers (or click any card to inspect full tournament stats, champs, and series links). Placements auto-save per tournament.": "Arraste cards para os tiers S–D (ou clique em qualquer um para ver stats do torneio, campeões e séries). Salva automaticamente por torneio.",
+  "Filter tournaments…": "Filtrar torneios…",
+  "Regional leagues": "Ligas regionais",
+  "Filter player or team…": "Filtrar jogador ou equipe…",
+  "Filter team…": "Filtrar equipe…",
+  "Card stat": "Stat do card",
+  "Auto-seed metric": "Métrica de ordenação",
+  "Auto-seed by stat": "Ordenar por stat",
+  "Reset board": "Resetar quadro",
+  "Drop here or use tier buttons in the inspector": "Solte aqui ou use os botões de tier no inspetor",
+  "Unplaced pool": "Não posicionados",
+  "Every filtered card is placed on the tier board.": "Todos os cards filtrados estão no quadro.",
+  "No players match the current filter.": "Nenhum jogador corresponde ao filtro atual.",
+  "Assign tier": "Definir tier",
+  "Series in this tournament": "Séries neste torneio",
+  "Matrix": "Matriz",
+  "No player statistics are recorded for this tournament yet.": "Ainda não há estatísticas de jogadores registradas para este torneio.",
+  "Highest DPM in a game": "Maior DPM em uma partida",
+  "International only": "Apenas internacionais",
+  "Record scope": "Escopo do recorde",
+  "All major events": "Todos os grandes eventos",
+  "Assists": "Assistências",
+  "Gold lead over the lane opponent at 20 minutes": "Vantagem de ouro sobre o oponente de rota aos 20 minutos",
+  "Pick #": "Pick #",
+  "Draft pick order (1–10)": "Ordem de escolha no draft (1–10)",
+  "Series totals": "Totais da série",
+  "All 10 players side by side. Click any stat row to highlight leaders across every role.": "Todos os 10 jogadores lado a lado. Clique em uma linha para destacar os líderes de cada função.",
+  "Open game": "Abrir partida",
+  "Swiss stage progression": "Progressão da fase suíça",
+  "Tier list mode": "Modo de tier list"
 }

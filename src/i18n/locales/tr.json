@@ -95,14 +95,11 @@
   "{n} player entered|{n} players entered": "{n} katılımcı|{n} katılımcı",
   "{n} series decided|{n} series decided": "{n} seri sonuçlandı|{n} seri sonuçlandı",
   "→ the current build's version": "→ mevcut derlemenin sürümü",
-
   "UPCOMING": "YAKINDA",
-
   "24/7 Stream": "24/7 Yayın",
   "Schedule": "Fikstür",
   "Stats": "İstatistik",
   "Watchlist": "Takip Listesi",
-
   "24/7 Stream & S-Tier Banger Alerts": "24/7 yayın ve S seviye efsane maç bildirimleri",
   "24/7 Stream Marathon Schedule": "24/7 maraton yayın akışı",
   "24/7 Stream Rebroadcasts (Twitch & YouTube)": "24/7 tekrar yayınlar (Twitch ve YouTube)",
@@ -184,7 +181,6 @@
   "Windows 10 or 11. RiftWise isn't code-signed yet, so Windows SmartScreen may say \"Windows protected your PC\": click More info, then Run anyway. The download comes straight from GitHub.": "Windows 10 veya 11. RiftWise henüz kod imzalı değil, bu yüzden Windows SmartScreen \"Windows bilgisayarınızı korudu\" diyebilir: Ek bilgi'ye, sonra Yine de çalıştır'a tıkla. Dosya doğrudan GitHub'dan iner.",
   "YouTube ↗": "YouTube ↗",
   "{teams} teams · {players} players · {regions} regions · {leagues} leagues": "{teams} takım · {players} oyuncu · {regions} bölge · {leagues} lig",
-
   "24/7 Stream Marathon": "24/7 Maraton",
   "Can't reach the data sources right now": "Veri kaynaklarına şu an ulaşılamıyor",
   "Connection problem · showing data from {time}": "Bağlantı sorunu · {time} itibarıyla veriler",
@@ -227,7 +223,6 @@
   "You're offline. Live scores and schedules will come back when the connection does.": "Çevrimdışısın. Bağlantı gelince canlı skorlar ve fikstür de geri gelir.",
   "{league} match is now live! (Bo{n})": "{league} maçı başladı! (Bo{n})",
   "{matchup} ({event}) is playing on the 24/7 stream!": "24/7 yayında şimdi: {matchup} ({event})!",
-
   "24/7 stream · short break": "24/7 yayın · kısa ara",
   "A team you follow": "Takip ettiğin bir takım",
   "Banger": "Efsane maç",
@@ -256,7 +251,6 @@
   "started {time}": "başlangıç: {time}",
   "team you follow": "takip ettiğin takım",
   "{n} match|{n} matches": "{n} maç",
-
   "Active Watchlist": "Takip listen",
   "Check Riot API for roster transfers, trades, and new leagues": "Riot'tan transferleri, takasları ve yeni ligleri kontrol et",
   "Check roster updates": "Kadro değişikliklerini kontrol et",
@@ -288,7 +282,6 @@
   "{n} Regions": "{n} bölge",
   "★ Follow All": "★ Tümünü takip et",
   "★ International Events": "★ Uluslararası turnuvalar",
-
   "Add RiftWise to your home screen or desktop": "RiftWise'ı ana ekranına ya da masaüstüne ekle",
   "Compact window": "Küçük pencere",
   "Download RiftWise for Windows (free, about 4 MB, no installer)": "Windows için RiftWise'ı indir (ücretsiz, yaklaşık 4 MB, kurulum yok)",
@@ -309,7 +302,6 @@
   "{league} on air": "{league} yayında",
   "{n} live pro match. Click to view.|{n} live pro matches. Click to view.": "{n} profesyonel maç canlı. Görmek için tıkla.",
   "{title} · Click to view stream": "{title} · Yayını izlemek için tıkla",
-
   "Add match to Calendar (Google, Apple, Outlook, Yahoo)": "Maçı takvime ekle (Google, Apple, Outlook, Yahoo)",
   "Add to Calendar": "Takvime ekle",
   "Added from RiftWise": "RiftWise'dan eklendi",
@@ -321,7 +313,6 @@
   "Select Calendar Type": "Takvim seç",
   "Watch live: {url}": "Canlı izle: {url}",
   "Yahoo Calendar": "Yahoo Takvim",
-
   "Against other teams": "Diğer takımlara karşı",
   "All leagues": "Tüm ligler",
   "All of it counts here.": "Burada hepsi sayılır.",
@@ -422,7 +413,6 @@
   "{n} wins": "{n} galibiyet",
   "{pct} win rate": "{pct} kazanma oranı",
   "{pct} won": "{pct} kazanıldı",
-
   "All leagues…": "Tüm ligler…",
   "Choose a league above to see its official standings.": "Resmî puan durumunu görmek için yukarıdan bir lig seç.",
   "Choose any league": "Lig seç",
@@ -447,12 +437,10 @@
   "Team": "Takım",
   "Tournament": "Turnuva",
   "Win%": "G%",
-
   "All-Time H2H · {games} games": "Tüm zamanlar karşılaşma · {games} oyun",
   "All-time head-to-head: {a} {w1}-{w2} {b} ({games} games)": "Tüm zamanlar karşılaşma: {a} {w1}-{w2} {b} ({games} oyun)",
   "{summary} · tap for history": "{summary} · geçmiş için dokun",
   "{summary}. Show full history.": "{summary}. Tüm geçmişi göster.",
-
   "All-time head-to-head": "Tüm zamanlar karşılaşma geçmişi",
   "Close": "Kapat",
   "Couldn't load the match history right now.": "Maç geçmişi şu an yüklenemedi.",
@@ -471,7 +459,6 @@
   "{n} games": "{n} oyun",
   "{n} games · all tournaments": "{n} oyun · tüm turnuvalar",
   "{team} won": "Kazanan: {team}",
-
   "Best of {n}": "Bo{n}",
   "Broadcast & Live Stream Channels": "Yayın kanalları",
   "Calculating…": "Hesaplanıyor…",
@@ -521,7 +508,6 @@
   "vs": "vs",
   "{date} at {time}": "{date} {time}",
   "{time} late": "{time} gecikmeli",
-
   "Click star to follow player": "Oyuncuyu takip etmek için yıldıza tıkla",
   "Close team details": "Takım bilgilerini kapat",
   "Follow {name}": "Takip et: {name}",
@@ -534,7 +520,6 @@
   "Unfollow {name}": "Takibi bırak: {name}",
   "View on LoLEsports": "LoL Esports'ta gör",
   "{team} team details": "Takım bilgileri: {team}",
-
   "Click to reveal final score": "Maç sonucunu görmek için tıkla",
   "Click to reveal the live score": "Canlı skoru görmek için tıkla",
   "Click to view {team} roster": "Kadroyu görmek için tıkla: {team}",
@@ -550,25 +535,20 @@
   "Tomorrow": "Yarın",
   "Upcoming": "Yaklaşan",
   "Yesterday": "Dün",
-
   "Copy link to {a} vs {b}": "Bağlantıyı kopyala: {a} vs {b}",
   "Copy this link:": "Bu bağlantıyı kopyala:",
   "Link copied": "Bağlantı kopyalandı",
-
   "LCK coverage, interviews and Korean scene reporting in English.": "LCK haberleri, röportajlar ve Kore sahnesinden haberler (İngilizce).",
   "Links to LoL Esports outlets. RiftWise does not show live headlines here.": "LoL espor sitelerine bağlantılar. RiftWise burada canlı manşet göstermez.",
   "Match recaps, patch and meta coverage.": "Maç özetleri, yama ve meta haberleri.",
   "News Sources": "Haber kaynakları",
   "Official announcements, tournament formats, rulebook changes and schedules.": "Resmî duyurular, turnuva formatları, kural değişiklikleri ve fikstürler.",
   "Roster moves, transfer news and industry reporting.": "Kadro değişiklikleri, transfer haberleri ve sektör haberleri.",
-
   "Oceanic leagues": "Okyanusya ligleri",
-
   "Twitch 24/7: Airing Now": "Twitch 24/7: Yayında",
   "Twitch 24/7: Offline": "Twitch 24/7: Kapalı",
   "Twitch 24/7: {details}": "Twitch 24/7: {details}",
   "Watch Live": "Canlı izle",
-
   "{h}h {m}m": "{h} sa {m} dk",
   "{m}m": "{m} dk",
   "Apple Calendar (.ics)": "Apple Takvim (.ics)",
@@ -1994,7 +1974,6 @@
   "now {team}": "şimdi: {team}",
   "title match::Final": "Final",
   "title winner::Champion": "Kazanan",
-
   "role::Top": "Üst",
   "role::Jungle": "Orman",
   "role::Mid": "Orta",
@@ -2041,7 +2020,6 @@
   "region::OCEANIA": "Okyanusya",
   "region::AMERICAS": "Amerika",
   "region::COMMONWEALTH OF INDEPENDENT STATES": "BDT",
-
   "Player rating": "Oyuncu puanı",
   "Every player in every game with a full scoreboard gets a rating from 0 to 10 for how well they played; 6 is an average game. It compares six numbers with players of the same role in the same year, so a support isn't judged on damage and old, slower games aren't held against new ones:": "Tam istatistiği olan her oyunda her oyuncu, ne kadar iyi oynadığına göre 0 ile 10 arasında bir puan alır; 6 ortalama bir oyundur. Puan altı değeri aynı yıl aynı roldeki oyuncularla karşılaştırır; böylece bir destek oyuncusu hasarla ölçülmez, daha yavaş eski oyunlar da yenilerle kıyaslanırken dezavantajlı olmaz:",
   "Kill participation: 25% of the rating's form part.": "Kill katılımı: performans kısmının %25'i.",
@@ -2104,7 +2082,6 @@
   "Team records": "Takım rekorları",
   "Player records": "Oyuncu rekorları",
   "Most viewed this week": "Bu hafta en çok bakılanlar",
-
   "Has a pro ever built it? Item history": "Bir profesyonel bunu hiç aldı mı? Eşya geçmişi",
   "Item history": "Eşya geçmişi",
   "Has a pro ever built it? Pick a player and an item: every pro game they finished holding it. A player alone shows every item they've finished games with; an item alone, the players who built it most. From the final inventory of every pro game with a full scoreboard, so an item sold before the end doesn't count.": "Bir profesyonel bunu hiç aldı mı? Bir oyuncu ve bir eşya seç: oyuncunun o eşyayla bitirdiği her profesyonel oyun. Yalnızca oyuncu seçersen oyunları bitirdiği tüm eşyalar; yalnızca eşya seçersen onu en çok alan oyuncular görünür. Tam skor tablosu olan her profesyonel oyunun son envanterinden sayılır, yani oyun bitmeden satılan bir eşya sayılmaz.",
@@ -2135,7 +2112,6 @@
   "To be decided": "Belli değil",
   "Floating team logos": "Yüzen takım logoları",
   "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Takım logoları sayfanın arkasında süzülür; güncel MSI ve First Stand şampiyonlarının kendi halkası vardır. Cihazın daha az hareket istediğinde kapanır.",
-
   "Only games on {champ} in {year}": "Yalnızca {year} yılında {champ} maçları",
   "Only games on {champ}": "Yalnızca {champ} maçları",
   "Only games in {year}": "Yalnızca {year} maçları",
@@ -2149,21 +2125,16 @@
   "Match page": "Maç sayfası",
   "This round only": "Yalnızca bu tur",
   "Every round": "Tüm turlar",
-
   "Dragon": "Ejder",
   "Baron": "Baron",
-
   "Item stats": "Eşya istatistikleri",
   "ended with it": "onunla bitti",
   "{n} won": "{n} galibiyet",
   "Most built on": "En çok alındığı şampiyon",
   "{n} players": "{n} oyuncu",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "Galibiyet %: eşyanın bir oyuncunun envanterinde olduğu hâlde biten maçlar. Kazanan takımlar daha çok eşya tamamladığından çoğu %50'nin üstündedir.",
-
   "Every game on {champ}": "{champ} ile tüm maçlar",
-
   "Pick a winner to play the rest out in the picker.": "Kalanını seçicide oynamak için bir kazanan seç.",
-
   "24/7 stream": "24/7 yayın",
   "30-day change": "30 günlük değişim",
   "A matchup opens match prep, a draft board and a comparison. A player plus a champion opens their games on it. An item shows every pro who ever built it.": "İki takım yazınca maç hazırlığı, draft tahtası ve karşılaştırma açılır. Oyuncu artı şampiyon o şampiyonla oynadığı maçları, bir eşya ise onu alan tüm profesyonelleri gösterir.",
@@ -2213,5 +2184,63 @@
   "team vs team": "takım vs takım",
   "the two compared over any period": "ikisi herhangi bir dönemde karşılaştırılır",
   "{n} live now": "{n} şu an canlı",
-  "{n} match live now|{n} matches live now": "{n} maç şu an canlı"
+  "{n} match live now|{n} matches live now": "{n} maç şu an canlı",
+  "Player tier list": "Oyuncu tier listesi",
+  "Gold lead over the lane opponent at 10 minutes": "10. dakikada koridor rakibine karşı altın farkı",
+  "CS lead over the lane opponent at 10 minutes": "10. dakikada koridor rakibine karşı CS farkı",
+  "XP lead over the lane opponent at 10 minutes": "10. dakikada koridor rakibine karşı XP farkı",
+  "CTR%": "CTR%",
+  "Counter-pick rate (drafted after lane opponent)": "Counter-pick oranı (koridor rakibinden sonra seçilen)",
+  "KS%": "KS%",
+  "Share of team kills": "Takım skorlarındaki pay",
+  "DTH%": "DTH%",
+  "Share of team deaths": "Takım ölümlerindeki pay",
+  "Minimum games": "En az maç",
+  "Min. GP": "Min. M",
+  "All games": "Tüm maçlar",
+  "Result split": "Sonuç filtresi",
+  "Losses": "Mağlubiyetler",
+  "Side split": "Taraf filtresi",
+  "Stage": "Aşama",
+  "All stages": "Tüm aşamalar",
+  "Loading split…": "Yükleniyor…",
+  "Reset split": "Filtreyi sıfırla",
+  "Early game leads": "Erken oyun farkları",
+  "Series view": "Seri görünümü",
+  "Scoreboard": "Skor tablosu",
+  "All stats matrix": "Tüm istatistik matrisi",
+  "Series summary": "Seri özeti",
+  "Team tier list": "Takım tier listesi",
+  "Return to pool": "Havuza geri gönder",
+  "Copy Markdown": "Markdown kopyala",
+  "Drag cards into S–D tiers (or click any card to inspect full tournament stats, champs, and series links). Placements auto-save per tournament.": "Kartları S–D aşamalarına sürükleyin (veya tam istatistikler, şampiyonlar ve seri bağlantıları için tıklayın). Turnuva bazında otomatik kaydedilir.",
+  "Filter tournaments…": "Turnuva filtrele…",
+  "Regional leagues": "Bölgesel ligler",
+  "Filter player or team…": "Oyuncu veya takım filtrele…",
+  "Filter team…": "Takım filtrele…",
+  "Card stat": "Kart istatistiği",
+  "Auto-seed metric": "Otomatik sıralama ölçütü",
+  "Auto-seed by stat": "İstatistiğe göre sırala",
+  "Reset board": "Panoyu sıfırla",
+  "Drop here or use tier buttons in the inspector": "Buraya bırakın veya paneldeki tier düğmelerini kullanın",
+  "Unplaced pool": "Yerleştirilmemişler",
+  "Every filtered card is placed on the tier board.": "Filtrelenen tüm kartlar panoya yerleştirildi.",
+  "No players match the current filter.": "Mevcut filtreyle eşleşen oyuncu yok.",
+  "Assign tier": "Tier ata",
+  "Series in this tournament": "Bu turnuvadaki seriler",
+  "Matrix": "Matris",
+  "No player statistics are recorded for this tournament yet.": "Bu turnuva için henüz oyuncu istatistiği kaydedilmedi.",
+  "Highest DPM in a game": "Bir maçta en yüksek DPM",
+  "International only": "Yalnızca uluslararası",
+  "Record scope": "Rekor kapsamı",
+  "All major events": "Tüm büyük turnuvalar",
+  "Assists": "Asist",
+  "Gold lead over the lane opponent at 20 minutes": "20. dakikada koridor rakibine karşı altın farkı",
+  "Pick #": "Pick #",
+  "Draft pick order (1–10)": "Draft seçim sırası (1–10)",
+  "Series totals": "Seri toplamları",
+  "All 10 players side by side. Click any stat row to highlight leaders across every role.": "10 oyuncu yan yana. Her roldeki liderleri vurgulamak için bir satıra tıklayın.",
+  "Open game": "Maçı aç",
+  "Swiss stage progression": "İsviçre aşaması ilerleyişi",
+  "Tier list mode": "Tier listesi modu"
 }

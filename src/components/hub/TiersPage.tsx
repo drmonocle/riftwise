@@ -14,6 +14,7 @@ import { normalizeRole, ROLES, champAgg, matchedEventLabel, matchEventIndices } 
 import { card, ChampIcon, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
 import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, resolveChampSlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
 import { SectionCard } from "./BroadcastCard";
+import { PlayerTierBuilder } from "./PlayerTierBuilder";
 
 const TIERS: { t: string; min: number; color: string }[] = [
   { t: "S", min: 40, color: "#ff6b81" },
@@ -39,11 +40,66 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
   usePageTitle(tl("Pro tier list"));
   useDDragon();
   const q = new URLSearchParams(query || "");
+  const rawMode = q.get("mode");
+  const tierMode: "champions" | "players" | "teams" = rawMode === "players" ? "players" : rawMode === "teams" ? "teams" : "champions";
   const set = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(query || "");
     for (const [k, v] of Object.entries(patch)) v ? next.set(k, v) : next.delete(k);
     navigateHub({ kind: "tiers", query: next.toString() }, { replace: true });
   };
+  const headerSwitcher = (
+    <div className="inline-flex items-center rounded-lg border border-rw-border bg-rw-bg p-0.5 text-xs" role="group" aria-label={tl("Tier list mode")}>
+      {(
+        [
+          ["champions", tl("Champions")],
+          ["players", tl("Players")],
+          ["teams", tl("Teams")],
+        ] as const
+      ).map(([m, label]) => (
+        <button
+          key={m}
+          type="button"
+          onClick={() => {
+            if (m === "champions") {
+              set({ mode: undefined });
+            } else {
+              const ev = q.get("event") || undefined;
+              navigateHub(
+                { kind: "tiers", query: new URLSearchParams({ mode: m, ...(ev ? { event: ev } : {}) }).toString() },
+                { replace: true },
+              );
+            }
+          }}
+          className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+            tierMode === m ? "bg-rw-accent text-rw-bg" : "text-rw-sub hover:text-rw-text"
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+  if (tierMode !== "champions") {
+    return (
+      <PlayerTierBuilder
+        mode={tierMode}
+        eventSlug={q.get("event") || undefined}
+        query={query}
+        onSelectEvent={(slug) => set({ mode: tierMode, event: slug || undefined })}
+        headerSwitcher={headerSwitcher}
+      />
+    );
+  }
+  return <ChampionTiersContent meta={meta} query={query} set={set} headerSwitcher={headerSwitcher} />;
+};
+
+const ChampionTiersContent: React.FC<{
+  meta: StatsMeta;
+  query?: string;
+  set: (patch: Record<string, string | undefined>) => void;
+  headerSwitcher: React.ReactNode;
+}> = ({ meta, query, set, headerSwitcher }) => {
+  const q = new URLSearchParams(query || "");
   const patchKeys = meta.champions.filter((k) => k.startsWith("p"));
   const evSlug = q.get("event") || "";
   const canonEvSlug = evSlug ? resolveEventSlug(evSlug) : "";
@@ -185,7 +241,10 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
     <div className="space-y-3">
       <div className={`${card} space-y-2`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-lg font-bold text-rw-text">{tl("Pro tier list")}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-lg font-bold text-rw-text">{tl("Pro tier list")}</h1>
+            {headerSwitcher}
+          </div>
           {block && block.games > 0 && (
             <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
               <HubLink

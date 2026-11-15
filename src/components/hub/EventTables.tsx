@@ -1,7 +1,9 @@
 /** gol.gg-style stat tables for one tournament: every player and every team, sortable by any column. */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { tl, roleName } from "../../i18n";
-import { bare, loadAliases, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadAliases, loadEventLines, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { aggregateLinesSplit, collectStageOptions, isSplitActive, type OutcomeSplit, type SideSplit } from "../../hub/splits";
+import type { EventLines } from "../../hub/worldsFacts";
 import { hubShareUrl } from "../../hub/route";
 import { champName } from "../../champions";
 import type { EventPlayer, EventTeamStats, HubEvent } from "../../hub/types";
@@ -40,12 +42,29 @@ const shareTone = (v: number | null, hi = 0.52, lo = 0.48) => {
   return <span className={c}>{pct(v)}</span>;
 };
 
-/** Oracle's Elixir columns for the player table (leads over the lane opponent at 15, first blood). */
-const playerEarlyCols = (wrap: (p: EventPlayer, node: React.ReactNode) => React.ReactNode): Column<EventPlayer>[] => [
-  { key: "g15", label: "GD@15", title: tl("Gold lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.g15 || 0, p.tn, 0) : null), render: (p) => (p.tn ? wrap(p, signed(per(p.g15 || 0, p.tn, 0))) : "–") },
-  { key: "c15", label: "CSD@15", title: tl("CS lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.c15 || 0, p.tn, 1) : null), render: (p) => (p.tn ? wrap(p, signed(per(p.c15 || 0, p.tn, 1))) : "–") },
-  { key: "x15", label: "XPD@15", title: tl("XP lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.x15 || 0, p.tn, 0) : null), render: (p) => (p.tn ? wrap(p, signed(per(p.x15 || 0, p.tn, 0))) : "–") },
+/** Oracle's Elixir columns for the player table (leads over the lane opponent at 15 or 10, first blood, counter-pick rate). */
+const playerEarlyCols = (
+  wrap: (p: EventPlayer, node: React.ReactNode) => React.ReactNode,
+  leadAt: 15 | 10,
+  showCtr: boolean,
+): Column<EventPlayer>[] => [
+  ...(leadAt === 10
+    ? ([
+        { key: "g10", label: "GD@10", title: tl("Gold lead over the lane opponent at 10 minutes"), value: (p) => (p.tn10 ? per(p.g10 || 0, p.tn10, 0) : null), render: (p) => (p.tn10 ? wrap(p, signed(per(p.g10 || 0, p.tn10, 0))) : "–") },
+        { key: "c10", label: "CSD@10", title: tl("CS lead over the lane opponent at 10 minutes"), value: (p) => (p.tn10 ? per(p.c10 || 0, p.tn10, 1) : null), render: (p) => (p.tn10 ? wrap(p, signed(per(p.c10 || 0, p.tn10, 1))) : "–") },
+        { key: "x10", label: "XPD@10", title: tl("XP lead over the lane opponent at 10 minutes"), value: (p) => (p.tn10 ? per(p.x10 || 0, p.tn10, 0) : null), render: (p) => (p.tn10 ? wrap(p, signed(per(p.x10 || 0, p.tn10, 0))) : "–") },
+      ] as Column<EventPlayer>[])
+    : ([
+        { key: "g15", label: "GD@15", title: tl("Gold lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.g15 || 0, p.tn, 0) : null), render: (p) => (p.tn ? wrap(p, signed(per(p.g15 || 0, p.tn, 0))) : "–") },
+        { key: "c15", label: "CSD@15", title: tl("CS lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.c15 || 0, p.tn, 1) : null), render: (p) => (p.tn ? wrap(p, signed(per(p.c15 || 0, p.tn, 1))) : "–") },
+        { key: "x15", label: "XPD@15", title: tl("XP lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? per(p.x15 || 0, p.tn, 0) : null), render: (p) => (p.tn ? wrap(p, signed(per(p.x15 || 0, p.tn, 0))) : "–") },
+      ] as Column<EventPlayer>[])),
   { key: "fbp", label: tl("FB%"), title: tl("Took part in first blood (kill or assist)"), value: (p) => (p.fbn ? per(p.fbp || 0, p.fbn, 3) : null), render: (p) => (p.fbn ? wrap(p, shareTone(per(p.fbp || 0, p.fbn, 3), 0.3, 0.12)) : "–") },
+  ...(showCtr
+    ? ([
+        { key: "ctr", label: tl("CTR%"), title: tl("Counter-pick rate (drafted after lane opponent)"), value: (p) => (p.ctrg ? per(p.ctr || 0, p.ctrg, 3) : null), render: (p) => (p.ctrg ? wrap(p, shareTone(per(p.ctr || 0, p.ctrg, 3), 0.65, 0.35)) : "–") },
+      ] as Column<EventPlayer>[])
+    : []),
 ];
 
 /** Oracle's Elixir columns for the team table. */
@@ -62,7 +81,43 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
   initialSearch = "",
   initialRole,
 }) => {
-  const players = hidden ? [] : e.players || [];
+  const basePlayers = useMemo(() => (hidden ? [] : e.players || []), [hidden, e.players]);
+  const [splitSide, setSplitSide] = useState<SideSplit>("all");
+  const [splitOutcome, setSplitOutcome] = useState<OutcomeSplit>("all");
+  const [splitStage, setSplitStage] = useState<string>("all");
+  const [leadAt, setLeadAt] = useState<15 | 10>(15);
+  const [minGpPick, setMinGpPick] = useState<number | null>(null);
+  const splitActive = isSplitActive({ side: splitSide, outcome: splitOutcome, stage: splitStage });
+  const [linesCache, setLinesCache] = useState<{ slug: string; data: EventLines | null; loading: boolean }>({
+    slug: "",
+    data: null,
+    loading: false,
+  });
+  useEffect(() => {
+    if (!splitActive || !e.ln || hidden) return;
+    if (linesCache.slug === e.u && linesCache.data) return;
+    let alive = true;
+    setLinesCache({ slug: e.u, data: null, loading: true });
+    loadEventLines(e.u)
+      .then((data) => {
+        if (alive) setLinesCache({ slug: e.u, data, loading: false });
+      })
+      .catch(() => {
+        if (alive) setLinesCache({ slug: e.u, data: null, loading: false });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [splitActive, e.ln, e.u, hidden, linesCache.slug, linesCache.data]);
+  const players = useMemo(() => {
+    if (!splitActive || linesCache.slug !== e.u || !linesCache.data) return basePlayers;
+    return aggregateLinesSplit(linesCache.data, { side: splitSide, outcome: splitOutcome, stage: splitStage });
+  }, [splitActive, linesCache, e.u, basePlayers, splitSide, splitOutcome, splitStage]);
+  const stageOptions = useMemo(() => {
+    const fromLines = linesCache.slug === e.u && linesCache.data ? linesCache.data.s.map((x) => x[1]) : [];
+    const fromStages = (e.stages || []).map((st) => st.name);
+    return collectStageOptions(fromLines.length ? fromLines : fromStages);
+  }, [linesCache, e.u, e.stages]);
   const aliases = useLoad(loadAliases, []);
   const normInitRole = initialRole ? ROLE_ALIASES[initialRole.toLowerCase()] || initialRole : "";
   const validRole = normInitRole && ROLES.some((r) => r.toLowerCase() === normInitRole.toLowerCase())
@@ -113,27 +168,28 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
   }, [initialSearch, effectiveInitialSearch]);
   const maxG = Math.max(0, ...players.map((p) => p.g));
   const [regular, setRegular] = useState(true);
-  const minG = Math.max(2, Math.ceil(maxG * 0.4));
+  const autoMinG = Math.max(2, Math.ceil(maxG * 0.4));
+  const minG = minGpPick != null ? minGpPick : regular ? autoMinG : 1;
   const rows = useMemo(() => {
     const terms = search
       .split(/[,|]+|\s+vs\.?\s+|\s+v\s+/i)
       .map((s) => normText(s))
       .filter(Boolean);
-    const matchRows = (useRole: string, useRegular: boolean, useTerms: string[]) =>
+    const matchRows = (useRole: string, useMinFilter: boolean, useTerms: string[]) =>
       players.filter(
         (p) =>
           (useRole === "All" || p.r === useRole) &&
-          (!useRegular || p.g >= minG || maxG < 3) &&
+          (!useMinFilter || minG <= 1 || p.g >= minG || maxG < 3) &&
           (!useTerms.length || useTerms.some((term) => matchEventPlayer(p, term))),
       );
-    let res = matchRows(role, regular, terms);
-    if (res.length === 0 && regular && terms.length > 0) res = matchRows(role, false, terms);
+    let res = matchRows(role, regular || minGpPick != null, terms);
+    if (res.length === 0 && (regular || minGpPick != null) && terms.length > 0) res = matchRows(role, false, terms);
     if (res.length === 0 && role !== "All" && terms.length > 0) res = matchRows("All", false, terms);
-    if (res.length === 0 && terms.length > 0 && search === effectiveInitialSearch) res = matchRows(role, regular, []);
+    if (res.length === 0 && terms.length > 0 && search === effectiveInitialSearch) res = matchRows(role, regular || minGpPick != null, []);
     return res;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [players, role, regular, minG, maxG, search, effectiveInitialSearch, aliases.data]);
-  if (players.length === 0) return null;
+  }, [players, role, regular, minGpPick, minG, maxG, search, effectiveInitialSearch, aliases.data]);
+  if (basePlayers.length === 0) return null;
   const evYr = /^\d{4}$/.test((e.start || e.end || "").slice(0, 4)) ? (e.start || e.end || "").slice(0, 4) : "";
   const evLg = e.lu ? resolveLeagueSlug(e.lu) : "";
   const pFinderQuery = (p: EventPlayer, champOverride?: string) => {
@@ -316,6 +372,12 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
     { key: "d", label: "D", title: tl("Deaths per game"), value: (p) => per(p.d, p.g), render: (p) => pStatLink(p, per(p.d, p.g)) },
     { key: "a", label: "A", title: tl("Assists per game"), value: (p) => per(p.a, p.g), render: (p) => pStatLink(p, per(p.a, p.g)) },
     { key: "kp", label: "KP", title: tl("Kill participation"), value: (p) => per(p.k + p.a, p.tk, 3), render: (p) => (p.tk ? pStatLink(p, shareTone(per(p.k + p.a, p.tk, 3), 0.72, 0.58)) : "–") },
+    { key: "ks", label: tl("KS%"), title: tl("Share of team kills"), value: (p) => (p.tk ? per(p.k, p.tk, 3) : null), render: (p) => (p.tk ? pStatLink(p, pct(per(p.k, p.tk, 3))) : "–") },
+    ...(players.some((p) => p.tdth)
+      ? ([
+          { key: "dth", label: tl("DTH%"), title: tl("Share of team deaths"), value: (p) => (p.tdth ? per(p.d, p.tdth, 3) : null), render: (p) => (p.tdth ? pStatLink(p, pct(per(p.d, p.tdth, 3))) : "–") },
+        ] as Column<EventPlayer>[])
+      : []),
     { key: "csm", label: tl("CS/m"), title: tl("CS per minute"), value: (p) => per(p.cs, p.min), render: (p) => pStatLink(p, per(p.cs, p.min)) },
     { key: "gpm", label: tl("GPM"), title: tl("Gold per minute"), value: (p) => per(p.gold, p.min, 0), render: (p) => pStatLink(p, per(p.gold, p.min, 0)) },
     { key: "dpm", label: tl("DPM"), title: tl("Damage per minute"), value: (p) => (p.dmg ? per(p.dmg, p.dm ?? p.min, 0) : null), render: (p) => (p.dmg ? pStatLink(p, per(p.dmg, p.dm ?? p.min, 0)) : "–") },
@@ -387,8 +449,11 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
           0
         ),
     });
-  const early = players.some((p) => p.tn || p.fbn);
-  if (early) cols.splice(cols.length - 1, 0, ...playerEarlyCols(pStatLink));
+  const has10 = players.some((p) => p.tn10);
+  const hasCtr = players.some((p) => p.ctrg);
+  const effectiveLeadAt: 15 | 10 = leadAt === 10 && has10 ? 10 : 15;
+  const early = players.some((p) => p.tn || p.tn10 || p.fbn || p.ctrg);
+  if (early) cols.splice(cols.length - 1, 0, ...playerEarlyCols(pStatLink, effectiveLeadAt, hasCtr));
   const roleFallbackPlayers = rows[0] ? players.filter((p) => p.r === rows[0].r) : [];
   const topTeams = Array.from(
     new Set(
@@ -989,12 +1054,113 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
           </>
         )}
         {maxG >= 3 && (
-          <label className="flex items-center gap-1 ml-auto text-rw-sub cursor-pointer">
-            <input type="checkbox" checked={regular} onChange={(ev) => setRegular(ev.target.checked)} />
-            {tl("Only players with {n}+ games", { n: minG })}
-          </label>
+          <div className="flex items-center gap-2 ml-auto text-rw-sub">
+            {minGpPick == null ? (
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" checked={regular} onChange={(ev) => setRegular(ev.target.checked)} />
+                {tl("Only players with {n}+ games", { n: autoMinG })}
+              </label>
+            ) : null}
+            <select
+              value={minGpPick == null ? (regular ? "auto" : "1") : String(minGpPick)}
+              onChange={(ev) => {
+                const v = ev.target.value;
+                if (v === "auto") {
+                  setMinGpPick(null);
+                  setRegular(true);
+                } else {
+                  const n = Number(v);
+                  setMinGpPick(n);
+                  setRegular(n > 1);
+                }
+              }}
+              aria-label={tl("Minimum games")}
+              className="bg-rw-bg border border-rw-border rounded px-1.5 py-0.5 text-[11px] text-rw-text"
+            >
+              <option value="auto">{tl("Min. GP")}: {autoMinG}+</option>
+              <option value="1">{tl("All games")}</option>
+              {[3, 5, 8, 10, 15, 20].filter((n) => n <= maxG).map((n) => (
+                <option key={n} value={n}>{`${n}+ GP`}</option>
+              ))}
+            </select>
+          </div>
         )}
       </div>
+      {(e.ln === 1 || has10) && (
+        <div className="flex flex-wrap items-center gap-2 text-[11px] text-rw-sub">
+          {e.ln === 1 && (
+            <>
+              <div className="inline-flex items-center rounded border border-rw-border bg-rw-bg p-0.5" role="group" aria-label={tl("Result split")}>
+                {([["all", tl("All")], ["win", tl("Wins")], ["loss", tl("Losses")]] as const).map(([k, lbl]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setSplitOutcome(k)}
+                    className={`px-2 py-0.5 rounded font-semibold ${splitOutcome === k ? "bg-rw-accent text-rw-bg" : "text-rw-sub hover:text-rw-text"}`}
+                  >
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+              <div className="inline-flex items-center rounded border border-rw-border bg-rw-bg p-0.5" role="group" aria-label={tl("Side split")}>
+                {([["all", tl("Both sides")], ["blue", tl("Blue")], ["red", tl("Red")]] as const).map(([k, lbl]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setSplitSide(k)}
+                    className={`px-2 py-0.5 rounded font-semibold ${splitSide === k ? "bg-rw-accent text-rw-bg" : "text-rw-sub hover:text-rw-text"}`}
+                  >
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+              {stageOptions.length > 1 && (
+                <select
+                  value={splitStage}
+                  onChange={(ev) => setSplitStage(ev.target.value)}
+                  aria-label={tl("Stage")}
+                  className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] text-rw-text"
+                >
+                  <option value="all">{tl("All stages")}</option>
+                  {stageOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.labelKey ? tl(opt.labelKey) : opt.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {linesCache.loading && <span className="text-rw-muted">{tl("Loading split…")}</span>}
+              {splitActive && !linesCache.loading && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSplitSide("all");
+                    setSplitOutcome("all");
+                    setSplitStage("all");
+                  }}
+                  className="text-rw-accent hover:underline font-semibold"
+                >
+                  {tl("Reset split")}
+                </button>
+              )}
+            </>
+          )}
+          {has10 && !splitActive && (
+            <div className="inline-flex items-center rounded border border-rw-border bg-rw-bg p-0.5 ml-auto" role="group" aria-label={tl("Early game leads")}>
+              {([15, 10] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setLeadAt(m)}
+                  className={`px-2 py-0.5 rounded font-semibold ${effectiveLeadAt === m ? "bg-rw-accent text-rw-bg" : "text-rw-sub hover:text-rw-text"}`}
+                >
+                  {`@${m}`}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <SortTable rows={rows} columns={cols} initial={{ key: "kda", desc: true }} rowKey={(p, i) => `${p.u || p.n}-${p.t}-${i}`} copyName={`${e.u}-players`} />
       <p className="text-[10px] text-rw-muted">{tl("Click a column to sort. K / D / A are per game; KP = kill participation.")}</p>
       {early && <OeCredit />}

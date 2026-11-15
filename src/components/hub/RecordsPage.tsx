@@ -748,6 +748,7 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
     p(tl("Most kills by one player"), all.player.kills, year.player.kills),
     p(tl("Most assists by one player"), all.player.assists, year.player.assists),
     p(tl("Most damage in a game"), all.player.dmg, year.player.dmg),
+    ...(all.player.dpm && year.player.dpm ? [p(tl("Highest DPM in a game"), all.player.dpm, year.player.dpm)] : []),
     p(tl("Most CS in a game"), all.player.cs, year.player.cs),
   ]
     .filter((r): r is Row => !!r)
@@ -1015,7 +1016,8 @@ export const RecordsPanel: React.FC = () => {
   const route = useHubRoute();
   const q = new URLSearchParams(route.kind === "records" && "query" in route ? route.query || "" : "");
   // all time, or one year (its own file; team streaks, titles and career totals are all-time only)
-  const year = q.get("year") || "all";
+  const scope = q.get("scope") === "intl" ? "intl" : "all";
+  const year = scope === "intl" ? "all" : q.get("year") || "all";
   const urlQ =
     q.get("q") ||
     [q.get("team"), q.get("vs") || q.get("vsteam"), q.get("player"), q.get("vsplayer"), q.get("champ"), q.get("vschamp")]
@@ -1036,7 +1038,7 @@ export const RecordsPanel: React.FC = () => {
       setSearch(urlQ);
     }
   }, [urlQ]);
-  const setRecordsUrl = (nextYear: string, nextQ: string) => {
+  const setRecordsUrl = (nextYear: string, nextQ: string, nextScope: "all" | "intl" = scope) => {
     const next = new URLSearchParams(q);
     next.delete("team");
     next.delete("vs");
@@ -1047,14 +1049,21 @@ export const RecordsPanel: React.FC = () => {
     next.delete("vschamp");
     next.delete("event");
     next.delete("league");
-    if (!nextYear || nextYear === "all") next.delete("year");
-    else next.set("year", nextYear);
+    if (nextScope === "intl") {
+      next.set("scope", "intl");
+      next.delete("year");
+    } else {
+      next.delete("scope");
+      if (!nextYear || nextYear === "all") next.delete("year");
+      else next.set("year", nextYear);
+    }
     if (nextQ.trim()) next.set("q", nextQ.trim());
     else next.delete("q");
     const qs = next.toString();
     navigateHub({ kind: "records", ...(qs ? { query: qs } : {}) }, { replace: true });
   };
-  const setYear = (y: string) => setRecordsUrl(y, search);
+  const setYear = (y: string) => setRecordsUrl(y, search, "all");
+  const setScope = (s: "all" | "intl") => setRecordsUrl(s === "intl" ? "all" : year, search, s);
   const yearState = useLoad(() => (year === "all" ? Promise.resolve(null) : loadRecordsYear(year)), [year]);
   // this year's file too, for "Closest to falling" on the all-time view
   const thisYear = String(new Date().getFullYear());
@@ -1101,13 +1110,18 @@ export const RecordsPanel: React.FC = () => {
     <Page state={state}>
       {(all) => {
         const y = year !== "all" ? yearState.data : null;
-        const r: HubRecords = y ? { ...all, game: y.game, player: y.player, pentas: y.pentas } : all;
+        const intlActive = scope === "intl" && !!all.intl && year === "all";
+        const r: HubRecords = y
+          ? { ...all, game: y.game, player: y.player, pentas: y.pentas }
+          : intlActive && all.intl
+            ? { ...all, game: all.intl.game, player: all.intl.player }
+            : all;
         const hasAnyRecordMatch =
           !rawMatchText ||
           [r.game.fastest, r.game.longest, r.game.bloodiest, r.game.comebacks].some((arr) =>
             arr.some((g) => rawMatchText(`${g.w} ${g.a} ${g.b} ${g.t} ${g.e || ""}`, undefined, undefined, [g.w, g.a, g.b], g.e, g.t)),
           ) ||
-          [r.player.kills, r.player.assists, r.player.perfect, r.player.dmg, r.player.cs].some((arr) =>
+          [r.player.kills, r.player.assists, r.player.perfect, r.player.dmg, ...(r.player.dpm ? [r.player.dpm] : []), r.player.cs].some((arr) =>
             arr.some((p) =>
               rawMatchText(`${p.pl} ${p.u || ""} ${p.c} ${champName(p.c)} ${p.opp} ${p.t} ${p.e || ""}`, p.c, p.u || resolvePlayerSlug(p.pl), [p.opp], p.e, p.t),
             ),
@@ -1153,7 +1167,7 @@ export const RecordsPanel: React.FC = () => {
           </select>
           </span>
         );
-        const recScopeLabel = year === "all" ? tl("All time") : year;
+        const recScopeLabel = intlActive ? tl("International only") : year === "all" ? tl("All time") : year;
         const gameList = (
           title: string,
           rawRows: HubRecords["game"]["fastest"],
@@ -1984,6 +1998,16 @@ export const RecordsPanel: React.FC = () => {
                   aria-label={tl("Filter by name or team…")}
                   className="bg-rw-bg border border-rw-border rounded px-2.5 py-1 text-xs text-rw-text w-44"
                 />
+                {all.intl && (
+                  <span className="flex items-center gap-1" role="group" aria-label={tl("Record scope")}>
+                    <button type="button" className={btn(!intlActive)} onClick={() => setScope("all")}>
+                      {tl("All major events")}
+                    </button>
+                    <button type="button" className={btn(intlActive)} onClick={() => setScope("intl")}>
+                      {tl("International only")}
+                    </button>
+                  </span>
+                )}
                 {yearPick}
                 <CopyRecordsPost year={year} r={r} search={search} />
               </span>
@@ -1996,7 +2020,7 @@ export const RecordsPanel: React.FC = () => {
               {tl("The top records were checked against Leaguepedia.")}
             </p>
             <div className="grid gap-3 md:grid-cols-2 3xl:grid-cols-3 items-start">
-              {year === "all" && !matchText && thisYearState.data && <ClosestToFalling all={all} year={thisYearState.data} label={thisYear} />}
+              {!intlActive && year === "all" && !matchText && thisYearState.data && <ClosestToFalling all={all} year={thisYearState.data} label={thisYear} />}
               {gameList(tl("Fastest wins"), r.game.fastest, mmss)}
               {gameList(tl("Longest games"), r.game.longest, mmss)}
               {gameList(tl("Most kills in a game"), r.game.bloodiest, (v) =>
@@ -2014,6 +2038,7 @@ export const RecordsPanel: React.FC = () => {
                 r.player.perfect,
               )}
               {playerList(tl("Most damage in a game"), r.player.dmg)}
+              {r.player.dpm && r.player.dpm.length > 0 && playerList(tl("Highest DPM in a game"), r.player.dpm)}
               {playerList(tl("Most CS in a game"), r.player.cs)}
               {r.pentas && r.pentas.recent.length > 0 && (
                 <PentakillRecords p={r.pentas} matchText={matchText} />

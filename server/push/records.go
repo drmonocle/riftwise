@@ -31,6 +31,7 @@ var recordTitles = map[string]string{
 	"player/kills":   "Most kills by one player",
 	"player/assists": "Most assists by one player",
 	"player/dmg":     "Most damage in a game",
+	"player/dpm":     "Highest DPM in a game",
 	"player/cs":      "Most CS in a game",
 	"team/streaks":   "Longest win streaks",
 }

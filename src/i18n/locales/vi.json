@@ -95,14 +95,11 @@
   "{n} player entered|{n} players entered": "{n} người tham gia|{n} người tham gia",
   "{n} series decided|{n} series decided": "{n} loạt đã có kết quả|{n} loạt đã có kết quả",
   "→ the current build's version": "→ phiên bản của bản dựng hiện tại",
-
   "UPCOMING": "SẮP DIỄN RA",
-
   "24/7 Stream": "Kênh 24/7",
   "Schedule": "Lịch thi đấu",
   "Stats": "Thống kê",
   "Watchlist": "Theo dõi",
-
   "24/7 Stream & S-Tier Banger Alerts": "Thông báo kênh 24/7 và trận kinh điển hạng S",
   "24/7 Stream Marathon Schedule": "Lịch phát kênh 24/7",
   "24/7 Stream Rebroadcasts (Twitch & YouTube)": "Phát lại 24/7 (Twitch & YouTube)",
@@ -184,7 +181,6 @@
   "Windows 10 or 11. RiftWise isn't code-signed yet, so Windows SmartScreen may say \"Windows protected your PC\": click More info, then Run anyway. The download comes straight from GitHub.": "Windows 10 hoặc 11. RiftWise chưa có chữ ký số nên Windows SmartScreen có thể báo \"Windows đã bảo vệ PC của bạn\": bấm Thông tin thêm, rồi bấm Vẫn chạy. Tệp được tải thẳng từ GitHub.",
   "YouTube ↗": "YouTube ↗",
   "{teams} teams · {players} players · {regions} regions · {leagues} leagues": "{teams} đội · {players} tuyển thủ · {regions} khu vực · {leagues} giải đấu",
-
   "24/7 Stream Marathon": "Kênh phát lại 24/7",
   "Can't reach the data sources right now": "Hiện không kết nối được nguồn dữ liệu",
   "Connection problem · showing data from {time}": "Lỗi kết nối · dữ liệu lúc {time}",
@@ -227,7 +223,6 @@
   "You're offline. Live scores and schedules will come back when the connection does.": "Bạn đang ngoại tuyến. Tỉ số và lịch thi đấu sẽ hiện lại khi có mạng.",
   "{league} match is now live! (Bo{n})": "Trận {league} đã bắt đầu! (Bo{n})",
   "{matchup} ({event}) is playing on the 24/7 stream!": "{matchup} ({event}) đang phát trên kênh 24/7!",
-
   "24/7 stream · short break": "Kênh 24/7 · nghỉ giải lao",
   "A team you follow": "Đội bạn theo dõi",
   "Banger": "Kinh điển",
@@ -256,7 +251,6 @@
   "started {time}": "bắt đầu lúc {time}",
   "team you follow": "đội bạn theo dõi",
   "{n} match|{n} matches": "{n} trận",
-
   "Active Watchlist": "Đang theo dõi",
   "Check Riot API for roster transfers, trades, and new leagues": "Kiểm tra chuyển nhượng, trao đổi và giải đấu mới từ Riot",
   "Check roster updates": "Kiểm tra thay đổi đội hình",
@@ -288,7 +282,6 @@
   "{n} Regions": "{n} khu vực",
   "★ Follow All": "★ Theo dõi tất cả",
   "★ International Events": "★ Giải quốc tế",
-
   "Add RiftWise to your home screen or desktop": "Thêm RiftWise vào màn hình chính hoặc màn hình máy tính",
   "Compact window": "Thu gọn cửa sổ",
   "Download RiftWise for Windows (free, about 4 MB, no installer)": "Tải RiftWise cho Windows (miễn phí, khoảng 4 MB, không cần cài đặt)",
@@ -309,7 +302,6 @@
   "{league} on air": "{league} đang phát sóng",
   "{n} live pro match. Click to view.|{n} live pro matches. Click to view.": "{n} trận chuyên nghiệp đang diễn ra. Nhấn để xem.",
   "{title} · Click to view stream": "{title} · Nhấn để xem stream",
-
   "Add match to Calendar (Google, Apple, Outlook, Yahoo)": "Thêm trận đấu vào lịch (Google, Apple, Outlook, Yahoo)",
   "Add to Calendar": "Thêm vào lịch",
   "Added from RiftWise": "Thêm từ RiftWise",
@@ -321,7 +313,6 @@
   "Select Calendar Type": "Chọn loại lịch",
   "Watch live: {url}": "Xem trực tiếp: {url}",
   "Yahoo Calendar": "Lịch Yahoo",
-
   "Against other teams": "Đối đầu với các đội khác",
   "All leagues": "Mọi giải đấu",
   "All of it counts here.": "Tất cả đều được tính ở đây.",
@@ -422,7 +413,6 @@
   "{n} wins": "{n} trận thắng",
   "{pct} win rate": "tỉ lệ thắng {pct}",
   "{pct} won": "thắng {pct}",
-
   "All leagues…": "Mọi giải đấu…",
   "Choose a league above to see its official standings.": "Chọn một giải ở trên để xem bảng xếp hạng chính thức.",
   "Choose any league": "Chọn giải đấu",
@@ -447,12 +437,10 @@
   "Team": "Đội",
   "Tournament": "Giải đấu",
   "Win%": "% thắng",
-
   "All-Time H2H · {games} games": "Đối đầu mọi thời đại · {games} ván",
   "All-time head-to-head: {a} {w1}-{w2} {b} ({games} games)": "Lịch sử đối đầu: {a} {w1}-{w2} {b} ({games} ván)",
   "{summary} · tap for history": "{summary} · chạm để xem lịch sử",
   "{summary}. Show full history.": "{summary}. Xem toàn bộ lịch sử.",
-
   "All-time head-to-head": "Lịch sử đối đầu",
   "Close": "Đóng",
   "Couldn't load the match history right now.": "Hiện không tải được lịch sử đối đầu.",
@@ -471,7 +459,6 @@
   "{n} games": "{n} ván",
   "{n} games · all tournaments": "{n} ván · mọi giải đấu",
   "{team} won": "{team} thắng",
-
   "Best of {n}": "Bo{n}",
   "Broadcast & Live Stream Channels": "Kênh phát sóng trực tiếp",
   "Calculating…": "Đang tính…",
@@ -521,7 +508,6 @@
   "vs": "vs",
   "{date} at {time}": "{date} lúc {time}",
   "{time} late": "trễ {time}",
-
   "Click star to follow player": "Nhấn ngôi sao để theo dõi tuyển thủ",
   "Close team details": "Đóng thông tin đội",
   "Follow {name}": "Theo dõi {name}",
@@ -534,7 +520,6 @@
   "Unfollow {name}": "Bỏ theo dõi {name}",
   "View on LoLEsports": "Xem trên LoL Esports",
   "{team} team details": "Thông tin đội {team}",
-
   "Click to reveal final score": "Nhấn để xem tỉ số chung cuộc",
   "Click to reveal the live score": "Nhấn để xem tỉ số trực tiếp",
   "Click to view {team} roster": "Nhấn để xem đội hình {team}",
@@ -550,25 +535,20 @@
   "Tomorrow": "Ngày mai",
   "Upcoming": "Sắp tới",
   "Yesterday": "Hôm qua",
-
   "Copy link to {a} vs {b}": "Sao chép liên kết {a} vs {b}",
   "Copy this link:": "Sao chép liên kết này:",
   "Link copied": "Đã sao chép liên kết",
-
   "LCK coverage, interviews and Korean scene reporting in English.": "Tin LCK, phỏng vấn và tin tức giới esports Hàn Quốc (tiếng Anh).",
   "Links to LoL Esports outlets. RiftWise does not show live headlines here.": "Liên kết tới các trang tin LoL Esports. RiftWise không hiện tin trực tiếp ở đây.",
   "Match recaps, patch and meta coverage.": "Tóm tắt trận đấu, phiên bản và meta.",
   "News Sources": "Nguồn tin",
   "Official announcements, tournament formats, rulebook changes and schedules.": "Thông báo chính thức, thể thức giải, thay đổi luật và lịch thi đấu.",
   "Roster moves, transfer news and industry reporting.": "Thay đổi đội hình, tin chuyển nhượng và tin ngành.",
-
   "Oceanic leagues": "Giải đấu châu Đại Dương",
-
   "Twitch 24/7: Airing Now": "Twitch 24/7: Đang phát",
   "Twitch 24/7: Offline": "Twitch 24/7: Offline",
   "Twitch 24/7: {details}": "Twitch 24/7: {details}",
   "Watch Live": "Xem trực tiếp",
-
   "{h}h {m}m": "{h} giờ {m} phút",
   "{m}m": "{m} phút",
   "Apple Calendar (.ics)": "Lịch Apple (.ics)",
@@ -1994,7 +1974,6 @@
   "now {team}": "nay là {team}",
   "title match::Final": "Chung kết",
   "title winner::Champion": "Nhà vô địch",
-
   "role::Top": "Đường trên",
   "role::Jungle": "Đi rừng",
   "role::Mid": "Đường giữa",
@@ -2041,7 +2020,6 @@
   "region::OCEANIA": "Châu Đại Dương",
   "region::AMERICAS": "Châu Mỹ",
   "region::COMMONWEALTH OF INDEPENDENT STATES": "SNG",
-
   "Player rating": "Điểm tuyển thủ",
   "Every player in every game with a full scoreboard gets a rating from 0 to 10 for how well they played; 6 is an average game. It compares six numbers with players of the same role in the same year, so a support isn't judged on damage and old, slower games aren't held against new ones:": "Mỗi tuyển thủ trong mỗi ván có đủ thông số được chấm điểm từ 0 đến 10 theo mức độ chơi tốt; 6 là một ván trung bình. Điểm so sánh sáu chỉ số với các tuyển thủ cùng vị trí trong cùng năm, nên Hỗ trợ không bị chấm theo sát thương và những ván cũ, chậm hơn không bị so bất lợi với ván mới:",
   "Kill participation: 25% of the rating's form part.": "Tham gia hạ gục: 25% phần phong độ.",
@@ -2104,7 +2082,6 @@
   "Team records": "Kỷ lục đội",
   "Player records": "Kỷ lục tuyển thủ",
   "Most viewed this week": "Xem nhiều nhất tuần này",
-
   "Has a pro ever built it? Item history": "Tuyển thủ nào từng lên món này? Lịch sử trang bị",
   "Item history": "Lịch sử trang bị",
   "Has a pro ever built it? Pick a player and an item: every pro game they finished holding it. A player alone shows every item they've finished games with; an item alone, the players who built it most. From the final inventory of every pro game with a full scoreboard, so an item sold before the end doesn't count.": "Tuyển thủ nào từng lên món này? Chọn một tuyển thủ và một trang bị: mọi ván chuyên nghiệp họ kết thúc khi đang giữ nó. Chỉ chọn tuyển thủ sẽ hiện mọi trang bị họ từng giữ khi kết thúc ván; chỉ chọn trang bị sẽ hiện những tuyển thủ lên nó nhiều nhất. Lấy từ túi đồ cuối ván của mọi ván chuyên nghiệp có bảng điểm đầy đủ, nên món đã bán trước khi hết ván không được tính.",
@@ -2135,7 +2112,6 @@
   "To be decided": "Chưa xác định",
   "Floating team logos": "Logo đội bay lơ lửng",
   "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "Logo các đội trôi phía sau trang; nhà vô địch MSI và First Stand hiện tại có viền riêng. Tắt khi thiết bị của bạn yêu cầu giảm chuyển động.",
-
   "Only games on {champ} in {year}": "Chỉ các trận dùng {champ} năm {year}",
   "Only games on {champ}": "Chỉ các trận dùng {champ}",
   "Only games in {year}": "Chỉ các trận năm {year}",
@@ -2149,21 +2125,16 @@
   "Match page": "Trang trận đấu",
   "This round only": "Chỉ vòng này",
   "Every round": "Mọi vòng",
-
   "Dragon": "Rồng",
   "Baron": "Baron",
-
   "Item stats": "Thống kê trang bị",
   "ended with it": "kết thúc với nó",
   "{n} won": "thắng {n}",
   "Most built on": "Lên nhiều nhất cho",
   "{n} players": "{n} tuyển thủ",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "Tỉ lệ thắng: các trận kết thúc khi trang bị nằm trong túi đồ của tuyển thủ. Đội thắng hoàn thành nhiều trang bị hơn, nên phần lớn trên 50%.",
-
   "Every game on {champ}": "Mọi trận dùng {champ}",
-
   "Pick a winner to play the rest out in the picker.": "Chọn đội thắng để dự đoán phần còn lại trong trình chọn.",
-
   "24/7 stream": "Kênh 24/7",
   "30-day change": "Thay đổi 30 ngày",
   "A matchup opens match prep, a draft board and a comparison. A player plus a champion opens their games on it. An item shows every pro who ever built it.": "Một cặp đấu mở chuẩn bị trận, bảng cấm chọn và so sánh. Tuyển thủ cộng tướng mở các ván họ chơi tướng đó. Một trang bị cho thấy mọi tuyển thủ từng lên món đó.",
@@ -2213,5 +2184,63 @@
   "team vs team": "đội vs đội",
   "the two compared over any period": "so sánh hai bên trong bất kỳ giai đoạn nào",
   "{n} live now": "{n} đang trực tiếp",
-  "{n} match live now|{n} matches live now": "{n} trận đang trực tiếp"
+  "{n} match live now|{n} matches live now": "{n} trận đang trực tiếp",
+  "Player tier list": "Bảng xếp hạng tuyển thủ",
+  "Gold lead over the lane opponent at 10 minutes": "Chênh lệch vàng với đối thủ cùng đường ở phút 10",
+  "CS lead over the lane opponent at 10 minutes": "Chênh lệch lính với đối thủ cùng đường ở phút 10",
+  "XP lead over the lane opponent at 10 minutes": "Chênh lệch kinh nghiệm với đối thủ cùng đường ở phút 10",
+  "CTR%": "CTR%",
+  "Counter-pick rate (drafted after lane opponent)": "Tỉ lệ chọn khắc chế (chọn sau đối thủ cùng đường)",
+  "KS%": "KS%",
+  "Share of team kills": "Tỉ lệ ăn mạng của đội",
+  "DTH%": "DTH%",
+  "Share of team deaths": "Tỉ lệ nằm xuống của đội",
+  "Minimum games": "Số trận tối thiểu",
+  "Min. GP": "Tối thiểu",
+  "All games": "Tất cả trận",
+  "Result split": "Lọc theo kết quả",
+  "Losses": "Thua",
+  "Side split": "Lọc theo bên",
+  "Stage": "Vòng đấu",
+  "All stages": "Tất cả vòng",
+  "Loading split…": "Đang tải bộ lọc…",
+  "Reset split": "Đặt lại bộ lọc",
+  "Early game leads": "Lợi thế đầu trận",
+  "Series view": "Chế độ xem loạt trận",
+  "Scoreboard": "Bảng điểm",
+  "All stats matrix": "Ma trận toàn bộ chỉ số",
+  "Series summary": "Tổng kết loạt trận",
+  "Team tier list": "Bảng xếp hạng đội tuyển",
+  "Return to pool": "Trả về danh sách",
+  "Copy Markdown": "Sao chép Markdown",
+  "Drag cards into S–D tiers (or click any card to inspect full tournament stats, champs, and series links). Placements auto-save per tournament.": "Kéo thẻ vào các bậc S–D (hoặc nhấp để xem full chỉ số, tướng và loạt trận). Tự động lưu theo từng giải đấu.",
+  "Filter tournaments…": "Tìm giải đấu…",
+  "Regional leagues": "Giải khu vực",
+  "Filter player or team…": "Tìm tuyển thủ hoặc đội…",
+  "Filter team…": "Tìm đội…",
+  "Card stat": "Chỉ số trên thẻ",
+  "Auto-seed metric": "Chỉ số tự sắp xếp",
+  "Auto-seed by stat": "Xếp hạng theo chỉ số",
+  "Reset board": "Đặt lại bảng",
+  "Drop here or use tier buttons in the inspector": "Thả vào đây hoặc dùng nút chọn bậc ở khung chi tiết",
+  "Unplaced pool": "Chưa xếp hạng",
+  "Every filtered card is placed on the tier board.": "Tất cả thẻ đã lọc đều đã được xếp lên bảng.",
+  "No players match the current filter.": "Không có tuyển thủ nào khớp bộ lọc.",
+  "Assign tier": "Chọn bậc",
+  "Series in this tournament": "Các loạt trận tại giải này",
+  "Matrix": "Ma trận",
+  "No player statistics are recorded for this tournament yet.": "Giải đấu này chưa có dữ liệu chỉ số tuyển thủ.",
+  "Highest DPM in a game": "DPM cao nhất trong một trận",
+  "International only": "Chỉ giải quốc tế",
+  "Record scope": "Phạm vi kỷ lục",
+  "All major events": "Mọi giải lớn",
+  "Assists": "Hỗ trợ",
+  "Gold lead over the lane opponent at 20 minutes": "Chênh lệch vàng với đối thủ cùng đường ở phút 20",
+  "Pick #": "Lượt chọn #",
+  "Draft pick order (1–10)": "Thứ tự chọn tướng (1–10)",
+  "Series totals": "Tổng loạt trận",
+  "All 10 players side by side. Click any stat row to highlight leaders across every role.": "Cả 10 tuyển thủ cạnh nhau. Nhấp vào hàng bất kỳ để đánh dấu người dẫn đầu mỗi vị trí.",
+  "Open game": "Mở ván đấu",
+  "Swiss stage progression": "Tiến trình vòng Swiss",
+  "Tier list mode": "Chế độ bảng xếp hạng"
 }

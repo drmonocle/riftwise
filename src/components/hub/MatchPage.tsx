@@ -15,6 +15,7 @@ import { RiotGamesFor, RiotMatchPage } from "./RiotMatch";
 import { RIOT_PREFIX } from "../../hub/riotMatch";
 import { card, ChampIcon, EventLink, fmtDate, fmtNum, HubLink, ItemIcon, OeCredit, Page, PlayerLink, PlayerPhoto, RatingBadge, RevealButton, RuneIcon, Section, SpellIcon, TeamLink, TeamLogo, useHidden, useLoad, usePageTitle, PhotosLink } from "./ui";
 import { heroBtn } from "./EntityHero";
+import { SeriesMatrix, SeriesSummaryGrid } from "./SeriesMatrix";
 
 export function extractHubGameDraft(g: HubGame): GameDraftInput {
   const bluePicks = g.t?.blue?.picks?.length
@@ -890,29 +891,72 @@ const SeriesGames: React.FC<{
         return { i, n: g.n, w: g.w, aPicks, bPicks };
       }).filter((x) => x.aPicks.length > 0 && x.bPicks.length > 0)
     : [];
+  const [view, setView] = useState<"scoreboard" | "matrix" | "summary">(() => {
+    if (typeof window === "undefined") return "scoreboard";
+    const v = new URLSearchParams(window.location.search).get("view");
+    return v === "matrix" || v === "summary" ? v : "scoreboard";
+  });
+  const canMatrix = !hidden && s.games.some((g) => !g.remake && (g.p?.length || g.t?.blue?.picks?.length));
   return (
     <>
       {!hidden && s.games.length >= 2 && <SeriesSummaryStrip s={s} />}
-      {tabs > 1 && (
-        <div className="flex flex-wrap gap-1.5" role="tablist">
-          {Array.from({ length: tabs }, (_, i) => s.games[i]).map((g, i) => (
-            <button
-              key={g ? g.n : `slot-${i}`}
-              type="button"
-              role="tab"
-              aria-selected={i === gi}
-              onClick={() => pick(i)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
-                i === gi ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
-              }`}
-            >
-              {tl("Game {n}", { n: g ? g.n : i + 1 })}
-              {!hidden && g?.w ? <span className="ml-1 opacity-90">({g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n})</span> : null}
-              {!hidden && g?.r != null ? <span className="ml-1.5 tabular-nums opacity-90">· {g.r.toFixed(0)}</span> : null}
-            </button>
-          ))}
+      {canMatrix && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="inline-flex flex-wrap gap-1 rounded-lg border border-rw-border bg-rw-bg p-0.5" role="group" aria-label={tl("Series view")}>
+            {(
+              [
+                ["scoreboard", tl("Scoreboard")],
+                ["matrix", tl("All stats matrix")],
+                ...(s.games.length >= 2 ? [["summary", tl("Series summary")] as ["summary", string]] : []),
+              ] as [("scoreboard" | "matrix" | "summary"), string][]
+            ).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setView(k)}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                  view === k ? "bg-rw-accent text-rw-bg" : "text-rw-sub hover:text-rw-text"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
+      {canMatrix && view === "matrix" ? (
+        <SeriesMatrix s={s} initialGame={s.games.length >= 2 ? "all" : (game?.n ?? "all")} />
+      ) : canMatrix && view === "summary" && s.games.length >= 2 ? (
+        <SeriesSummaryGrid
+          s={s}
+          onSelectGame={(n) => {
+            const idx = s.games.findIndex((x) => x.n === n);
+            if (idx >= 0) pick(idx);
+            setView("scoreboard");
+          }}
+        />
+      ) : (
+        <>
+          {tabs > 1 && (
+            <div className="flex flex-wrap gap-1.5" role="tablist">
+              {Array.from({ length: tabs }, (_, i) => s.games[i]).map((g, i) => (
+                <button
+                  key={g ? g.n : `slot-${i}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === gi}
+                  onClick={() => pick(i)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+                    i === gi ? "bg-rw-accent text-rw-bg border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
+                  }`}
+                >
+                  {tl("Game {n}", { n: g ? g.n : i + 1 })}
+                  {!hidden && g?.w ? <span className="ml-1 opacity-90">({g.w === 1 ? s.a.c || s.a.n : s.b.c || s.b.n})</span> : null}
+                  {!hidden && g?.r != null ? <span className="ml-1.5 tabular-nums opacity-90">· {g.r.toFixed(0)}</span> : null}
+                </button>
+              ))}
+            </div>
+          )}
       {gamePicks.length > 1 && (
         <div className={`${card} !py-2 flex flex-wrap items-center gap-2 text-[11px]`}>
           <span className="text-[10px] font-bold uppercase tracking-wider text-rw-muted">{tl("Fearless")}</span>
@@ -1129,6 +1173,8 @@ const SeriesGames: React.FC<{
             <RevealButton onReveal={reveal} />
           </div>
         )
+      )}
+        </>
       )}
     </>
   );

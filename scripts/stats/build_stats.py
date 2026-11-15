@@ -790,9 +790,14 @@ def main() -> None:
         "mg": 0, "mk": 0, "ma": 0, "mchamps": set(),
     })
     champ_rows = defaultdict(lambda: defaultdict(lambda: {"p": 0, "w": 0, "k": 0, "d": 0, "a": 0, "roles": Counter()}))
-    record_rows = {"kills": [], "assists": [], "dmg": [], "cs": [], "perfect": []}
+    record_keys = ("kills", "assists", "dmg", "dpm", "cs", "perfect")
+    record_rows = {k: [] for k in record_keys}
+    record_rows_intl = {k: [] for k in record_keys}
     # the same per year, for the records page's year picker
-    record_rows_y = defaultdict(lambda: {"kills": [], "assists": [], "dmg": [], "cs": [], "perfect": []})
+    record_rows_y = defaultdict(lambda: {k: [] for k in record_keys})
+    INTL_RE = re.compile(r"\bworlds\b|world championship|\bmsi\b|mid-season invitational|first stand", re.I)
+    NOT_INTL_RE = re.compile(r"world cup|qualif", re.I)
+    is_intl_rec = lambda tname: bool(tname and INTL_RE.search(tname) and not NOT_INTL_RE.search(tname))
     consistent = {}
     game_champs = defaultdict(list)
 
@@ -883,17 +888,29 @@ def main() -> None:
             base = {"pl": pname(page), "ps": page, "pk": page, "gid": gid, "team": team, "opp": opp, "c": champ, "date": g["date"],
                     "t": g["t"], "kda": f"{k}/{d}/{a}"}
             ry = record_rows_y[g["year"]]
-            for rows_, key, val in ((record_rows, "kills", k), (ry, "kills", k), (record_rows, "assists", a), (ry, "assists", a),
-                                    (record_rows, "dmg", r["damage"] or 0), (ry, "dmg", r["damage"] or 0),
-                                    (record_rows, "cs", r["cs"] or 0), (ry, "cs", r["cs"] or 0)):
+            intl_g = is_intl_rec(g["t"])
+            pairs = [(record_rows, "kills", k), (ry, "kills", k), (record_rows, "assists", a), (ry, "assists", a),
+                     (record_rows, "dmg", r["damage"] or 0), (ry, "dmg", r["damage"] or 0),
+                     (record_rows, "cs", r["cs"] or 0), (ry, "cs", r["cs"] or 0)]
+            if r["damage"] and r["damage"] > 0 and g["min"]:
+                dpm_v = round(r["damage"] / g["min"], 1)
+                pairs += [(record_rows, "dpm", dpm_v), (ry, "dpm", dpm_v)]
+            for rows_, key, val in pairs:
                 rows_[key].append((val, base))
+                if intl_g and rows_ is record_rows:
+                    record_rows_intl[key].append((val, base))
             if d == 0:
                 record_rows["perfect"].append((k + a, base))
                 ry["perfect"].append((k + a, base))
+                if intl_g:
+                    record_rows_intl["perfect"].append((k + a, base))
             for key in record_rows:
                 if len(record_rows[key]) > 2000:
                     record_rows[key].sort(key=lambda x: x[0], reverse=True)
                     del record_rows[key][50:]
+                if len(record_rows_intl[key]) > 500:
+                    record_rows_intl[key].sort(key=lambda x: x[0], reverse=True)
+                    del record_rows_intl[key][20:]
                 if len(ry[key]) > 500:
                     ry[key].sort(key=lambda x: x[0], reverse=True)
                     del ry[key][20:]
@@ -1121,6 +1138,9 @@ def main() -> None:
     domestic = Counter(t["fid"] for t in titles if t["kind"] == "Regional")
     intl_order = sorted(intl, key=lambda f: (-intl[f], -worlds[f], -msi[f], -domestic[f], fr_name[f]))
     major_players = [(pg, p) for pg, p in players.items() if p["mg"]]
+    intl_timed = [(gid, g) for gid, g in timed if is_intl_rec(g["t"])]
+    intl_killed = [(gid, g) for gid, g in killed if is_intl_rec(g["t"])]
+    intl_comebacks = [(v, gid, g) for v, gid, g in comebacks if is_intl_rec(g["t"])]
     records = {
         "built": version,
         "note": f"Top leagues and international events only. Games shorter than {RECORD_MIN_MINUTES} minutes are skipped, "
@@ -1132,6 +1152,15 @@ def main() -> None:
             "comebacks": [game_row(gid, g, v) for v, gid, g in comebacks[:10]],
         },
         "player": {k: top(v) for k, v in record_rows.items()},
+        "intl": {
+            "game": {
+                "fastest": [game_row(gid, g, round(g["min"], 3)) for gid, g in sorted(intl_timed, key=lambda x: x[1]["min"])[:10]],
+                "longest": [game_row(gid, g, round(g["min"], 3)) for gid, g in sorted(intl_timed, key=lambda x: -x[1]["min"])[:10]],
+                "bloodiest": [game_row(gid, g, g["tk"]) for gid, g in sorted(intl_killed, key=lambda x: -(x[1]["k1"] + x[1]["k2"]))[:10]],
+                "comebacks": [game_row(gid, g, v) for v, gid, g in intl_comebacks[:10]],
+            },
+            "player": {k: top(v) for k, v in record_rows_intl.items()},
+        },
         "career": {
             "games": [{"v": p["mg"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(major_players, key=lambda kv: -kv[1]["mg"])[:10]],
             "kills": [{"v": p["mk"], "pl": pname(pg), "ps": slug(pg), "pk": pg} for pg, p in sorted(major_players, key=lambda kv: -kv[1]["mk"])[:10]],
@@ -1153,14 +1182,18 @@ def main() -> None:
     for lst in records["player"].values():
         for x in lst:
             x["ps"] = slug(x["ps"])
+    for lst in records["intl"]["player"].values():
+        for x in lst:
+            x["ps"] = slug(x["ps"])
     records["game"]["bloodiest"] = [dict(x, v=x["v"] if x["v"] is not None else 0) for x in records["game"]["bloodiest"]]
+    records["intl"]["game"]["bloodiest"] = [dict(x, v=x["v"] if x["v"] is not None else 0) for x in records["intl"]["game"]["bloodiest"]]
     write(os.path.join(vdir, "records.json"), records)
     # the same records for each year (game records and single-game player records; pentakills are added by hub.py)
     records_by_year = {}
     for year in sorted({g["date"][:4] for _gid, g in major_games if g["date"]}):
         yg = [(gid, g) for gid, g in timed if g["date"][:4] == year]
         yk = [(gid, g) for gid, g in killed if g["date"][:4] == year]
-        ry = record_rows_y.get(year) or {"kills": [], "assists": [], "dmg": [], "cs": [], "perfect": []}
+        ry = record_rows_y.get(year) or {k: [] for k in record_keys}
         records_by_year[year] = {
             "game": {
                 "fastest": [game_row(gid, g, round(g["min"], 3)) for gid, g in sorted(yg, key=lambda x: x[1]["min"])[:10]],

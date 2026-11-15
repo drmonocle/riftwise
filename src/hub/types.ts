@@ -176,6 +176,8 @@ export interface EventPlayer {
   a: number;
   /** team kills in the games played (for kill participation) */
   tk: number;
+  /** team deaths in the games played (for death share DTH%) */
+  tdth?: number;
   cs: number;
   gold: number;
   dmg: number;
@@ -201,10 +203,18 @@ export interface EventPlayer {
   g15?: number;
   c15?: number;
   x15?: number;
+  /** Oracle's Elixir: games with leads at 10 minutes, and the sums of the gold / CS / XP leads */
+  tn10?: number;
+  g10?: number;
+  c10?: number;
+  x10?: number;
   /** Oracle's Elixir: games where first blood is known, ones they took part in, ones they died in */
   fbn?: number;
   fbp?: number;
   fbv?: number;
+  /** Draft counter-pick rate vs lane opponent: games with draft order known, games picked after lane opponent */
+  ctrg?: number;
+  ctr?: number;
 }
 
 export interface EventTeamStats {
@@ -331,11 +341,15 @@ export interface GamePlayer {
   g15?: number;
   c15?: number;
   x15?: number;
-  /** gold and XP leads at 10 and 20 minutes (builds from 2026-10-18 on) */
+  /** gold, CS and XP leads at 10 and 20 minutes (builds from 2026-10-18 on; c10/c20 from 2026-11-15) */
   g10?: number;
+  c10?: number;
   x10?: number;
   g20?: number;
+  c20?: number;
   x20?: number;
+  /** draft pick slot in alternating order (1-10) when draft pick order is known */
+  pk?: number;
 }
 
 export interface HubGame {
@@ -705,7 +719,12 @@ export interface HubRecords {
   built: string;
   note: string;
   game: Record<"fastest" | "longest" | "bloodiest" | "comebacks", HubGameRecord[]>;
-  player: Record<"kills" | "assists" | "dmg" | "cs" | "perfect", HubPlayerRecord[]>;
+  player: Record<"kills" | "assists" | "dmg" | "cs" | "perfect", HubPlayerRecord[]> & { dpm?: HubPlayerRecord[] };
+  /** International events only (Worlds, MSI, First Stand) */
+  intl?: {
+    game: Record<"fastest" | "longest" | "bloodiest" | "comebacks", HubGameRecord[]>;
+    player: Record<"kills" | "assists" | "dmg" | "cs" | "perfect", HubPlayerRecord[]> & { dpm?: HubPlayerRecord[] };
+  };
   /** top leagues and international events */
   career: Record<"games" | "kills" | "assists" | "pool", HubCareerRecord[]>;
   /** every pro game, like the player pages (builds from 2026-10-18 on) */

@@ -196,6 +196,51 @@ def main() -> int:
         if not rating.get("base", {}).get("all|Mid") or not 0.3 < rating.get("scale", 0) < 5:
             print(f"FAIL: rating.json: scale {rating.get('scale')}, roles {sorted(rating.get('base', {}))[:6]}")
             return 1
+        with open(os.path.join(out, v, "hub", "records.json"), encoding="utf-8") as f:
+            rec = json.load(f)
+        if not isinstance(rec.get("intl"), dict):
+            print("FAIL: records.json missing 'intl' scope dict")
+            return 1
+        if "dpm" in rec.get("player", {}) and (not rec["player"]["dpm"] or rec["player"]["dpm"][0].get("v", 0) <= 0):
+            print(f"FAIL: records.json invalid player/dpm: {rec['player']['dpm'][:1]}")
+            return 1
+        with open(os.path.join(out, v, "hub", "event", "worlds-2024-main-event.json"), encoding="utf-8") as f:
+            w24 = json.load(f)
+        pls = w24.get("players") or []
+        if not pls or not any(p.get("tdth", 0) >= p.get("d", 0) and p.get("tdth", 0) > 0 for p in pls):
+            print("FAIL: worlds-2024-main-event players missing valid tdth totals")
+            return 1
+        for p in pls:
+            if p.get("ctrg") is not None and not (0 <= p.get("ctr", 0) <= p["ctrg"]):
+                print(f"FAIL: invalid CTR counts on player {p.get('n')}: ctr={p.get('ctr')} ctrg={p.get('ctrg')}")
+                return 1
+            if p.get("tn10", 0) > 0 and p.get("g10") is None:
+                print(f"FAIL: tn10>0 without g10 on player {p.get('n')}")
+                return 1
+        game_dir = os.path.join(out, v, "hub", "game")
+        if not os.path.isdir(game_dir):
+            print("FAIL: missing hub/game directory")
+            return 1
+        pk_seen = c10_seen = c20_seen = 0
+        for fn in sorted(os.listdir(game_dir)):
+            if not fn.endswith(".json"):
+                continue
+            with open(os.path.join(game_dir, fn), encoding="utf-8") as mf:
+                mdata = json.load(mf)
+            for gm in mdata.get("games") or []:
+                for gp in gm.get("p") or []:
+                    if "pk" in gp:
+                        if not (1 <= gp["pk"] <= 10):
+                            print(f"FAIL: out-of-range pick order pk={gp['pk']} in {fn}")
+                            return 1
+                        pk_seen += 1
+                    if "c10" in gp:
+                        c10_seen += 1
+                    if "c20" in gp:
+                        c20_seen += 1
+        if pk_seen == 0 or c10_seen == 0 or c20_seen == 0:
+            print(f"FAIL: expected pk/c10/c20 in hub/game/*.json, saw pk={pk_seen}, c10={c10_seen}, c20={c20_seen}")
+            return 1
         audit = subprocess.run([sys.executable, "-u", os.path.join(STATS, "audit_data.py"), out],
                                capture_output=True, text=True, encoding="utf-8", errors="replace")
         print(audit.stdout[-2500:])

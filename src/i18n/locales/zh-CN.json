@@ -95,14 +95,11 @@
   "{n} player entered|{n} players entered": "{n} 人参加|{n} 人参加",
   "{n} series decided|{n} series decided": "{n} 个系列赛已定|{n} 个系列赛已定",
   "→ the current build's version": "→ 当前构建版本",
-
   "UPCOMING": "即将开始",
-
   "24/7 Stream": "24/7 直播",
   "Schedule": "赛程",
   "Stats": "数据",
   "Watchlist": "关注",
-
   "24/7 Stream & S-Tier Banger Alerts": "24/7 直播与 S 级名局提醒",
   "24/7 Stream Marathon Schedule": "24/7 轮播节目单",
   "24/7 Stream Rebroadcasts (Twitch & YouTube)": "24/7 重播（Twitch 和 YouTube）",
@@ -184,7 +181,6 @@
   "Windows 10 or 11. RiftWise isn't code-signed yet, so Windows SmartScreen may say \"Windows protected your PC\": click More info, then Run anyway. The download comes straight from GitHub.": "支持 Windows 10 和 11。RiftWise 暂时还没有代码签名，Windows SmartScreen 可能会提示“Windows 已保护你的电脑”：点击“更多信息”，再点“仍要运行”即可。文件直接从 GitHub 下载。",
   "YouTube ↗": "YouTube ↗",
   "{teams} teams · {players} players · {regions} regions · {leagues} leagues": "{teams} 支战队 · {players} 名选手 · {regions} 个赛区 · {leagues} 个联赛",
-
   "24/7 Stream Marathon": "24/7 轮播",
   "Can't reach the data sources right now": "暂时无法连接数据源",
   "Connection problem · showing data from {time}": "连接异常 · 显示 {time} 的数据",
@@ -227,7 +223,6 @@
   "You're offline. Live scores and schedules will come back when the connection does.": "你已离线。网络恢复后，实时比分和赛程会自动回来。",
   "{league} match is now live! (Bo{n})": "{league} 比赛开始了！（BO{n}）",
   "{matchup} ({event}) is playing on the 24/7 stream!": "{matchup}（{event}）正在 24/7 直播中播出！",
-
   "24/7 stream · short break": "24/7 直播 · 短暂休息",
   "A team you follow": "你关注的战队",
   "Banger": "名局",
@@ -256,7 +251,6 @@
   "started {time}": "{time} 开始",
   "team you follow": "你关注的战队",
   "{n} match|{n} matches": "{n} 场",
-
   "Active Watchlist": "我的关注",
   "Check Riot API for roster transfers, trades, and new leagues": "从 Riot 检查转会、交易和新联赛",
   "Check roster updates": "检查阵容变动",
@@ -288,7 +282,6 @@
   "{n} Regions": "{n} 个赛区",
   "★ Follow All": "★ 全部关注",
   "★ International Events": "★ 国际赛事",
-
   "Add RiftWise to your home screen or desktop": "把 RiftWise 添加到主屏幕或桌面",
   "Compact window": "缩小窗口",
   "Download RiftWise for Windows (free, about 4 MB, no installer)": "下载 RiftWise Windows 版（免费，约 4 MB，无需安装）",
@@ -309,7 +302,6 @@
   "{league} on air": "{league} 直播中",
   "{n} live pro match. Click to view.|{n} live pro matches. Click to view.": "{n} 场职业比赛正在直播，点击查看。",
   "{title} · Click to view stream": "{title} · 点击观看直播",
-
   "Add match to Calendar (Google, Apple, Outlook, Yahoo)": "把比赛添加到日历（Google、Apple、Outlook、Yahoo）",
   "Add to Calendar": "添加到日历",
   "Added from RiftWise": "来自 RiftWise",
@@ -321,7 +313,6 @@
   "Select Calendar Type": "选择日历",
   "Watch live: {url}": "观看直播：{url}",
   "Yahoo Calendar": "Yahoo 日历",
-
   "Against other teams": "对阵各战队",
   "All leagues": "所有联赛",
   "All of it counts here.": "这里全部合并计算。",
@@ -422,7 +413,6 @@
   "{n} wins": "{n} 胜",
   "{pct} win rate": "胜率 {pct}",
   "{pct} won": "胜率 {pct}",
-
   "All leagues…": "所有联赛…",
   "Choose a league above to see its official standings.": "在上方选择联赛，查看官方积分榜。",
   "Choose any league": "选择联赛",
@@ -447,12 +437,10 @@
   "Team": "战队",
   "Tournament": "赛事",
   "Win%": "胜率",
-
   "All-Time H2H · {games} games": "历史交手 · {games} 局",
   "All-time head-to-head: {a} {w1}-{w2} {b} ({games} games)": "历史交手：{a} {w1}-{w2} {b}（{games} 局）",
   "{summary} · tap for history": "{summary} · 点击查看记录",
   "{summary}. Show full history.": "{summary}。查看完整记录。",
-
   "All-time head-to-head": "历史交手记录",
   "Close": "关闭",
   "Couldn't load the match history right now.": "暂时无法加载交手记录。",
@@ -471,7 +459,6 @@
   "{n} games": "{n} 局",
   "{n} games · all tournaments": "{n} 局 · 所有赛事",
   "{team} won": "{team} 获胜",
-
   "Best of {n}": "BO{n}",
   "Broadcast & Live Stream Channels": "直播频道",
   "Calculating…": "计算中…",
@@ -521,7 +508,6 @@
   "vs": "vs",
   "{date} at {time}": "{date} {time}",
   "{time} late": "延迟 {time}",
-
   "Click star to follow player": "点星标关注选手",
   "Close team details": "关闭战队详情",
   "Follow {name}": "关注 {name}",
@@ -534,7 +520,6 @@
   "Unfollow {name}": "取消关注 {name}",
   "View on LoLEsports": "在 LoL Esports 查看",
   "{team} team details": "{team} 战队详情",
-
   "Click to reveal final score": "点击查看最终比分",
   "Click to reveal the live score": "点击查看实时比分",
   "Click to view {team} roster": "点击查看 {team} 阵容",
@@ -550,25 +535,20 @@
   "Tomorrow": "明天",
   "Upcoming": "即将开始",
   "Yesterday": "昨天",
-
   "Copy link to {a} vs {b}": "复制 {a} vs {b} 的链接",
   "Copy this link:": "复制这个链接：",
   "Link copied": "链接已复制",
-
   "LCK coverage, interviews and Korean scene reporting in English.": "LCK 报道、采访和韩国赛区新闻（英文）。",
   "Links to LoL Esports outlets. RiftWise does not show live headlines here.": "英雄联盟电竞媒体链接。RiftWise 不在这里显示实时新闻。",
   "Match recaps, patch and meta coverage.": "比赛回顾、版本和环境分析。",
   "News Sources": "新闻来源",
   "Official announcements, tournament formats, rulebook changes and schedules.": "官方公告、赛制、规则变动和赛程。",
   "Roster moves, transfer news and industry reporting.": "阵容变动、转会消息和行业报道。",
-
   "Oceanic leagues": "大洋洲联赛",
-
   "Twitch 24/7: Airing Now": "Twitch 24/7：正在播出",
   "Twitch 24/7: Offline": "Twitch 24/7：未开播",
   "Twitch 24/7: {details}": "Twitch 24/7：{details}",
   "Watch Live": "看直播",
-
   "{h}h {m}m": "{h}小时{m}分",
   "{m}m": "{m}分钟",
   "Apple Calendar (.ics)": "Apple 日历 (.ics)",
@@ -1994,7 +1974,6 @@
   "now {team}": "现 {team}",
   "title match::Final": "决赛",
   "title winner::Champion": "冠军",
-
   "role::Top": "上单",
   "role::Jungle": "打野",
   "role::Mid": "中单",
@@ -2041,7 +2020,6 @@
   "region::OCEANIA": "大洋洲",
   "region::AMERICAS": "美洲",
   "region::COMMONWEALTH OF INDEPENDENT STATES": "独联体",
-
   "Player rating": "选手评分",
   "Every player in every game with a full scoreboard gets a rating from 0 to 10 for how well they played; 6 is an average game. It compares six numbers with players of the same role in the same year, so a support isn't judged on damage and old, slower games aren't held against new ones:": "每一局有完整数据的比赛里，每位选手都会得到 0 到 10 的评分，衡量他打得怎么样；6 分是一局普通的发挥。评分把六项数据与同一年同一位置的选手相比，所以辅助不会按伤害打分，节奏更慢的老比赛也不会因此吃亏：",
   "Kill participation: 25% of the rating's form part.": "参团率：表现部分的 25%。",
@@ -2104,7 +2082,6 @@
   "Team records": "战队纪录",
   "Player records": "选手纪录",
   "Most viewed this week": "本周最多浏览",
-
   "Has a pro ever built it? Item history": "职业选手出过这件装备吗？装备记录",
   "Item history": "装备记录",
   "Has a pro ever built it? Pick a player and an item: every pro game they finished holding it. A player alone shows every item they've finished games with; an item alone, the players who built it most. From the final inventory of every pro game with a full scoreboard, so an item sold before the end doesn't count.": "职业选手出过这件装备吗？选一位选手和一件装备：列出他带着这件装备结束的每一场职业比赛。只选选手，显示他结束比赛时带过的所有装备；只选装备，显示出这件装备最多的选手。数据来自每场有完整数据的职业比赛的最终装备栏，比赛中途卖掉的装备不算。",
@@ -2135,7 +2112,6 @@
   "To be decided": "待定",
   "Floating team logos": "漂浮的战队队标",
   "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "战队队标在页面背后漂浮；现任 MSI 和 First Stand 冠军有专属光环。设备要求减少动态效果时自动关闭。",
-
   "Only games on {champ} in {year}": "仅 {year} 年使用{champ}的比赛",
   "Only games on {champ}": "仅使用{champ}的比赛",
   "Only games in {year}": "仅 {year} 年的比赛",
@@ -2149,21 +2125,16 @@
   "Match page": "比赛页面",
   "This round only": "仅本轮",
   "Every round": "所有轮次",
-
   "Dragon": "小龙",
   "Baron": "大龙",
-
   "Item stats": "装备统计",
   "ended with it": "结束时持有",
   "{n} won": "胜 {n} 场",
   "Most built on": "最常出于",
   "{n} players": "{n} 名选手",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "胜率：选手结束时背包里有该装备的比赛。获胜方会做出更多装备，所以大多数装备的胜率都高于 50%。",
-
   "Every game on {champ}": "使用{champ}的全部比赛",
-
   "Pick a winner to play the rest out in the picker.": "选择胜者，在模拟器中推演剩下的比赛。",
-
   "24/7 stream": "24/7 直播",
   "30-day change": "30 天变化",
   "A matchup opens match prep, a draft board and a comparison. A player plus a champion opens their games on it. An item shows every pro who ever built it.": "输入两支战队，打开赛前准备、BP 模拟和对比；选手加英雄，打开他用这个英雄打过的比赛；输入装备，列出出过它的所有职业选手。",
@@ -2213,5 +2184,63 @@
   "team vs team": "战队 vs 战队",
   "the two compared over any period": "任意时间段内对比两者",
   "{n} live now": "{n} 场直播中",
-  "{n} match live now|{n} matches live now": "{n} 场比赛直播中"
+  "{n} match live now|{n} matches live now": "{n} 场比赛直播中",
+  "Player tier list": "选手梯度榜",
+  "Gold lead over the lane opponent at 10 minutes": "10 分钟对位经济差",
+  "CS lead over the lane opponent at 10 minutes": "10 分钟对位补刀差",
+  "XP lead over the lane opponent at 10 minutes": "10 分钟对位经验差",
+  "CTR%": "CTR%",
+  "Counter-pick rate (drafted after lane opponent)": "后手 Counter 率（在对线对手之后选人）",
+  "KS%": "KS%",
+  "Share of team kills": "击杀占比",
+  "DTH%": "DTH%",
+  "Share of team deaths": "阵亡占比",
+  "Minimum games": "最少场次",
+  "Min. GP": "最少场次",
+  "All games": "全部比赛",
+  "Result split": "胜负筛选",
+  "Losses": "负场",
+  "Side split": "红蓝方筛选",
+  "Stage": "赛段",
+  "All stages": "全部赛段",
+  "Loading split…": "正在加载分项…",
+  "Reset split": "重置筛选",
+  "Early game leads": "前期对位领先",
+  "Series view": "系列赛视图",
+  "Scoreboard": "记分板",
+  "All stats matrix": "全数据对比矩阵",
+  "Series summary": "系列赛总览",
+  "Team tier list": "战队梯度榜",
+  "Return to pool": "放回备选池",
+  "Copy Markdown": "复制 Markdown",
+  "Drag cards into S–D tiers (or click any card to inspect full tournament stats, champs, and series links). Placements auto-save per tournament.": "将卡片拖入 S–D 梯度（或点击任意卡片查看完整赛事数据、英雄池与对局链接）。按赛事自动保存。",
+  "Filter tournaments…": "筛选赛事…",
+  "Regional leagues": "赛区联赛",
+  "Filter player or team…": "筛选选手或战队…",
+  "Filter team…": "筛选战队…",
+  "Card stat": "卡片指标",
+  "Auto-seed metric": "自动排榜指标",
+  "Auto-seed by stat": "按数据自动排榜",
+  "Reset board": "重置榜单",
+  "Drop here or use tier buttons in the inspector": "拖放到此处，或点击右侧详情中的梯度按钮",
+  "Unplaced pool": "未排位备选池",
+  "Every filtered card is placed on the tier board.": "当前筛选下的卡片已全部排入榜单。",
+  "No players match the current filter.": "没有符合当前筛选条件的选手。",
+  "Assign tier": "指定梯度",
+  "Series in this tournament": "本届赛事的系列赛",
+  "Matrix": "矩阵",
+  "No player statistics are recorded for this tournament yet.": "该赛事暂无选手统计数据。",
+  "Highest DPM in a game": "单局最高分均伤害",
+  "International only": "仅国际赛事",
+  "Record scope": "纪录范围",
+  "All major events": "所有重大赛事",
+  "Assists": "助攻",
+  "Gold lead over the lane opponent at 20 minutes": "20 分钟对位经济差",
+  "Pick #": "选人顺位",
+  "Draft pick order (1–10)": "BP 选人顺序（1–10）",
+  "Series totals": "系列赛总计",
+  "All 10 players side by side. Click any stat row to highlight leaders across every role.": "10 名选手并排对比。点击任意数据行可高亮每个位置的领先者。",
+  "Open game": "打开单局",
+  "Swiss stage progression": "瑞士轮晋级历程",
+  "Tier list mode": "梯度榜模式"
 }

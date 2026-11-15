@@ -95,14 +95,11 @@
   "{n} player entered|{n} players entered": "参加者 {n} 人|参加者 {n} 人",
   "{n} series decided|{n} series decided": "{n} シリーズ確定|{n} シリーズ確定",
   "→ the current build's version": "→ 現在のビルドのバージョン",
-
   "UPCOMING": "予定",
-
   "24/7 Stream": "24/7 配信",
   "Schedule": "日程",
   "Stats": "データ",
   "Watchlist": "ウォッチリスト",
-
   "24/7 Stream & S-Tier Banger Alerts": "24/7 配信と S ティア神試合の通知",
   "24/7 Stream Marathon Schedule": "24/7 配信スケジュール",
   "24/7 Stream Rebroadcasts (Twitch & YouTube)": "24/7 再放送（Twitch と YouTube）",
@@ -184,7 +181,6 @@
   "Windows 10 or 11. RiftWise isn't code-signed yet, so Windows SmartScreen may say \"Windows protected your PC\": click More info, then Run anyway. The download comes straight from GitHub.": "Windows 10 または 11 に対応。RiftWise はまだコード署名がないため、Windows SmartScreen に「Windows によって PC が保護されました」と出ることがあります。「詳細情報」を押してから「実行」を押してください。ファイルは GitHub から直接ダウンロードされます。",
   "YouTube ↗": "YouTube ↗",
   "{teams} teams · {players} players · {regions} regions · {leagues} leagues": "{teams} チーム · {players} 選手 · {regions} 地域 · {leagues} リーグ",
-
   "24/7 Stream Marathon": "24/7 配信",
   "Can't reach the data sources right now": "データを取得できません",
   "Connection problem · showing data from {time}": "接続エラー · {time} 時点のデータ",
@@ -227,7 +223,6 @@
   "You're offline. Live scores and schedules will come back when the connection does.": "オフラインです。接続が戻れば、スコアと日程も表示されます。",
   "{league} match is now live! (Bo{n})": "{league} の試合が始まりました！（BO{n}）",
   "{matchup} ({event}) is playing on the 24/7 stream!": "24/7 配信で {matchup}（{event}）を放送中！",
-
   "24/7 stream · short break": "24/7 配信 · 小休憩",
   "A team you follow": "フォロー中のチーム",
   "Banger": "神試合",
@@ -256,7 +251,6 @@
   "started {time}": "{time} 開始",
   "team you follow": "フォロー中のチーム",
   "{n} match|{n} matches": "{n} 試合",
-
   "Active Watchlist": "ウォッチリスト",
   "Check Riot API for roster transfers, trades, and new leagues": "Riot から移籍・トレード・新リーグを確認",
   "Check roster updates": "ロスター変更を確認",
@@ -288,7 +282,6 @@
   "{n} Regions": "{n} 地域",
   "★ Follow All": "★ すべてフォロー",
   "★ International Events": "★ 国際大会",
-
   "Add RiftWise to your home screen or desktop": "RiftWise をホーム画面やデスクトップに追加",
   "Compact window": "ウィンドウを小さく",
   "Download RiftWise for Windows (free, about 4 MB, no installer)": "Windows 版 RiftWise をダウンロード（無料、約 4 MB、インストール不要）",
@@ -309,7 +302,6 @@
   "{league} on air": "{league} 配信中",
   "{n} live pro match. Click to view.|{n} live pro matches. Click to view.": "{n} 試合がライブ中。クリックで表示。",
   "{title} · Click to view stream": "{title} · クリックで配信を見る",
-
   "Add match to Calendar (Google, Apple, Outlook, Yahoo)": "試合をカレンダーに追加（Google、Apple、Outlook、Yahoo）",
   "Add to Calendar": "カレンダーに追加",
   "Added from RiftWise": "RiftWise から追加",
@@ -321,7 +313,6 @@
   "Select Calendar Type": "カレンダーを選択",
   "Watch live: {url}": "ライブで見る: {url}",
   "Yahoo Calendar": "Yahoo カレンダー",
-
   "Against other teams": "チーム別の対戦成績",
   "All leagues": "すべてのリーグ",
   "All of it counts here.": "ここではすべて合算しています。",
@@ -422,7 +413,6 @@
   "{n} wins": "{n} 勝",
   "{pct} win rate": "勝率 {pct}",
   "{pct} won": "勝率 {pct}",
-
   "All leagues…": "すべてのリーグ…",
   "Choose a league above to see its official standings.": "上でリーグを選ぶと、公式の順位が見られます。",
   "Choose any league": "リーグを選ぶ",
@@ -447,12 +437,10 @@
   "Team": "チーム",
   "Tournament": "大会",
   "Win%": "勝率",
-
   "All-Time H2H · {games} games": "通算対戦成績 · {games} ゲーム",
   "All-time head-to-head: {a} {w1}-{w2} {b} ({games} games)": "通算対戦成績: {a} {w1}-{w2} {b}（{games} ゲーム）",
   "{summary} · tap for history": "{summary} · タップで履歴を見る",
   "{summary}. Show full history.": "{summary}。すべての履歴を見る。",
-
   "All-time head-to-head": "通算対戦成績",
   "Close": "閉じる",
   "Couldn't load the match history right now.": "対戦履歴を読み込めませんでした。",
@@ -471,7 +459,6 @@
   "{n} games": "{n} ゲーム",
   "{n} games · all tournaments": "{n} ゲーム · 全大会",
   "{team} won": "{team} の勝利",
-
   "Best of {n}": "BO{n}",
   "Broadcast & Live Stream Channels": "配信チャンネル",
   "Calculating…": "計算中…",
@@ -521,7 +508,6 @@
   "vs": "vs",
   "{date} at {time}": "{date} {time}",
   "{time} late": "{time} 遅れ",
-
   "Click star to follow player": "星をクリックして選手をフォロー",
   "Close team details": "チーム情報を閉じる",
   "Follow {name}": "{name} をフォロー",
@@ -534,7 +520,6 @@
   "Unfollow {name}": "{name} のフォローを解除",
   "View on LoLEsports": "LoL Esports で見る",
   "{team} team details": "{team} のチーム情報",
-
   "Click to reveal final score": "クリックで最終スコアを表示",
   "Click to reveal the live score": "クリックでライブスコアを表示",
   "Click to view {team} roster": "クリックで {team} のロスターを見る",
@@ -550,25 +535,20 @@
   "Tomorrow": "明日",
   "Upcoming": "予定",
   "Yesterday": "昨日",
-
   "Copy link to {a} vs {b}": "{a} vs {b} のリンクをコピー",
   "Copy this link:": "このリンクをコピー:",
   "Link copied": "リンクをコピーしました",
-
   "LCK coverage, interviews and Korean scene reporting in English.": "LCK の記事、インタビュー、韓国シーンのニュース（英語）。",
   "Links to LoL Esports outlets. RiftWise does not show live headlines here.": "LoL e スポーツのメディアへのリンクです。RiftWise はここに最新見出しを表示しません。",
   "Match recaps, patch and meta coverage.": "試合のまとめ、パッチやメタの解説。",
   "News Sources": "ニュースの情報源",
   "Official announcements, tournament formats, rulebook changes and schedules.": "公式発表、大会形式、ルール変更、日程。",
   "Roster moves, transfer news and industry reporting.": "ロスター変更、移籍ニュース、業界の記事。",
-
   "Oceanic leagues": "オセアニアのリーグ",
-
   "Twitch 24/7: Airing Now": "Twitch 24/7: 放送中",
   "Twitch 24/7: Offline": "Twitch 24/7: オフライン",
   "Twitch 24/7: {details}": "Twitch 24/7: {details}",
   "Watch Live": "ライブで見る",
-
   "{h}h {m}m": "{h}時間{m}分",
   "{m}m": "{m}分",
   "Apple Calendar (.ics)": "Apple カレンダー (.ics)",
@@ -1994,7 +1974,6 @@
   "now {team}": "現 {team}",
   "title match::Final": "決勝",
   "title winner::Champion": "優勝",
-
   "role::Top": "トップ",
   "role::Jungle": "ジャングル",
   "role::Mid": "ミッド",
@@ -2041,7 +2020,6 @@
   "region::OCEANIA": "オセアニア",
   "region::AMERICAS": "南北アメリカ",
   "region::COMMONWEALTH OF INDEPENDENT STATES": "独立国家共同体",
-
   "Player rating": "選手評価",
   "Every player in every game with a full scoreboard gets a rating from 0 to 10 for how well they played; 6 is an average game. It compares six numbers with players of the same role in the same year, so a support isn't judged on damage and old, slower games aren't held against new ones:": "スタッツがそろっているすべてのゲームで、すべての選手にプレーの良さを0〜10で表す評価がつきます。6が平均的なゲームです。同じ年・同じロールの選手と6つの数字を比べるので、サポートがダメージで評価されることはなく、テンポの遅い昔のゲームが最近のゲームより不利になることもありません：",
   "Kill participation: 25% of the rating's form part.": "キル関与率：パフォーマンス部分の25%。",
@@ -2104,7 +2082,6 @@
   "Team records": "チーム記録",
   "Player records": "選手記録",
   "Most viewed this week": "今週よく見られたページ",
-
   "Has a pro ever built it? Item history": "プロがこのアイテムを積んだことは？アイテム履歴",
   "Item history": "アイテム履歴",
   "Has a pro ever built it? Pick a player and an item: every pro game they finished holding it. A player alone shows every item they've finished games with; an item alone, the players who built it most. From the final inventory of every pro game with a full scoreboard, so an item sold before the end doesn't count.": "プロがこのアイテムを積んだことは？選手とアイテムを選ぶと、そのアイテムを持って終えたプロの試合をすべて表示します。選手だけなら試合終了時に持っていたすべてのアイテム、アイテムだけならそれを最も多く積んだ選手を表示します。完全なスコアボードがあるすべてのプロ試合の最終インベントリから数えるため、試合終了前に売ったアイテムは含まれません。",
@@ -2135,7 +2112,6 @@
   "To be decided": "未定",
   "Floating team logos": "浮かぶチームロゴ",
   "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "チームロゴがページの背景に浮かびます。現 MSI・First Stand 王者には専用のリングが付きます。端末が動きを減らす設定のときはオフになります。",
-
   "Only games on {champ} in {year}": "{year}年の{champ}の試合のみ",
   "Only games on {champ}": "{champ}の試合のみ",
   "Only games in {year}": "{year}年の試合のみ",
@@ -2149,21 +2125,16 @@
   "Match page": "試合ページ",
   "This round only": "このラウンドのみ",
   "Every round": "すべてのラウンド",
-
   "Dragon": "ドラゴン",
   "Baron": "バロン",
-
   "Item stats": "アイテム統計",
   "ended with it": "所持して終了",
   "{n} won": "{n} 勝",
   "Most built on": "最も多いチャンピオン",
   "{n} players": "{n} 人",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "勝率：選手のインベントリにそのアイテムがある状態で終わった試合。勝つチームほど多くのアイテムを完成させるため、ほとんどが50%を超えます。",
-
   "Every game on {champ}": "{champ}の全試合",
-
   "Pick a winner to play the rest out in the picker.": "勝者を選ぶと、残りをピッカーで予想できます。",
-
   "24/7 stream": "24/7 配信",
   "30-day change": "30日間の変動",
   "A matchup opens match prep, a draft board and a comparison. A player plus a champion opens their games on it. An item shows every pro who ever built it.": "チーム同士を入力すると試合準備、ドラフトボード、比較が開きます。選手とチャンピオンでそのチャンピオンでの試合、アイテムでそれを積んだ全プロ選手が出ます。",
@@ -2213,5 +2184,63 @@
   "team vs team": "チーム vs チーム",
   "the two compared over any period": "任意の期間で2つを比較",
   "{n} live now": "{n} 試合ライブ中",
-  "{n} match live now|{n} matches live now": "{n} 試合ライブ中"
+  "{n} match live now|{n} matches live now": "{n} 試合ライブ中",
+  "Player tier list": "選手ティアリスト",
+  "Gold lead over the lane opponent at 10 minutes": "10分時点の対面とのゴールド差",
+  "CS lead over the lane opponent at 10 minutes": "10分時点の対面とのCS差",
+  "XP lead over the lane opponent at 10 minutes": "10分時点の対面との経験値差",
+  "CTR%": "CTR%",
+  "Counter-pick rate (drafted after lane opponent)": "カウンターピック率（対面より後にピック）",
+  "KS%": "KS%",
+  "Share of team kills": "チーム内キル割合",
+  "DTH%": "DTH%",
+  "Share of team deaths": "チーム内デス割合",
+  "Minimum games": "最小試合数",
+  "Min. GP": "最小試合",
+  "All games": "全試合",
+  "Result split": "勝敗フィルター",
+  "Losses": "敗北",
+  "Side split": "陣営フィルター",
+  "Stage": "ステージ",
+  "All stages": "全ステージ",
+  "Loading split…": "読込中…",
+  "Reset split": "フィルター解除",
+  "Early game leads": "序盤のリード",
+  "Series view": "シリーズ表示",
+  "Scoreboard": "スコアボード",
+  "All stats matrix": "全スタッツマトリクス",
+  "Series summary": "シリーズサマリー",
+  "Team tier list": "チームティアリスト",
+  "Return to pool": "プールに戻す",
+  "Copy Markdown": "Markdown をコピー",
+  "Drag cards into S–D tiers (or click any card to inspect full tournament stats, champs, and series links). Placements auto-save per tournament.": "カードを S〜D ティアにドラッグ（クリックで大会全成績・使用チャンピオン・試合リンクを表示）。大会ごとに自動保存されます。",
+  "Filter tournaments…": "大会を検索…",
+  "Regional leagues": "地域リーグ",
+  "Filter player or team…": "選手・チームで絞り込み…",
+  "Filter team…": "チームで絞り込み…",
+  "Card stat": "カード表示指標",
+  "Auto-seed metric": "自動配置の指標",
+  "Auto-seed by stat": "指標で自動配置",
+  "Reset board": "ボードをリセット",
+  "Drop here or use tier buttons in the inspector": "ここにドロップ、または右の詳細からティアを選択",
+  "Unplaced pool": "未配置プール",
+  "Every filtered card is placed on the tier board.": "絞り込み対象のカードはすべて配置済みです。",
+  "No players match the current filter.": "条件に一致する選手はいません。",
+  "Assign tier": "ティアを設定",
+  "Series in this tournament": "この大会のシリーズ",
+  "Matrix": "マトリクス",
+  "No player statistics are recorded for this tournament yet.": "この大会の選手スタッツはまだ記録されていません。",
+  "Highest DPM in a game": "1試合最高 DPM",
+  "International only": "国際大会のみ",
+  "Record scope": "記録の対象",
+  "All major events": "全主要大会",
+  "Assists": "アシスト",
+  "Gold lead over the lane opponent at 20 minutes": "20分時点の対面とのゴールド差",
+  "Pick #": "Pick #",
+  "Draft pick order (1–10)": "ドラフトピック順（1〜10）",
+  "Series totals": "シリーズ合計",
+  "All 10 players side by side. Click any stat row to highlight leaders across every role.": "全10選手を一覧表示。行をクリックすると各ロールのトップを強調表示します。",
+  "Open game": "試合を開く",
+  "Swiss stage progression": "スイスステージ進行表",
+  "Tier list mode": "ティアリスト切替"
 }

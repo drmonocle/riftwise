@@ -14,6 +14,7 @@ import { bare, downloadEventCsv, downloadStagesCsv, loadAliases, loadHubEvent, m
 import type { HubEvent, SeriesRow, Stage, StandingRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { EventPlayerStats, EventTeamStatsTable } from "./EventTables";
+import { SwissProgression } from "./SwissProgression";
 import { EventFacts, EventRosters, RegionalRecords } from "./EventExtras";
 import { EventStatsSection } from "./EventStats";
 import { PlayoffChances } from "./PlayoffChances";
@@ -634,6 +635,17 @@ const EventView: React.FC<{ e: HubEvent; tab: string; onOpenUrl?: (url: string) 
                     <Download className="w-3.5 h-3.5" />
                     {tl("Download every game (CSV)")}
                   </button>
+                  {(e.players?.length || 0) > 0 && (
+                    <HubLink
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({ mode: "players", event: e.u }).toString(),
+                      }}
+                      className={heroBtn()}
+                    >
+                      {tl("Player tier list")} →
+                    </HubLink>
+                  )}
                 </>
               )}
             </div>
@@ -1815,6 +1827,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
  * Overview, and of the Worlds, MSI and First Stand pages in the years their pickers don't cover.
  */
 export const EventBracketBlock: React.FC<{ e: HubEvent; topChamps?: string[]; topPlayers?: string[] }> = ({ e, topChamps = [], topPlayers = [] }) => {
+  const [hidden] = useHidden(`event:${e.u}`, e.end);
   const st = e.stages || [];
   const bracket = st.filter((s) => s.kind === "bracket");
   const tables = e.standings || [];
@@ -1830,6 +1843,7 @@ export const EventBracketBlock: React.FC<{ e: HubEvent; topChamps?: string[]; to
           topPlayers={topPlayers}
         />
       )}
+      <SwissProgression e={e} hidden={hidden} />
       {tables.length > 0 && (
         <div className={`grid gap-3 ${tables.length > 1 ? "md:grid-cols-2" : ""}`}>
           {tables.map((t, i) => (

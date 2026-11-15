@@ -554,10 +554,11 @@ def build(ctx) -> dict:
 
     def new_tp_row():
         return {"g": 0, "w": 0, "k": 0, "d": 0, "a": 0, "cs": 0, "gold": 0, "dmg": 0, "min": 0.0,
-                "team": Counter(), "champs": Counter(), "roles": Counter(), "tk": 0, "vis": 0, "vg": 0, "dmin": 0.0,
+                "team": Counter(), "champs": Counter(), "roles": Counter(), "tk": 0, "tdth": 0, "vis": 0, "vg": 0, "dmin": 0.0,
                 "sdmg": 0, "tdmg": 0, "sgold": 0, "tgold": 0, "svis": 0, "tvis": 0,
-                # Oracle's Elixir: games with leads at 15 and their sums; games with first blood known, taking part, dying
-                "tn": 0, "g15": 0, "c15": 0, "x15": 0, "fbn": 0, "fbp": 0, "fbv": 0}
+                # Oracle's Elixir: games with leads at 10 and 15 and their sums; games with first blood known, taking part, dying
+                "tn": 0, "g15": 0, "c15": 0, "x15": 0, "tn10": 0, "g10": 0, "c10": 0, "x10": 0,
+                "fbn": 0, "fbp": 0, "fbv": 0, "ctrg": 0, "ctr": 0}
 
     def new_tts_row():
         return {"g": 0, "w": 0, "min": 0.0, "k": 0, "d": 0, "gd": 0, "drag": 0, "bar": 0, "tow": 0,
@@ -605,8 +606,11 @@ def build(ctx) -> dict:
                 "vis": x["vis"], "vmin": r1(x["vg"]), "c": [c for c, _ in x["champs"].most_common(3)], "nc": len(x["champs"]),
                 "sd": x["sdmg"], "td": x["tdmg"], "sg": x["sgold"], "tg": x["tgold"], "sv": x["svis"], "tv": x["tvis"],
                 **({"mvp": ev_mvp[page]} if ev_mvp.get(page) else {}),
+                **({"tdth": x["tdth"]} if x["tdth"] else {}),
                 **({"tn": x["tn"], "g15": x["g15"], "c15": x["c15"], "x15": x["x15"]} if x["tn"] else {}),
+                **({"tn10": x["tn10"], "g10": x["g10"], "c10": x["c10"], "x10": x["x10"]} if x["tn10"] else {}),
                 **({"fbn": x["fbn"], "fbp": x["fbp"], "fbv": x["fbv"]} if x["fbn"] else {}),
+                **({"ctrg": x["ctrg"], "ctr": x["ctr"]} if x["ctrg"] else {}),
             })
         team_stats_out = sorted(({"t": n, "u": team_ref(n, last_date or "")[1], **{k: (r1(v) if k == "min" else v) for k, v in z.items()}}
                                  for n, z in tts.items() if z["g"]), key=lambda x: (-x["w"] / x["g"], -x["g"]))
@@ -1284,15 +1288,27 @@ def build(ctx) -> dict:
                         n_stats_games += 1
                         plist = []
                         opp_of = {g["t1"]: g["t2"], g["t2"]: g["t1"]}
-                        team_kills, team_dmg, team_gold, team_vis = Counter(), Counter(), Counter(), Counter()
+                        team_kills, team_deaths, team_dmg, team_gold, team_vis = Counter(), Counter(), Counter(), Counter(), Counter()
                         lane = defaultdict(dict)  # role -> team -> champion
                         for r in rows:
                             team_kills[r["team"]] += r["kills"] or 0
+                            team_deaths[r["team"]] += r["deaths"] or 0
                             team_dmg[r["team"]] += r["damage"] or 0
                             team_gold[r["team"]] += r["gold"] or 0
                             team_vis[r["team"]] += r["vision"] or 0
                             if r["role"] and r["champion"]:
                                 lane[r["role"]][r["team"]] = r["champion"]
+                        pick_slot = {}
+                        if dr is not None and d_pre:
+                            dr_t1 = g["t1"] if d_pre.get("blue") == "team1" else g["t2"] if d_pre.get("red") == "team1" else None
+                            dr_t2 = g["t2"] if dr_t1 == g["t1"] else g["t1"] if dr_t1 == g["t2"] else None
+                            p1 = [champ_name(c, gid) for c in jlist(dr["team1_picks"])]
+                            p2 = [champ_name(c, gid) for c in jlist(dr["team2_picks"])]
+                            if dr_t1 and dr_t2 and len(p1) == 5 and len(p2) == 5 and len(set(p1)) == 5 and len(set(p2)) == 5 and not (set(p1) & set(p2)):
+                                for idx_p, ch_p in zip((0, 3, 4, 7, 8), p1):
+                                    pick_slot[(dr_t1, ch_p)] = idx_p
+                                for idx_p, ch_p in zip((1, 2, 5, 6, 9), p2):
+                                    pick_slot[(dr_t2, ch_p)] = idx_p
                         gpatch = fix_patch(g["patch"], g["date"])
                         if gpatch:
                             ps = patch_stats[gpatch]
@@ -1322,7 +1338,10 @@ def build(ctx) -> dict:
                             ptl = timeline.player_tl(oe_row[(r["team"], r["champion"])]) if (r["team"], r["champion"]) in oe_row else None
                             if ptl:
                                 row.update({"g15": ptl[3], "c15": ptl[4], "x15": ptl[5],
-                                            "g10": ptl[0], "x10": ptl[2], "g20": ptl[6], "x20": ptl[8]})
+                                            "g10": ptl[0], "c10": ptl[1], "x10": ptl[2], "g20": ptl[6], "c20": ptl[7], "x20": ptl[8]})
+                            my_slot = pick_slot.get((r["team"], r["champion"]))
+                            if my_slot is not None:
+                                row["pk"] = my_slot + 1
                             plist.append({k2: v for k2, v in row.items() if v not in (None, [], "")})
                             # Collect for player, tournament, champion pages
                             team_name = r["team"]
@@ -1344,6 +1363,7 @@ def build(ctx) -> dict:
                                 x["team"][team_name] += 1
                                 x["roles"][r["role"] or "?"] += 1
                                 x["tk"] += team_kills[team_name]
+                                x["tdth"] += team_deaths[team_name]
                                 if r["damage"] is not None:
                                     x["sdmg"] += r["damage"]
                                     x["tdmg"] += team_dmg[team_name]
@@ -1368,10 +1388,23 @@ def build(ctx) -> dict:
                                     x["g15"] += ptl[3]
                                     x["c15"] += ptl[4] or 0
                                     x["x15"] += ptl[5] or 0
+                                if ptl and ptl[0] is not None:
+                                    x["tn10"] += 1
+                                    x["g10"] += ptl[0]
+                                    x["c10"] += ptl[1] or 0
+                                    x["x10"] += ptl[2] or 0
                                 if ptl and ptl[9] is not None:
                                     x["fbn"] += 1
                                     x["fbp"] += 1 if ptl[9] in (1, 2) else 0
                                     x["fbv"] += 1 if ptl[9] == 3 else 0
+                                if r["role"] and r["champion"] and len(lane.get(r["role"], {})) == 2:
+                                    opp_name = opp_of.get(team_name)
+                                    opp_champ = lane[r["role"]].get(opp_name) if opp_name else None
+                                    opp_slot = pick_slot.get((opp_name, opp_champ)) if opp_name and opp_champ else None
+                                    if my_slot is not None and opp_slot is not None and my_slot != opp_slot:
+                                        x["ctrg"] += 1
+                                        if my_slot > opp_slot:
+                                            x["ctr"] += 1
                                 opp = opp_of.get(team_name, "")
                                 p_games[page].append((g["date"][:10], gslug, r["champion"] or "", k, d, aa, won, team_name, opp, en,
                                                       r["role"] or "", eslug, r["cs"], r["gold"], r["damage"], r["vision"],
@@ -2724,22 +2757,25 @@ def build(ctx) -> dict:
     # -- records and titles with links to the hub pages -------------------------------------------
     team_by_name = {ctx.fr_name[fid]: u for fid, u in team_slug.items() if fid in ctx.fr_name}
     rec = json.loads(json.dumps(ctx.records, ensure_ascii=False))
-    for lst in rec["game"].values():
-        for x in lst:
-            gid = x.pop("gid", None)
-            x["g"] = gid_slug.get(gid)
-            x["gn"] = gid_n.get(gid)
-            x["e"] = tname_slug.get(x["t"])
-            x["au"] = team_ref(x["a"], x["date"])[1]
-            x["bu"] = team_ref(x["b"], x["date"])[1]
-    for lst in rec["player"].values():
-        for x in lst:
-            x["u"] = player_slug.get(x.pop("pk", None))
-            gid = x.pop("gid", None)
-            x["g"] = gid_slug.get(gid)
-            x["gn"] = gid_n.get(gid)
-            x["e"] = tname_slug.get(x["t"])
-            x.pop("ps", None)
+    for rec_blk in (rec, rec.get("intl")):
+        if not isinstance(rec_blk, dict):
+            continue
+        for lst in (rec_blk.get("game") or {}).values():
+            for x in lst:
+                gid = x.pop("gid", None)
+                x["g"] = gid_slug.get(gid)
+                x["gn"] = gid_n.get(gid)
+                x["e"] = tname_slug.get(x["t"])
+                x["au"] = team_ref(x["a"], x["date"])[1]
+                x["bu"] = team_ref(x["b"], x["date"])[1]
+        for lst in (rec_blk.get("player") or {}).values():
+            for x in lst:
+                x["u"] = player_slug.get(x.pop("pk", None))
+                gid = x.pop("gid", None)
+                x["g"] = gid_slug.get(gid)
+                x["gn"] = gid_n.get(gid)
+                x["e"] = tname_slug.get(x["t"])
+                x.pop("ps", None)
     for lst in [*rec["career"].values(), *rec.get("careerAll", {}).values()]:
         for x in lst:
             x["u"] = player_slug.get(x.pop("pk", None))

@@ -396,14 +396,18 @@ def main():
                 bad("wrong champion in titles", f"{kind} {year}: have {sorted(have)}, expected {champ}")
     # -- records and best games ---------------------------------------------------------------------
     rec = load(os.path.join(hub, "records.json"))
-    for group in ("game", "player"):
-        for name, lst in (rec.get(group) or {}).items():
-            vals = [x.get("v") for x in lst if x.get("v") is not None]
-            desc = name not in ("fastest",)
-            if vals and vals != sorted(vals, reverse=desc):
-                bad("records list out of order", f"{group}.{name}")
-            for x in lst:
-                link("game", x.get("g"), f"records {group}.{name}")
+    for rec_blk in (rec, rec.get("intl")):
+        if not isinstance(rec_blk, dict):
+            continue
+        tag = "records" if rec_blk is rec else "records.intl"
+        for group in ("game", "player"):
+            for name, lst in (rec_blk.get(group) or {}).items():
+                vals = [x.get("v") for x in lst if x.get("v") is not None]
+                desc = name not in ("fastest",)
+                if vals and vals != sorted(vals, reverse=desc):
+                    bad("records list out of order", f"{tag} {group}.{name}")
+                for x in lst:
+                    link("game", x.get("g"), f"{tag} {group}.{name}")
     best = load(os.path.join(hub, "best", "all.json"))
     for r in best.get("g", []):
         link("game", r[1], "best/all games")

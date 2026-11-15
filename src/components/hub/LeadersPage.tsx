@@ -263,7 +263,9 @@ export const LeadersPage: React.FC<{ query?: string }> = ({ query }) => {
       ),
       className: "tabular-nums text-rw-sub",
     },
-    ...PLAYER_METRICS.map<Column<EventPlayer>>((m) => ({
+    ...PLAYER_METRICS.filter(
+      (m) => !["dth", "g10", "c10", "x10", "ctr"].includes(m.key) || statParam === m.key || rows.some((p) => m.value(p) != null),
+    ).map<Column<EventPlayer>>((m) => ({
       key: m.key,
       label: m.short || m.label,
       title: zMode ? `${m.label}: ${tl("standard deviations from the average of the player's role in this list")}` : m.label,

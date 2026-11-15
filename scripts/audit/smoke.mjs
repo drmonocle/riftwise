@@ -17,14 +17,16 @@ const PAGES = [
   "/stats/champions", "/stats/tournaments", "/stats/best", "/stats/data", "/stats/worlds", "/stats/worlds/2024", "/stats/weekly", "/watchlist",
   "/team/t1", "/player/faker", "/tournament/worlds-2024-main-event", "/league/lol-champions-korea", "/champion/ahri",
   // the lists of every team and player, and a tab of each tabbed page
-  "/stats/teams", "/stats/players?role=Mid", "/team/t1/matches", "/team/t1/stats", "/player/faker/champions", "/player/faker/career",
+  "/stats/teams", "/stats/players?role=Mid", "/stats/tiers", "/stats/tiers?mode=players&event=worlds-2024-main-event",
+  "/stats/tiers?mode=teams&event=worlds-2024-main-event",
+  "/team/t1/matches", "/team/t1/stats", "/player/faker/champions", "/player/faker/career",
   "/tournament/worlds-2024-main-event/stats", "/stats/compare?teams=t1,geng",
 ];
 try {
   const { version } = await (await fetch(`${base}/stats/latest.json`)).json();
   const rec = await (await fetch(`${base}/stats/${version}/hub/records.json`)).json();
   const g = rec?.game?.fastest?.[0]?.g;
-  if (g) PAGES.push(`/match/${g}`);
+  if (g) PAGES.push(`/match/${g}`, `/match/${g}?view=matrix`, `/match/${g}?view=summary`);
 } catch (e) {
   console.log(`(no match page: ${e.message})`);
 }

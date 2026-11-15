@@ -42,6 +42,8 @@ export const PLAYER_METRICS: Metric<EventPlayer>[] = [
     fmt: r2,
   },
   { key: "kp", label: "KP", value: (p) => div(p.k + p.a, p.tk), fmt: pc },
+  { key: "ks", short: "KS%", label: tk("Share of team kills"), value: (p) => div(p.k, p.tk), fmt: pc },
+  { key: "dth", short: "DTH%", label: tk("Share of team deaths"), value: (p) => (p.tdth ? div(p.d, p.tdth) : null), fmt: pc, low: true },
   {
     key: "k",
     short: "K",
@@ -93,7 +95,11 @@ export const PLAYER_METRICS: Metric<EventPlayer>[] = [
   { key: "g15", short: "GD@15", label: tk("Gold lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.g15, p.tn) : null), fmt: sInt },
   { key: "c15", short: "CSD@15", label: tk("CS lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.c15, p.tn) : null), fmt: sR1 },
   { key: "x15", short: "XPD@15", label: tk("XP lead over the lane opponent at 15 minutes"), value: (p) => (p.tn ? div(p.x15, p.tn) : null), fmt: sInt },
+  { key: "g10", short: "GD@10", label: tk("Gold lead over the lane opponent at 10 minutes"), value: (p) => (p.tn10 ? div(p.g10, p.tn10) : null), fmt: sInt },
+  { key: "c10", short: "CSD@10", label: tk("CS lead over the lane opponent at 10 minutes"), value: (p) => (p.tn10 ? div(p.c10, p.tn10) : null), fmt: sR1 },
+  { key: "x10", short: "XPD@10", label: tk("XP lead over the lane opponent at 10 minutes"), value: (p) => (p.tn10 ? div(p.x10, p.tn10) : null), fmt: sInt },
   { key: "fbp", short: "FB%", label: tk("Took part in first blood (kill or assist)"), value: (p) => (p.fbn ? div(p.fbp, p.fbn) : null), fmt: pc },
+  { key: "ctr", short: "CTR%", label: tk("Counter-pick rate (drafted after lane opponent)"), value: (p) => (p.ctrg ? div(p.ctr, p.ctrg) : null), fmt: pc },
   { key: "wr", short: "W%", label: tk("Win %"), value: (p) => div(p.w, p.g), fmt: pc },
 ];
 

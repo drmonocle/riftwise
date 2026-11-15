@@ -95,14 +95,11 @@
   "{n} player entered|{n} players entered": "참가자 {n}명|참가자 {n}명",
   "{n} series decided|{n} series decided": "{n}개 시리즈 확정|{n}개 시리즈 확정",
   "→ the current build's version": "→ 현재 빌드 버전",
-
   "UPCOMING": "예정",
-
   "24/7 Stream": "24/7 방송",
   "Schedule": "일정",
   "Stats": "통계",
   "Watchlist": "관심 목록",
-
   "24/7 Stream & S-Tier Banger Alerts": "24/7 방송 & S급 명경기 알림",
   "24/7 Stream Marathon Schedule": "24/7 마라톤 방송 일정",
   "24/7 Stream Rebroadcasts (Twitch & YouTube)": "24/7 재방송 (Twitch & YouTube)",
@@ -184,7 +181,6 @@
   "Windows 10 or 11. RiftWise isn't code-signed yet, so Windows SmartScreen may say \"Windows protected your PC\": click More info, then Run anyway. The download comes straight from GitHub.": "Windows 10 또는 11. RiftWise는 아직 코드 서명이 없어서 Windows SmartScreen에 \"Windows의 PC 보호\"가 뜰 수 있어요: 추가 정보를 누른 다음 실행을 누르세요. 파일은 GitHub에서 바로 받아요.",
   "YouTube ↗": "YouTube ↗",
   "{teams} teams · {players} players · {regions} regions · {leagues} leagues": "팀 {teams} · 선수 {players} · 지역 {regions} · 리그 {leagues}",
-
   "24/7 Stream Marathon": "24/7 마라톤 방송",
   "Can't reach the data sources right now": "지금은 데이터를 불러올 수 없어요",
   "Connection problem · showing data from {time}": "연결 문제 · {time} 기준 데이터",
@@ -227,7 +223,6 @@
   "You're offline. Live scores and schedules will come back when the connection does.": "오프라인 상태예요. 연결되면 라이브 점수와 일정이 다시 보여요.",
   "{league} match is now live! (Bo{n})": "{league} 경기 시작! (Bo{n})",
   "{matchup} ({event}) is playing on the 24/7 stream!": "24/7 방송에서 {matchup} ({event}) 방송 중!",
-
   "24/7 stream · short break": "24/7 방송 · 잠깐 쉬는 중",
   "A team you follow": "팔로우한 팀",
   "Banger": "명경기",
@@ -256,7 +251,6 @@
   "started {time}": "{time} 시작",
   "team you follow": "팔로우한 팀",
   "{n} match|{n} matches": "{n}경기",
-
   "Active Watchlist": "관심 목록",
   "Check Riot API for roster transfers, trades, and new leagues": "Riot에서 이적, 트레이드, 새 리그 확인",
   "Check roster updates": "로스터 변경 확인",
@@ -288,7 +282,6 @@
   "{n} Regions": "지역 {n}개",
   "★ Follow All": "★ 전부 팔로우",
   "★ International Events": "★ 국제 대회",
-
   "Add RiftWise to your home screen or desktop": "홈 화면이나 바탕화면에 RiftWise 추가",
   "Compact window": "작은 창",
   "Download RiftWise for Windows (free, about 4 MB, no installer)": "Windows용 RiftWise 다운로드 (무료, 약 4 MB, 설치 필요 없음)",
@@ -309,7 +302,6 @@
   "{league} on air": "{league} 방송 중",
   "{n} live pro match. Click to view.|{n} live pro matches. Click to view.": "프로 경기 {n}개 라이브 중. 클릭해서 보기.",
   "{title} · Click to view stream": "{title} · 클릭해서 방송 보기",
-
   "Add match to Calendar (Google, Apple, Outlook, Yahoo)": "경기를 캘린더에 추가 (Google, Apple, Outlook, Yahoo)",
   "Add to Calendar": "캘린더에 추가",
   "Added from RiftWise": "RiftWise에서 추가함",
@@ -321,7 +313,6 @@
   "Select Calendar Type": "캘린더 선택",
   "Watch live: {url}": "라이브 보기: {url}",
   "Yahoo Calendar": "Yahoo 캘린더",
-
   "Against other teams": "팀별 상대 전적",
   "All leagues": "전체 리그",
   "All of it counts here.": "여기서는 전부 합산해요.",
@@ -422,7 +413,6 @@
   "{n} wins": "{n}승",
   "{pct} win rate": "승률 {pct}",
   "{pct} won": "{pct} 승리",
-
   "All leagues…": "전체 리그…",
   "Choose a league above to see its official standings.": "위에서 리그를 고르면 공식 순위를 볼 수 있어요.",
   "Choose any league": "리그 선택",
@@ -447,12 +437,10 @@
   "Team": "팀",
   "Tournament": "대회",
   "Win%": "승률",
-
   "All-Time H2H · {games} games": "통산 상대 전적 · {games}세트",
   "All-time head-to-head: {a} {w1}-{w2} {b} ({games} games)": "통산 상대 전적: {a} {w1}-{w2} {b} ({games}세트)",
   "{summary} · tap for history": "{summary} · 눌러서 전적 보기",
   "{summary}. Show full history.": "{summary}. 전체 전적 보기.",
-
   "All-time head-to-head": "통산 상대 전적",
   "Close": "닫기",
   "Couldn't load the match history right now.": "지금은 경기 기록을 불러올 수 없어요.",
@@ -471,7 +459,6 @@
   "{n} games": "{n}세트",
   "{n} games · all tournaments": "{n}세트 · 모든 대회",
   "{team} won": "{team} 승리",
-
   "Best of {n}": "Bo{n}",
   "Broadcast & Live Stream Channels": "중계 채널",
   "Calculating…": "계산 중…",
@@ -521,7 +508,6 @@
   "vs": "vs",
   "{date} at {time}": "{date} {time}",
   "{time} late": "{time} 지연",
-
   "Click star to follow player": "별을 눌러 선수 팔로우",
   "Close team details": "팀 정보 닫기",
   "Follow {name}": "{name} 팔로우",
@@ -534,7 +520,6 @@
   "Unfollow {name}": "{name} 팔로우 취소",
   "View on LoLEsports": "LoL Esports에서 보기",
   "{team} team details": "{team} 팀 정보",
-
   "Click to reveal final score": "클릭해서 최종 점수 보기",
   "Click to reveal the live score": "클릭해서 라이브 점수 보기",
   "Click to view {team} roster": "클릭해서 {team} 로스터 보기",
@@ -550,25 +535,20 @@
   "Tomorrow": "내일",
   "Upcoming": "예정",
   "Yesterday": "어제",
-
   "Copy link to {a} vs {b}": "{a} vs {b} 링크 복사",
   "Copy this link:": "이 링크를 복사하세요:",
   "Link copied": "링크 복사됨",
-
   "LCK coverage, interviews and Korean scene reporting in English.": "LCK 소식, 인터뷰, 한국 씬 기사 (영어).",
   "Links to LoL Esports outlets. RiftWise does not show live headlines here.": "LoL e스포츠 매체 링크예요. RiftWise가 여기서 실시간 헤드라인을 보여 주지는 않아요.",
   "Match recaps, patch and meta coverage.": "경기 요약, 패치와 메타 소식.",
   "News Sources": "뉴스 출처",
   "Official announcements, tournament formats, rulebook changes and schedules.": "공식 발표, 대회 방식, 규정 변경, 일정.",
   "Roster moves, transfer news and industry reporting.": "로스터 변동, 이적 소식, 업계 기사.",
-
   "Oceanic leagues": "오세아니아 리그",
-
   "Twitch 24/7: Airing Now": "Twitch 24/7: 방송 중",
   "Twitch 24/7: Offline": "Twitch 24/7: 오프라인",
   "Twitch 24/7: {details}": "Twitch 24/7: {details}",
   "Watch Live": "라이브 보기",
-
   "{h}h {m}m": "{h}시간 {m}분",
   "{m}m": "{m}분",
   "Apple Calendar (.ics)": "Apple 캘린더 (.ics)",
@@ -1994,7 +1974,6 @@
   "now {team}": "현재 {team}",
   "title match::Final": "결승",
   "title winner::Champion": "우승팀",
-
   "role::Top": "탑",
   "role::Jungle": "정글",
   "role::Mid": "미드",
@@ -2041,7 +2020,6 @@
   "region::OCEANIA": "오세아니아",
   "region::AMERICAS": "아메리카",
   "region::COMMONWEALTH OF INDEPENDENT STATES": "독립국가연합",
-
   "Player rating": "선수 평점",
   "Every player in every game with a full scoreboard gets a rating from 0 to 10 for how well they played; 6 is an average game. It compares six numbers with players of the same role in the same year, so a support isn't judged on damage and old, slower games aren't held against new ones:": "전체 기록이 있는 모든 세트에서 모든 선수가 얼마나 잘했는지 0~10점으로 평점을 받아요. 6점이 평균적인 세트예요. 같은 해 같은 포지션 선수들과 여섯 가지 수치를 비교하기 때문에 서폿이 피해량으로 평가받지 않고, 템포가 느렸던 옛날 세트가 요즘 세트보다 불리하지도 않아요:",
   "Kill participation: 25% of the rating's form part.": "킬관여율: 퍼포먼스 부분의 25%.",
@@ -2104,7 +2082,6 @@
   "Team records": "팀 기록",
   "Player records": "선수 기록",
   "Most viewed this week": "이번 주 많이 본 페이지",
-
   "Has a pro ever built it? Item history": "프로가 이 아이템을 산 적이 있을까? 아이템 기록",
   "Item history": "아이템 기록",
   "Has a pro ever built it? Pick a player and an item: every pro game they finished holding it. A player alone shows every item they've finished games with; an item alone, the players who built it most. From the final inventory of every pro game with a full scoreboard, so an item sold before the end doesn't count.": "프로가 이 아이템을 산 적이 있을까? 선수와 아이템을 고르면 그 아이템을 들고 끝낸 프로 경기를 모두 보여줍니다. 선수만 고르면 그 선수가 경기를 끝낼 때 가졌던 모든 아이템을, 아이템만 고르면 그 아이템을 가장 많이 산 선수들을 보여줍니다. 전체 스코어보드가 있는 모든 프로 경기의 최종 인벤토리 기준이라, 경기 중에 판 아이템은 세지 않습니다.",
@@ -2135,7 +2112,6 @@
   "To be decided": "미정",
   "Floating team logos": "떠다니는 팀 로고",
   "Team logos drift behind the page; the reigning MSI and First Stand champions have their own ring. Off when your device asks for less motion.": "팀 로고가 페이지 뒤에서 떠다니고, 현 MSI·퍼스트 스탠드 우승팀은 전용 테두리를 두릅니다. 기기가 움직임 줄이기를 요청하면 꺼집니다.",
-
   "Only games on {champ} in {year}": "{year}년 {champ} 경기만",
   "Only games on {champ}": "{champ} 경기만",
   "Only games in {year}": "{year}년 경기만",
@@ -2149,21 +2125,16 @@
   "Match page": "경기 페이지",
   "This round only": "이번 라운드만",
   "Every round": "모든 라운드",
-
   "Dragon": "드래곤",
   "Baron": "바론",
-
   "Item stats": "아이템 통계",
   "ended with it": "보유한 채 종료",
   "{n} won": "{n}승",
   "Most built on": "가장 많이 산 챔피언",
   "{n} players": "{n}명",
   "Win %: the games that ended with the item in a player's inventory. Winning teams finish more items, so most sit above 50%.": "승률: 선수의 인벤토리에 그 아이템이 있는 채로 끝난 경기. 이기는 팀이 아이템을 더 많이 완성하므로 대부분 50%를 넘습니다.",
-
   "Every game on {champ}": "{champ} 전체 경기",
-
   "Pick a winner to play the rest out in the picker.": "승자를 고르면 나머지를 예측기에서 이어서 진행합니다.",
-
   "24/7 stream": "24/7 방송",
   "30-day change": "30일 변동",
   "A matchup opens match prep, a draft board and a comparison. A player plus a champion opens their games on it. An item shows every pro who ever built it.": "두 팀을 입력하면 경기 준비, 밴픽 보드, 비교 페이지가 열립니다. 선수와 챔피언을 함께 입력하면 그 챔피언으로 치른 경기가, 아이템을 입력하면 그 아이템을 산 모든 프로가 나옵니다.",
@@ -2213,5 +2184,63 @@
   "team vs team": "팀 vs 팀",
   "the two compared over any period": "원하는 기간 동안 둘을 비교",
   "{n} live now": "{n}경기 라이브",
-  "{n} match live now|{n} matches live now": "{n}경기 라이브 진행 중"
+  "{n} match live now|{n} matches live now": "{n}경기 라이브 진행 중",
+  "Player tier list": "선수 티어 리스트",
+  "Gold lead over the lane opponent at 10 minutes": "10분 맞라이너 대비 골드 차이",
+  "CS lead over the lane opponent at 10 minutes": "10분 맞라이너 대비 CS 차이",
+  "XP lead over the lane opponent at 10 minutes": "10분 맞라이너 대비 경험치 차이",
+  "CTR%": "CTR%",
+  "Counter-pick rate (drafted after lane opponent)": "카운터 픽 비율 (맞라이너 이후 픽)",
+  "KS%": "KS%",
+  "Share of team kills": "팀 킬 비중",
+  "DTH%": "DTH%",
+  "Share of team deaths": "팀 데스 비중",
+  "Minimum games": "최소 경기 수",
+  "Min. GP": "최소 경기",
+  "All games": "전체 경기",
+  "Result split": "승패 필터",
+  "Losses": "패배",
+  "Side split": "진영 필터",
+  "Stage": "스테이지",
+  "All stages": "전체 스테이지",
+  "Loading split…": "불러오는 중…",
+  "Reset split": "필터 초기화",
+  "Early game leads": "초반 라인전 우위",
+  "Series view": "시리즈 보기",
+  "Scoreboard": "스코어보드",
+  "All stats matrix": "전체 스탯 매트릭스",
+  "Series summary": "시리즈 요약",
+  "Team tier list": "팀 티어 리스트",
+  "Return to pool": "목록으로 되돌리기",
+  "Copy Markdown": "Markdown 복사",
+  "Drag cards into S–D tiers (or click any card to inspect full tournament stats, champs, and series links). Placements auto-save per tournament.": "카드를 S–D 티어로 드래그하세요 (클릭 시 대회 상세 지표·챔피언·경기 링크 확인). 대회별로 자동 저장됩니다.",
+  "Filter tournaments…": "대회 검색…",
+  "Regional leagues": "지역 리그",
+  "Filter player or team…": "선수 또는 팀 검색…",
+  "Filter team…": "팀 검색…",
+  "Card stat": "카드 지표",
+  "Auto-seed metric": "자동 배치 기준",
+  "Auto-seed by stat": "지표로 자동 배치",
+  "Reset board": "보드 초기화",
+  "Drop here or use tier buttons in the inspector": "여기에 놓거나 우측 상세 창 티어 버튼을 누르세요",
+  "Unplaced pool": "미배치 목록",
+  "Every filtered card is placed on the tier board.": "필터된 모든 카드가 티어 보드에 배치되었습니다.",
+  "No players match the current filter.": "조건에 맞는 선수가 없습니다.",
+  "Assign tier": "티어 지정",
+  "Series in this tournament": "이 대회의 시리즈",
+  "Matrix": "매트릭스",
+  "No player statistics are recorded for this tournament yet.": "이 대회에 기록된 선수 통계가 아직 없습니다.",
+  "Highest DPM in a game": "단일 세트 최고 DPM",
+  "International only": "국제전만 보기",
+  "Record scope": "기록 범위",
+  "All major events": "전체 주요 대회",
+  "Assists": "어시스트",
+  "Gold lead over the lane opponent at 20 minutes": "20분 맞라이너 대비 골드 차이",
+  "Pick #": "Pick #",
+  "Draft pick order (1–10)": "밴픽 선택 순서 (1–10)",
+  "Series totals": "시리즈 합계",
+  "All 10 players side by side. Click any stat row to highlight leaders across every role.": "10명의 선수를 한눈에 비교합니다. 행을 클릭하면 라인별 1위를 강조합니다.",
+  "Open game": "세트 열기",
+  "Swiss stage progression": "스위스 스테이지 진행표",
+  "Tier list mode": "티어 리스트 모드"
 }
