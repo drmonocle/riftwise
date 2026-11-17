@@ -19,6 +19,7 @@ const PAGES = [
   // the lists of every team and player, and a tab of each tabbed page
   "/stats/teams", "/stats/players?role=Mid", "/stats/moves", "/stats/tiers", "/stats/tiers?mode=players&event=worlds-2024-main-event",
   "/stats/tiers?mode=teams&event=worlds-2024-main-event",
+  "/stats/gm", "/stats/changelog",
   "/team/t1/matches", "/team/t1/stats", "/player/faker/champions", "/player/faker/career",
   "/tournament/worlds-2024-main-event/stats", "/stats/compare?teams=t1,geng",
 ];

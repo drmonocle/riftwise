@@ -35,6 +35,8 @@ const SECTIONS = {
   teams: ["Every team", "Every team since 2011, by region"],
   players: ["Every player", "Every pro player, by role and team"],
   moves: ["Roster moves", "Transfers and expiring contracts"],
+  gm: ["Roster builder", "Build a 5-player lineup and test its fit"],
+  changelog: ["What's new", "New tools, stats and broadcast features on RiftWise."],
 };
 
 // a team's, player's and tournament's page tabs (/ko/team/t1/matches): the tab's name, as on screen

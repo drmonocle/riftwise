@@ -500,6 +500,12 @@ export const MovesPage: React.FC<{ query?: string }> = ({ query }) => {
             {tl("Expiring contracts")}
             {totalExpiring > 0 && <span className="ml-1.5 opacity-75 font-num">({fmtNum(totalExpiring)})</span>}
           </button>
+          <HubLink
+            to={{ kind: "gm" }}
+            className="px-2.5 py-1.5 rounded-lg border border-rw-border text-xs font-semibold text-rw-sub hover:text-rw-accent hover:border-rw-accent/60"
+          >
+            {tl("Roster builder")} →
+          </HubLink>
         </div>
       </div>
 

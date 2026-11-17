@@ -52,6 +52,8 @@ const WorldsPage = lazyPart(() => pageCode.worlds().then((m) => m.WorldsPage));
 const TeamsDirectory = lazyPart(() => pageCode.teams().then((m) => m.TeamsDirectory));
 const PlayersDirectory = lazyPart(() => pageCode.players().then((m) => m.PlayersDirectory));
 const MovesPage = lazyPart(() => pageCode.moves().then((m) => m.MovesPage));
+const RosterBuilderPage = lazyPart(() => pageCode.gm().then((m) => m.RosterBuilderPage));
+const ChangelogPage = lazyPart(() => pageCode.changelog().then((m) => m.ChangelogPage));
 
 interface StatsViewProps {
   settings: AppSettings;
@@ -69,10 +71,10 @@ interface StatsViewProps {
 
 type SectionKind = HubRoute["kind"];
 /** pages whose own title is their <h1> (the others get the page's name over them as theirs) */
-const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "items", "leaders", "tiers", "moves", "team", "player", "event", "champ", "league", "match", "aboutme"]);
+const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "gm", "finder", "best", "counters", "items", "leaders", "tiers", "moves", "team", "player", "event", "champ", "league", "match", "aboutme"]);
 
 /** pages whose address carries what they show (teams, filters): their link is worth copying */
-const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players", "moves", "data", "rankings", "records", "tournaments", "leagues", "patches", "titles", "weekly", "worlds", "msi", "first-stand"]);
+const LINKABLE = new Set<SectionKind>(["prep", "draft", "gm", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players", "moves", "data", "rankings", "records", "tournaments", "leagues", "patches", "titles", "weekly", "worlds", "msi", "first-stand"]);
 
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
 const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "items", "leaders", "teams", "players", "moves"]);
@@ -87,6 +89,7 @@ const KIND_NAME: Partial<Record<SectionKind, string>> = {
   champ: tk("Champions"),
   about: tk("How we count"),
   aboutme: tk("About"),
+  changelog: tk("What's new"),
 };
 /** the list a kind of page is reached from (the breadcrumb's first link) */
 const KIND_LIST: Partial<Record<SectionKind, HubRoute>> = {
@@ -413,7 +416,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
   const sectionName = MENU_ITEMS.find((it) => it.kind === route.kind)?.label || KIND_NAME[route.kind] || "";
   // a team's or player's page sits under Teams or Players, a tournament under Tournaments... (menu.tsx)
   const group = groupOf(route.kind);
-  const crumbs = !isSection && route.kind !== "home" && route.kind !== "about" && route.kind !== "aboutme";
+  const crumbs = !isSection && route.kind !== "home" && route.kind !== "about" && route.kind !== "aboutme" && route.kind !== "changelog";
 
   return (
     <OpenUrlContext.Provider value={onOpenUrl}>
@@ -457,7 +460,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
                 <span className="text-rw-text font-semibold truncate">{pageTitle || "…"}</span>
               </nav>
             )}
-            {(route.kind === "about" || route.kind === "aboutme") && (
+            {(route.kind === "about" || route.kind === "aboutme" || route.kind === "changelog") && (
               <nav aria-label={tl("Breadcrumb")} className="flex items-center gap-1 text-xs min-w-0">
                 <HubLink to={{ kind: "home" }} className="text-rw-accent hover:underline shrink-0">
                   RiftWise
@@ -496,6 +499,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
         {route.kind === "teams" && <TeamsDirectory query={"query" in route ? route.query : undefined} />}
         {route.kind === "players" && <PlayersDirectory query={"query" in route ? route.query : undefined} />}
         {route.kind === "moves" && <MovesPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "gm" && <RosterBuilderPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "changelog" && <ChangelogPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "tournaments" && (
           <EventsBrowse
             year={route.year}
@@ -564,6 +569,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
           </HubLink>
           <HubLink to={{ kind: "aboutme" }} className="text-rw-sub hover:text-rw-accent hover:underline">
             {tl("About RiftWise")}
+          </HubLink>
+          <HubLink to={{ kind: "changelog" }} className="text-rw-sub hover:text-rw-accent hover:underline">
+            {tl("What's new")}
           </HubLink>
           <a
             href={reportUrl(hubShareUrl(route))}

@@ -366,6 +366,15 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   >
                     {`${tl("Stats for")} ${activeRoster.y}`}
                   </HubLink>
+                  <HubLink
+                    to={{
+                      kind: "gm",
+                      query: `team=${encodeURIComponent(t.u)}&p=y${encodeURIComponent(activeRoster.y)}`,
+                    }}
+                    className="text-[11px] text-rw-accent hover:underline"
+                  >
+                    {tl("Roster builder")} →
+                  </HubLink>
                 </>
               );
             })()}

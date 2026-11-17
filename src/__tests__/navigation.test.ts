@@ -51,6 +51,10 @@ describe("page tabs in the address", () => {
     expect(hubPath({ kind: "patches", query: "q=Azir" })).toBe("/stats/patches?q=Azir");
     expect(parseHubPath("/stats/moves", "?tab=contracts&role=Mid")).toEqual({ kind: "moves", query: "tab=contracts&role=Mid" });
     expect(hubPath({ kind: "moves", query: "tab=contracts" })).toBe("/stats/moves?tab=contracts");
+    expect(parseHubPath("/stats/gm", "?mid=faker&p=y2026")).toEqual({ kind: "gm", query: "mid=faker&p=y2026" });
+    expect(hubPath({ kind: "gm", query: "team=t1" })).toBe("/stats/gm?team=t1");
+    expect(parseHubPath("/stats/changelog", "")).toEqual({ kind: "changelog" });
+    expect(hubPath({ kind: "changelog" })).toBe("/stats/changelog");
   });
   it("resolves legacy and alternate entity/compare URLs and slug aliases", () => {
     expect(parseHubPath("/event/worlds-2026-main-event", "")).toEqual({ kind: "event", slug: "worlds-2026-main-event" });
@@ -122,7 +126,7 @@ describe("the menu", () => {
   it("has every page once, and a group for every kind of page", () => {
     const kinds = MENU_ITEMS.map((i) => i.kind);
     expect(new Set(kinds).size).toBe(kinds.length);
-    for (const k of ["weekly", "worlds", "rankings", "teams", "players", "moves", "tiers", "prep", "data"]) expect(kinds).toContain(k);
+    for (const k of ["weekly", "worlds", "rankings", "teams", "players", "moves", "tiers", "prep", "gm", "data"]) expect(kinds).toContain(k);
     expect(groupOf("team")?.key).toBe("teams");
     expect(groupOf("event")?.key).toBe("tournaments");
     expect(groupOf("champ")?.key).toBe("champions");

@@ -34,6 +34,8 @@ const PAGES = [
   ["patches", "/stats/patches"],
   ["prep", "/stats/prep?teams=t1,geng"],
   ["draft", "/stats/draft?teams=t1,geng"],
+  ["gm", "/stats/gm?top=doran&jg=oner&mid=faker&bot=peyz&sup=keria&p=y2026"],
+  ["changelog", "/stats/changelog"],
   ["finder", "/stats/finder"],
   ["best", "/stats/best"],
   ["data", "/stats/data"],

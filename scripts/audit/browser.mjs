@@ -87,7 +87,13 @@ export async function launch({ width = 1440, height = 900 } = {}) {
       /* gone */
     }
     proc.kill();
-    setTimeout(() => fs.rmSync(profile, { recursive: true, force: true }), 1500);
+    setTimeout(() => {
+      try {
+        fs.rmSync(profile, { recursive: true, force: true });
+      } catch {
+        /* Windows may still hold Chromium lock briefly after exit */
+      }
+    }, 1500).unref();
   };
   return { send, on, close, sleep };
 }

@@ -54,6 +54,8 @@ const HUB_KIND_PREFETCH: Partial<Record<string, string[]>> = {
   prep: ["hub/search/teams.json", "hub/ratings.json", "hub/leagues.json"],
   compare: ["hub/search/teams.json", "hub/leagues.json"],
   draft: ["hub/search/teams.json", "hub/leagues.json", "hub/alias.json"],
+  gm: ["hub/search/teams.json", "hub/rating.json"],
+  changelog: ["hub/meta.json"],
   data: ["hub/csv/index.json"],
   worlds: ["hub/league/world-championship.json", "hub/titles.json", "hub/ratings.json"],
   msi: ["hub/league/mid-season-invitational.json", "hub/titles.json", "hub/ratings.json"],
@@ -80,6 +82,7 @@ if (IS_WEB && STARTED_ON_HUB) {
     r.kind === "prep" ||
     r.kind === "compare" ||
     r.kind === "draft" ||
+    r.kind === "gm" ||
     r.kind === "finder" ||
     r.kind === "leaders" ||
     r.kind === "patches" ||

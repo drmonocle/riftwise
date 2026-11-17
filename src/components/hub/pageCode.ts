@@ -36,6 +36,8 @@ export const pageCode = {
   teams: () => import("./DirectoryPages"),
   players: () => import("./DirectoryPages"),
   moves: () => import("./RosterMoves"),
+  gm: () => import("./RosterBuilderPage"),
+  changelog: () => import("./ChangelogPage"),
 };
 
 /** Start downloading one page's code (a failure shows, and is retried, where the page loads it). */

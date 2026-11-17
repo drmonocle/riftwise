@@ -84,6 +84,7 @@ export const MENU: MenuGroup[] = [
     items: [
       { kind: "prep", label: tk("Match prep"), sub: tk("Everything before a broadcast"), icon: ic(ClipboardList), also: ["preview", "head to head", "h2h", "caster"] },
       { kind: "draft", label: tk("Draft board"), sub: tk("Plan a draft with both teams' pools"), icon: ic(LayoutGrid), also: ["draft", "pick and ban", "fearless"] },
+      { kind: "gm", label: tk("Roster builder"), sub: tk("Build a 5-player lineup and test its fit"), icon: ic(Users), also: ["gm", "superteam", "lineup", "dream team", "roster simulator"] },
       { kind: "compare", label: tk("Compare"), sub: tk("Any two teams or players"), icon: ic(GitCompare), also: ["versus", "vs", "head to head"] },
       { kind: "finder", label: tk("Game finder"), sub: tk("Any game by team, champion, player"), icon: ic(Search), also: ["find games", "search games", "csv"] },
       { kind: "items", label: tk("Item history"), sub: tk("Has a pro ever built it?"), icon: ic(Package), also: ["items", "item builds", "builds", "built", "build history"] },

@@ -32,6 +32,7 @@ export const NAV_GROUP: Record<string, NavGroup> = {
   champ: "champions",
   prep: "tools",
   draft: "tools",
+  gm: "tools",
   compare: "tools",
   finder: "tools",
   items: "tools",

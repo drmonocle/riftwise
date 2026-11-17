@@ -332,6 +332,9 @@ export const HubHome: React.FC<{
               <HubLink to={{ kind: "rankings" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Power rankings")} →
               </HubLink>
+              <HubLink to={{ kind: "changelog" }} className="text-rw-accent hover:underline">
+                {tl("What's new")} →
+              </HubLink>
             </span>
           </div>
           <ul className="text-xs space-y-1.5">
@@ -339,6 +342,7 @@ export const HubHome: React.FC<{
               [
                 [{ kind: "prep" }, tk("Match prep"), tk("form, lanes, drafts, storylines"), <ClipboardList key="p" className="w-3.5 h-3.5" />],
                 [{ kind: "draft" }, tk("Draft board"), tk("pools, Fearless, live handoff"), <LayoutGrid key="d" className="w-3.5 h-3.5" />],
+                [{ kind: "gm" }, tk("Roster builder"), tk("Build a 5-player lineup and test its fit"), <Users key="g" className="w-3.5 h-3.5" />],
                 [{ kind: "compare" }, tk("Compare"), tk("any teams or players"), <GitCompare key="c" className="w-3.5 h-3.5" />],
                 [{ kind: "finder" }, tk("Game finder"), tk("any game, as CSV too"), <Search key="f" className="w-3.5 h-3.5" />],
                 [{ kind: "items" }, tk("Item history"), tk("has a pro ever built it?"), <Package key="i" className="w-3.5 h-3.5" />],
