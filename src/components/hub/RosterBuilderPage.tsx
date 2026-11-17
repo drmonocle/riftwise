@@ -3,9 +3,10 @@
  * composite 0-10 rating, Gold% and DMG% economy balance, early-game lane delta, Bo5 Fearless pool depth + multi-role
  * flex picks, and historical teammate chemistry. Shareable via URL (?top=&jg=&mid=&bot=&sup=&p=y2026) and OBS overlay.
  */
-import React, { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, CheckCircle2, Copy, MonitorPlay, Sparkles, Swords, Users, X } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, Check, CheckCircle2, Copy, GitCompare, MonitorPlay, Sparkles, Swords, Users, X } from "lucide-react";
 import { tl, roleName, fmtDec } from "../../i18n";
+import { MissingFile } from "../../stats";
 import {
   loadHubPlayer,
   loadHubTeam,
@@ -19,7 +20,7 @@ import { normalizeRole } from "../../hub/champAgg";
 import { inPeriod, playerAgg, playerRowRef, type PlayerAgg } from "../../hub/period";
 import { playerRowLine, rateLine, type RatingFile } from "../../hub/playerRating";
 import type { HubPlayer, HubTeam, PlayerGameRow } from "../../hub/types";
-import { navigateHub, hubShareUrl } from "../../hub/route";
+import { BASE, navigateHub, hubShareUrl } from "../../hub/route";
 import { STable } from "../STable";
 import { ComparePick } from "./ComparePage";
 import { RatingBadge, fmtRating, useRatingFile } from "./PlayerRating";
@@ -240,6 +241,124 @@ function teamStartersByRole(team: HubTeam): Partial<Record<RosterRole, string>> 
   return out;
 }
 
+/** Resolve a club's 5-role lineup for a target period (`y2025`, `all`, etc.), preferring that season's most-played starter per role. */
+export function teamLineupForPeriod(team: HubTeam, period: string): Partial<Record<RosterRole, string>> {
+  const out: Partial<Record<RosterRole, string>> = {};
+  const ym = /^y(\d{4})$/.exec(period);
+  if (ym) {
+    const yr = team.roster?.find((x) => x.y === ym[1]);
+    if (yr?.p?.length) {
+      for (const m of [...yr.p].sort((a, b) => b.g - a.g)) {
+        const r = normalizeRole(m.r || "") as RosterRole | null;
+        if (r && !out[r]) out[r] = m.u || resolvePlayerSlug(m.n);
+      }
+    }
+  }
+  const starters = teamStartersByRole(team);
+  for (const r of ROSTER_ROLES) {
+    if (!out[r] && starters[r]) out[r] = starters[r];
+  }
+  return out;
+}
+
+export interface RosterDeltaSlotInput {
+  role: RosterRole;
+  slug: string;
+  name: string;
+  games: number;
+  rating: number | null;
+  kda: number | null;
+  dpm: number | null;
+  goldShare: number | null;
+  gd15: number | null;
+}
+
+export type RosterDeltaVerdict = "upgrade" | "downgrade" | "sidegrade" | "unchanged" | "incomplete";
+
+export interface RosterDeltaRow {
+  role: RosterRole;
+  current: RosterDeltaSlotInput | null;
+  baseline: RosterDeltaSlotInput | null;
+  dRating: number | null;
+  dKda: number | null;
+  dDpm: number | null;
+  dGoldShare: number | null;
+  dGd15: number | null;
+  verdict: RosterDeltaVerdict;
+}
+
+export interface RosterDeltaSummary {
+  rows: RosterDeltaRow[];
+  comparedRoles: number;
+  upgrades: number;
+  downgrades: number;
+  sidegrades: number;
+  currAvgRating: number | null;
+  baseAvgRating: number | null;
+  netRatingDelta: number | null;
+  netGd15Delta: number | null;
+  netGoldShareDelta: number | null;
+}
+
+const cleanZero = (n: number) => (Object.is(n, -0) ? 0 : n);
+
+/** Compare proposed 5-role slots against a baseline lineup across ratings, KDA, DPM, Gold%, and GD@15. */
+export function computeRosterDelta(
+  current: Partial<Record<RosterRole, RosterDeltaSlotInput | null>>,
+  baseline: Partial<Record<RosterRole, RosterDeltaSlotInput | null>>,
+  samePeriod = false,
+): RosterDeltaSummary {
+  const rows: RosterDeltaRow[] = ROSTER_ROLES.map((role) => {
+    const curr = current[role] ?? null;
+    const base = baseline[role] ?? null;
+    const dRating = curr?.rating != null && base?.rating != null ? cleanZero(Number((curr.rating - base.rating).toFixed(1))) : null;
+    const dKda = curr?.kda != null && base?.kda != null ? cleanZero(Number((curr.kda - base.kda).toFixed(2))) : null;
+    const dDpm = curr?.dpm != null && base?.dpm != null ? cleanZero(Math.round(curr.dpm - base.dpm)) : null;
+    const dGoldShare =
+      curr?.goldShare != null && base?.goldShare != null ? cleanZero(Number((curr.goldShare - base.goldShare).toFixed(1))) : null;
+    const dGd15 = curr?.gd15 != null && base?.gd15 != null ? cleanZero(Math.round(curr.gd15 - base.gd15)) : null;
+    let verdict: RosterDeltaVerdict = "incomplete";
+    if (curr && base) {
+      if (samePeriod && curr.slug === base.slug) verdict = "unchanged";
+      else if (dRating != null) verdict = dRating >= 0.25 ? "upgrade" : dRating <= -0.25 ? "downgrade" : "sidegrade";
+      else if (dKda != null) verdict = dKda >= 0.5 ? "upgrade" : dKda <= -0.5 ? "downgrade" : "sidegrade";
+      else verdict = "sidegrade";
+    }
+    return { role, current: curr, baseline: base, dRating, dKda, dDpm, dGoldShare, dGd15, verdict };
+  });
+
+  const compared = rows.filter((r) => r.current && r.baseline);
+  const ratedPairs = compared.filter((r) => r.current!.rating != null && r.baseline!.rating != null);
+  const currAvgRating = ratedPairs.length
+    ? Number((ratedPairs.reduce((s, r) => s + r.current!.rating!, 0) / ratedPairs.length).toFixed(1))
+    : null;
+  const baseAvgRating = ratedPairs.length
+    ? Number((ratedPairs.reduce((s, r) => s + r.baseline!.rating!, 0) / ratedPairs.length).toFixed(1))
+    : null;
+  const netRatingDelta = ratedPairs.length
+    ? cleanZero(Number((ratedPairs.reduce((s, r) => s + (r.current!.rating! - r.baseline!.rating!), 0) / ratedPairs.length).toFixed(1)))
+    : null;
+  const gdRows = compared.filter((r) => r.dGd15 != null);
+  const netGd15Delta = gdRows.length ? cleanZero(gdRows.reduce((s, r) => s + r.dGd15!, 0)) : null;
+  const goldRows = compared.filter((r) => r.dGoldShare != null);
+  const netGoldShareDelta = goldRows.length
+    ? cleanZero(Number(goldRows.reduce((s, r) => s + r.dGoldShare!, 0).toFixed(1)))
+    : null;
+
+  return {
+    rows,
+    comparedRoles: compared.length,
+    upgrades: compared.filter((r) => r.verdict === "upgrade").length,
+    downgrades: compared.filter((r) => r.verdict === "downgrade").length,
+    sidegrades: compared.filter((r) => r.verdict === "sidegrade").length,
+    currAvgRating,
+    baseAvgRating,
+    netRatingDelta,
+    netGd15Delta,
+    netGoldShareDelta,
+  };
+}
+
 function avgRatingInPeriod(rows: PlayerGameRow[], ratingFile: RatingFile | null): number | null {
   if (!ratingFile || !rows.length) return null;
   let sum = 0;
@@ -260,9 +379,15 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
   const q = useMemo(() => new URLSearchParams(query || ""), [query]);
   const thisYear = String(new Date().getFullYear());
   const prevYear = String(Number(thisYear) - 1);
+  const prev2Year = String(Number(thisYear) - 2);
   const rawPeriod = q.get("p") || `y${thisYear}`;
   const period = /^y\d{4}$|^all$|^last\d+$/.test(rawPeriod) ? rawPeriod : `y${thisYear}`;
   const teamSeed = q.get("team") || "";
+  const rawVs = q.get("vs") || "";
+  const vsSlug = rawVs ? resolveTeamAlias(rawVs) || rawVs : "";
+  const defaultVp = period === `y${thisYear}` ? `y${prevYear}` : period;
+  const rawVp = q.get("vp") || "";
+  const vp = /^y\d{4}$|^all$|^last\d+$/.test(rawVp) ? rawVp : defaultVp;
 
   const slotSlugs = useMemo(
     () =>
@@ -276,9 +401,36 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
   );
 
   const [loaded, setLoaded] = useState<Record<string, LoadedSlot>>({});
+  const loadedRef = useRef(loaded);
+  loadedRef.current = loaded;
+  const inFlightRef = useRef<Set<string>>(new Set());
   const [loadingSlug, setLoadingSlug] = useState<Set<string>>(() => new Set());
   const [teamLoading, setTeamLoading] = useState<string | null>(null);
+  const [baselineTeam, setBaselineTeam] = useState<{ slug: string; team: HubTeam } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!vsSlug) {
+      setBaselineTeam(null);
+      return;
+    }
+    let alive = true;
+    loadHubTeam(vsSlug)
+      .then((team) => {
+        if (alive) setBaselineTeam({ slug: vsSlug, team });
+      })
+      .catch(() => {
+        if (alive) setBaselineTeam(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [vsSlug]);
+
+  const baseSlugs = useMemo(
+    () => (baselineTeam && baselineTeam.slug === vsSlug ? teamLineupForPeriod(baselineTeam.team, vp) : {}),
+    [baselineTeam, vsSlug, vp],
+  );
 
   const setParams = (updates: Record<string, string | null>) => {
     const next = new URLSearchParams(query || "");
@@ -314,20 +466,27 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
   }, [teamSeed]);
 
   useEffect(() => {
-    const wanted = [...new Set(ROSTER_ROLES.map((r) => slotSlugs[r]).filter(Boolean))];
-    const missing = wanted.filter((s) => !loaded[s]);
-    if (!missing.length) return;
-    let alive = true;
-    setLoadingSlug((prev) => new Set([...prev, ...missing]));
-    for (const slug of missing) {
-      Promise.all([loadHubPlayer(slug), loadPlayerGames(slug).catch(() => [] as PlayerGameRow[])])
+    const wanted = [
+      ...new Set([...ROSTER_ROLES.map((r) => slotSlugs[r]), ...ROSTER_ROLES.map((r) => baseSlugs[r] || "")].filter(Boolean)),
+    ];
+    const toFetch = wanted.filter((s) => !loadedRef.current[s] && !inFlightRef.current.has(s));
+    if (!toFetch.length) return;
+    for (const s of toFetch) inFlightRef.current.add(s);
+    setLoadingSlug((prev) => new Set([...prev, ...toFetch]));
+    for (const slug of toFetch) {
+      Promise.all([
+        loadHubPlayer(slug),
+        loadPlayerGames(slug).catch((err) => {
+          if (err instanceof MissingFile) return [] as PlayerGameRow[];
+          throw err;
+        }),
+      ])
         .then(([player, games]) => {
-          if (!alive) return;
           setLoaded((prev) => ({ ...prev, [slug]: { slug, player, games } }));
         })
         .catch(() => {})
         .finally(() => {
-          if (!alive) return;
+          inFlightRef.current.delete(slug);
           setLoadingSlug((prev) => {
             const next = new Set(prev);
             next.delete(slug);
@@ -335,10 +494,7 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
           });
         });
     }
-    return () => {
-      alive = false;
-    };
-  }, [slotSlugs, loaded]);
+  }, [slotSlugs, baseSlugs]);
 
   const roleEntries = useMemo(() => {
     return ROSTER_ROLES.map((role) => {
@@ -361,6 +517,75 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
   }, [slotSlugs, loaded, period, ratingFile]);
 
   const filledEntries = roleEntries.filter((x) => Boolean(x.entry && x.agg));
+
+  const dominantClub = useMemo(() => {
+    const counts = new Map<string, { slug: string; name: string; n: number }>();
+    for (const x of filledEntries) {
+      const cu = x.entry?.player.clubU || (x.entry?.player.club ? resolveTeamAlias(x.entry.player.club) : "");
+      if (!cu || !x.entry?.player.club) continue;
+      const cur = counts.get(cu) || { slug: cu, name: x.entry.player.club, n: 0 };
+      cur.n++;
+      counts.set(cu, cur);
+    }
+    const top = [...counts.values()].sort((a, b) => b.n - a.n)[0];
+    return top && top.n >= 2 ? top : null;
+  }, [filledEntries]);
+
+  const baseEntries = useMemo(() => {
+    return Object.fromEntries(
+      ROSTER_ROLES.map((role) => {
+        const slug = baseSlugs[role] || "";
+        const entry = slug ? loaded[slug] : undefined;
+        if (!entry) return [role, null];
+        const periodGames = inPeriod(entry.games, vp, playerRowRef);
+        const fallbackGames = periodGames.length === 0 ? entry.games : periodGames;
+        const agg: PlayerAgg | null = fallbackGames.length > 0 ? playerAgg(fallbackGames) : null;
+        if (!agg) return [role, null];
+        const rt = avgRatingInPeriod(fallbackGames, ratingFile);
+        const slot: RosterDeltaSlotInput = {
+          role,
+          slug,
+          name: entry.player.name,
+          games: agg.g,
+          rating: rt,
+          kda: agg.kda,
+          dpm: agg.dpm,
+          goldShare: agg.goldShare,
+          gd15: agg.tl?.gd15 ?? null,
+        };
+        return [role, slot];
+      }),
+    ) as Partial<Record<RosterRole, RosterDeltaSlotInput | null>>;
+  }, [baseSlugs, loaded, vp, ratingFile]);
+
+  const currentDeltaMap = useMemo(
+    () =>
+      Object.fromEntries(
+        roleEntries.map((x) => [
+          x.role,
+          x.entry && x.agg
+            ? {
+                role: x.role,
+                slug: x.slug,
+                name: x.entry.player.name,
+                games: x.agg.g,
+                rating: x.rt,
+                kda: x.agg.kda,
+                dpm: x.agg.dpm,
+                goldShare: x.agg.goldShare,
+                gd15: x.agg.tl?.gd15 ?? null,
+              }
+            : null,
+        ]),
+      ) as Partial<Record<RosterRole, RosterDeltaSlotInput | null>>,
+    [roleEntries],
+  );
+
+  const deltaSummary = useMemo(
+    () => computeRosterDelta(currentDeltaMap, baseEntries, period === vp),
+    [currentDeltaMap, baseEntries, period, vp],
+  );
+  const vpLabel = vp === "all" ? tl("All time") : vp.startsWith("y") ? vp.slice(1) : vp;
 
   const economy = useMemo(
     () =>
@@ -499,24 +724,85 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
                 }
               />
               <a
-                href={`/overlay?mode=roster&players=${encodeURIComponent(rosterPlayersParam)}&p=${encodeURIComponent(period)}&studio=1`}
+                href={`${BASE}embed?mode=roster&players=${encodeURIComponent(rosterPlayersParam)}&p=${encodeURIComponent(period)}&studio=1`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rw-accent/50 bg-rw-accent/10 text-rw-accent hover:bg-rw-accent hover:text-rw-bg font-semibold transition-colors"
               >
                 <MonitorPlay className="w-3.5 h-3.5" />
-                {tl("OBS overlay")} →
+                {tl("Embed / OBS")} →
               </a>
             </>
           )}
           {ROSTER_ROLES.some((r) => Boolean(slotSlugs[r])) && (
             <button
               type="button"
-              onClick={() => setParams({ top: null, jg: null, mid: null, bot: null, sup: null, team: null })}
+              onClick={() => setParams({ top: null, jg: null, mid: null, bot: null, sup: null, team: null, vs: null, vp: null })}
               className="px-2.5 py-1 rounded-lg border border-rw-border text-rw-muted hover:text-rw-text"
             >
               {tl("Clear")}
             </button>
+          )}
+        </div>
+        <div className="w-full pt-2 mt-1 border-t border-rw-border/60 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Compare vs club")}</span>
+          {dominantClub && vsSlug !== dominantClub.slug && (
+            <button
+              type="button"
+              onClick={() => setParams({ vs: dominantClub.slug, vp: `y${prevYear}` })}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-rw-accent/60 bg-rw-accent/10 hover:bg-rw-accent hover:text-rw-bg text-xs text-rw-accent font-semibold transition-colors"
+            >
+              <TeamLogo name={dominantClub.name} size={14} />
+              <span>{dominantClub.name} ({prevYear})</span>
+            </button>
+          )}
+          {PRESET_TEAMS.map((t) => (
+            <button
+              key={`vs-${t.slug}`}
+              type="button"
+              onClick={() => setParams({ vs: t.slug })}
+              aria-pressed={vsSlug === t.slug}
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs transition-colors ${
+                vsSlug === t.slug
+                  ? "border-rw-accent bg-rw-accent/15 text-rw-accent font-semibold"
+                  : "border-rw-border bg-rw-bg text-rw-sub hover:border-rw-accent hover:text-rw-text"
+              }`}
+            >
+              <TeamLogo name={t.label} size={14} />
+              <span>{t.label}</span>
+            </button>
+          ))}
+          <div className="w-44 min-w-[9rem]">
+            <ComparePick kind="team" onPick={(slug) => setParams({ vs: resolveTeamAlias(slug) || slug })} />
+          </div>
+          {vsSlug && (
+            <div className="ml-auto flex flex-wrap items-center gap-1.5 text-xs">
+              {[
+                [`y${thisYear}`, thisYear],
+                [`y${prevYear}`, prevYear],
+                [`y${prev2Year}`, prev2Year],
+                ["all", tl("All time")],
+              ].map(([val, label]) => (
+                <button
+                  key={`vp-${val}`}
+                  type="button"
+                  onClick={() => setParams({ vp: val })}
+                  aria-pressed={vp === val}
+                  className={`px-2 py-0.5 rounded-lg border font-semibold ${
+                    vp === val ? "border-rw-teal bg-rw-teal/15 text-rw-teal" : "border-rw-border text-rw-sub hover:text-rw-text"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setParams({ vs: null, vp: null })}
+                className="px-2 py-0.5 rounded-lg border border-rw-border text-rw-muted hover:text-rw-text"
+              >
+                {tl("Clear")}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -791,6 +1077,151 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
             )}
           </section>
         </div>
+      )}
+
+      {/* Split-to-split / baseline club roster delta table */}
+      {vsSlug && filledEntries.length >= 1 && (
+        <section className={`${card} space-y-3`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <GitCompare className="w-4 h-4 text-rw-accent" />
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-rw-text">
+                {tl("Roster delta vs baseline")}
+              </h2>
+              {baselineTeam && baselineTeam.slug === vsSlug ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rw-sub">
+                  <TeamLogo name={baselineTeam.team.name} code={baselineTeam.team.codes?.[0]} size={16} />
+                  <TeamLink name={baselineTeam.team.name} u={baselineTeam.slug} className="hover:text-rw-accent" />
+                  <span>({vpLabel})</span>
+                </span>
+              ) : (
+                <span className="text-xs text-rw-muted">{tl("Loading…")}</span>
+              )}
+            </div>
+            {deltaSummary.comparedRoles > 0 && (
+              <div className="flex flex-wrap items-center gap-2 text-[11px] tabular-nums">
+                {deltaSummary.netRatingDelta != null && (
+                  <span
+                    className={`px-2 py-0.5 rounded-full border font-semibold ${
+                      deltaSummary.netRatingDelta > 0
+                        ? "border-rw-teal/50 bg-rw-teal/15 text-rw-teal"
+                        : deltaSummary.netRatingDelta < 0
+                          ? "border-rw-red/50 bg-rw-red/15 text-rw-red"
+                          : "border-rw-border text-rw-sub"
+                    }`}
+                  >
+                    Δ {tl("Rating")}: {deltaSummary.netRatingDelta > 0 ? `+${fmtDec(deltaSummary.netRatingDelta, 1)}` : fmtDec(deltaSummary.netRatingDelta, 1)}
+                  </span>
+                )}
+                {deltaSummary.netGd15Delta != null && (
+                  <span
+                    className={`px-2 py-0.5 rounded-full border font-semibold ${
+                      deltaSummary.netGd15Delta > 0
+                        ? "border-rw-teal/50 bg-rw-teal/15 text-rw-teal"
+                        : deltaSummary.netGd15Delta < 0
+                          ? "border-rw-red/50 bg-rw-red/15 text-rw-red"
+                          : "border-rw-border text-rw-sub"
+                    }`}
+                  >
+                    Δ GD@15: {deltaSummary.netGd15Delta > 0 ? `+${fmtNum(deltaSummary.netGd15Delta)}` : fmtNum(deltaSummary.netGd15Delta)}
+                  </span>
+                )}
+                <span className="text-rw-sub">
+                  <span className="text-rw-teal font-semibold">{deltaSummary.upgrades} {tl("Upgrade")}</span>
+                  {" · "}
+                  <span className="text-rw-red font-semibold">{deltaSummary.downgrades} {tl("Downgrade")}</span>
+                  {" · "}
+                  <span className="text-rw-gold font-semibold">{deltaSummary.sidegrades} {tl("Sidegrade")}</span>
+                </span>
+              </div>
+            )}
+          </div>
+
+          <STable className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-rw-border">
+                <th className={th}>{tl("Role")}</th>
+                <th className={th}>{tl("Proposed")} ({periodLabel})</th>
+                <th className={th}>{tl("Baseline")} ({vpLabel})</th>
+                <th className={`${th} text-right`}>Δ {tl("Rating")}</th>
+                <th className={`${th} text-right`}>Δ KDA</th>
+                <th className={`${th} text-right max-sm:hidden`}>Δ DPM</th>
+                <th className={`${th} text-right`}>Δ GD@15</th>
+                <th className={`${th} text-right max-md:hidden`}>Δ Gold%</th>
+                <th className={`${th} text-right`}>{tl("Result")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {deltaSummary.rows.map((row) => {
+                const signedTone = (v: number | null) =>
+                  v == null || v === 0 ? "text-rw-muted" : v > 0 ? "text-rw-teal font-semibold" : "text-rw-red font-semibold";
+                const verdictPill =
+                  row.verdict === "upgrade"
+                    ? "border-rw-teal/50 bg-rw-teal/15 text-rw-teal"
+                    : row.verdict === "downgrade"
+                      ? "border-rw-red/50 bg-rw-red/15 text-rw-red"
+                      : row.verdict === "sidegrade"
+                        ? "border-rw-gold/50 bg-rw-gold/15 text-rw-gold"
+                        : "border-rw-border text-rw-muted";
+                const verdictLabel =
+                  row.verdict === "upgrade"
+                    ? tl("Upgrade")
+                    : row.verdict === "downgrade"
+                      ? tl("Downgrade")
+                      : row.verdict === "sidegrade"
+                        ? tl("Sidegrade")
+                        : row.verdict === "unchanged"
+                          ? tl("Unchanged")
+                          : "–";
+                return (
+                  <tr key={`delta-${row.role}`} className="border-b border-rw-border/60">
+                    <td className={`${td} font-semibold text-rw-accent`}>{roleName(row.role)}</td>
+                    <td className={td}>
+                      {row.current ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <PlayerLink name={row.current.name} u={row.current.slug} className="font-semibold text-rw-text hover:text-rw-accent" />
+                          {row.current.rating != null && <RatingBadge v={row.current.rating} />}
+                        </span>
+                      ) : (
+                        <span className="text-rw-muted">–</span>
+                      )}
+                    </td>
+                    <td className={td}>
+                      {row.baseline ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <PlayerLink name={row.baseline.name} u={row.baseline.slug} className="text-rw-sub hover:text-rw-accent" />
+                          {row.baseline.rating != null && <RatingBadge v={row.baseline.rating} />}
+                        </span>
+                      ) : (
+                        <span className="text-rw-muted">–</span>
+                      )}
+                    </td>
+                    <td className={`${td} text-right tabular-nums ${signedTone(row.dRating)}`}>
+                      {row.dRating == null ? "–" : `${row.dRating > 0 ? "+" : ""}${fmtDec(row.dRating, 1)}`}
+                    </td>
+                    <td className={`${td} text-right tabular-nums ${signedTone(row.dKda)}`}>
+                      {row.dKda == null ? "–" : `${row.dKda > 0 ? "+" : ""}${fmtDec(row.dKda, 2)}`}
+                    </td>
+                    <td className={`${td} text-right tabular-nums max-sm:hidden ${signedTone(row.dDpm)}`}>
+                      {row.dDpm == null ? "–" : `${row.dDpm > 0 ? "+" : ""}${fmtNum(row.dDpm)}`}
+                    </td>
+                    <td className={`${td} text-right tabular-nums ${signedTone(row.dGd15)}`}>
+                      {row.dGd15 == null ? "–" : `${row.dGd15 > 0 ? "+" : ""}${fmtNum(row.dGd15)}`}
+                    </td>
+                    <td className={`${td} text-right tabular-nums max-md:hidden text-rw-sub`}>
+                      {row.dGoldShare == null ? "–" : `${row.dGoldShare > 0 ? "+" : ""}${fmtDec(row.dGoldShare, 1)}%`}
+                    </td>
+                    <td className={`${td} text-right`}>
+                      <span className={`inline-block px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wide ${verdictPill}`}>
+                        {verdictLabel}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </STable>
+        </section>
       )}
     </div>
   );

@@ -348,6 +348,9 @@ func TestUnknownAndOldNames(t *testing.T) {
 	if w := get(s, "/riftwise/overlay"); w.Code != 200 || !strings.Contains(w.Body.String(), "noindex") {
 		t.Errorf("overlay page: %d", w.Code)
 	}
+	if w := get(s, "/riftwise/embed"); w.Code != 200 || !strings.Contains(w.Body.String(), "noindex") {
+		t.Errorf("embed page: %d", w.Code)
+	}
 	if w := get(s, "/riftwise/stats/best"); w.Code != 200 || !strings.Contains(w.Body.String(), "best pro LoL games") {
 		t.Errorf("best games: %d", w.Code)
 	}

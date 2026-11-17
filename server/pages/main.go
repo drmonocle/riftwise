@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.6.27" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "1.6.28" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -795,6 +795,9 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	case len(parts) == 1 && parts[0] == "overlay":
 		// the stream overlay (OBS browser source): the app, not for search engines
 		title, desc, index = "RiftWise stream overlay", "Win chances, form and the live score of one matchup, for a stream.", false
+	case len(parts) == 1 && parts[0] == "embed":
+		// shareable iframe widget card (/embed?teams=t1,geng, ?mode=rankings, ...): the app, not for search engines
+		title, desc, index = "RiftWise embeddable LoL stats card", "Embeddable League of Legends matchup, player, roster and power rankings card from RiftWise.", false
 	case parts[0] == "stats":
 		sec := ""
 		if len(parts) > 1 {

@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { tl, tn } from "../../i18n";
 import { bare, loadAliases, loadRatings, loadRatingsHistory, normText, prettySlug, resolveLeagueSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
-import { hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
+import { BASE, hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
@@ -708,6 +708,14 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
                 >
                   {tl("Records")} →
                 </HubLink>
+                <a
+                  href={`${BASE}embed?mode=rankings${leagueSlug ? `&league=${encodeURIComponent(leagueSlug)}` : ""}&studio=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Embed / OBS")} →
+                </a>
               </>
             );
           })()}

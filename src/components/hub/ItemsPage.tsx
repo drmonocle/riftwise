@@ -591,10 +591,25 @@ const PlayerItemsView: React.FC<{
   const mVs = (r: PlayerGameRow) => !vs || (r[8] ? (resolveTeamAlias(r[8]) || prettySlug(r[8])) === vs : false);
   const mTeam = (r: PlayerGameRow) => !team || (r[7] ? (resolveTeamAlias(r[7]) || prettySlug(r[7])) === team : false);
   const mEvent = (r: PlayerGameRow) => !event || (r[11] ? matchesPeriodEvent(r[11], r[9], event) : normText(r[9] || "").includes(normText(event)));
-  const candidates: { c: boolean; y: boolean; fn: (r: PlayerGameRow) => boolean }[] = [
-    { c: true, y: true, fn: (r) => mChamp(r) && mYear(r) && mPatch(r) && mVs(r) && mTeam(r) && mEvent(r) },
-    { c: true, y: true, fn: (r) => mChamp(r) && mYear(r) && mPatch(r) && mTeam(r) && mEvent(r) },
-    { c: true, y: true, fn: (r) => mChamp(r) && mYear(r) && mPatch(r) && mEvent(r) },
+  const candidates: { c: boolean; y: boolean; fn: (r: PlayerGameRow) => boolean; np?: (r: PlayerGameRow) => boolean }[] = [
+    {
+      c: true,
+      y: true,
+      fn: (r) => mChamp(r) && mYear(r) && mPatch(r) && mVs(r) && mTeam(r) && mEvent(r),
+      np: (r) => mChamp(r) && mYear(r) && mVs(r) && mTeam(r) && mEvent(r),
+    },
+    {
+      c: true,
+      y: true,
+      fn: (r) => mChamp(r) && mYear(r) && mPatch(r) && mTeam(r) && mEvent(r),
+      np: (r) => mChamp(r) && mYear(r) && mTeam(r) && mEvent(r),
+    },
+    {
+      c: true,
+      y: true,
+      fn: (r) => mChamp(r) && mYear(r) && mPatch(r) && mEvent(r),
+      np: (r) => mChamp(r) && mYear(r) && mEvent(r),
+    },
     { c: true, y: true, fn: (r) => mChamp(r) && mYear(r) && mTeam(r) },
     { c: true, y: true, fn: (r) => mChamp(r) && mYear(r) },
     ...(champ
@@ -603,9 +618,24 @@ const PlayerItemsView: React.FC<{
           { c: true, y: false, fn: (r: PlayerGameRow) => mChamp(r) },
         ]
       : []),
-    { c: false, y: true, fn: (r) => mYear(r) && mPatch(r) && mVs(r) && mTeam(r) && mEvent(r) },
-    { c: false, y: true, fn: (r) => mYear(r) && mPatch(r) && mTeam(r) && mEvent(r) },
-    { c: false, y: true, fn: (r) => mYear(r) && mPatch(r) && mEvent(r) },
+    {
+      c: false,
+      y: true,
+      fn: (r) => mYear(r) && mPatch(r) && mVs(r) && mTeam(r) && mEvent(r),
+      np: (r) => mYear(r) && mVs(r) && mTeam(r) && mEvent(r),
+    },
+    {
+      c: false,
+      y: true,
+      fn: (r) => mYear(r) && mPatch(r) && mTeam(r) && mEvent(r),
+      np: (r) => mYear(r) && mTeam(r) && mEvent(r),
+    },
+    {
+      c: false,
+      y: true,
+      fn: (r) => mYear(r) && mPatch(r) && mEvent(r),
+      np: (r) => mYear(r) && mEvent(r),
+    },
     { c: false, y: true, fn: (r) => mYear(r) && mTeam(r) },
     { c: false, y: true, fn: (r) => mYear(r) },
     { c: false, y: false, fn: (r) => mTeam(r) },
@@ -622,8 +652,10 @@ const PlayerItemsView: React.FC<{
     chosen = candidates[1];
   }
   const keep = chosen.fn;
+  const keepNoPatch = chosen.np || keep;
   const effScope = scopeText(chosen.c && champ ? champLabel : "", chosen.y ? year : "");
   const games = (pos: number[]) => pos.map((i) => rows[i]).filter((r): r is PlayerGameRow => !!r && keep(r));
+  const patchGames = (pos: number[]) => pos.map((i) => rows[i]).filter((r): r is PlayerGameRow => !!r && keepNoPatch(r));
   const counted = champ || year || event || patch || vs || team ? rows.filter(keep).length : rows.length;
   const whoBuilt = (label: string) => (
     <HubLink
@@ -651,6 +683,7 @@ const PlayerItemsView: React.FC<{
   if (item) {
     const label = itemName(hit?.[0] || itemTitle || item);
     const g = hit ? games(hit[1]) : [];
+    const patchPool = hit ? (patch ? patchGames(hit[1]) : g) : [];
     const primaryTeam = team || (g[0]?.[7] ? resolveTeamAlias(g[0][7]) || prettySlug(g[0][7]) : "");
     const primaryVs = vs || (g[0]?.[8] ? resolveTeamAlias(g[0][8]) || prettySlug(g[0][8]) : "");
     if (!g.length)
@@ -837,6 +870,7 @@ const PlayerItemsView: React.FC<{
           })}
         </p>
         <ChampSpread games={g} picks={picks} />
+        <PatchSpread games={patchPool} picks={picks} />
         <GameList games={g} spoilerKey={`items:${slug}`} picks={picks} />
         {whoBuilt(label)}
       </Section>
@@ -2898,6 +2932,102 @@ const ChampSpread: React.FC<{ games: PlayerGameRow[]; picks?: Picks }> = ({ game
     ))}
   </div>
 );
+
+export interface ItemPatchStat {
+  patch: string;
+  games: number;
+  wins: number;
+  winPct: number;
+}
+
+function patchOrderVal(p: string): number {
+  const parts = p.split(".").map((x) => Number(x));
+  if (parts.length >= 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
+    return parts[0] * 1000 + parts[1];
+  }
+  return 0;
+}
+
+/** Group a player's item game rows by League patch descending with game counts and win rates. */
+export function itemPatchBreakdown(games: PlayerGameRow[]): ItemPatchStat[] {
+  const map = new Map<string, { games: number; wins: number }>();
+  for (const r of games) {
+    const p = r[24];
+    if (!p) continue;
+    const cur = map.get(p) || { games: 0, wins: 0 };
+    cur.games++;
+    if (r[6]) cur.wins++;
+    map.set(p, cur);
+  }
+  return [...map.entries()]
+    .map(([patch, { games: n, wins }]) => ({
+      patch,
+      games: n,
+      wins,
+      winPct: n ? Math.round((wins / n) * 1000) / 10 : 0,
+    }))
+    .sort((a, b) => patchOrderVal(b.patch) - patchOrderVal(a.patch) || b.games - a.games);
+}
+
+/** Interactive patch pills for a player's item games, allowing one-click patch filtering. */
+const PatchSpread: React.FC<{ games: PlayerGameRow[]; picks: Picks }> = ({ games, picks }) => {
+  const patches = useMemo(() => itemPatchBreakdown(games), [games]);
+  const [showAll, setShowAll] = useState(false);
+  if (!picks.player || !picks.item || (patches.length < 2 && !picks.patch)) return null;
+  const shown = showAll ? patches : patches.slice(0, 10);
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+      <span className="text-rw-muted">{tl("By patch")}</span>
+      {shown.map((r) => {
+        const active = picks.patch === r.patch;
+        const wr = Math.round(r.winPct);
+        const wrTone = active
+          ? "text-rw-accent"
+          : r.games >= 2
+            ? wr >= 55
+              ? "text-rw-teal"
+              : wr <= 45
+                ? "text-rw-red"
+                : "text-rw-sub"
+            : "text-rw-muted";
+        const nextQ = new URLSearchParams({
+          player: picks.player!,
+          ...(picks.vsplayer ? { vsplayer: picks.vsplayer } : {}),
+          item: picks.item!,
+          ...(picks.champ ? { champ: picks.champ } : {}),
+          ...(picks.vschamp ? { vschamp: picks.vschamp } : {}),
+          ...(picks.role ? { role: picks.role } : {}),
+          ...(picks.year ? { year: picks.year } : {}),
+          ...(picks.event ? { event: picks.event } : {}),
+          ...(!active ? { patch: r.patch } : {}),
+          ...(picks.vs ? { vs: picks.vs } : {}),
+          ...(picks.team ? { team: picks.team } : {}),
+          ...(picks.league ? { league: picks.league } : {}),
+        }).toString();
+        return (
+          <HubLink
+            key={r.patch}
+            to={{ kind: "items", query: nextQ }}
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border tabular-nums transition-colors ${
+              active
+                ? "border-rw-accent bg-rw-accent/15 text-rw-accent font-semibold"
+                : "border-rw-border text-rw-sub hover:border-rw-accent hover:text-rw-text"
+            }`}
+          >
+            <span className="font-semibold">{r.patch}</span>
+            <span className="text-rw-muted">{fmtNum(r.games)}G</span>
+            <span className={wrTone}>{wr}%</span>
+          </HubLink>
+        );
+      })}
+      {!showAll && patches.length > 10 && (
+        <button type="button" onClick={() => setShowAll(true)} className="text-rw-accent hover:underline">
+          {tl("Show all {n}", { n: patches.length })}
+        </button>
+      )}
+    </div>
+  );
+};
 
 /** The games, newest first: result, champion, KDA, opponent and event, each linked to its match page. */
 const GameList: React.FC<{ games: PlayerGameRow[]; spoilerKey: string; picks?: Picks }> = ({ games, spoilerKey, picks }) => {

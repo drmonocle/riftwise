@@ -62,8 +62,11 @@ const HUB_KIND_PREFETCH: Partial<Record<string, string[]>> = {
   "first-stand": ["hub/league/first-stand.json", "hub/titles.json", "hub/ratings.json"],
   team: ["hub/ratings.json"],
 };
+// riftwise.gg/overlay & /embed: standalone stream/iframe widgets instead of the full shell
+const overlay = IS_WEB && /^(?:\/(?:es|pt-br|ko|vi|zh-cn|zh-tw|ja|fr|de|tr))?\/(?:overlay|embed)\/?$/i.test(window.location.pathname);
+
 let picturePage = false; // a page that shows champion pictures straight away
-if (IS_WEB && STARTED_ON_HUB) {
+if (IS_WEB && !overlay && STARTED_ON_HUB) {
   import("./components/views/StatsView").catch(() => {}); // a failure shows (and retries) where the page loads it
   const r = currentHubRoute();
   preloadPageCode(r.kind); // each stats page is its own download (pageCode.ts)
@@ -90,15 +93,13 @@ if (IS_WEB && STARTED_ON_HUB) {
     r.kind === "worlds" ||
     r.kind === "msi" ||
     r.kind === "first-stand";
-} else if (IS_WEB) {
+} else if (IS_WEB && !overlay) {
   import("./components/views/LiveView").catch(() => {});
 }
 
 // The language is loaded before the first render, so every screen can simply call tl().
 // A language's address (riftwise.gg/ko/...) shows that language, whatever was picked before
 const startLanguage = (URL_LANG as ReturnType<typeof loadSettings>["language"] | null) || loadSettings().language;
-// riftwise.gg/overlay: the stream overlay instead of the app (an OBS browser source)
-const overlay = IS_WEB && /^\/overlay\/?$/.test(window.location.pathname);
 initI18n(startLanguage).finally(async () => {
   // its picture lists too, once the language is known (they come with that language's names)
   if (picturePage) preloadDDragon();

@@ -14,7 +14,7 @@ import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChan
 import { liveRating } from "../../hub/liveRatings";
 import { Change } from "./RankingsPage";
 import type { HubPlayer, HubTeam, PlayerGameRow, TeamGameRow, TeamSeriesRow } from "../../hub/types";
-import { PrepRoute, hubShareUrl, navigateHub } from "../../hub/route";
+import { BASE, PrepRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { PeriodKey, inPeriod, matchesPeriodEvent, playerAgg, playerHeadToHead, playerRowRef, teamAgg, teamRowRef } from "../../hub/period";
 import { HeadToHeadSeries } from "./Archives";
@@ -588,6 +588,14 @@ const WinChances: React.FC<{ a: HubTeam; b: HubTeam; period?: PeriodKey; card?: 
                 >
                   {tl("Player leaderboards")} →
                 </HubLink>
+                <a
+                  href={`${BASE}embed?teams=${encodeURIComponent(a.u)},${encodeURIComponent(b.u)}&studio=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-rw-sub hover:text-rw-accent hover:underline"
+                >
+                  {tl("Embed / OBS")} →
+                </a>
               </>
             );
           })()}

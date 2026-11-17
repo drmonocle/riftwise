@@ -2,7 +2,7 @@
 import React from "react";
 import { tl, tk } from "../../i18n";
 import { feedbackUrl } from "../../feedback";
-import { hubShareUrl } from "../../hub/route";
+import { BASE, hubShareUrl } from "../../hub/route";
 import { JumpBar } from "./PageTabs";
 import { HubLink, Section, usePageTitle } from "./ui";
 
@@ -23,7 +23,7 @@ export const ChangelogPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
         <ul className="list-disc pl-4 space-y-2 text-rw-sub">
           <li>
             <strong className="text-rw-text">{tl("Roster builder")}</strong> —{" "}
-            {tl("Choose any five pro players to check composite form, Gold% and DMG% fit, Fearless flex depth and teammate history.")}{" "}
+            {tl("Choose any five pro players to check composite form, Gold% and DMG% fit, Fearless flex depth, teammate history and club/season deltas.")}{" "}
             <HubLink to={{ kind: "gm" }} className="text-rw-accent hover:underline font-semibold">
               {tl("Roster builder")} →
             </HubLink>
@@ -36,10 +36,10 @@ export const ChangelogPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
             </HubLink>
           </li>
           <li>
-            <strong className="text-rw-text">{tl("OBS stream overlay")}</strong> —{" "}
-            {tl("Add live matchup cards, individual player spotlights or 5-player lineup bars to OBS with the interactive URL builder.")}{" "}
-            <a href="/overlay?studio=1" target="_blank" rel="noopener noreferrer" className="text-rw-accent hover:underline font-semibold">
-              {tl("OBS stream overlay")} →
+            <strong className="text-rw-text">{tl("OBS stream overlay")} &amp; {tl("Embed")}</strong> —{" "}
+            {tl("Create live matchup, player spotlight, 5-player roster and power rankings widgets for OBS Browser Sources or <iframe> embeds.")}{" "}
+            <a href={`${BASE}embed?studio=1`} target="_blank" rel="noopener noreferrer" className="text-rw-accent hover:underline font-semibold">
+              {tl("Embed / OBS")} →
             </a>
           </li>
           <li>
@@ -96,7 +96,7 @@ export const ChangelogPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
 
       <Section title={tl("Roadmap & feedback")} id="roadmap">
         <p className="text-rw-sub">
-          {tl("Coming up next: split-to-split roster strength deltas, automated international seed simulations, and richer patch-by-patch item win curves.")}{" "}
+          {tl("Coming up next: year-round regional Pick'Em leagues, automated international seed simulations, and richer item build paths.")}{" "}
           <a
             href={sendIdea}
             onClick={(e) => {

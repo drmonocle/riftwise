@@ -1,8 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { computeRosterEconomy, computeRosterFlexes, computeRosterSynergy, ROSTER_ROLES } from "../components/hub/RosterBuilderPage";
-import type { PlayerGameRow } from "../hub/types";
+import {
+  computeRosterDelta,
+  computeRosterEconomy,
+  computeRosterFlexes,
+  computeRosterSynergy,
+  ROSTER_ROLES,
+  teamLineupForPeriod,
+} from "../components/hub/RosterBuilderPage";
+import { itemPatchBreakdown } from "../components/hub/ItemsPage";
+import type { HubTeam, PlayerGameRow } from "../hub/types";
 
-const makeRow = (series: string, gn: number, team: string, won: number, champ = "Azir", role = "Mid"): PlayerGameRow => [
+const makeRow = (series: string, gn: number, team: string, won: number, champ = "Azir", role = "Mid", patch = "26.18"): PlayerGameRow => [
   "2026-10-15 12:00:00",
   series,
   champ,
@@ -27,7 +35,7 @@ const makeRow = (series: string, gn: number, team: string, won: number, champ = 
   null,
   gn,
   7.2,
-  "26.18",
+  patch,
 ];
 
 describe("RosterBuilderPage helpers", () => {
@@ -125,5 +133,88 @@ describe("RosterBuilderPage helpers", () => {
     ]);
     expect(pairs).toHaveLength(1);
     expect(pairs[0]).toMatchObject({ games: 2, wins: 1, winPct: 50 });
+  });
+
+  it("resolves season-specific lineups and computes role upgrade/downgrade/sidegrade deltas", () => {
+    const fakeTeam = {
+      name: "T1",
+      u: "t1",
+      starters: [
+        ["Doran", "doran", "Top"],
+        ["Oner", "oner", "Jungle"],
+        ["Faker", "faker", "Mid"],
+        ["Peyz", "peyz", "Bot"],
+        ["Keria", "keria", "Support"],
+      ],
+      roster: [
+        {
+          y: "2025",
+          p: [
+            { n: "Doran", u: "doran", g: 90, r: "Top" },
+            { n: "Oner", u: "oner", g: 90, r: "Jungle" },
+            { n: "Faker", u: "faker", g: 90, r: "Mid" },
+            { n: "Gumayusi", u: "gumayusi", g: 85, r: "Bot" },
+            { n: "Smash", u: "smash", g: 5, r: "Bot" },
+            { n: "Keria", u: "keria", g: 90, r: "Support" },
+          ],
+        },
+      ],
+    } as unknown as HubTeam;
+
+    expect(teamLineupForPeriod(fakeTeam, "y2025")).toEqual({
+      Top: "doran",
+      Jungle: "oner",
+      Mid: "faker",
+      Bot: "gumayusi",
+      Support: "keria",
+    });
+
+    const delta = computeRosterDelta(
+      {
+        Top: { role: "Top", slug: "zeus", name: "Zeus", games: 30, rating: 7.4, kda: 4.5, dpm: 620, goldShare: 21.5, gd15: 340 },
+        Jungle: { role: "Jungle", slug: "oner", name: "Oner", games: 30, rating: 7.0, kda: 5.0, dpm: 380, goldShare: 18.0, gd15: 120 },
+        Mid: { role: "Mid", slug: "faker", name: "Faker", games: 30, rating: 7.1, kda: 5.2, dpm: 650, goldShare: 23.0, gd15: 150 },
+        Bot: { role: "Bot", slug: "peyz", name: "Peyz", games: 30, rating: 6.5, kda: 5.8, dpm: 720, goldShare: 25.0, gd15: 80 },
+        Support: { role: "Support", slug: "keria", name: "Keria", games: 30, rating: 7.1, kda: 5.4, dpm: 250, goldShare: 12.5, gd15: 60 },
+      },
+      {
+        Top: { role: "Top", slug: "doran", name: "Doran", games: 30, rating: 6.8, kda: 3.8, dpm: 560, goldShare: 20.5, gd15: 140 },
+        Jungle: { role: "Jungle", slug: "oner", name: "Oner", games: 30, rating: 7.0, kda: 5.0, dpm: 380, goldShare: 18.0, gd15: 120 },
+        Mid: { role: "Mid", slug: "faker", name: "Faker", games: 30, rating: 7.0, kda: 4.9, dpm: 630, goldShare: 22.8, gd15: 100 },
+        Bot: { role: "Bot", slug: "gumayusi", name: "Gumayusi", games: 30, rating: 7.1, kda: 6.5, dpm: 760, goldShare: 25.2, gd15: 200 },
+        Support: { role: "Support", slug: "keria", name: "Keria", games: 30, rating: 6.9, kda: 5.1, dpm: 240, goldShare: 12.5, gd15: 40 },
+      },
+      false,
+    );
+
+    expect(delta.comparedRoles).toBe(5);
+    expect(delta.upgrades).toBe(1); // Top +0.6
+    expect(delta.downgrades).toBe(1); // Bot -0.6
+    expect(delta.sidegrades).toBe(3); // Jungle 0.0, Mid +0.1, Support +0.2 across seasons
+    expect(delta.rows.find((r) => r.role === "Top")?.dGd15).toBe(200);
+    expect(delta.netRatingDelta).toBe(0.1);
+    expect(delta.netGd15Delta).toBe(150);
+
+    const sameSeasonDelta = computeRosterDelta(
+      { Jungle: { role: "Jungle", slug: "oner", name: "Oner", games: 30, rating: 7.0, kda: 5.0, dpm: 380, goldShare: 18.0, gd15: 120 } },
+      { Jungle: { role: "Jungle", slug: "oner", name: "Oner", games: 30, rating: 7.0, kda: 5.0, dpm: 380, goldShare: 18.0, gd15: 120 } },
+      true,
+    );
+    expect(sameSeasonDelta.rows.find((r) => r.role === "Jungle")?.verdict).toBe("unchanged");
+  });
+
+  it("groups item history rows numerically by patch descending with win rates", () => {
+    const rows = [
+      makeRow("s1", 1, "T1", 1, "Azir", "Mid", "26.8"),
+      makeRow("s2", 1, "T1", 0, "Azir", "Mid", "26.8"),
+      makeRow("s3", 1, "T1", 1, "Azir", "Mid", "26.18"),
+      makeRow("s4", 1, "T1", 1, "Azir", "Mid", "26.18"),
+      makeRow("s5", 1, "T1", 0, "Azir", "Mid", "25.20"),
+      makeRow("s6", 1, "T1", 1, "Azir", "Mid", ""),
+    ];
+    const patches = itemPatchBreakdown(rows);
+    expect(patches.map((p) => p.patch)).toEqual(["26.18", "26.8", "25.20"]);
+    expect(patches[0]).toEqual({ patch: "26.18", games: 2, wins: 2, winPct: 100 });
+    expect(patches[1]).toEqual({ patch: "26.8", games: 2, wins: 1, winPct: 50 });
   });
 });

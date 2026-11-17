@@ -1,20 +1,23 @@
 /**
- * Stream overlay & interactive OBS Studio (/overlay):
- *  - /overlay?teams=t1,geng                          Matchup card (win chances, form, H2H, live score) — preserved unchanged
- *  - /overlay?mode=player&player=faker&p=y2026       Player spotlight lower-third
- *  - /overlay?mode=roster&players=a,b,c,d,e&title=.. 5-player lineup strip
- *  - /overlay or /overlay?studio=1                   Interactive OBS URL builder + live preview
+ * Stream overlay & embeddable stats cards (/overlay and /embed):
+ *  - ?teams=t1,geng                          Matchup card (win chances, form, H2H, live score) — preserved unchanged
+ *  - ?mode=player&player=faker&p=y2026       Player spotlight lower-third
+ *  - ?mode=roster&players=a,b,c,d,e&title=.. 5-player lineup strip
+ *  - ?mode=rankings&league=lck&n=8           Global or regional Elo power rankings card
+ *  - ?studio=1 (or bare /overlay, /embed)    Interactive OBS & <iframe> studio + live preview
  * Options on every widget: &bg=transparent &scale=0.5..3
  */
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Check, Copy, ExternalLink, MonitorPlay, X } from "lucide-react";
+import { ArrowLeft, Check, Code2, Copy, ExternalLink, MonitorPlay, X } from "lucide-react";
 import { tl, tc, roleName, fmtDec } from "../i18n";
+import { SITE_URL } from "../platform";
 import { fetchSchedule } from "../api";
-import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamSeries, resolvePlayerSlug, resolveTeamAlias } from "../hub/data";
+import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamSeries, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../hub/data";
 import { useDDragon } from "../hub/ddragon";
 import { liveRating } from "../hub/liveRatings";
 import { inPeriod, playerAgg, playerRowRef } from "../hub/period";
 import { playerRowLine, rateLine, type RatingFile } from "../hub/playerRating";
+import { BASE } from "../hub/route";
 import { loadHubLogos, loadHubPhotos } from "../hub/riotCatalog";
 import type { HubPlayer, HubRatings, HubTeam, PlayerGameRow, TeamSeriesRow } from "../hub/types";
 import { chanceContext, matchChance, seriesChance } from "../hub/winChance";
@@ -25,14 +28,33 @@ import { ChampIcon, fmtNum, PlayerPhoto, TeamLogo } from "../components/hub/ui";
 import type { Match } from "../types";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+const IS_EMBED = typeof window !== "undefined" && /^(?:\/(?:es|pt-br|ko|vi|zh-cn|zh-tw|ja|fr|de|tr))?\/embed\/?$/i.test(window.location.pathname);
+const siteLink = (path = ""): string => `${SITE_URL}${BASE.slice(1)}${path.replace(/^\//, "")}`;
+
+const BrandFoot: React.FC<{ linkOut?: boolean; href?: string }> = ({ linkOut, href }) => {
+  const inner = (
+    <span style={{ color: "var(--rw-muted)" }}>
+      <b style={{ color: "var(--rw-accent)" }}>Rift</b>
+      <b style={{ color: "var(--rw-teal)" }}>Wise</b> · <span style={{ color: "var(--rw-teal)" }}>riftwise.gg</span>
+    </span>
+  );
+  return linkOut ? (
+    <a href={href || SITE_URL} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+      {inner}
+    </a>
+  ) : (
+    inner
+  );
+};
 
 // ── 1. Matchup card (original OBS widget, unchanged DOM/layout) ───────────
 
-const MatchupOverlay: React.FC<{ slugs: [string, string]; transparent: boolean; scale: number; embedded?: boolean }> = ({
+const MatchupOverlay: React.FC<{ slugs: [string, string]; transparent: boolean; scale: number; embedded?: boolean; linkOut?: boolean }> = ({
   slugs,
   transparent,
   scale,
   embedded,
+  linkOut,
 }) => {
   const [a, setA] = useState<HubTeam | null>(null);
   const [b, setB] = useState<HubTeam | null>(null);
@@ -124,7 +146,15 @@ const MatchupOverlay: React.FC<{ slugs: [string, string]; transparent: boolean; 
     <div style={{ flex: 1, minWidth: 0, textAlign: right ? "right" : "left" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: right ? "flex-end" : "flex-start" }}>
         {!right && <TeamLogo name={t.name} code={t.codes?.[0]} size={38} />}
-        <div style={{ fontSize: t.name.length > 16 ? 24 : t.name.length > 11 ? 28 : 34, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+        <div style={{ fontSize: t.name.length > 16 ? 24 : t.name.length > 11 ? 28 : 34, fontWeight: 800, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {linkOut && t.u ? (
+            <a href={siteLink(`team/${encodeURIComponent(t.u)}`)} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
+              {t.name}
+            </a>
+          ) : (
+            t.name
+          )}
+        </div>
         {right && <TeamLogo name={t.name} code={t.codes?.[0]} size={38} />}
       </div>
       {t.rating && (
@@ -249,10 +279,7 @@ const MatchupOverlay: React.FC<{ slugs: [string, string]; transparent: boolean; 
               </span>
             )}
           </span>
-          <span style={{ color: "var(--rw-muted)" }}>
-            <b style={{ color: "var(--rw-accent)" }}>Rift</b>
-            <b style={{ color: "var(--rw-teal)" }}>Wise</b> · <span style={{ color: "var(--rw-teal)" }}>riftwise.gg</span>
-          </span>
+          <BrandFoot linkOut={linkOut} />
         </div>
       </div>
     </div>
@@ -275,12 +302,13 @@ function avgPlayerRating(rows: PlayerGameRow[], rf: RatingFile | null): number |
   return n ? Number((sum / n).toFixed(1)) : null;
 }
 
-const PlayerOverlay: React.FC<{ slug: string; period: string; transparent: boolean; scale: number; embedded?: boolean }> = ({
+const PlayerOverlay: React.FC<{ slug: string; period: string; transparent: boolean; scale: number; embedded?: boolean; linkOut?: boolean }> = ({
   slug,
   period,
   transparent,
   scale,
   embedded,
+  linkOut,
 }) => {
   useDDragon();
   const ratingFile = useRatingFile();
@@ -344,7 +372,15 @@ const PlayerOverlay: React.FC<{ slug: string; period: string; transparent: boole
           <PlayerPhoto name={player.name} team={player.club} slug={player.u} img={player.img} size={64} linkFallback={false} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.05 }}>{player.name}</span>
+              <span style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.05 }}>
+                {linkOut ? (
+                  <a href={siteLink(`player/${encodeURIComponent(resolved)}`)} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
+                    {player.name}
+                  </a>
+                ) : (
+                  player.name
+                )}
+              </span>
               {rt != null && <RatingBadge v={rt} />}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, fontSize: 14, color: "var(--rw-sub)" }}>
@@ -384,10 +420,7 @@ const PlayerOverlay: React.FC<{ slug: string; period: string; transparent: boole
           </div>
         )}
         <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end", fontSize: 12, color: "var(--rw-muted)" }}>
-          <span>
-            <b style={{ color: "var(--rw-accent)" }}>Rift</b>
-            <b style={{ color: "var(--rw-teal)" }}>Wise</b> · <span style={{ color: "var(--rw-teal)" }}>riftwise.gg</span>
-          </span>
+          <BrandFoot linkOut={linkOut} href={siteLink(`player/${encodeURIComponent(resolved)}`)} />
         </div>
       </div>
     </div>
@@ -402,13 +435,14 @@ interface LoadedMember {
   games: PlayerGameRow[];
 }
 
-const RosterOverlay: React.FC<{ slugs: string[]; title: string; period: string; transparent: boolean; scale: number; embedded?: boolean }> = ({
+const RosterOverlay: React.FC<{ slugs: string[]; title: string; period: string; transparent: boolean; scale: number; embedded?: boolean; linkOut?: boolean }> = ({
   slugs,
   title,
   period,
   transparent,
   scale,
   embedded,
+  linkOut,
 }) => {
   useDDragon();
   const ratingFile = useRatingFile();
@@ -506,7 +540,15 @@ const RosterOverlay: React.FC<{ slugs: string[]; title: string; period: string; 
               <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                 <PlayerPhoto name={c.player.name} team={c.player.club} slug={c.slug} img={c.player.img} size={36} linkFallback={false} />
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.player.name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {linkOut ? (
+                      <a href={siteLink(`player/${encodeURIComponent(c.slug)}`)} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
+                        {c.player.name}
+                      </a>
+                    ) : (
+                      c.player.name
+                    )}
+                  </div>
                   <div style={{ fontSize: 11, color: "var(--rw-sub)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.player.club || tl("Free agent")}</div>
                 </div>
               </div>
@@ -522,19 +564,154 @@ const RosterOverlay: React.FC<{ slugs: string[]; title: string; period: string; 
           ))}
         </div>
         <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end", fontSize: 12, color: "var(--rw-muted)" }}>
-          <span>
-            <b style={{ color: "var(--rw-accent)" }}>Rift</b>
-            <b style={{ color: "var(--rw-teal)" }}>Wise</b> · <span style={{ color: "var(--rw-teal)" }}>riftwise.gg</span>
-          </span>
+          <BrandFoot linkOut={linkOut} href={siteLink(`stats/gm?players=${encodeURIComponent(cards.map((c) => c.slug).join(","))}`)} />
         </div>
       </div>
     </div>
   );
 };
 
-// ── 4. Interactive OBS Overlay Studio (/overlay or ?studio=1) ─────────────
+// ── 4. Power rankings card (?mode=rankings&league=lck&n=8) ──────────────
 
-type OverlayMode = "teams" | "player" | "roster";
+const RankingsOverlay: React.FC<{ league: string; count: number; transparent: boolean; scale: number; embedded?: boolean; linkOut?: boolean }> = ({
+  league,
+  count,
+  transparent,
+  scale,
+  embedded,
+  linkOut,
+}) => {
+  const [data, setData] = useState<HubRatings | null>(null);
+  const [error, setError] = useState("");
+  const capped = Math.min(15, Math.max(3, count || 8));
+
+  useEffect(() => {
+    let alive = true;
+    setError("");
+    loadHubLogos();
+    const load = () =>
+      loadRatings()
+        .then((r) => {
+          if (alive) setData(r);
+        })
+        .catch(() => alive && setError(tl("Couldn't load the stats right now. Check your connection and try again in a minute.")));
+    load();
+    const t = setInterval(load, 10 * 60 * 1000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+
+  const bg = transparent ? "transparent" : "var(--rw-bg)";
+  if (error) return <div style={{ padding: 24, color: "var(--rw-red)", background: bg }}>{error}</div>;
+  if (!data) return <div style={{ padding: 24, color: "var(--rw-muted)", background: bg }}>…</div>;
+
+  const low = league.trim().toLowerCase();
+  const slug = low ? resolveLeagueSlug(low).toLowerCase() : "";
+  const matched = low
+    ? data.teams.filter(
+        (r) =>
+          (r[3] && r[3].toLowerCase() === low) ||
+          (r[4] && (r[4].toLowerCase() === low || r[4].toLowerCase() === slug)) ||
+          (r[10] && r[10].toLowerCase() === low),
+      )
+    : [];
+  const rows = (matched.length ? matched : data.teams.filter((r) => r[9] === 1)).slice(0, capped);
+  const maxR = Math.max(1500, ...rows.map((r) => r[5]));
+  const minR = Math.min(...rows.map((r) => r[5])) - 40;
+  const scopeLabel = matched.length ? matched[0][10] || matched[0][3] : tl("Global");
+  const rankingsHref = siteLink(`stats/rankings${matched.length && matched[0][4] ? `?league=${encodeURIComponent(matched[0][4])}` : ""}`);
+
+  return (
+    <div style={{ background: embedded ? "transparent" : bg, minHeight: embedded ? undefined : "100vh", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: 16 }}>
+      <div
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: "top center",
+          width: 680,
+          maxWidth: "100%",
+          padding: "18px 24px",
+          borderRadius: 16,
+          background: transparent ? "rgba(12, 10, 29, 0.88)" : "var(--rw-surface)",
+          border: "1px solid var(--rw-border)",
+          color: "var(--rw-text)",
+          fontFamily: "inherit",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 18, fontWeight: 900 }}>{tl("Power rankings")}</span>
+            <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999, border: "1px solid var(--rw-border)", background: "rgba(9, 8, 22, 0.7)", color: "var(--rw-accent)" }}>
+              {scopeLabel}
+            </span>
+          </div>
+          <span style={{ fontSize: 11, color: "var(--rw-muted)", fontVariantNumeric: "tabular-nums" }}>{data.asof}</span>
+        </div>
+        <div style={{ display: "grid", gap: 6 }}>
+          {rows.map((r, i) => {
+            const pctW = Math.max(8, Math.min(100, Math.round(((r[5] - minR) / Math.max(1, maxR - minR)) * 100)));
+            const chg = r[6];
+            return (
+              <div
+                key={r[0] || `${r[1]}-${i}`}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "28px 1fr auto 48px 54px",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "6px 10px",
+                  borderRadius: 10,
+                  background: "rgba(9, 8, 22, 0.65)",
+                  border: "1px solid var(--rw-border)",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                <span style={{ fontSize: 12, fontWeight: 800, color: i === 0 ? "var(--rw-accent)" : "var(--rw-muted)" }}>#{i + 1}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <TeamLogo name={r[1]} code={r[2]} size={20} />
+                  <span style={{ fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {linkOut && r[0] ? (
+                      <a href={siteLink(`team/${encodeURIComponent(r[0])}`)} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
+                        {r[1]}
+                      </a>
+                    ) : (
+                      r[1]
+                    )}
+                  </span>
+                  {!matched.length && (r[10] || r[3]) && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "var(--rw-muted)", whiteSpace: "nowrap" }}>{r[10] || r[3]}</span>
+                  )}
+                </div>
+                <div style={{ width: 92, height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                  <div style={{ width: `${pctW}%`, height: "100%", borderRadius: 999, background: i < 3 ? "var(--rw-accent)" : "var(--rw-teal)" }} />
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, textAlign: "right", color: chg == null || chg === 0 ? "var(--rw-muted)" : chg > 0 ? "var(--rw-teal)" : "var(--rw-red)" }}>
+                  {chg == null ? "–" : chg > 0 ? `+${chg}` : chg}
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 900, textAlign: "right", color: "var(--rw-text)" }}>{fmtNum(Math.round(r[5]))}</span>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end", fontSize: 12, color: "var(--rw-muted)" }}>
+          <BrandFoot linkOut={linkOut} href={rankingsHref} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── 5. Interactive OBS & Embed Studio (/overlay or /embed?studio=1) ──────
+
+type OverlayMode = "teams" | "player" | "roster" | "rankings";
+const RANKING_LEAGUES: [string, string][] = [
+  ["", "Global"],
+  ["lck", "LCK"],
+  ["lpl", "LPL"],
+  ["lec", "LEC"],
+  ["lcs", "LCS"],
+];
 
 const OverlayStudio: React.FC<{
   initMode: OverlayMode;
@@ -543,9 +720,11 @@ const OverlayStudio: React.FC<{
   initRoster: string[];
   initTitle: string;
   initPeriod: string;
+  initLeague: string;
+  initCount: number;
   initTransparent: boolean;
   initScale: number;
-}> = ({ initMode, initTeams, initPlayer, initRoster, initTitle, initPeriod, initTransparent, initScale }) => {
+}> = ({ initMode, initTeams, initPlayer, initRoster, initTitle, initPeriod, initLeague, initCount, initTransparent, initScale }) => {
   const [mode, setMode] = useState<OverlayMode>(initMode);
   const [teamA, setTeamA] = useState(initTeams[0] || "t1");
   const [teamB, setTeamB] = useState(initTeams[1] || "geng");
@@ -555,11 +734,14 @@ const OverlayStudio: React.FC<{
   );
   const [rosterTitle, setRosterTitle] = useState(initTitle || "");
   const [period, setPeriod] = useState(initPeriod || `y${new Date().getFullYear()}`);
+  const [rankLeague, setRankLeague] = useState(initLeague);
+  const [rankCount, setRankCount] = useState(Math.min(15, Math.max(3, initCount || 8)));
   const [transparent, setTransparent] = useState(initTransparent);
   const [scale, setScale] = useState(initScale || 1);
-  const [copied, setCopied] = useState(false);
+  const [copiedObs, setCopiedObs] = useState(false);
+  const [copiedEmbed, setCopiedEmbed] = useState(false);
 
-  const builtUrl = useMemo(() => {
+  const queryString = useMemo(() => {
     const p = new URLSearchParams();
     if (mode === "teams") {
       p.set("teams", `${resolveTeamAlias(teamA) || teamA},${resolveTeamAlias(teamB) || teamB}`);
@@ -567,23 +749,32 @@ const OverlayStudio: React.FC<{
       p.set("mode", "player");
       p.set("player", resolvePlayerSlug(playerSlug));
       p.set("p", period);
-    } else {
+    } else if (mode === "roster") {
       p.set("mode", "roster");
       p.set("players", rosterSlugs.map((s) => resolvePlayerSlug(s)).join(","));
       if (rosterTitle.trim()) p.set("title", rosterTitle.trim());
       p.set("p", period);
+    } else {
+      p.set("mode", "rankings");
+      if (rankLeague.trim()) p.set("league", rankLeague.trim());
+      p.set("n", String(rankCount));
     }
     if (transparent) p.set("bg", "transparent");
     if (scale !== 1) p.set("scale", String(scale));
-    return `${window.location.origin}/overlay?${p.toString()}`;
-  }, [mode, teamA, teamB, playerSlug, rosterSlugs, rosterTitle, period, transparent, scale]);
+    return p.toString();
+  }, [mode, teamA, teamB, playerSlug, rosterSlugs, rosterTitle, period, rankLeague, rankCount, transparent, scale]);
 
-  const copyUrl = () => {
+  const builtUrl = `${window.location.origin}${BASE}overlay?${queryString}`;
+  const embedUrl = `${window.location.origin}${BASE}embed?${queryString}`;
+  const embedHeight = mode === "teams" ? 310 : mode === "player" ? 230 : mode === "roster" ? 250 : 96 + rankCount * 38;
+  const embedCode = `<iframe src="${embedUrl}" width="100%" height="${embedHeight}" style="border:0;border-radius:16px;overflow:hidden" loading="lazy" title="RiftWise"></iframe>`;
+
+  const copyText = (txt: string, mark: (v: boolean) => void) => {
     navigator.clipboard
-      .writeText(builtUrl)
+      .writeText(txt)
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        mark(true);
+        setTimeout(() => mark(false), 2000);
       })
       .catch(() => {});
   };
@@ -593,15 +784,15 @@ const OverlayStudio: React.FC<{
       <div className="max-w-5xl mx-auto space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <a href="/" className="inline-flex items-center gap-1 text-xs text-rw-accent hover:underline mb-1">
+            <a href={BASE} className="inline-flex items-center gap-1 text-xs text-rw-accent hover:underline mb-1">
               <ArrowLeft className="w-3.5 h-3.5" /> RiftWise
             </a>
             <h1 className="font-head text-2xl font-bold text-rw-text flex items-center gap-2">
               <MonitorPlay className="w-5 h-5 text-rw-accent" />
-              {tl("OBS stream overlay")}
+              {IS_EMBED ? tl("Embed & OBS studio") : tl("OBS stream overlay")}
             </h1>
             <p className="text-xs text-rw-sub">
-              {tl("Choose teams or players, adjust transparency and scale, then paste the URL into an OBS Browser Source.")}
+              {tl("Choose teams, players or power rankings, then copy an OBS Browser Source URL or a responsive <iframe> embed.")}
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5 text-xs">
@@ -610,6 +801,7 @@ const OverlayStudio: React.FC<{
                 ["teams", tl("Matchup")],
                 ["player", tl("Player card")],
                 ["roster", tl("5-player roster")],
+                ["rankings", tl("Power rankings")],
               ] as [OverlayMode, string][]
             ).map(([m, label]) => (
               <button
@@ -711,6 +903,39 @@ const OverlayStudio: React.FC<{
             </div>
           )}
 
+          {mode === "rankings" && (
+            <div className="flex flex-wrap items-center gap-4 text-xs">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-semibold text-rw-text">{tl("League")}:</span>
+                {RANKING_LEAGUES.map(([val, label]) => (
+                  <button
+                    key={val || "global"}
+                    type="button"
+                    onClick={() => setRankLeague(val)}
+                    aria-pressed={rankLeague === val}
+                    className={`px-2.5 py-1 rounded-lg border ${rankLeague === val ? "border-rw-accent text-rw-accent font-semibold" : "border-rw-border text-rw-sub"}`}
+                  >
+                    {val ? label : tl(label)}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-rw-muted">{tl("Show")}:</span>
+                {[5, 8, 10].map((cnt) => (
+                  <button
+                    key={cnt}
+                    type="button"
+                    onClick={() => setRankCount(cnt)}
+                    aria-pressed={rankCount === cnt}
+                    className={`px-2 py-1 rounded-lg border tabular-nums ${rankCount === cnt ? "border-rw-accent text-rw-accent font-semibold" : "border-rw-border text-rw-sub"}`}
+                  >
+                    {cnt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-rw-border text-xs">
             <label className="inline-flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={transparent} onChange={(e) => setTransparent(e.target.checked)} />
@@ -731,37 +956,65 @@ const OverlayStudio: React.FC<{
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 pt-2">
-            <input
-              readOnly
-              value={builtUrl}
-              aria-label="OBS Browser Source URL"
-              className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-xs font-mono text-rw-sub flex-1 min-w-[14rem]"
-            />
-            <button
-              type="button"
-              onClick={copyUrl}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rw-accent hover:bg-rw-text text-rw-bg font-bold text-xs"
-            >
-              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? tl("Copied") : tl("Copy link")}
-            </button>
-            <a
-              href={builtUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rw-border hover:border-rw-accent text-xs font-semibold"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              {tl("Open")}
-            </a>
+          <div className="space-y-2 pt-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                readOnly
+                value={builtUrl}
+                aria-label="OBS Browser Source URL"
+                className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-xs font-mono text-rw-sub flex-1 min-w-[14rem]"
+              />
+              <button
+                type="button"
+                onClick={() => copyText(builtUrl, setCopiedObs)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rw-accent hover:bg-rw-text text-rw-bg font-bold text-xs"
+              >
+                {copiedObs ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedObs ? tl("Copied") : tl("Copy link")}
+              </button>
+              <a
+                href={builtUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rw-border hover:border-rw-accent text-xs font-semibold"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                {tl("Open")}
+              </a>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                readOnly
+                value={embedCode}
+                aria-label={tl("Website <iframe> embed")}
+                className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1.5 text-xs font-mono text-rw-muted flex-1 min-w-[14rem]"
+              />
+              <button
+                type="button"
+                onClick={() => copyText(embedCode, setCopiedEmbed)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rw-accent/60 text-rw-accent hover:bg-rw-accent hover:text-rw-bg font-bold text-xs transition-colors"
+              >
+                {copiedEmbed ? <Check className="w-3.5 h-3.5" /> : <Code2 className="w-3.5 h-3.5" />}
+                {copiedEmbed ? tl("Copied") : tl("Copy <iframe>")}
+              </button>
+              <a
+                href={embedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rw-border hover:border-rw-accent text-xs font-semibold"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                {tl("Open")}
+              </a>
+            </div>
           </div>
         </div>
 
         <div className="rounded-xl border border-dashed border-rw-border bg-[radial-gradient(#262146_1px,transparent_1px)] [background-size:16px_16px] p-4 overflow-x-auto">
-          {mode === "teams" && <MatchupOverlay slugs={[teamA, teamB]} transparent={transparent} scale={1} embedded />}
-          {mode === "player" && <PlayerOverlay slug={playerSlug} period={period} transparent={transparent} scale={1} embedded />}
-          {mode === "roster" && <RosterOverlay slugs={rosterSlugs} title={rosterTitle} period={period} transparent={transparent} scale={1} embedded />}
+          {mode === "teams" && <MatchupOverlay slugs={[teamA, teamB]} transparent={transparent} scale={1} embedded linkOut={IS_EMBED} />}
+          {mode === "player" && <PlayerOverlay slug={playerSlug} period={period} transparent={transparent} scale={1} embedded linkOut={IS_EMBED} />}
+          {mode === "roster" && <RosterOverlay slugs={rosterSlugs} title={rosterTitle} period={period} transparent={transparent} scale={1} embedded linkOut={IS_EMBED} />}
+          {mode === "rankings" && <RankingsOverlay league={rankLeague} count={rankCount} transparent={transparent} scale={1} embedded linkOut={IS_EMBED} />}
         </div>
       </div>
     </div>
@@ -777,31 +1030,38 @@ const PLAYER_PARAM = (q.get("player") || "").trim().toLowerCase();
 const PLAYERS_PARAM = (q.get("players") || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
 const TITLE_PARAM = q.get("title") || "";
 const PERIOD_PARAM = q.get("p") || `y${new Date().getFullYear()}`;
+const LEAGUE_PARAM = q.get("league") || "";
+const COUNT_PARAM = Number(q.get("n")) || 8;
 const STUDIO = q.get("studio") === "1";
 const TRANSPARENT = q.get("bg") === "transparent";
 const SCALE = Math.min(3, Math.max(0.5, Number(q.get("scale")) || 1));
 
 export const Overlay: React.FC = () => {
   if (!STUDIO) {
+    if (MODE_PARAM === "rankings" || (!MODE_PARAM && !SLUGS.length && !PLAYER_PARAM && !PLAYERS_PARAM.length && LEAGUE_PARAM)) {
+      return <RankingsOverlay league={LEAGUE_PARAM} count={COUNT_PARAM} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />;
+    }
     if (MODE_PARAM === "player" || (!MODE_PARAM && !SLUGS.length && PLAYER_PARAM)) {
-      if (PLAYER_PARAM) return <PlayerOverlay slug={PLAYER_PARAM} period={PERIOD_PARAM} transparent={TRANSPARENT} scale={SCALE} />;
+      if (PLAYER_PARAM) return <PlayerOverlay slug={PLAYER_PARAM} period={PERIOD_PARAM} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />;
     }
     if (MODE_PARAM === "roster" || (!MODE_PARAM && !SLUGS.length && PLAYERS_PARAM.length > 0)) {
       if (PLAYERS_PARAM.length > 0) {
-        return <RosterOverlay slugs={PLAYERS_PARAM} title={TITLE_PARAM} period={PERIOD_PARAM} transparent={TRANSPARENT} scale={SCALE} />;
+        return <RosterOverlay slugs={PLAYERS_PARAM} title={TITLE_PARAM} period={PERIOD_PARAM} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />;
       }
     }
     if (SLUGS.length >= 2) {
-      return <MatchupOverlay slugs={[SLUGS[0], SLUGS[1]]} transparent={TRANSPARENT} scale={SCALE} />;
+      return <MatchupOverlay slugs={[SLUGS[0], SLUGS[1]]} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />;
     }
   }
 
   const initMode: OverlayMode =
-    MODE_PARAM === "player" || (!SLUGS.length && PLAYER_PARAM)
-      ? "player"
-      : MODE_PARAM === "roster" || (!SLUGS.length && PLAYERS_PARAM.length > 0)
-        ? "roster"
-        : "teams";
+    MODE_PARAM === "rankings" || (!SLUGS.length && !PLAYER_PARAM && !PLAYERS_PARAM.length && LEAGUE_PARAM)
+      ? "rankings"
+      : MODE_PARAM === "player" || (!SLUGS.length && PLAYER_PARAM)
+        ? "player"
+        : MODE_PARAM === "roster" || (!SLUGS.length && PLAYERS_PARAM.length > 0)
+          ? "roster"
+          : "teams";
 
   return (
     <OverlayStudio
@@ -811,6 +1071,8 @@ export const Overlay: React.FC = () => {
       initRoster={PLAYERS_PARAM}
       initTitle={TITLE_PARAM}
       initPeriod={PERIOD_PARAM}
+      initLeague={LEAGUE_PARAM}
+      initCount={COUNT_PARAM}
       initTransparent={TRANSPARENT}
       initScale={SCALE}
     />

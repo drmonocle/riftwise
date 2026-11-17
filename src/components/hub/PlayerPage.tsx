@@ -9,7 +9,7 @@ import { tl, tk, tc, roleName, eventTitle, regionName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { bare, loadHubChamp, loadHubPlayer, loadPlayerGames, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
-import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
+import { BASE, currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
 import { type PeriodKey, inPeriod, latestYearRow, matchesPeriodEvent, periodOptions, playerAgg, playerRowRef } from "../../hub/period";
 import { PageTabs, type PageTab } from "./PageTabs";
@@ -616,6 +616,14 @@ const PlayerView: React.FC<{
                         </HubLink>
                       </>
                     )}
+                    <a
+                      href={`${BASE}embed?mode=player&player=${encodeURIComponent(p.u)}${pParam ? `&p=${encodeURIComponent(pParam)}` : ""}&studio=1`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={heroLink}
+                    >
+                      {tl("Embed / OBS")}
+                    </a>
                   </div>
                 </>
               );
