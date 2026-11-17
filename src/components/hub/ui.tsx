@@ -209,7 +209,7 @@ export const Section: React.FC<{
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 pt-3 pb-1">
         <h3 className={sectionTitle}>{title}</h3>
         {(right || share) && (
-          <span className="flex flex-wrap items-center justify-end gap-2 min-w-0 ml-auto">
+          <span className="flex flex-wrap items-center justify-end gap-2 min-w-0 max-w-full ml-auto">
             {right}
             {share && <ShareButtons target={ref} name={share} />}
           </span>

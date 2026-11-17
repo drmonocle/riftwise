@@ -3223,9 +3223,11 @@ const Lanes: React.FC<{
       [tl("Win rate"), wr(sa), wr(sb), (v) => `${Math.round(v)}%`],
       ["KDA", sa?.kda, sb?.kda, (v) => fmtDec(v, 2)],
       ["KP", sa?.kp, sb?.kp, (v) => `${Math.round(v)}%`, tl("Kill participation")],
+      ["KS%", sa?.ks, sb?.ks, (v) => `${Math.round(v)}%`, tl("Share of team kills")],
       [tl("CS/m"), sa?.csm, sb?.csm, fmt1],
       [tl("DPM"), sa?.dpm, sb?.dpm, (v) => String(Math.round(v))],
       [tl("DMG%"), sa?.dmgShare, sb?.dmgShare, (v) => `${Math.round(v)}%`],
+      ["GD@10", sa?.tl?.gd10, sb?.tl?.gd10, (v) => sgn(v), tl("Gold lead over the lane opponent at 10 minutes")],
       [tl("Gold @15"), sa?.tl?.gd15, sb?.tl?.gd15, (v) => sgn(v), tl("Average lead over the lane opponent at 15 minutes")],
       [tl("CS @15"), sa?.tl?.csd15, sb?.tl?.csd15, (v) => sgn(v)],
       [tl("XP @15"), sa?.tl?.xpd15, sb?.tl?.xpd15, (v) => sgn(v)],
@@ -3295,7 +3297,7 @@ const Lanes: React.FC<{
             <>
               <HubLink
                 to={{ kind: "compare", mode: "player", a: pa.p.u, b: pb.p.u, period }}
-                className="text-[11px] text-rw-accent hover:underline font-semibold mr-1"
+                className="text-[11px] text-rw-accent hover:underline font-semibold whitespace-nowrap"
               >
                 {tl("Compare")} →
               </HubLink>
@@ -3330,7 +3332,7 @@ const Lanes: React.FC<{
                             : ""
                     }`,
                   }}
-                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                  className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
                 >
                   {tl("Counters")} →
                 </HubLink>
@@ -3351,7 +3353,7 @@ const Lanes: React.FC<{
                     return `player=${encodeURIComponent(pa.p.u)}${pb.p.u !== pa.p.u ? `&vsplayer=${encodeURIComponent(pb.p.u)}` : ""}&team=${encodeURIComponent(a.team.u)}&vs=${encodeURIComponent(b.team.u)}&role=${encodeURIComponent(r)}${topC ? `&champ=${encodeURIComponent(resolveChampSlug(topC))}` : ""}${vsC ? `&vschamp=${encodeURIComponent(resolveChampSlug(vsC))}` : ""}${a.team.rating?.league && a.team.rating.league === b.team.rating?.league ? `&league=${encodeURIComponent(resolveLeagueSlug(a.team.rating.league) || a.team.rating.league)}` : ""}${period.startsWith("y") && period.length === 5 ? `&year=${encodeURIComponent(period.slice(1))}` : period.startsWith("e:") ? `&event=${encodeURIComponent(resolveEventSlug(period.slice(2)))}` : period.startsWith("p:") ? `&patch=${encodeURIComponent(period.slice(2))}` : ""}`;
                   })(),
                 }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
               >
                 {tl("Item history")} →
               </HubLink>
@@ -3375,7 +3377,7 @@ const Lanes: React.FC<{
                         : {}),
                   }).toString(),
                 }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
               >
                 {tl("Player leaderboards")} →
               </HubLink>
@@ -3403,7 +3405,7 @@ const Lanes: React.FC<{
                     }`;
                   })(),
                 }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
               >
                 {tl("Game finder")} →
               </HubLink>
@@ -3441,7 +3443,7 @@ const Lanes: React.FC<{
                           : {}),
                   }).toString(),
                 }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
               >
                 {tl("Pro tier list")} →
               </HubLink>
@@ -3469,7 +3471,7 @@ const Lanes: React.FC<{
                       : ""
                   }${period !== "all" ? `&p=${encodeURIComponent(period)}` : ""}`,
                 }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
               >
                 {tl("Draft board")} →
               </HubLink>
@@ -3483,7 +3485,7 @@ const Lanes: React.FC<{
                       : {}),
                   }).toString(),
                 }}
-                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline mr-1"
+                className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline whitespace-nowrap"
               >
                 {tl("Power rankings")} →
               </HubLink>
@@ -4022,7 +4024,7 @@ const LaneBlock: React.FC<{
   const data = card();
   return (
     <div className="@container py-2.5">
-      <div className="flex justify-end mb-1 items-center gap-1" data-nocapture="1">
+      <div className="flex flex-wrap justify-end mb-1 items-center gap-x-2 gap-y-0.5" data-nocapture="1">
         {extra}
         {data && <BroadcastCardButton data={() => card() as CardData} name={name} label={tl("Lane card")} compact />}
         <ShareButtons target={ref} name={name} />

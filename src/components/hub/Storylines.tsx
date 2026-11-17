@@ -339,7 +339,7 @@ export const StoryList: React.FC<{
       share={share}
       right={
         right || (!hidden && plainLines.length > 0) ? (
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center justify-end gap-2 min-w-0 max-w-full [&_a]:whitespace-nowrap [&_button]:whitespace-nowrap">
             {right}
             {!hidden && plainLines.length > 0 && (
               <>

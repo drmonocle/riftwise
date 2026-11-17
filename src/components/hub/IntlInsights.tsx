@@ -1873,7 +1873,7 @@ export const IntlInsights: React.FC<{ files: (EventLines | null)[]; years: strin
                     }
                     sub={l.map((f) => `${yearOnly(f.year)}: ${f.winner} ${f.score}`).join(" · ")}
                     right={
-                      <span className="inline-flex items-center gap-2">
+                      <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 min-w-0 max-w-full [&_a]:whitespace-nowrap">
                         <HubLink
                           to={{ kind: "prep", a: wSlug, b: lSlug, ...(lastYr ? { period: `y${lastYr}` } : {}), query: fRepeatMetaQ }}
                           className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"

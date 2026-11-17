@@ -11,7 +11,9 @@ import {
   seedItemsByStat,
 } from "../components/hub/PlayerTierBuilder";
 import { aggregateLinesSplit, collectStageOptions } from "../hub/splits";
-import type { EventPlayer, HubEvent, HubSeries, SearchEventRow, Stage } from "../hub/types";
+import { latestYearRow, playerAgg } from "../hub/period";
+import { PLAYER_METRICS } from "../components/hub/Ranks";
+import type { EventPlayer, HubEvent, HubSeries, PlayerGameRow, SearchEventRow, Stage } from "../hub/types";
 import type { EventLines } from "../hub/worldsFacts";
 
 describe("SeriesMatrix aggregation", () => {
@@ -77,11 +79,60 @@ describe("SeriesMatrix aggregation", () => {
     expect(kiin.tdth).toBe(3);
   });
 
-  it("keeps single-game pick order (`pk`) when inspecting a specific game", () => {
+  it("keeps single-game pick order (`pk`) when inspecting a specific game and omits it in series totals", () => {
     const g1 = buildSeriesMatrixPlayers(sampleSeries, 1);
     expect(g1.gamesCount).toBe(1);
     expect(g1.a.find((p) => p.n === "Kiin")?.pk).toBe(2);
     expect(g1.b.find((p) => p.n === "Bin")?.pk).toBe(1);
+    const totals = buildSeriesMatrixPlayers(sampleSeries, "all");
+    expect(totals.a.every((p) => p.pk == null)).toBe(true);
+    expect(totals.b.every((p) => p.pk == null)).toBe(true);
+  });
+
+  it("computes player kill share (ks) alongside kill participation (kp) in playerAgg", () => {
+    const row = (k: number, d: number, a: number, tk: number): PlayerGameRow => [
+      "2026-11-14", "worlds-2026-main-event-finals-1", "Azir", k, d, a, 1, "Gen.G", "BLG",
+      "Worlds 2026 Main Event", "Mid", "worlds-2026-main-event", 250, 14000, 22000, 25, 30, tk, 80000, 60000, 120,
+    ];
+    const agg = playerAgg([row(5, 1, 5, 20), row(3, 2, 7, 20)]);
+    // total k=8, a=12, tk=40 -> ks = 20.0%, kp = 50.0%
+    expect(agg.ks).toBe(20);
+    expect(agg.kp).toBe(50);
+  });
+
+  it("returns null for untracked zero-damage/gold/vision metrics in PLAYER_METRICS and uses dm when present", () => {
+    const legacy: EventPlayer = {
+      n: "sOAZ",
+      u: "soaz",
+      t: "aAa",
+      tu: "aaa",
+      r: "Top",
+      g: 10,
+      w: 5,
+      k: 20,
+      d: 15,
+      a: 40,
+      tk: 100,
+      min: 300,
+      cs: 1800,
+      dmg: 0,
+      gold: 0,
+      vis: 0,
+      vmin: 300,
+      nc: 3,
+      c: ["Irelia"],
+    };
+    const dpmM = PLAYER_METRICS.find((m) => m.key === "dpm")!;
+    const gpmM = PLAYER_METRICS.find((m) => m.key === "gpm")!;
+    const vsmM = PLAYER_METRICS.find((m) => m.key === "vsm")!;
+    expect(dpmM.value(legacy)).toBeNull();
+    expect(gpmM.value(legacy)).toBeNull();
+    expect(vsmM.value(legacy)).toBeNull();
+
+    const modern: EventPlayer = { ...legacy, dmg: 120000, dm: 200, gold: 90000, vis: 400, vmin: 200 };
+    expect(dpmM.value(modern)).toBe(600);
+    expect(gpmM.value(modern)).toBe(300);
+    expect(vsmM.value(modern)).toBe(2);
   });
 });
 
@@ -355,5 +406,15 @@ describe("PlayerTierBuilder pure helpers", () => {
       [playerId(faker)]: "A",
     });
     expect(decodeTierBoard("", items, playerId, (p) => p.u || p.n.toLowerCase())).toEqual({});
+  });
+});
+
+describe("latestYearRow", () => {
+  it("picks the most recent year whether rows are descending, ascending, or numeric", () => {
+    expect(latestYearRow([{ y: "2026", g: 169 }, { y: "2025", g: 187 }, { y: "2013", g: 69 }])?.y).toBe("2026");
+    expect(latestYearRow([{ y: "2013" }, { y: "2024" }, { y: "2026" }])?.y).toBe("2026");
+    expect(latestYearRow([{ y: 2019 }, { y: 2025 }, { y: 2022 }])?.y).toBe(2025);
+    expect(latestYearRow([])).toBeUndefined();
+    expect(latestYearRow(undefined)).toBeUndefined();
   });
 });

@@ -1477,146 +1477,144 @@ const MetaSpotlight: React.FC<{
             ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
           }).toString() || undefined;
         return (
-        <div key={item.label} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{item.label}</div>
-            <div className="mt-0.5 truncate">
-              <ChampLink name={item.c} size={18} query={itemChampQuery} />
+        <div key={item.label} className="rounded-lg border border-rw-border bg-rw-bg/50 px-2.5 py-2 flex flex-col justify-between gap-1.5 min-w-0">
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <div className="min-w-0">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted truncate">{item.label}</div>
+              <div className="mt-0.5 truncate">
+                <ChampLink name={item.c} size={18} query={itemChampQuery} />
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <HubLink
+                to={{ kind: "champ", slug: curCSlug, query: itemChampQuery }}
+                className={`font-mono font-bold tabular-nums hover:underline ${item.tone}`}
+              >
+                {item.val}
+              </HubLink>
+              {item.sub && (
+                <div className="text-[10px] text-rw-muted font-mono">
+                  <HubLink to={{ kind: "champ", slug: curCSlug, query: itemChampQuery }} className="hover:text-rw-accent hover:underline">
+                    {item.sub}
+                  </HubLink>
+                </div>
+              )}
             </div>
           </div>
-          <div className="text-right shrink-0">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-rw-muted border-t border-rw-border/50 pt-1" data-nocapture="1">
             <HubLink
-              to={{ kind: "champ", slug: curCSlug, query: itemChampQuery }}
-              className={`font-mono font-bold tabular-nums hover:underline ${item.tone}`}
+              to={{
+                kind: "counters",
+                query: new URLSearchParams({
+                  champ: curCSlug,
+                  ...(otherSpotSlug ? { vs: otherSpotSlug } : {}),
+                  ...(itemRole ? { role: itemRole } : {}),
+                  ...(league ? { league } : {}),
+                  ...(player ? { player } : {}),
+                  ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
+                  ...(team ? { team } : {}),
+                  ...(vsTeam ? { vsteam: vsTeam } : {}),
+                  ...(canonEv ? { event: canonEv } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
+                }).toString(),
+              }}
+              className="hover:text-rw-accent hover:underline whitespace-nowrap"
             >
-              {item.val}
+              {tl("Counters")}
             </HubLink>
-            {item.sub && (
-              <div className="text-[10px] text-rw-muted font-mono">
-                <HubLink to={{ kind: "champ", slug: curCSlug, query: itemChampQuery }} className="hover:text-rw-accent hover:underline">
-                  {item.sub}
-                </HubLink>
-                {" · "}
-                <HubLink
-                  to={{
-                    kind: "counters",
-                    query: new URLSearchParams({
-                      champ: curCSlug,
-                      ...(otherSpotSlug ? { vs: otherSpotSlug } : {}),
-                      ...(itemRole ? { role: itemRole } : {}),
-                      ...(league ? { league } : {}),
-                      ...(player ? { player } : {}),
-                      ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
-                      ...(team ? { team } : {}),
-                      ...(vsTeam ? { vsteam: vsTeam } : {}),
-                      ...(canonEv ? { event: canonEv } : patch ? { patch } : year ? { patch: `y${year}`, year } : {}),
-                    }).toString(),
-                  }}
-                  className="hover:text-rw-accent hover:underline"
-                >
-                  {tl("Counters")}
-                </HubLink>
-                {" · "}
-                <HubLink
-                  to={{
-                    kind: "items",
-                    query: new URLSearchParams({
-                      champ: curCSlug,
-                      ...(otherSpotSlug ? { vschamp: otherSpotSlug } : {}),
-                      ...(itemRole ? { role: itemRole } : {}),
-                      ...(league ? { league } : {}),
-                      ...(player ? { player } : {}),
-                      ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
-                      ...(team ? { team } : {}),
-                      ...(vsTeam ? { vs: vsTeam } : {}),
-                      ...(year ? { year } : {}),
-                      ...(patch ? { patch } : {}),
-                      ...(canonEv ? { event: canonEv } : {}),
-                    }).toString(),
-                  }}
-                  className="hover:text-rw-accent hover:underline"
-                >
-                  {tl("Item history")}
-                </HubLink>
-                {" · "}
-                <HubLink
-                  to={{
-                    kind: "finder",
-                    query: new URLSearchParams({
-                      champ: curCSlug,
-                      ...(otherSpotSlug ? { vschamp: otherSpotSlug } : {}),
-                      ...(league ? { league } : {}),
-                      ...(year ? { year } : {}),
-                      ...(canonEv ? { event: canonEv } : {}),
-                      ...(patch ? { patch } : {}),
-                      ...(itemRole ? { role: itemRole } : {}),
-                      ...(team ? { team } : {}),
-                      ...(vsTeam ? { vs: vsTeam } : {}),
-                      ...(player ? { player } : {}),
-                      ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
-                    }).toString(),
-                  }}
-                  className="hover:text-rw-accent hover:underline"
-                >
-                  {tl("Game finder")}
-                </HubLink>
-                {" · "}
-                <HubLink
-                  to={{
-                    kind: "tiers",
-                    query: new URLSearchParams({
-                      ...(league ? { scope: league, league } : scopeAll ? { scope: "all" } : {}),
-                      ...(tierKey ? { key: tierKey } : {}),
-                      ...(patch ? { patch } : year ? { year } : {}),
-                      ...(canonEv ? { event: canonEv } : {}),
-                      ...(itemRole ? { role: itemRole } : {}),
-                      q: [curCSlug, otherSpotSlug].filter(Boolean).join(","),
-                      ...(team ? { team } : {}),
-                      ...(vsTeam ? { vs: vsTeam } : {}),
-                      ...(player ? { player } : {}),
-                      ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
-                    }).toString(),
-                  }}
-                  className="hover:text-rw-accent hover:underline"
-                >
-                  {tl("Pro tier list")}
-                </HubLink>
-                {" · "}
-                <HubLink
-                  to={{
-                    kind: "draft",
-                    query: new URLSearchParams({
-                      ...(draftP ? { p: draftP } : {}),
-                      ...(team || vsTeam ? { teams: [team, vsTeam].filter(Boolean).join(",") } : {}),
-                      champ: [curCSlug, otherSpotSlug].filter(Boolean).join(","),
-                      ...(itemRole ? { role: itemRole } : {}),
-                    }).toString(),
-                  }}
-                  className="hover:text-rw-accent hover:underline"
-                >
-                  {tl("Draft board")}
-                </HubLink>
-                {" · "}
-                <HubLink
-                  to={{
-                    kind: "leaders",
-                    query: new URLSearchParams({
-                      champ: curCSlug,
-                      ...(league ? { league } : {}),
-                      ...(year ? { year } : {}),
-                      ...(canonEv ? { event: canonEv } : {}),
-                      ...(itemRole ? { role: itemRole } : {}),
-                      ...(otherSpotSlug || player || vsPlayer || team || vsTeam
-                        ? { q: [player, vsPlayer, team, vsTeam, curCSlug, otherSpotSlug].filter(Boolean).join(",") }
-                        : {}),
-                    }).toString(),
-                  }}
-                  className="hover:text-rw-accent hover:underline"
-                >
-                  {tl("Player leaderboards")}
-                </HubLink>
-              </div>
-            )}
+            <HubLink
+              to={{
+                kind: "items",
+                query: new URLSearchParams({
+                  champ: curCSlug,
+                  ...(otherSpotSlug ? { vschamp: otherSpotSlug } : {}),
+                  ...(itemRole ? { role: itemRole } : {}),
+                  ...(league ? { league } : {}),
+                  ...(player ? { player } : {}),
+                  ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
+                  ...(team ? { team } : {}),
+                  ...(vsTeam ? { vs: vsTeam } : {}),
+                  ...(year ? { year } : {}),
+                  ...(patch ? { patch } : {}),
+                  ...(canonEv ? { event: canonEv } : {}),
+                }).toString(),
+              }}
+              className="hover:text-rw-accent hover:underline whitespace-nowrap"
+            >
+              {tl("Item history")}
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "finder",
+                query: new URLSearchParams({
+                  champ: curCSlug,
+                  ...(otherSpotSlug ? { vschamp: otherSpotSlug } : {}),
+                  ...(league ? { league } : {}),
+                  ...(year ? { year } : {}),
+                  ...(canonEv ? { event: canonEv } : {}),
+                  ...(patch ? { patch } : {}),
+                  ...(itemRole ? { role: itemRole } : {}),
+                  ...(team ? { team } : {}),
+                  ...(vsTeam ? { vs: vsTeam } : {}),
+                  ...(player ? { player } : {}),
+                  ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
+                }).toString(),
+              }}
+              className="hover:text-rw-accent hover:underline whitespace-nowrap"
+            >
+              {tl("Game finder")}
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "tiers",
+                query: new URLSearchParams({
+                  ...(league ? { scope: league, league } : scopeAll ? { scope: "all" } : {}),
+                  ...(tierKey ? { key: tierKey } : {}),
+                  ...(patch ? { patch } : year ? { year } : {}),
+                  ...(canonEv ? { event: canonEv } : {}),
+                  ...(itemRole ? { role: itemRole } : {}),
+                  q: [curCSlug, otherSpotSlug].filter(Boolean).join(","),
+                  ...(team ? { team } : {}),
+                  ...(vsTeam ? { vs: vsTeam } : {}),
+                  ...(player ? { player } : {}),
+                  ...(vsPlayer ? { vsplayer: vsPlayer } : {}),
+                }).toString(),
+              }}
+              className="hover:text-rw-accent hover:underline whitespace-nowrap"
+            >
+              {tl("Pro tier list")}
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "draft",
+                query: new URLSearchParams({
+                  ...(draftP ? { p: draftP } : {}),
+                  ...(team || vsTeam ? { teams: [team, vsTeam].filter(Boolean).join(",") } : {}),
+                  champ: [curCSlug, otherSpotSlug].filter(Boolean).join(","),
+                  ...(itemRole ? { role: itemRole } : {}),
+                }).toString(),
+              }}
+              className="hover:text-rw-accent hover:underline whitespace-nowrap"
+            >
+              {tl("Draft board")}
+            </HubLink>
+            <HubLink
+              to={{
+                kind: "leaders",
+                query: new URLSearchParams({
+                  champ: curCSlug,
+                  ...(league ? { league } : {}),
+                  ...(year ? { year } : {}),
+                  ...(canonEv ? { event: canonEv } : {}),
+                  ...(itemRole ? { role: itemRole } : {}),
+                  ...(otherSpotSlug || player || vsPlayer || team || vsTeam
+                    ? { q: [player, vsPlayer, team, vsTeam, curCSlug, otherSpotSlug].filter(Boolean).join(",") }
+                    : {}),
+                }).toString(),
+              }}
+              className="hover:text-rw-accent hover:underline whitespace-nowrap"
+            >
+              {tl("Player leaderboards")}
+            </HubLink>
           </div>
         </div>
       );

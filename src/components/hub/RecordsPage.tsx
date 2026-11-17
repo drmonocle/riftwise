@@ -222,7 +222,7 @@ const PentakillRecords: React.FC<{
       <Section
         title={tl("Most pentakills")}
         right={
-          <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+          <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
             {mostRows.length >= 1 && (
               <HubLink
                 to={{
@@ -346,7 +346,7 @@ const PentakillRecords: React.FC<{
         title={tl("Latest pentakills")}
         right={
           recentRows.length > 0 ? (
-            <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+            <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
               {(() => {
                 const r0Year = /^\d{4}$/.test((recentRows[0]?.date || "").slice(0, 4)) ? (recentRows[0]!.date || "").slice(0, 4) : "";
                 const r0Ev = recentRows[0]?.e || "";
@@ -759,7 +759,7 @@ const ClosestToFalling: React.FC<{ all: HubRecords; year: HubRecordsYear; label:
     <Section
       title={tl("Closest to falling")}
       right={
-        <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+        <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
           {all.game.fastest[0]?.w && year.game.fastest[0]?.w && (
             <>
               <HubLink
@@ -1185,7 +1185,7 @@ export const RecordsPanel: React.FC = () => {
               title={title}
               right={
                 rows.length > 0 ? (
-                  <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                  <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                     {rows[0].w && rows[0].a && rows[0].b && (() => {
                       const wSlug = resolveTeamAlias(rows[0].w, aliases.data?.team) || prettySlug(rows[0].w);
                       const lName = rows[0].w === rows[0].a ? rows[0].b : rows[0].a;
@@ -1443,7 +1443,7 @@ export const RecordsPanel: React.FC = () => {
               title={title}
               right={
                 rows.length > 0 ? (
-                  <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                  <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                     {(() => {
                       const p0Ev = rows[0].e || "";
                       const p0Yr = year !== "all" ? year : /^\d{4}$/.test((rows[0].date || "").slice(0, 4)) ? (rows[0].date || "").slice(0, 4) : "";
@@ -1773,7 +1773,7 @@ export const RecordsPanel: React.FC = () => {
               title={title}
               right={
                 rows.length > 0 ? (
-                  <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                  <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                     {rows.length >= 1 && (
                       <HubLink
                         to={{
@@ -2048,7 +2048,7 @@ export const RecordsPanel: React.FC = () => {
                 title={tl("Longest win streaks")}
                 right={
                   streakRows.length > 0 ? (
-                    <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                    <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                       {streakRows.length >= 1 && (
                         <>
                           <HubLink
@@ -2253,7 +2253,7 @@ export const RecordsPanel: React.FC = () => {
                 )}
                 right={
                   titleRecordRows.length > 0 ? (
-                    <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                    <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                       {titleRecordRows.length >= 1 && (
                         <>
                           <HubLink

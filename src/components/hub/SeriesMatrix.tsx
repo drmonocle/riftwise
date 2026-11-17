@@ -99,7 +99,7 @@ export function buildSeriesMatrixPlayers(s: HubSeries, gameNum: number | "all"):
           teamName: seriesSide === 1 ? s.a.n : s.b.n,
           c: p.c,
           champs: [],
-          pk: p.pk,
+          pk: gameNum !== "all" ? p.pk : undefined,
           g: 0,
           w: 0,
           k: 0,
@@ -225,6 +225,15 @@ const STAT_ROWS: StatRowDef[] = [
   { key: "dm", label: tk("Damage"), group: "dmg", val: (p) => (p.dmKnown ? p.dm : null), fmt: kFmt },
   { key: "dpm", label: "DPM", title: tk("Damage per minute"), group: "dmg", val: (p) => (p.dmKnown && p.min ? p.dm / p.min : null), fmt: r0 },
   { key: "dmgs", label: tk("DMG%"), group: "dmg", val: (p) => (p.tdm ? p.dm / p.tdm : null), fmt: pc1 },
+  {
+    key: "dmgeff",
+    label: tk("DMG% − Gold%"),
+    title: tk("Damage vs. gold share"),
+    group: "dmg",
+    val: (p) => (p.tdm && p.tgd ? p.dm / p.tdm - p.gd / p.tgd : null),
+    fmt: (v) => `${v > 0 ? "+" : ""}${fmtDec(v * 100)}%`,
+    diff: true,
+  },
   { key: "v", label: tk("Vision"), group: "dmg", val: (p) => (p.vKnown ? p.v : null), fmt: r0 },
   { key: "vsm", label: "VSPM", title: tk("Vision score per minute"), group: "dmg", val: (p) => (p.vKnown && p.min ? p.v / p.min : null), fmt: (v) => fmtDec(v, 2) },
   { key: "g10", label: "GD@10", title: tk("Gold lead over the lane opponent at 10 minutes"), group: "lane", val: (p) => (p.n10 ? p.g10 / p.n10 : null), fmt: sInt, diff: true },
@@ -260,7 +269,9 @@ export const SeriesMatrix: React.FC<{ s: HubSeries; initialGame?: number | "all"
     }`;
 
   // Filter rows dynamically so e.g. pick order # disappears on "Series Avg" or when unavailable across the series
-  const visibleRows = STAT_ROWS.filter((row) => cols.some((p) => row.val(p) !== null));
+  const visibleRows = STAT_ROWS.filter(
+    (row) => (row.key !== "pk" || effectiveScope !== "all") && cols.some((p) => row.val(p) !== null),
+  );
 
   return (
     <Section

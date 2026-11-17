@@ -440,7 +440,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
               new Set(blocks[0].lines.map((l) => (l.who?.to.kind === "player" ? l.who.to.slug : "")).filter(Boolean)),
             ).slice(0, 2);
             return (
-              <span className="flex items-center gap-2" data-nocapture="1">
+              <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 min-w-0 max-w-full [&_a]:whitespace-nowrap" data-nocapture="1">
                 <HubLink to={{ kind: "prep", a, b, period: p }} className="text-rw-sub hover:text-rw-accent hover:underline">
                   {tl("Match prep")} →
                 </HubLink>
@@ -683,7 +683,7 @@ export const AtStakeToday: React.FC<{ schedule: Match[]; narrow?: boolean }> = (
                 </HubLink>
               </span>
               <WinChanceLine match={m} />
-              <span className="ml-auto flex items-center gap-1" data-nocapture="1">
+              <span className="ml-auto flex flex-wrap items-center justify-end gap-1 min-w-0 max-w-full [&_a]:whitespace-nowrap [&_button]:whitespace-nowrap" data-nocapture="1">
                 <MatchOverviewButton match={m} compact />
                 <MatchPrepButton match={m} compact />
                 <HubLink

@@ -780,7 +780,7 @@ const LeagueTable: React.FC<{ title?: string; rows: LeagueRow[]; limit?: number;
       <div className="flex items-center justify-between gap-2">
         {title ? <h3 className="text-xs font-semibold uppercase tracking-wider text-rw-text">{title}</h3> : <span />}
         {list.length > 0 && (
-          <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+          <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
             {(() => {
               const scopeLg = list[0]?.u || "";
               const scopeYr = scopeLg && list[0]?.to && /^\d{4}$/.test(list[0].to) ? list[0].to : "";
@@ -1328,7 +1328,7 @@ const LeagueView: React.FC<{ l: HubLeague; year?: string }> = ({ l, year }) => {
           <Section
             title={tl("Most titles")}
             right={
-              <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+              <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                 {topTeams.length >= 1 && (
                   <>
                     <HubLink

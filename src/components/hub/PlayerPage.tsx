@@ -11,7 +11,7 @@ import { champName } from "../../champions";
 import { bare, loadHubChamp, loadHubPlayer, loadPlayerGames, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
 import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
 import type { HubPlayer } from "../../hub/types";
-import { type PeriodKey, inPeriod, matchesPeriodEvent, periodOptions, playerAgg, playerRowRef } from "../../hub/period";
+import { type PeriodKey, inPeriod, latestYearRow, matchesPeriodEvent, periodOptions, playerAgg, playerRowRef } from "../../hub/period";
 import { PageTabs, type PageTab } from "./PageTabs";
 import { useDDragon } from "../../hub/ddragon";
 import { PlayerChampGames, PlayerGamesArchive } from "./Archives";
@@ -906,13 +906,14 @@ const PlayerView: React.FC<{
           right={
             <span className="flex flex-wrap items-center gap-2">
               {(() => {
-                const latestYr = p.years[p.years.length - 1]?.y ? String(p.years[p.years.length - 1].y) : undefined;
-                const latestTeamName = p.years[p.years.length - 1]?.team || p.club;
+                const latestRow = latestYearRow(p.years);
+                const latestYr = latestRow?.y != null ? String(latestRow.y) : undefined;
+                const latestTeamName = latestRow?.team || p.club;
                 const teamSlug = latestTeamName
                   ? (latestTeamName === p.club ? p.clubU : undefined) || resolveTeamAlias(latestTeamName) || prettySlug(latestTeamName)
                   : primaryClubSlug;
                 const vsTeamSlug = [
-                  ...[...p.years].reverse().map((y) => (y.team ? resolveTeamAlias(y.team) || prettySlug(y.team) : "")),
+                  ...[...p.years].sort((a, b) => Number(b.y) - Number(a.y)).map((y) => (y.team ? resolveTeamAlias(y.team) || prettySlug(y.team) : "")),
                   vsClubFor(teamSlug) || "",
                 ].find((s) => s && s !== teamSlug);
                 const yrChamp = p.champs[0]?.c ? resolveChampSlug(p.champs[0].c) : undefined;

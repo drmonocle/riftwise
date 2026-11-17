@@ -2190,6 +2190,7 @@ const PlayerRows: React.FC<{
     { key: "p_kda", group: gStats, label: tl("KDA"), a: pStat(x.u, fmtN(A.kda)), b: pStat(y.u, fmtN(B.kda)), va: A.kda, vb: B.kda },
     { key: "p_kda_line", group: gStats, label: "K / D / A", a: pStat(x.u, pg(A)), b: pStat(y.u, pg(B)) },
     { key: "p_kp", group: gStats, label: "KP", a: pStat(x.u, pct(A.kp)), b: pStat(y.u, pct(B.kp)), va: A.kp, vb: B.kp },
+    { key: "p_ks", group: gStats, label: "KS%", a: pStat(x.u, pct(A.ks)), b: pStat(y.u, pct(B.ks)), va: A.ks, vb: B.ks },
     { key: "p_csm", group: gStats, label: tl("CS / min"), a: pStat(x.u, d(A.csm)), b: pStat(y.u, d(B.csm)), va: A.csm, vb: B.csm },
     { key: "p_gpm", group: gStats, label: tl("GPM"), a: pStat(x.u, A.gpm != null ? fmtNum(A.gpm) : "–"), b: pStat(y.u, B.gpm != null ? fmtNum(B.gpm) : "–"), va: A.gpm, vb: B.gpm },
     { key: "p_dpm", group: gStats, label: tl("Damage / min"), a: pStat(x.u, A.dpm != null ? fmtNum(A.dpm) : "–"), b: pStat(y.u, B.dpm != null ? fmtNum(B.dpm) : "–"), va: A.dpm, vb: B.dpm },
@@ -2198,6 +2199,9 @@ const PlayerRows: React.FC<{
     { key: "p_vsm", group: gStats, label: tl("VS / min"), a: pStat(x.u, d(A.vsm)), b: pStat(y.u, d(B.vsm)), va: A.vsm, vb: B.vsm },
     ...(A.tl || B.tl
       ? ([
+          { key: "p_gd10", group: gEarly, label: "GD@10", a: pStat(x.u, sgn(A.tl?.gd10 ?? null)), b: pStat(y.u, sgn(B.tl?.gd10 ?? null)), va: A.tl?.gd10 ?? null, vb: B.tl?.gd10 ?? null },
+          { key: "p_csd10", group: gEarly, label: "CSD@10", a: pStat(x.u, sgn(A.tl?.csd10 ?? null)), b: pStat(y.u, sgn(B.tl?.csd10 ?? null)), va: A.tl?.csd10 ?? null, vb: B.tl?.csd10 ?? null },
+          { key: "p_xpd10", group: gEarly, label: "XPD@10", a: pStat(x.u, sgn(A.tl?.xpd10 ?? null)), b: pStat(y.u, sgn(B.tl?.xpd10 ?? null)), va: A.tl?.xpd10 ?? null, vb: B.tl?.xpd10 ?? null },
           { key: "p_gd15", group: gEarly, label: "GD@15", a: pStat(x.u, sgn(A.tl?.gd15 ?? null)), b: pStat(y.u, sgn(B.tl?.gd15 ?? null)), va: A.tl?.gd15 ?? null, vb: B.tl?.gd15 ?? null },
           { key: "p_csd15", group: gEarly, label: "CSD@15", a: pStat(x.u, sgn(A.tl?.csd15 ?? null)), b: pStat(y.u, sgn(B.tl?.csd15 ?? null)), va: A.tl?.csd15 ?? null, vb: B.tl?.csd15 ?? null },
           { key: "p_xpd15", group: gEarly, label: "XPD@15", a: pStat(x.u, sgn(A.tl?.xpd15 ?? null)), b: pStat(y.u, sgn(B.tl?.xpd15 ?? null)), va: A.tl?.xpd15 ?? null, vb: B.tl?.xpd15 ?? null },
@@ -3716,9 +3720,11 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
             [tl("Win rate"), A.map((x) => wr(x.w, x.g))],
             ["KDA", A.map((x) => x.kda)],
             ["KP", A.map((x) => x.kp)],
+            ["KS%", A.map((x) => x.ks)],
             [tl("CS / min"), A.map((x) => x.csm)],
             [tl("Damage / min"), A.map((x) => x.dpm)],
             ["DMG%", A.map((x) => x.dmgShare)],
+            ["GD@10", A.map((x) => x.tl?.gd10 ?? null)],
             ["GD@15", A.map((x) => x.tl?.gd15 ?? null)],
             ["CSD@15", A.map((x) => x.tl?.csd15 ?? null)],
             [tl("VS / min"), A.map((x) => x.vsm)],
@@ -3727,7 +3733,7 @@ const MultiCompare: React.FC<{ mode: Mode; slugs: string[]; period?: string; set
         })();
   const pct = (label: string) => /rate|wins|%|blood|KP/.test(label);
   const fmt = (label: string, v: number | null) =>
-    v == null ? "–" : pct(label) ? `${fmtDec(v)}%` : /GD@15|Gold diff/.test(label) ? `${v > 0 ? "+" : ""}${fmtNum(Math.round(v))}` : /KDA|CS|VS|min\)/.test(label) ? Number(v.toFixed(2)).toLocaleString(locale()) : fmtNum(Math.round(v));
+    v == null ? "–" : pct(label) ? `${fmtDec(v)}%` : /GD@|Gold diff/.test(label) ? `${v > 0 ? "+" : ""}${fmtNum(Math.round(v))}` : /KDA|CS|VS|min\)/.test(label) ? Number(v.toFixed(2)).toLocaleString(locale()) : fmtNum(Math.round(v));
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 text-xs">

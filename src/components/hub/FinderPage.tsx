@@ -233,7 +233,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
           <h1 className="text-base font-bold text-rw-text">
             {tl("Game finder")}
           </h1>
-          <span className="flex flex-wrap items-center gap-2 text-[11px]" data-nocapture="1">
+          <span className="flex flex-wrap items-center gap-2 text-[11px] [&_a]:whitespace-nowrap" data-nocapture="1">
             {(() => {
               const qEvent = q.get("event") ? resolveEventSlug(q.get("event")!) : "";
               const qPatch = q.get("patch") || "";
@@ -1931,9 +1931,9 @@ const Cohort: React.FC<{
     const maxG = Math.max(1, ...rows.map(([, [g]]) => g));
     return (
       <div className="min-w-0">
-        <div className="flex items-center justify-between gap-2 text-[10px] font-semibold text-rw-muted mb-1">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-[10px] font-semibold text-rw-muted mb-1">
           <span>{title}</span>
-          <span className="flex items-center gap-2 shrink-0">
+          <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 min-w-0 max-w-full [&_a]:whitespace-nowrap">
             {rows.length >= 1 && (
               <>
                 <HubLink

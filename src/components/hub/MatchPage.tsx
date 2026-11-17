@@ -1007,7 +1007,7 @@ const SeriesGames: React.FC<{
                 ...(seriesYear ? { year: seriesYear } : {}),
               }).toString() || undefined;
             return (
-              <span className="ml-auto flex items-center gap-2">
+              <span className="ml-auto flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 min-w-0 max-w-full [&_a]:whitespace-nowrap">
                 <HubLink
                   to={{ kind: "prep", a: slugA, b: slugB, ...(fearlessPeriod ? { period: fearlessPeriod } : {}), ...(fearlessCtxQuery ? { query: fearlessCtxQuery } : {}) }}
                   className="text-rw-accent hover:underline font-semibold"

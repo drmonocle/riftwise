@@ -235,9 +235,9 @@ export const HubHome: React.FC<{
           width after them (both lay themselves out in columns) */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 items-stretch">
         <section className={`${hot} flex flex-col`}>
-          <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <h2 className="font-head text-lg font-bold text-rw-text flex items-center gap-2"><TrendingUp className="w-4 h-4 text-rw-accent" />{tl("Power rankings")}</h2>
-            <span className="flex items-center gap-2">
+            <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 min-w-0 max-w-full [&_a]:whitespace-nowrap">
               {(() => {
                 const top2 = (ratings.data?.teams || [])
                   .filter((t) => t[9] === 1)
@@ -1182,7 +1182,7 @@ const PlayersOfTheMonth: React.FC<{ rows: NonNullable<import("../../hub/types").
         hidden ? (
           <RevealButton onReveal={reveal} small />
         ) : (
-          <span className="flex items-center gap-2" data-nocapture="1">
+          <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 min-w-0 max-w-full [&_a]:whitespace-nowrap" data-nocapture="1">
             {(() => {
               const potmYr = from && /^\d{4}/.test(from) ? from.slice(0, 4) : undefined;
               const t0 = rows[0]?.t ? teamSlug(rows[0].t) : "";
@@ -1668,7 +1668,7 @@ const EventsTable: React.FC<{ list: EventListItem[]; scope: "main" | "all"; q: s
         <span className="text-[11px] text-rw-muted tabular-nums">
           {tn("{n} tournament", "{n} tournaments", rows.length)}
         </span>
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 min-w-0 max-w-full [&_a]:whitespace-nowrap">
           {(() => {
             const singleLg = (() => {
               const lgs = new Set(rows.map((e) => (e.l ? resolveLeagueSlug(e.l) : "")).filter(Boolean));

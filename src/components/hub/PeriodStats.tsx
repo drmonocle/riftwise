@@ -1340,7 +1340,7 @@ const PlayerPeriodView: React.FC<{ slug: string; rows: PlayerGameRow[]; who?: Wh
             <Stat
               label="KP"
               value={pct(agg.kp)}
-              sub={tl("Kill participation")}
+              sub={agg.ks != null ? `${tl("KS%")} ${pct(agg.ks)}` : tl("Kill participation")}
               to={leaderTo("kp")}
             />
             <Stat

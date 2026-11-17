@@ -1694,8 +1694,8 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
     <div className={`bg-rw-bg border border-rw-border rounded-lg ${compact ? "px-2 py-1" : "px-2.5 py-1.5"} text-xs min-w-0`}>
       {line(r.a, r.au, r.sa, r.w === 1, bu)}
       {line(r.b, r.bu, r.sb, r.w === 2, au)}
-      <div className="flex items-center justify-between gap-2 mt-0.5 text-[10px] text-rw-muted">
-        <span className="truncate">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-rw-muted">
+        <span className="truncate min-w-0">
           {r.g && !hideResult ? (
             <HubLink to={{ kind: "match", slug: r.g }} className="hover:text-rw-text hover:underline">
               {note ?? fmtDate(r.date, false)}
@@ -1704,10 +1704,11 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
             note ?? fmtDate(r.date, false)
           )}
         </span>
-        <span className="flex items-center gap-1.5 shrink-0">
+        <span className="flex flex-wrap items-center justify-end gap-x-1.5 gap-y-0.5 min-w-0">
           {hiddenBySpoiler && !hideResult && played && <RevealButton onReveal={reveal} small />}
           {au && bu && (
             <>
+              {!compact && (
               <HubLink
                 to={{
                   kind: "prep",
@@ -1725,6 +1726,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               >
                 {tl("Match prep")}
               </HubLink>
+              )}
               <HubLink
                 to={{
                   kind: "compare",
@@ -1743,6 +1745,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               >
                 {tl("vs")}
               </HubLink>
+              {!compact && (
               <HubLink
                 to={{
                   kind: "draft",
@@ -1758,6 +1761,8 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               >
                 {tl("Draft board")}
               </HubLink>
+              )}
+              {!compact && (
               <HubLink
                 to={{
                   kind: "items",
@@ -1774,6 +1779,8 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               >
                 {tl("Item history")}
               </HubLink>
+              )}
+              {!compact && (
               <HubLink
                 to={{
                   kind: "finder",
@@ -1790,6 +1797,7 @@ export const SeriesBox: React.FC<{ r: SeriesRow; hideResult?: boolean; note?: Re
               >
                 {tl("Game finder")}
               </HubLink>
+              )}
             </>
           )}
           {!hidden && r.r != null &&

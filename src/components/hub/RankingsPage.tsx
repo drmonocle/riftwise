@@ -1101,7 +1101,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           title={tl("League strength")}
           share="riftwise-league-strength"
           right={
-            <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+            <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
               {(() => {
                 const topTwo = d.leagues
                   .slice(0, 4)

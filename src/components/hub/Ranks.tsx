@@ -72,14 +72,14 @@ export const PLAYER_METRICS: Metric<EventPlayer>[] = [
     key: "gpm",
     short: "GPM",
     label: tk("Gold per minute"),
-    value: (p) => div(p.gold, p.min),
+    value: (p) => (p.gold > 0 ? div(p.gold, p.min) : null),
     fmt: int,
   },
   {
     key: "dpm",
     short: "DPM",
     label: tk("Damage per minute"),
-    value: (p) => div(p.dmg, p.min),
+    value: (p) => (p.dmg > 0 ? div(p.dmg, p.dm ?? p.min) : null),
     fmt: int,
   },
   { key: "dmgs", label: tk("DMG%"), value: (p) => div(p.sd, p.td), fmt: pc },
@@ -88,7 +88,7 @@ export const PLAYER_METRICS: Metric<EventPlayer>[] = [
     key: "vsm",
     short: "VSPM",
     label: tk("Vision score per minute"),
-    value: (p) => div(p.vis, p.vmin),
+    value: (p) => (p.vis > 0 ? div(p.vis, p.vmin) : null),
     fmt: r2,
   },
   // Oracle's Elixir (games with timelines only)
@@ -373,7 +373,7 @@ const RankControls: React.FC<{ prefs: RankPrefs; set: (p: RankPrefs) => void }> 
   const seg = (on: boolean) =>
     `px-2 py-1 pointer-coarse:min-h-9 max-sm:min-h-9 ${on ? "bg-rw-accent/15 text-rw-text" : "text-rw-sub hover:text-rw-text"}`;
   return (
-    <span data-nocapture="1" className="flex items-center gap-2 text-[11px]">
+    <span data-nocapture="1" className="flex flex-wrap items-center justify-end gap-2 text-[11px] min-w-0 max-w-full">
       <span className="flex rounded border border-rw-border divide-x divide-rw-border overflow-hidden" role="group" aria-label={tl("Count stats")}>
         <button type="button" aria-pressed={!prefs.perMin} onClick={() => set({ ...prefs, perMin: false })} className={seg(!prefs.perMin)}>
           {tl("Per game")}

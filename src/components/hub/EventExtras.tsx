@@ -741,12 +741,12 @@ export const EventFacts: React.FC<{ o: EventOverview; slug?: string; leagueSlug?
       )}
       {!hidden && o.pentas.length > 0 && (
         <div className="text-xs">
-          <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 mb-1">
             <span className="text-rw-muted flex items-center gap-1">
               <Swords className="w-3 h-3" />
               {tl("Pentakills")}
             </span>
-            <span className="flex items-center gap-2">
+            <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 min-w-0 max-w-full [&_a]:whitespace-nowrap">
               {pentaPlayers[0] && (
                 <>
                   <HubLink

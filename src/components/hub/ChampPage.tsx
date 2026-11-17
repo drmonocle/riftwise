@@ -4,7 +4,7 @@ import { tl, tc, roleName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { bare, loadAliases, loadHubChamp, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveItemSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
-import { matchesPeriodEvent } from "../../hub/period";
+import { latestYearRow, matchesPeriodEvent } from "../../hub/period";
 import { normalizeRole } from "../../hub/champAgg";
 import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import type { HubChamp } from "../../hub/types";
@@ -3094,7 +3094,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
         right={
           <span className="flex flex-wrap items-center gap-2">
             {(() => {
-              const latestY = c.years[c.years.length - 1]?.y;
+              const latestY = latestYearRow(c.years)?.y;
               return (
                 <>
                   {heroTeam0 && (

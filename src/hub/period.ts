@@ -238,6 +238,7 @@ export interface PlayerAgg {
   a: number;
   kda: number;
   kp: number | null;
+  ks: number | null;
   csm: number | null;
   gpm: number | null;
   dpm: number | null;
@@ -333,6 +334,7 @@ export function playerAgg(rows: PlayerGameRow[]): PlayerAgg {
     a,
     kda: kdaOf(k, d, a),
     kp: share(kpN, kpD),
+    ks: share(k, kpD),
     csm: ratio(cs, minCs),
     gpm: ratio(gold, minGold, 0),
     dpm: ratio(dmg, minDmg, 0),
@@ -686,4 +688,17 @@ export function winWhen(rows: TeamGameRow[]): {
     }
   }
   return { firsts, gold: (["a2", "a0", "b0", "b2"] as const).map((key) => ({ key, g: bands[key][0], w: bands[key][1] })), n };
+}
+
+/** Return the most recent `{ y }` entry regardless of whether a dataset sorts `years` newest-first or oldest-first. */
+export function latestYearRow<T extends { y: string | number }>(years: readonly T[] | undefined | null): T | undefined {
+  if (!years?.length) return undefined;
+  let best = years[0];
+  for (let i = 1; i < years.length; i++) {
+    const cur = years[i];
+    const cn = Number(cur.y);
+    const bn = Number(best.y);
+    if (!Number.isNaN(cn) && !Number.isNaN(bn) ? cn > bn : String(cur.y) > String(best.y)) best = cur;
+  }
+  return best;
 }

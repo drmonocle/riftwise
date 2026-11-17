@@ -19,7 +19,7 @@ import { SectionCard } from "./BroadcastCard";
 const DEFAULT_LEAGUE = "world-championship";
 
 const yearsOf = (l?: LeagueRow) => {
-  if (l?.sy?.length) return l.sy;
+  if (l?.sy?.length) return [...l.sy].sort((a, b) => b.localeCompare(a));
   const from = Number(l?.from) || 0;
   const to = Number(l?.to) || 0;
   const out: string[] = [];

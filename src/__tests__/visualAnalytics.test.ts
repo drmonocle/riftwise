@@ -13,6 +13,7 @@ describe("playerPlaystyleTags", () => {
     a: 140,
     kda: 7.14,
     kp: 71.2,
+    ks: 31.3,
     csm: 9.2,
     gpm: 445,
     dpm: 690,

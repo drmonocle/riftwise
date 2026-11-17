@@ -12,7 +12,7 @@ import { bare, loadAliases, loadWeekly, normText, prettySlug, resolveChampSlug, 
 import { matchesPeriodEvent } from "../../hub/period";
 import { navigateHub, useHubRoute } from "../../hub/route";
 import type { HubWeekly } from "../../hub/types";
-import { card, ChampIcon, ChampLink, EventLink, fmtDate, HubLink, hubShareUrl, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, HubLink, hubShareUrl, Page, PlayerLink, PlayerPhoto, RevealButton, Section, TeamLink, TeamLogo, th, td, useHidden, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { BroadcastCardButton, listCard, SectionCard } from "./BroadcastCard";
 import { fmtRating, RatingBadge } from "./PlayerRating";
@@ -31,7 +31,8 @@ const RECORD_TITLES: Record<string, string> = {
   "team/streaks": "Longest win streaks",
 };
 const mmss = (m: number) => `${Math.floor(m)}:${String(Math.round((m % 1) * 60)).padStart(2, "0")}`;
-const recordValue = (k: string, v: number) => (k === "fastest" || k === "longest" ? mmss(v) : k === "comebacks" ? `${(v / 1000).toFixed(1)}k` : String(v));
+const recordValue = (k: string, v: number, en = false) =>
+  k === "fastest" || k === "longest" ? mmss(v) : k === "comebacks" ? `${(v / 1000).toFixed(1)}k` : en ? v.toLocaleString("en-US") : fmtNum(v);
 const recordWho = (r: Record<string, string | number>) => String(r.pl ? `${r.pl}${r.team ? ` (${r.team})` : ""}` : r.w || r.team || "");
 
 /** The week as Markdown for a Reddit post (English: the post is for r/leagueoflegends and r/lolesports). */
@@ -49,7 +50,7 @@ function markdown(w: HubWeekly): string {
   }
   if (w.records.length) {
     L.push("## All-time records set", "");
-    for (const r of w.records) L.push(`- ${RECORD_TITLES[`${r.s}/${r.k}`] || r.k}: ${recordValue(r.k, Number(r.r.v))} · ${recordWho(r.r)}`);
+    for (const r of w.records) L.push(`- ${RECORD_TITLES[`${r.s}/${r.k}`] || r.k}: ${recordValue(r.k, Number(r.r.v), true)} · ${recordWho(r.r)}`);
     L.push("");
   }
   if (w.best.length) {
@@ -488,7 +489,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             title={tl("Biggest upsets")}
             right={
               w.upsets.length > 0 ? (
-                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                   <HubLink
                     to={{
                       kind: "prep",
@@ -722,7 +723,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             title={tl("Power rankings movers")}
             right={
               w.movers.length > 0 ? (
-                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                   {w.movers.length >= 1 && (
                     <>
                       <HubLink
@@ -918,7 +919,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             <Section
               title={tl("All-time records set")}
               right={
-                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                   {(() => {
                     const r0 = w.records[0]?.r;
                     const r1 = w.records[1]?.r;
@@ -1205,7 +1206,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             title={tl("Best games")}
             right={
               w.best.length > 0 ? (
-                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                   <HubLink
                     to={{
                       kind: "prep",
@@ -1432,7 +1433,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             <Section
               title={tl("Players of the week")}
               right={
-                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                   {(() => {
                     const pwP0 = w.players[0].u || playerSlug(w.players[0].n);
                     const pwP1 =
@@ -1738,7 +1739,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
             <Section
               title={tl("Picks and bans this week")}
               right={
-                <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+                <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
                   {(() => {
                     const pbChamps = [
                       w.champs[0]?.[0] ? resolveChampSlug(w.champs[0][0]) : "",

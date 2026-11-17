@@ -379,9 +379,9 @@ export const EventPlayerStats: React.FC<{ e: HubEvent; hidden?: boolean; initial
         ] as Column<EventPlayer>[])
       : []),
     { key: "csm", label: tl("CS/m"), title: tl("CS per minute"), value: (p) => per(p.cs, p.min), render: (p) => pStatLink(p, per(p.cs, p.min)) },
-    { key: "gpm", label: tl("GPM"), title: tl("Gold per minute"), value: (p) => per(p.gold, p.min, 0), render: (p) => pStatLink(p, per(p.gold, p.min, 0)) },
+    { key: "gpm", label: tl("GPM"), title: tl("Gold per minute"), value: (p) => (p.gold ? per(p.gold, p.min, 0) : null), render: (p) => (p.gold ? pStatLink(p, per(p.gold, p.min, 0)) : "–") },
     { key: "dpm", label: tl("DPM"), title: tl("Damage per minute"), value: (p) => (p.dmg ? per(p.dmg, p.dm ?? p.min, 0) : null), render: (p) => (p.dmg ? pStatLink(p, per(p.dmg, p.dm ?? p.min, 0)) : "–") },
-    { key: "vpm", label: tl("VS/m"), title: tl("Vision score per minute"), value: (p) => per(p.vis, p.vmin, 2), render: (p) => pStatLink(p, per(p.vis, p.vmin, 2)) },
+    { key: "vpm", label: tl("VS/m"), title: tl("Vision score per minute"), value: (p) => (p.vis ? per(p.vis, p.vmin, 2) : null), render: (p) => (p.vis ? pStatLink(p, per(p.vis, p.vmin, 2)) : "–") },
     { key: "dmgs", label: tl("DMG%"), title: tl("Share of the team's damage to champions"), value: (p) => (p.td ? per(p.sd || 0, p.td, 3) : null), render: (p) => (p.td ? pStatLink(p, shareTone(per(p.sd || 0, p.td, 3), 0.26, 0.1)) : "–") },
     { key: "golds", label: tl("Gold%"), title: tl("Share of the team's gold"), value: (p) => (p.tg ? per(p.sg || 0, p.tg, 3) : null), render: (p) => (p.tg ? pStatLink(p, pct(per(p.sg || 0, p.tg, 3))) : "–") },
     { key: "viss", label: tl("VS%"), title: tl("Share of the team's vision score"), value: (p) => (p.tv ? per(p.sv || 0, p.tv, 3) : null), render: (p) => (p.tv ? pStatLink(p, pct(per(p.sv || 0, p.tv, 3))) : "–") },
@@ -1715,7 +1715,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
             className="bg-rw-bg border border-rw-border rounded px-2 py-1 text-[11px] text-rw-text w-44"
           />
           {pair && (
-            <span className="flex items-center gap-2 text-[11px]">
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full [&_a]:whitespace-nowrap">
               <HubLink
                 to={{
                   kind: "prep",
@@ -1841,7 +1841,7 @@ export const EventTeamStatsTable: React.FC<{ e: HubEvent; hidden?: boolean; init
             </span>
           )}
           {search.trim() && rows.length === 1 && (
-            <span className="flex items-center gap-2 text-[11px]">
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full [&_a]:whitespace-nowrap">
               <HubLink
                 to={{
                   kind: "prep",

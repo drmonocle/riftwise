@@ -263,9 +263,10 @@ const ColoredOpponentGraph: React.FC<{
   const W = 760;
   const H = 186;
   const padX = 38;
+  const padRight = 84;
   const padTop = 26;
   const padBot = 36;
-  const plotW = W - padX * 2;
+  const plotW = W - padX - padRight;
   const plotH = H - padTop - padBot;
 
   const xOf = (i: number) => padX + (items.length === 1 ? plotW / 2 : (i / (items.length - 1)) * plotW);
@@ -308,13 +309,13 @@ const ColoredOpponentGraph: React.FC<{
           {/* Subtle horizontal guide lines */}
           {[0.2, 0.5, 0.8].map((f) => {
             const gy = padTop + f * plotH;
-            return <line key={f} x1={padX} x2={W - padX} y1={gy} y2={gy} stroke="var(--rw-border)" strokeWidth="1" strokeDasharray="2 4" opacity="0.55" />;
+            return <line key={f} x1={padX} x2={W - padRight} y1={gy} y2={gy} stroke="var(--rw-border)" strokeWidth="1" strokeDasharray="2 4" opacity="0.55" />;
           })}
 
           {/* Baseline reference */}
           <line
             x1={padX - 8}
-            x2={W - padX + 8}
+            x2={W - padRight + 8}
             y1={baseY}
             y2={baseY}
             stroke="var(--rw-muted)"
@@ -322,7 +323,7 @@ const ColoredOpponentGraph: React.FC<{
             strokeDasharray="4 4"
             opacity="0.7"
           />
-          <text x={W - padX + 6} y={Math.max(12, Math.min(H - padBot - 4, baseY - 4))} textAnchor="end" fontSize="9.5" fill="var(--rw-muted)">
+          <text x={W - padRight + 11} y={Math.max(12, Math.min(H - padBot - 4, baseY + 3))} textAnchor="start" fontSize="9.5" fill="var(--rw-muted)">
             {baselineLabel}
           </text>
 
@@ -995,7 +996,7 @@ export const PlayerOpponents: React.FC<{
       title={tl("Against other teams")}
       share={`${slug}-opponents`}
       right={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 min-w-0 max-w-full [&_a]:whitespace-nowrap [&_button]:whitespace-nowrap">
           {!givenRows && has2y && !fullLog && (
             <button
               type="button"

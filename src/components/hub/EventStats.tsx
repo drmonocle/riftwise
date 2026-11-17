@@ -168,7 +168,7 @@ export const FactGroups: React.FC<{
     <div className="space-y-4">
       {(facts.length > 6 || Boolean(search.trim())) && (
         <div className="flex flex-wrap items-center justify-between gap-2" data-nocapture="1">
-          <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-semibold">
+          <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-semibold [&_a]:whitespace-nowrap">
             {topTeams.length >= 1 && (
               <HubLink
                 to={{
@@ -565,7 +565,7 @@ export const FactCard: React.FC<{
       id={shareId}
       share={shareId}
       right={
-        <span className="flex items-center gap-1">
+        <span className="flex flex-wrap items-center justify-end gap-x-1.5 gap-y-0.5 min-w-0 max-w-full [&_a]:whitespace-nowrap [&_button]:whitespace-nowrap">
           {f.rows.length >= 1 &&
             (cardPlayers[0] ? (
               <>

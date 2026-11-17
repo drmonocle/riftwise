@@ -11,7 +11,7 @@ import { champName } from "../../champions";
 import { loadPlayerGames, loadPlayerGames2y, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { currentHubRoute } from "../../hub/route";
 import type { HubChamp, HubPlayer, HubTeam, PlayerGameRow, PlayerTimeline } from "../../hub/types";
-import { playerAgg, type PlayerAgg } from "../../hub/period";
+import { latestYearRow, playerAgg, type PlayerAgg } from "../../hub/period";
 import { playerRowLine, rateLine } from "../../hub/playerRating";
 import { fmtRating, useRatingFile } from "./PlayerRating";
 import { SectionCard } from "./BroadcastCard";
@@ -156,7 +156,7 @@ export const PlayerVisualOverview: React.FC<{ p: HubPlayer; cardSub?: string }> 
   const rows = usePlayerOverviewRows(p.u, !!p.g2y);
   const { periodRows, periodLabel, periodKey } = useMemo(() => {
     if (!rows || !rows.length) return { periodRows: [] as PlayerGameRow[], periodLabel: "", periodKey: undefined as string | undefined };
-    const latestYear = p.years[p.years.length - 1]?.y;
+    const latestYear = latestYearRow(p.years)?.y;
     if (latestYear) {
       const yRows = rows.filter((r) => r[0].startsWith(latestYear));
       if (yRows.length >= 10) return { periodRows: yRows, periodLabel: `${latestYear} · ${yRows.length}G`, periodKey: `y${latestYear}` };
@@ -1338,7 +1338,7 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
 
   const R = 21;
   const C = 2 * Math.PI * R;
-  const latestYr = p.years[p.years.length - 1]?.y;
+  const latestYr = latestYearRow(p.years)?.y;
   const myClubSlug = p.club ? teamSlug(p.club, p.clubU) : p.teams[0] ? teamSlug(p.teams[0].n, p.teams[0].u) : undefined;
   const recentOppSlug = p.recent.map((r) => (r.opp ? teamSlug(r.opp) : "")).find((s) => Boolean(s) && s !== myClubSlug);
   const vsPlayer = urlVsPlayerFor(p.u);
@@ -1354,7 +1354,7 @@ export const SignatureChampsGrid: React.FC<{ p: HubPlayer; cardSub?: string }> =
         title={tl("Most played champions")}
         share={`${p.u}-signature-champs`}
         right={
-          <span className="flex items-center gap-2 text-[11px]" data-nocapture="1">
+          <span className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[11px] min-w-0 max-w-full" data-nocapture="1">
             {c0Slug && (
               <>
                 <HubLink

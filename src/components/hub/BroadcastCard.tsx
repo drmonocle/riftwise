@@ -12,7 +12,7 @@ import { ChampIcon } from "./ui";
 import { heroBtn } from "./EntityHero";
 import { champName } from "../../champions";
 import { loadHubLogos, loadHubPhotos, usePlayerPicture, useTeamLogo } from "../../hub/riotCatalog";
-import type { PlayerAgg, TeamAgg } from "../../hub/period";
+import { latestYearRow, type PlayerAgg, type TeamAgg } from "../../hub/period";
 import { ROLES } from "../../hub/champAgg";
 import type { draftTendencies } from "./DraftTendencies";
 
@@ -1459,7 +1459,7 @@ export function chancesCard(d: { title: string; subtitle: string; cols: string[]
 
 /** A champion in pro play: this year and all time, its roles and the players with the most games on it. */
 export function champCardData(c: import("../../hub/types").HubChamp, label: string): CardData {
-  const year = c.years.find((y) => y.y === String(new Date().getFullYear())) || c.years[c.years.length - 1];
+  const year = c.years.find((y) => y.y === String(new Date().getFullYear())) || latestYearRow(c.years);
   const rows: CardRow[] = [];
   if (year) {
     rows.push({ label: tl("Games in {year}", { year: year.y }), a: year.p.toLocaleString(locale()) });

@@ -14,7 +14,7 @@ import type { HubTeam, PlayerGameRow, TeamGameRow } from "../../hub/types";
 import { useDDragon } from "../../hub/ddragon";
 import { TeamSeriesArchive } from "./Archives";
 import { PeriodPicker, QuickPeriods, TeamPeriodStats, playstyleTags } from "./PeriodStats";
-import { PeriodKey, inPeriod, matchesPeriodEvent, periodOptions, teamAgg, teamRowRef } from "../../hub/period";
+import { PeriodKey, inPeriod, latestYearRow, matchesPeriodEvent, periodOptions, teamAgg, teamRowRef } from "../../hub/period";
 import { TeamRanks } from "./Ranks";
 import { OwnStorylines } from "./Storylines";
 import { CaptureContext, card, ChampIcon, ChampLink, EventLink, fmtDate, fmtNum, fmtUsd, fmtUsdShort, HubLink, isFresh, Loading, Page, PlayerLink, PlayerPhoto, ratingTextClass, RevealButton, Section, Stat, td, TeamLink, TeamLogo, th, useHidden, useHiddenCheck, useLoad, usePageTitle, PhotosLink, FollowFeeds } from "./ui";
@@ -1217,7 +1217,8 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
           right={
             <span className="flex flex-wrap items-center gap-2">
               {(() => {
-                const latestYr = t.years[t.years.length - 1]?.y ? String(t.years[t.years.length - 1].y) : undefined;
+                const latestYrRow = latestYearRow(t.years);
+                const latestYr = latestYrRow?.y != null ? String(latestYrRow.y) : undefined;
                 const oppSlug = t.opps.map((o) => o.u || resolveTeamAlias(o.n) || prettySlug(o.n)).find((s) => s && s !== t.u);
                 const c0Slug = t.champs[0]?.c ? resolveChampSlug(t.champs[0].c) : undefined;
                 const c1Slug = t.champs.map((x) => resolveChampSlug(x.c)).find((s) => s && s !== c0Slug);
@@ -4112,7 +4113,7 @@ const TeamPlaystyleOverview: React.FC<{ t: HubTeam }> = ({ t }) => {
 
   const { periodRows, periodLabel } = useMemo(() => {
     if (!rows || !rows.length) return { periodRows: [] as TeamGameRow[], periodLabel: "" };
-    const latestYear = t.years[t.years.length - 1]?.y;
+    const latestYear = latestYearRow(t.years)?.y;
     if (latestYear) {
       const yRows = rows.filter((r) => r[0].startsWith(latestYear));
       if (yRows.length >= 12) return { periodRows: yRows, periodLabel: `${latestYear} · ${yRows.length}G` };
