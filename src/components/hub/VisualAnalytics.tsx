@@ -11,7 +11,7 @@ import { champName } from "../../champions";
 import { loadPlayerGames, loadPlayerGames2y, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../../hub/data";
 import { currentHubRoute } from "../../hub/route";
 import type { HubChamp, HubPlayer, HubTeam, PlayerGameRow, PlayerTimeline } from "../../hub/types";
-import { latestYearRow, playerAgg, type PlayerAgg } from "../../hub/period";
+import { latestYearRow, patchYear, playerAgg, type PlayerAgg } from "../../hub/period";
 import { playerRowLine, rateLine } from "../../hub/playerRating";
 import { fmtRating, useRatingFile } from "./PlayerRating";
 import { SectionCard } from "./BroadcastCard";
@@ -2434,7 +2434,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             <HubLink
               to={{
                 kind: "counters",
-                query: `champ=${encodeURIComponent(cSlug)}${topVsSlug ? `&vs=${encodeURIComponent(topVsSlug)}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}${topPlayerSlugs[1] && topPlayerSlugs[1] !== topPlayerSlugs[0] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}${topTeamSlugs[1] && topTeamSlugs[1] !== topTeamSlugs[0] ? `&vsteam=${encodeURIComponent(topTeamSlugs[1])}` : ""}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}` : ""}${sel?.p && /^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}`,
+                query: `champ=${encodeURIComponent(cSlug)}${topVsSlug ? `&vs=${encodeURIComponent(topVsSlug)}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}${topPlayerSlugs[1] && topPlayerSlugs[1] !== topPlayerSlugs[0] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}${topTeamSlugs[1] && topTeamSlugs[1] !== topTeamSlugs[0] ? `&vsteam=${encodeURIComponent(topTeamSlugs[1])}` : ""}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}${patchYear(sel.p) ? `&year=${patchYear(sel.p)}` : ""}` : ""}`,
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
@@ -2446,7 +2446,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                 query: new URLSearchParams({
                   q: qChamps,
                   ...(sel ? { key: `p${sel.p}`, patch: sel.p } : {}),
-                  ...(sel?.p && /^\d{2}\./.test(sel.p) ? { year: String(2010 + Number(sel.p.split(".")[0])) } : {}),
+                  ...(patchYear(sel?.p) ? { year: patchYear(sel?.p) } : {}),
                   ...(primaryRole ? { role: primaryRole } : {}),
                 }).toString(),
               }}
@@ -2466,7 +2466,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                   ...(topTeamSlugs[0] ? { team: topTeamSlugs[0] } : {}),
                   ...(topTeamSlugs[1] ? { vs: topTeamSlugs[1] } : {}),
                   ...(sel?.p ? { patch: sel.p } : {}),
-                  ...(sel?.p && /^\d{2}\./.test(sel.p) ? { year: String(2010 + Number(sel.p.split(".")[0])) } : {}),
+                  ...(patchYear(sel?.p) ? { year: patchYear(sel?.p) } : {}),
                 }).toString(),
               }}
               className="text-rw-accent hover:underline font-semibold"
@@ -2476,7 +2476,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             <HubLink
               to={{
                 kind: "finder",
-                query: `champ=${encodeURIComponent(cSlug)}${topVsSlug ? `&vschamp=${encodeURIComponent(topVsSlug)}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}` : ""}${topPlayerSlugs[1] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}` : ""}${topTeamSlugs[1] ? `&vs=${encodeURIComponent(topTeamSlugs[1])}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}` : ""}${sel?.p && /^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}`,
+                query: `champ=${encodeURIComponent(cSlug)}${topVsSlug ? `&vschamp=${encodeURIComponent(topVsSlug)}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}` : ""}${topPlayerSlugs[1] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}` : ""}${topTeamSlugs[1] ? `&vs=${encodeURIComponent(topTeamSlugs[1])}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}${patchYear(sel.p) ? `&year=${patchYear(sel.p)}` : ""}` : ""}`,
               }}
               className="text-rw-accent hover:underline font-semibold"
             >
@@ -2541,7 +2541,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                 query: new URLSearchParams({
                   champ: cSlug,
                   ...(primaryRole ? { role: primaryRole } : {}),
-                  ...(sel?.p && /^\d{2}\./.test(sel.p) ? { year: String(2010 + Number(sel.p.split(".")[0])) } : {}),
+                  ...(patchYear(sel?.p) ? { year: patchYear(sel?.p) } : {}),
                   ...(topPlayerSlugs.length || topTeamSlugs.length
                     ? { q: [...topPlayerSlugs, ...topTeamSlugs].join(",") }
                     : {}),
@@ -2760,7 +2760,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <HubLink
                       to={{
                         kind: "finder",
-                        query: `patch=${encodeURIComponent(sel.p)}&champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${topVsSlug ? `&vschamp=${encodeURIComponent(topVsSlug)}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}` : ""}${topPlayerSlugs[1] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}` : ""}${topTeamSlugs[1] ? `&vs=${encodeURIComponent(topTeamSlugs[1])}` : ""}${/^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}`,
+                        query: `patch=${encodeURIComponent(sel.p)}&champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${topVsSlug ? `&vschamp=${encodeURIComponent(topVsSlug)}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}` : ""}${topPlayerSlugs[1] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}` : ""}${topTeamSlugs[1] ? `&vs=${encodeURIComponent(topTeamSlugs[1])}` : ""}${patchYear(sel.p) ? `&year=${patchYear(sel.p)}` : ""}`,
                       }}
                       className="hover:text-rw-accent hover:underline"
                     >
@@ -2768,14 +2768,14 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     </HubLink>{" "}
                     ·{" "}
                     <HubLink
-                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}&ban=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${/^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}` }}
+                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}&ban=${encodeURIComponent(c.u || resolveChampSlug(c.name))}${patchYear(sel.p) ? `&year=${patchYear(sel.p)}` : ""}` }}
                       className="hover:text-rw-accent hover:underline"
                     >
                       {sel.b} {tl("Bans")}
                     </HubLink>{" "}
                     ·{" "}
                     <HubLink
-                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}${/^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}` }}
+                      to={{ kind: "finder", query: `patch=${encodeURIComponent(sel.p)}${patchYear(sel.p) ? `&year=${patchYear(sel.p)}` : ""}` }}
                       className="hover:text-rw-accent hover:underline"
                     >
                       {sel.g} {tl("Games")}
@@ -2784,7 +2784,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                     <HubLink
                       to={{
                         kind: "counters",
-                        query: `champ=${encodeURIComponent(cSlug)}${topVsSlug ? `&vs=${encodeURIComponent(topVsSlug)}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}${topPlayerSlugs[1] && topPlayerSlugs[1] !== topPlayerSlugs[0] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}${topTeamSlugs[1] && topTeamSlugs[1] !== topTeamSlugs[0] ? `&vsteam=${encodeURIComponent(topTeamSlugs[1])}` : ""}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}` : ""}${sel?.p && /^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}`,
+                        query: `champ=${encodeURIComponent(cSlug)}${topVsSlug ? `&vs=${encodeURIComponent(topVsSlug)}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}${topPlayerSlugs[1] && topPlayerSlugs[1] !== topPlayerSlugs[0] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}${topTeamSlugs[1] && topTeamSlugs[1] !== topTeamSlugs[0] ? `&vsteam=${encodeURIComponent(topTeamSlugs[1])}` : ""}` : ""}${primaryRole ? `&role=${encodeURIComponent(primaryRole)}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}${patchYear(sel.p) ? `&year=${patchYear(sel.p)}` : ""}` : ""}`,
                       }}
                       className="text-rw-accent hover:underline font-semibold"
                     >
@@ -2803,7 +2803,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                           ...(topTeamSlugs[0] ? { team: topTeamSlugs[0] } : {}),
                           ...(topTeamSlugs[1] ? { vs: topTeamSlugs[1] } : {}),
                           ...(sel?.p ? { patch: sel.p } : {}),
-                          ...(sel?.p && /^\d{2}\./.test(sel.p) ? { year: String(2010 + Number(sel.p.split(".")[0])) } : {}),
+                          ...(patchYear(sel?.p) ? { year: patchYear(sel?.p) } : {}),
                         }).toString(),
                       }}
                       className="text-rw-accent hover:underline font-semibold"
@@ -2832,7 +2832,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                         query: new URLSearchParams({
                           key: `p${sel.p}`,
                           patch: sel.p,
-                          ...(/^\d{2}\./.test(sel.p) ? { year: String(2010 + Number(sel.p.split(".")[0])) } : {}),
+                          ...(patchYear(sel.p) ? { year: patchYear(sel.p) } : {}),
                           q: qChamps,
                           ...(primaryRole ? { role: primaryRole } : {}),
                         }).toString(),
@@ -2848,7 +2848,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                         query: new URLSearchParams({
                           champ: cSlug,
                           ...(primaryRole ? { role: primaryRole } : {}),
-                          ...(sel?.p && /^\d{2}\./.test(sel.p) ? { year: String(2010 + Number(sel.p.split(".")[0])) } : {}),
+                          ...(patchYear(sel?.p) ? { year: patchYear(sel?.p) } : {}),
                           ...(topPlayerSlugs.length || topTeamSlugs.length
                             ? { q: [...topPlayerSlugs, ...topTeamSlugs].join(",") }
                             : {}),
@@ -2890,7 +2890,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                         key={r.r}
                         to={{
                           kind: "counters",
-                          query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}&role=${encodeURIComponent(r.r)}${roleTopVs ? `&vs=${encodeURIComponent(resolveChampSlug(roleTopVs))}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}${topPlayerSlugs[1] && topPlayerSlugs[1] !== topPlayerSlugs[0] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}${topTeamSlugs[1] && topTeamSlugs[1] !== topTeamSlugs[0] ? `&vsteam=${encodeURIComponent(topTeamSlugs[1])}` : ""}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}${/^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}` : ""}`,
+                          query: `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}&role=${encodeURIComponent(r.r)}${roleTopVs ? `&vs=${encodeURIComponent(resolveChampSlug(roleTopVs))}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}${topPlayerSlugs[1] && topPlayerSlugs[1] !== topPlayerSlugs[0] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}${topTeamSlugs[1] && topTeamSlugs[1] !== topTeamSlugs[0] ? `&vsteam=${encodeURIComponent(topTeamSlugs[1])}` : ""}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}${patchYear(sel.p) ? `&year=${patchYear(sel.p)}` : ""}` : ""}`,
                         }}
                         className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-2 text-xs rounded px-1 -mx-1 hover:bg-rw-raised/50 transition-colors"
                       >
@@ -2920,7 +2920,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
                   ...(topTeamSlugs[1] ? { vs: topTeamSlugs[1] } : {}),
                   side: s,
                   ...(sel?.p ? { patch: sel.p } : {}),
-                  ...(sel?.p && /^\d{2}\./.test(sel.p) ? { year: String(2010 + Number(sel.p.split(".")[0])) } : {}),
+                  ...(patchYear(sel?.p) ? { year: patchYear(sel?.p) } : {}),
                 }).toString();
               return (
               <div className="grid grid-cols-2 gap-2">
@@ -2966,7 +2966,7 @@ export const ChampVisualOverview: React.FC<{ c: HubChamp }> = ({ c }) => {
             })()}
 
             {lane && lane[2] >= 5 && (() => {
-              const laneQuery = `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}&role=${encodeURIComponent(primaryRole)}${topVsChamp ? `&vs=${encodeURIComponent(resolveChampSlug(topVsChamp))}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}${topPlayerSlugs[1] && topPlayerSlugs[1] !== topPlayerSlugs[0] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}` : ""}${topTeamSlugs[1] ? `&vsteam=${encodeURIComponent(topTeamSlugs[1])}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}${/^\d{2}\./.test(sel.p) ? `&year=${2010 + Number(sel.p.split(".")[0])}` : ""}` : ""}`;
+              const laneQuery = `champ=${encodeURIComponent(c.u || resolveChampSlug(c.name))}&role=${encodeURIComponent(primaryRole)}${topVsChamp ? `&vs=${encodeURIComponent(resolveChampSlug(topVsChamp))}` : ""}${topPlayerSlugs[0] ? `&player=${encodeURIComponent(topPlayerSlugs[0])}${topPlayerSlugs[1] && topPlayerSlugs[1] !== topPlayerSlugs[0] ? `&vsplayer=${encodeURIComponent(topPlayerSlugs[1])}` : ""}` : ""}${topTeamSlugs[0] ? `&team=${encodeURIComponent(topTeamSlugs[0])}` : ""}${topTeamSlugs[1] ? `&vsteam=${encodeURIComponent(topTeamSlugs[1])}` : ""}${sel?.p ? `&patch=${encodeURIComponent(sel.p)}${patchYear(sel.p) ? `&year=${patchYear(sel.p)}` : ""}` : ""}`;
               return (
               <div className="grid grid-cols-4 gap-2">
                 <HubLink

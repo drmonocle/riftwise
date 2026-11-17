@@ -12,6 +12,7 @@ import type { ChampGame, ChampGamesFile, ChampPick } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { matchedEventLabel, matchEventIndices, normalizeRole, patchCompare, ROLES } from "../../hub/champAgg";
+import { patchYear } from "../../hub/period";
 import { TableExport } from "./SortTable";
 import {
   card,
@@ -184,12 +185,7 @@ export const FinderPage: React.FC<{ query?: string }> = ({ query }) => {
     [leagues, league],
   );
   const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(canonEvSlug || evSlug)?.[1] || "";
-  const patchYr = q.get("patch")
-    ? (() => {
-        const m = Number(q.get("patch")!.split(".")[0]);
-        return m >= 25 ? String(2000 + m) : m >= 1 ? String(2010 + m) : "";
-      })()
-    : "";
+  const patchYr = patchYear(q.get("patch"));
   const askedYear = q.get("year") || evYr || patchYr;
   const year =
     askedYear && years.includes(askedYear)

@@ -702,3 +702,10 @@ export function latestYearRow<T extends { y: string | number }>(years: readonly 
   }
   return best;
 }
+
+/** Map a LoL patch string ("14.18" -> "2024", "25.20" -> "2025", "26.20" -> "2026") to its calendar year. */
+export function patchYear(patch: string | undefined | null): string {
+  if (!patch) return "";
+  const m = Number(String(patch).trim().split(".")[0]);
+  return Number.isFinite(m) && m >= 1 ? String(m >= 25 ? 2000 + m : 2010 + m) : "";
+}

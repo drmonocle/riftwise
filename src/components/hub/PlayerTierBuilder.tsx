@@ -127,8 +127,8 @@ export const PLAYER_TIER_STATS: StatOption<EventPlayer>[] = [
     key: "gpm",
     labelKey: "GPM",
     short: "GPM",
-    value: (p) => (p.min ? p.gold / p.min : null),
-    format: (p) => fmtPer(p.gold, p.min, 0),
+    value: (p) => (p.gold && p.min ? p.gold / p.min : null),
+    format: (p) => (p.gold ? fmtPer(p.gold, p.min, 0) : null),
   },
 ];
 

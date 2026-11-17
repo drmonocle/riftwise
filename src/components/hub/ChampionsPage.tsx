@@ -11,6 +11,7 @@ import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, normTe
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { ChampAggRow, normalizeRole, ROLES, champAgg, matchedEventLabel, matchEventIndices, patchCompare } from "../../hub/champAgg";
+import { patchYear } from "../../hub/period";
 import { SortTable, type Column } from "./SortTable";
 import { card, ChampLink, Failed, fmtNum, HubLink, Loading, useLoad, usePageTitle } from "./ui";
 import { SectionCard } from "./BroadcastCard";
@@ -246,8 +247,7 @@ const LeagueFilters: React.FC<{ league: string; years: string[]; q: URLSearchPar
   const ys = [...years].sort().reverse();
   const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(q.get("event") || "")?.[1] || "";
   const rawPatch = q.get("patch") || (q.get("key")?.startsWith("p") ? q.get("key")!.slice(1) : "");
-  const patchMajor = rawPatch ? Number(rawPatch.split(".")[0]) : 0;
-  const patchYr = patchMajor >= 1 ? String(patchMajor >= 25 ? 2000 + patchMajor : 2010 + patchMajor) : "";
+  const patchYr = patchYear(rawPatch);
   const year =
     q.get("year") ||
     (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") ||
@@ -356,8 +356,7 @@ const LeagueTable: React.FC<{
   const ys = [...years].sort().reverse();
   const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(q.get("event") || "")?.[1] || "";
   const rawPatch = q.get("patch") || (q.get("key")?.startsWith("p") ? q.get("key")!.slice(1) : "");
-  const patchMajor = rawPatch ? Number(rawPatch.split(".")[0]) : 0;
-  const patchYr = patchMajor >= 1 ? String(patchMajor >= 25 ? 2000 + patchMajor : 2010 + patchMajor) : "";
+  const patchYr = patchYear(rawPatch);
   const year =
     q.get("year") ||
     (q.get("key")?.startsWith("y") ? q.get("key")!.slice(1) : "") ||
@@ -968,8 +967,7 @@ const OverallTable: React.FC<{ meta: StatsMeta; scope: "major" | "all"; q: URLSe
   }, [urlSearch]);
   const rawKey = q.get("key") || "";
   const rawPatch = q.get("patch") || (rawKey.startsWith("p") ? rawKey.slice(1) : "");
-  const patchMajor = rawPatch ? Number(rawPatch.split(".")[0]) : 0;
-  const patchYr = patchMajor >= 1 ? String(patchMajor >= 25 ? 2000 + patchMajor : 2010 + patchMajor) : "";
+  const patchYr = patchYear(rawPatch);
   const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(q.get("event") || "")?.[1] || "";
   const rawYear = q.get("year") || (rawKey.startsWith("y") ? rawKey.slice(1) : "") || evYr || patchYr;
   const candidateKeys = [

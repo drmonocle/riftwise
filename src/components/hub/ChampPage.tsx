@@ -4,7 +4,7 @@ import { tl, tc, roleName, fmtN } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
 import { bare, loadAliases, loadHubChamp, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveItemSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
-import { latestYearRow, matchesPeriodEvent } from "../../hub/period";
+import { latestYearRow, matchesPeriodEvent, patchYear } from "../../hub/period";
 import { normalizeRole } from "../../hub/champAgg";
 import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
 import type { HubChamp } from "../../hub/types";
@@ -2860,7 +2860,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               )}
               {(() => {
                 const p0 = c.patches[0]?.p || "";
-                const p0Yr = p0 && /^\d+\./.test(p0) ? String(2010 + Number(p0.split(".")[0])) : "";
+                const p0Yr = patchYear(p0);
                 return (
                   <>
                     <HubLink
@@ -3031,7 +3031,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               const pres = (p.pr ?? p.pk + p.b) / Math.max(p.g, 1);
               const before = c.patches![i + 1];
               const d = before ? Math.round((pres - (before.pr ?? before.pk + before.b) / Math.max(before.g, 1)) * 100) : null;
-              const pYr = /^\d+\./.test(p.p) ? String(2010 + Number(p.p.split(".")[0])) : "";
+              const pYr = patchYear(p.p);
               return (
                 <div
                   key={p.p}

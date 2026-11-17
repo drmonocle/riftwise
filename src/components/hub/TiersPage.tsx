@@ -11,6 +11,7 @@ import { ChampRow, ChampionStats, StatsMeta, loadChampionStats } from "../../sta
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { normalizeRole, ROLES, champAgg, matchedEventLabel, matchEventIndices } from "../../hub/champAgg";
+import { patchYear } from "../../hub/period";
 import { card, ChampIcon, HubLink, Loading, Section, useLoad, usePageTitle } from "./ui";
 import { loadAliases, loadChampGames, loadChampIndex, matchesChampSearch, resolveChampSlug, resolveEventSlug, resolveLeagueSlug } from "../../hub/data";
 import { SectionCard } from "./BroadcastCard";
@@ -112,8 +113,7 @@ const ChampionTiersContent: React.FC<{
   const evYr = /(?:^|-)(20\d{2})(?:-|$)/.exec(canonEvSlug || evSlug)?.[1] || "";
   const rawKey = q.get("key") || "";
   const rawPatch = q.get("patch") || (rawKey.startsWith("p") ? rawKey.slice(1) : "");
-  const patchMajor = rawPatch ? Number(rawPatch.split(".")[0]) : 0;
-  const patchYr = patchMajor >= 1 ? String(patchMajor >= 25 ? 2000 + patchMajor : 2010 + patchMajor) : "";
+  const patchYr = patchYear(rawPatch);
   const rawYear = q.get("year") || (rawKey.startsWith("y") ? rawKey.slice(1) : "") || evYr || patchYr;
   const candidateKeys = [
     rawKey,
@@ -156,8 +156,7 @@ const ChampionTiersContent: React.FC<{
         targetYears = availYears.includes(y) ? [y] : [];
       } else if (key.startsWith("p")) {
         patchFilter = key.slice(1);
-        const majorNum = Number(patchFilter.split(".")[0]);
-        const guessedYear = String(majorNum >= 25 ? 2000 + majorNum : 2010 + majorNum);
+        const guessedYear = patchYear(patchFilter);
         targetYears = Array.from(new Set([guessedYear, ...availYears.slice(0, 2)])).filter((y) => availYears.includes(y));
       } else {
         targetYears = availYears;

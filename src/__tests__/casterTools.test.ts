@@ -1,17 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildSeriesMatrixPlayers } from "../components/hub/SeriesMatrix";
 import { buildSwissMatrix } from "../components/hub/SwissProgression";
-import {
-  collectTeamEventSeries,
-  decodeTierBoard,
-  encodeTierBoard,
-  formatTierListMarkdown,
-  pickDefaultTierEvent,
-  playerId,
-  seedItemsByStat,
-} from "../components/hub/PlayerTierBuilder";
+import { PLAYER_TIER_STATS, collectTeamEventSeries, decodeTierBoard, encodeTierBoard, formatTierListMarkdown, pickDefaultTierEvent, playerId, seedItemsByStat } from "../components/hub/PlayerTierBuilder";
 import { aggregateLinesSplit, collectStageOptions } from "../hub/splits";
-import { latestYearRow, playerAgg } from "../hub/period";
+import { latestYearRow, patchYear, playerAgg } from "../hub/period";
 import { PLAYER_METRICS } from "../components/hub/Ranks";
 import type { EventPlayer, HubEvent, HubSeries, PlayerGameRow, SearchEventRow, Stage } from "../hub/types";
 import type { EventLines } from "../hub/worldsFacts";
@@ -416,5 +408,22 @@ describe("latestYearRow", () => {
     expect(latestYearRow([{ y: 2019 }, { y: 2025 }, { y: 2022 }])?.y).toBe(2025);
     expect(latestYearRow([])).toBeUndefined();
     expect(latestYearRow(undefined)).toBeUndefined();
+  });
+
+  it("maps legacy and year-numbered LoL patches to calendar years", () => {
+    expect(patchYear("26.20")).toBe("2026");
+    expect(patchYear("25.20")).toBe("2025");
+    expect(patchYear("14.18")).toBe("2024");
+    expect(patchYear("9.24")).toBe("2019");
+    expect(patchYear("")).toBe("");
+    expect(patchYear(undefined)).toBe("");
+  });
+
+  it("treats untracked zero gold as null in tier builder GPM", () => {
+    const gpm = PLAYER_TIER_STATS.find((s) => s.key === "gpm")!;
+    const legacy = { g: 5, w: 3, k: 10, d: 5, a: 15, tk: 30, tdth: 20, min: 150, cs: 900, dmg: 0, gold: 0, vis: 0, vmin: 0, nc: 3, c: ["Ahri"], mvp: 0, n: "A", u: "a", t: "T", tu: "t", r: "Mid" };
+    expect(gpm.value(legacy)).toBeNull();
+    expect(gpm.format(legacy)).toBeNull();
+    expect(gpm.format({ ...legacy, gold: 60000 })).toBe("400");
   });
 });

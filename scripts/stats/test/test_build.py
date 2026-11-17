@@ -113,9 +113,15 @@ def copies_check() -> str:
 
 
 def data_fixes_check() -> str:
-    """Known Leaguepedia same-side duplicate champion fixes in names.champ_name and cross-table team canonicalization."""
+    """Known Leaguepedia same-side duplicate champion fixes in names.champ_name, patch normalization, and team canonicalization."""
     sys.path.insert(0, STATS)
+    import hub_util
     import names
+
+    if hub_util.fix_patch("26.2", "2026-10-20") != "26.20" or hub_util.fix_patch("26.1", "2026-05-15") != "26.10":
+        return "expected fix_patch to restore dropped trailing zeros for late-season 26.x patches"
+    if hub_util.fix_patch("26.02", "2026-01-25") != "26.02" or hub_util.fix_patch("25.2", "2025-10-15") != "25.20":
+        return "expected fix_patch to preserve 26.02 and normalize 25.2 -> 25.20"
 
     if names.champ_name("Morgana", "Champions/2012 Season/Spring_Finals_1_G2", "Support") != "Janna":
         return "expected Janna for Champions 2012 Spring Finals G2 Support"

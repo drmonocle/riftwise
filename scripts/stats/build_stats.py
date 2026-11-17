@@ -43,6 +43,7 @@ import urllib.request
 from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from hub_util import fix_patch  # noqa: E402
 from names import PlayerNames, canon_team, champ_name, learn_team_case, match_teams, show_team, show_teams, team_key  # noqa: E402
 
 MIN_SEARCH_GAMES = 10     # teams / players with fewer games get no page
@@ -449,7 +450,7 @@ def main() -> None:
             "stage": (r["stage_tab"] or "").strip(),
             "date": (r["date_utc"] or "")[:10],
             "year": (r["date_utc"] or "0000")[:4],
-            "patch": (r["patch"] or "").strip(),
+            "patch": fix_patch((r["patch"] or "").strip(), r["date_utc"] or "") or "",
             "t1": canon_team(r["team1"], r["date_utc"], r["overview_page"]),
             "t2": canon_team(r["team2"], r["date_utc"], r["overview_page"]),
             "w": canon_team(r["winner"], r["date_utc"], r["overview_page"]),
