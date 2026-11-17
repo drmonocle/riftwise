@@ -45,6 +45,33 @@ export const Change: React.FC<{ v: number | null | undefined }> = ({ v }) =>
     </span>
   );
 
+export function computeRatingTrend(
+  raw: [string, number][] | undefined,
+  rating: number,
+  lastDate: string,
+  asOf?: string,
+): [string, number][] | null {
+  if (!raw || !raw.length) return null;
+  if (asOf) {
+    const pts = raw.filter(([dt]) => dt <= asOf);
+    if (pts.length < 2) return null;
+    const end = pts[pts.length - 1];
+    return end[1] === rating ? pts : [...pts, [asOf > end[0] ? asOf : end[0], rating]];
+  }
+  const end = raw[raw.length - 1];
+  // no game since: a flat (grey) line
+  return end[1] === rating && raw.length > 1 ? raw : [...raw, [lastDate > end[0] ? lastDate : end[0], rating]];
+}
+
+export function computeRatingChange(
+  raw: [string, number][] | undefined,
+  r: Pick<RatingRow, 5 | 6 | 8>,
+  asOf?: string,
+): number | null {
+  const p = computeRatingTrend(raw, r[5], r[8], asOf);
+  return p && p.length > 1 ? p[p.length - 1][1] - p[0][1] : asOf ? null : r[6];
+}
+
 export const RankingsPage: React.FC = () => {
   usePageTitle(tl("Power rankings"));
   const state = useLoad(loadRatings, []);
@@ -180,18 +207,9 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
   }, [d.teams]);
   type Row = { r: RatingRow; rank: number };
   // the rating after each game day of the last 30 days (the stats build), ending at the rating shown (which counts the
-  // games since); the "30 days" number is the same line's start to end, so the line, its colour and the number agree
-  const trend = (r: RatingRow): [string, number][] | null => {
-    const h = hist.data?.[r[0]];
-    if (!h || !h.length) return null;
-    const end = h[h.length - 1];
-    // no game since: a flat (grey) line
-    return end[1] === r[5] && h.length > 1 ? h : [...h, [r[8] > end[0] ? r[8] : end[0], r[5]]];
-  };
-  const change = (r: RatingRow) => {
-    const p = trend(r);
-    return p && p.length > 1 ? p[p.length - 1][1] - p[0][1] : r[6];
-  };
+  // games since); when viewing a historical `asOf` date, clamp history strictly to <= asOf
+  const trend = (r: RatingRow): [string, number][] | null => computeRatingTrend(hist.data?.[r[0]], r[5], r[8], asOf);
+  const change = (r: RatingRow) => computeRatingChange(hist.data?.[r[0]], r, asOf);
   const maxRowRating = useMemo(() => Math.max(1500, ...rows.map((x) => x.r[5])), [rows]);
   const minRowRating = useMemo(() => Math.min(1100, ...rows.map((x) => x.r[5])) - 40, [rows]);
   const maxRowGames = useMemo(() => Math.max(1, ...rows.map((x) => x.r[7] || 0)), [rows]);
@@ -333,9 +351,13 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
         const tQ = rowTeamQ(x.r);
         return (
           <span className="inline-flex flex-col gap-0.5 min-w-[3.25rem]">
-            <HubLink to={{ kind: "team", slug: x.r[0], ...(tQ ? { query: tQ } : {}) }} className="hover:underline">
-              {x.r[5]}
-            </HubLink>
+            {x.r[0] ? (
+              <HubLink to={{ kind: "team", slug: x.r[0], ...(tQ ? { query: tQ } : {}) }} className="hover:underline">
+                {x.r[5]}
+              </HubLink>
+            ) : (
+              <span>{x.r[5]}</span>
+            )}
             <span className="h-1 w-11 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
               <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${w}%` }} />
             </span>
@@ -371,7 +393,7 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
       render: (x) => {
         const v = change(x.r);
         const tQ = rowTeamQ(x.r);
-        return v != null ? (
+        return v != null && x.r[0] ? (
           <HubLink to={{ kind: "team", slug: x.r[0], tab: "matches", ...(tQ ? { query: tQ } : {}) }} className="hover:underline">
             <Change v={v} />
           </HubLink>

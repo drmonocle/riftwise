@@ -65,7 +65,7 @@ export const PLAYER_METRICS: Metric<EventPlayer>[] = [
     key: "csm",
     short: "CSM",
     label: tk("CS per minute"),
-    value: (p) => div(p.cs, p.min),
+    value: (p) => (p.cs > 0 || p.gold > 0 || p.dmg > 0 ? div(p.cs, p.min) : null),
     fmt: r1,
   },
   {
@@ -103,12 +103,12 @@ export const PLAYER_METRICS: Metric<EventPlayer>[] = [
   { key: "wr", short: "W%", label: tk("Win %"), value: (p) => div(p.w, p.g), fmt: pc },
 ];
 
-const TEAM_METRICS: Metric<EventTeamStats>[] = [
+export const TEAM_METRICS: Metric<EventTeamStats>[] = [
   { key: "wr", label: tk("Win %"), value: (t) => div(t.w, t.g), fmt: pc },
   {
     key: "gdm",
     label: tk("GD/m"),
-    value: (t) => div(t.gd, t.min),
+    value: (t) => (t.gold ? div(t.gd, t.min) : null),
     fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)}`,
   },
   {

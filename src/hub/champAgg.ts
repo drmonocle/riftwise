@@ -109,7 +109,8 @@ export interface ChampAggRow {
 
 export function champAgg(games: ChampGame[], f: ChampFilter): { games: number; rows: ChampAggRow[] } {
   type Acc = {
-    p: number; w: number; b: number; k: number; d: number; a: number; ks: number; cs: number; gold: number; dmg: number; min: number;
+    p: number; w: number; b: number; k: number; d: number; a: number; ks: number;
+    cs: number; csMin: number; gold: number; goldMin: number; dmg: number; dmgMin: number;
     blindN: number; blindD: number; fp: number; roles: number[]; blueP: number; redP: number;
     /** picks in any role (a role view scales the champion's bans by its share of picks in that role) */
     allP: number;
@@ -120,7 +121,7 @@ export function champAgg(games: ChampGame[], f: ChampFilter): { games: number; r
   const get = (c: string): Acc => {
     let x = acc.get(c);
     if (!x) {
-      x = { p: 0, w: 0, b: 0, k: 0, d: 0, a: 0, ks: 0, cs: 0, gold: 0, dmg: 0, min: 0, blindN: 0, blindD: 0, fp: 0, roles: [0, 0, 0, 0, 0], blueP: 0, redP: 0, allP: 0, pres: 0 };
+      x = { p: 0, w: 0, b: 0, k: 0, d: 0, a: 0, ks: 0, cs: 0, csMin: 0, gold: 0, goldMin: 0, dmg: 0, dmgMin: 0, blindN: 0, blindD: 0, fp: 0, roles: [0, 0, 0, 0, 0], blueP: 0, redP: 0, allP: 0, pres: 0 };
       acc.set(c, x);
     }
     return x;
@@ -158,11 +159,21 @@ export function champAgg(games: ChampGame[], f: ChampFilter): { games: number; r
           x.a += a;
           x.ks++;
         }
-        if (min && cs != null && gold != null && dmg != null) {
-          x.cs += cs;
-          x.gold += gold;
-          x.dmg += dmg;
-          x.min += min;
+        if (min != null && min > 0) {
+          // Guard against untracked legacy games stored with 0s while still counting genuine 0 CS supports when gold/dmg exist.
+          const hasTelemetry = (gold != null && gold > 0) || (dmg != null && dmg > 0);
+          if (cs != null && (cs > 0 || hasTelemetry)) {
+            x.cs += cs;
+            x.csMin += min;
+          }
+          if (gold != null && gold > 0) {
+            x.gold += gold;
+            x.goldMin += min;
+          }
+          if (dmg != null && dmg > 0) {
+            x.dmg += dmg;
+            x.dmgMin += min;
+          }
         }
         if (ordered && role >= 0) {
           const j = enemy.findIndex((e) => e[1] === role);
@@ -199,9 +210,9 @@ export function champAgg(games: ChampGame[], f: ChampFilter): { games: number; r
       kda: x.ks ? Number(((x.k + x.a) / Math.max(x.d, 1)).toFixed(2)) : null,
       blind: x.blindD ? x.blindN / x.blindD : null,
       fp: x.fp,
-      csm: x.min ? Number((x.cs / x.min).toFixed(1)) : null,
-      gpm: x.min ? Math.round(x.gold / x.min) : null,
-      dpm: x.min ? Math.round(x.dmg / x.min) : null,
+      csm: x.csMin ? Number((x.cs / x.csMin).toFixed(1)) : null,
+      gpm: x.goldMin ? Math.round(x.gold / x.goldMin) : null,
+      dpm: x.dmgMin ? Math.round(x.dmg / x.dmgMin) : null,
       blueP: x.blueP,
       redP: x.redP,
     });

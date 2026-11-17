@@ -8,14 +8,108 @@ import { tl, roleName } from "../../i18n";
 import { champName } from "../../champions";
 import { bare, loadHubChamp, loadHubIndexQuick, loadMatchups, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
 import { normalizeRole, ROLES } from "../../hub/champAgg";
-import type { HubChamp, HubMatchups } from "../../hub/types";
+import type { HubChamp, HubMatchups, LaneLine } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
 import { useDDragon } from "../../hub/ddragon";
 import { card, ChampIcon, ChampLink, HubLink, Loading, OeCredit, Section, useLoad, usePageTitle } from "./ui";
 import { SortTable, type Column } from "./SortTable";
 import { SectionCard } from "./BroadcastCard";
 
-type Row = { c: string; role: number; g: number; w: number; gd: number | null; csd?: number | null };
+export type CounterRow = {
+  c: string;
+  role: number;
+  g: number;
+  w: number;
+  gd: number | null;
+  csd?: number | null;
+  xpd?: number | null;
+  lane?: number | null;
+};
+
+type Row = CounterRow;
+
+const laneLineToRow = (line: LaneLine, role: number): CounterRow => {
+  const [opp, g, w, tn, gd, csd, xpd, ahead] = line;
+  return {
+    c: opp,
+    role,
+    g,
+    w,
+    gd: gd ?? null,
+    csd: csd ?? null,
+    xpd: xpd ?? null,
+    lane: ahead != null && tn ? Math.round((ahead / tn) * 100) : null,
+  };
+};
+
+/**
+ * Extract lane matchup rows for a single champion across `12m` or `all` time.
+ * On `all`, prefers `ch.matchups` (which carries CSD@15, XPD@15, and Lane %) and
+ * merges any lower-sample `<3G` pairs from `m.vs` that `ch.matchups` omits.
+ */
+export function buildCounterRows(
+  d: { m: HubMatchups; ch: HubChamp | null } | null | undefined,
+  opts: { span: "12m" | "all"; roleIdx?: number; minG?: number; oppQuery?: string },
+): CounterRow[] {
+  if (!d) return [];
+  const roleIdx = opts.roleIdx ?? -1;
+  const minG = opts.minG ?? 1;
+  const oppQuery = opts.oppQuery;
+  const matchOpp = (c: string) => !oppQuery || sameChamp(c, oppQuery);
+  const out: CounterRow[] = [];
+  const seen = new Set<string>();
+  const keyOf = (c: string, r: number) => `${bare(c)}:${r}`;
+  const laneMap = opts.span === "12m" ? d.ch?.matchups12 : d.ch?.matchups;
+  const hasLaneSource = !!laneMap && Object.values(laneMap).some((l) => l && l.length > 0);
+
+  if (hasLaneSource && laneMap) {
+    ROLES.forEach((rName, rIdx) => {
+      if (roleIdx >= 0 && rIdx !== roleIdx) return;
+      for (const line of laneMap[rName] || []) {
+        const opp = line[0];
+        if (!matchOpp(opp)) continue;
+        seen.add(keyOf(opp, rIdx));
+        if (line[1] >= minG) out.push(laneLineToRow(line, rIdx));
+      }
+    });
+  }
+
+  // Merge missing pairs on All time; on 12m fall back to m.vs only when 12m telemetry doesn't exist.
+  if (opts.span === "all" || !hasLaneSource) {
+    for (const [c, r, g, w, gd] of d.m.vs) {
+      if (roleIdx >= 0 && r !== roleIdx) continue;
+      if (!matchOpp(c) || seen.has(keyOf(c, r))) continue;
+      if (g >= minG) out.push({ c, role: r, g, w, gd });
+    }
+  }
+  return out;
+}
+
+const weightedAvg = (list: CounterRow[], pick: (r: CounterRow) => number | null | undefined, digits = 0): number | null => {
+  let sum = 0;
+  let weight = 0;
+  for (const r of list) {
+    const v = pick(r);
+    if (v != null) {
+      sum += v * r.g;
+      weight += r.g;
+    }
+  }
+  if (!weight) return null;
+  const raw = sum / weight;
+  return digits ? Number(raw.toFixed(digits)) : Math.round(raw);
+};
+
+const signedNum = (v: number, digits = 0) => `${v > 0 ? "+" : ""}${digits ? v.toFixed(digits) : v}`;
+
+const formatLaneStats = (x: { gd?: number | null; csd?: number | null; xpd?: number | null; lane?: number | null }, laneLabel: string): string[] => {
+  const parts: string[] = [];
+  if (x.gd != null) parts.push(`${signedNum(x.gd)} GD@15`);
+  if (x.csd != null) parts.push(`${signedNum(x.csd, 1)} CSD@15`);
+  if (x.xpd != null) parts.push(`${signedNum(x.xpd)} XPD@15`);
+  if (x.lane != null) parts.push(`${x.lane}% ${laneLabel}`);
+  return parts;
+};
 
 /** a champion's page slug from the search index row (the stored slug, else one from the name) */
 const champSlug = (c: [string, string, number]) => c[1] || prettySlug(c[0]);
@@ -90,22 +184,8 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     );
   };
   const rows = useMemo<Row[]>(() => {
-    const d = data.data;
-    if (!d) return [];
     const roleIdx = role ? ROLES.indexOf(role) : -1;
-    if (span === "12m" && d.ch?.matchups12) {
-      const out: Row[] = [];
-      ROLES.forEach((rName, rIdx) => {
-        if (roleIdx >= 0 && rIdx !== roleIdx) return;
-        for (const [opp, g, w, , gd, csd] of d.ch?.matchups12?.[rName] || []) {
-          if (g >= minG) out.push({ c: opp, role: rIdx, g, w, gd: gd ?? null, csd: csd ?? null });
-        }
-      });
-      if (out.length > 0) return out;
-    }
-    return d.m.vs
-      .filter(([, r, g]) => g >= minG && (roleIdx < 0 || r === roleIdx))
-      .map(([c, r, g, w, gd]) => ({ c, role: r, g, w, gd }));
+    return buildCounterRows(data.data, { span, roleIdx, minG });
   }, [data.data, role, minG, span]);
   const sel = "bg-rw-bg border border-rw-border rounded px-2 py-1 text-xs text-rw-text";
   const rawChamp = data.data?.m.c || "";
@@ -186,6 +266,38 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   };
   const maxRowG = useMemo(() => Math.max(1, ...rows.map((r) => r.g)), [rows]);
   const hasCsd = useMemo(() => rows.some((r) => r.csd != null), [rows]);
+  const hasXpd = useMemo(() => rows.some((r) => r.xpd != null), [rows]);
+  const hasLane = useMemo(() => rows.some((r) => r.lane != null), [rows]);
+  const metricCol = (opts: {
+    key: string;
+    label: string;
+    title: string;
+    pick: (x: Row) => number | null | undefined;
+    good: (v: number) => boolean;
+    bad: (v: number) => boolean;
+    format: (v: number) => string;
+  }): Column<Row> => ({
+    key: opts.key,
+    label: opts.label,
+    title: opts.title,
+    value: (x) => opts.pick(x) ?? null,
+    render: (x) => {
+      const v = opts.pick(x);
+      if (v == null) return "–";
+      const cls = opts.good(v) ? "text-rw-teal" : opts.bad(v) ? "text-rw-red" : "hover:text-rw-accent";
+      return (
+        <button
+          type="button"
+          onClick={() => set({ vs: resolveChampSlug(x.c) })}
+          className={`hover:underline ${cls}`}
+          title={`${cName} ${tl("vs")} ${champName(x.c)}`}
+        >
+          {opts.format(v)}
+        </button>
+      );
+    },
+    className: "tabular-nums",
+  });
   const columns: Column<Row>[] = [
     { key: "c", label: tl("Lane opponent"), value: (x) => champName(x.c), render: (x) => <ChampLink name={x.c} size={18} query={champQueryForRole(x.role, slug)} /> },
     {
@@ -250,50 +362,53 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
       },
       className: "tabular-nums",
     },
-    {
+    metricCol({
       key: "gd",
       label: "GD@15",
       title: tl("Average gold lead over this lane opponent at 15 minutes (Oracle's Elixir)"),
-      value: (x) => x.gd,
-      render: (x) =>
-        x.gd == null ? (
-          "–"
-        ) : (
-          <button
-            type="button"
-            onClick={() => set({ vs: resolveChampSlug(x.c) })}
-            className={`hover:underline ${x.gd > 150 ? "text-rw-teal" : x.gd < -150 ? "text-rw-red" : ""}`}
-            title={`${cName} ${tl("vs")} ${champName(x.c)}`}
-          >
-            {x.gd > 0 ? "+" : ""}
-            {x.gd}
-          </button>
-        ),
-      className: "tabular-nums",
-    },
+      pick: (x) => x.gd,
+      good: (v) => v > 150,
+      bad: (v) => v < -150,
+      format: (v) => signedNum(v),
+    }),
     ...(hasCsd
-      ? ([
-          {
+      ? [
+          metricCol({
             key: "csd",
             label: "CSD@15",
             title: tl("CS lead over the lane opponent at 15 minutes"),
-            value: (x) => x.csd ?? null,
-            render: (x) =>
-              x.csd == null ? (
-                "–"
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => set({ vs: resolveChampSlug(x.c) })}
-                  className={`hover:underline ${x.csd >= 3 ? "text-rw-teal" : x.csd <= -3 ? "text-rw-red" : "hover:text-rw-accent"}`}
-                >
-                  {x.csd > 0 ? "+" : ""}
-                  {x.csd.toFixed(1)}
-                </button>
-              ),
-            className: "tabular-nums",
-          },
-        ] as Column<Row>[])
+            pick: (x) => x.csd,
+            good: (v) => v >= 3,
+            bad: (v) => v <= -3,
+            format: (v) => signedNum(v, 1),
+          }),
+        ]
+      : []),
+    ...(hasXpd
+      ? [
+          metricCol({
+            key: "xpd",
+            label: "XPD@15",
+            title: tl("XP lead over the lane opponent at 15 minutes"),
+            pick: (x) => x.xpd,
+            good: (v) => v > 150,
+            bad: (v) => v < -150,
+            format: (v) => signedNum(v),
+          }),
+        ]
+      : []),
+    ...(hasLane
+      ? [
+          metricCol({
+            key: "lane",
+            label: tl("Lane %"),
+            title: tl("Games ahead in gold at 15 minutes"),
+            pick: (x) => x.lane,
+            good: (v) => v >= 55,
+            bad: (v) => v <= 45,
+            format: (v) => `${v}%`,
+          }),
+        ]
       : []),
   ];
   const sampleFloor = span === "12m" ? Math.max(minG, 3) : Math.max(minG, 8);
@@ -312,32 +427,22 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
     });
   }, [rows, tableSearch]);
   const vsMatch = useMemo(() => {
-    const d = data.data;
-    if (!d || !vsParam) return null;
-    const allRows: Row[] = [];
-    if (span === "12m" && d.ch?.matchups12) {
-      ROLES.forEach((rName, rIdx) => {
-        for (const [opp, g, w, , gd, csd] of d.ch?.matchups12?.[rName] || []) {
-          if (sameChamp(opp, vsParam)) {
-            allRows.push({ c: opp, role: rIdx, g, w, gd: gd ?? null, csd: csd ?? null });
-          }
-        }
-      });
-    }
-    if (allRows.length === 0) {
-      for (const [c, r, g, w, gd] of d.m.vs) {
-        if (sameChamp(c, vsParam)) {
-          allRows.push({ c, role: r, g, w, gd });
-        }
-      }
-    }
+    if (!data.data || !vsParam) return null;
+    const allRows = buildCounterRows(data.data, { span, oppQuery: vsParam });
     if (allRows.length === 0) return null;
     const oppCanon = allRows[0].c;
     const totalG = allRows.reduce((s, r) => s + r.g, 0);
     const totalW = allRows.reduce((s, r) => s + r.w, 0);
-    const gdRows = allRows.filter((r) => r.gd != null);
-    const avgGd = gdRows.length > 0 ? Math.round(gdRows.reduce((s, r) => s + (r.gd || 0) * r.g, 0) / gdRows.reduce((s, r) => s + r.g, 0)) : null;
-    return { oppCanon, totalG, totalW, avgGd, roles: allRows };
+    return {
+      oppCanon,
+      totalG,
+      totalW,
+      avgGd: weightedAvg(allRows, (r) => r.gd),
+      avgCsd: weightedAvg(allRows, (r) => r.csd, 1),
+      avgXpd: weightedAvg(allRows, (r) => r.xpd),
+      avgLane: weightedAvg(allRows, (r) => r.lane),
+      roles: allRows,
+    };
   }, [data.data, vsParam, span]);
   useEffect(() => {
     setVsInput(vsMatch?.oppCanon ? champName(vsMatch.oppCanon) : vsParam ? champName(vsParam) : "");
@@ -998,24 +1103,32 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                       section={tl("Matchups")}
                       name={`${cName} vs ${champName(vsMatch.oppCanon)}`}
                       sub={span === "12m" ? tl("Last 12 months") : tl("All time")}
-                      rows={() =>
-                        [
+                      rows={() => {
+                        const laneLabel = tl("Ahead at 15");
+                        const topLane = formatLaneStats(
+                          { gd: vsMatch.avgGd, csd: vsMatch.avgCsd, xpd: vsMatch.avgXpd, lane: vsMatch.avgLane },
+                          laneLabel,
+                        ).join(" · ");
+                        return [
                           {
                             champ: vsMatch.oppCanon,
                             label: `${cName} vs ${champName(vsMatch.oppCanon)}`,
-                            sub: `${vsMatch.totalG}G · ${vsMatch.totalW}W–${vsMatch.totalG - vsMatch.totalW}L${vsMatch.avgGd != null ? ` · ${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15` : ""}`,
+                            sub: `${vsMatch.totalG}G · ${vsMatch.totalW}W–${vsMatch.totalG - vsMatch.totalW}L${topLane ? ` · ${topLane}` : ""}`,
                             value: `${Math.round((vsMatch.totalW / vsMatch.totalG) * 100)}%`,
                             win: vsMatch.totalW / vsMatch.totalG >= 0.5,
                           },
-                          ...vsMatch.roles.map((r) => ({
-                            champ: rawChamp || undefined,
-                            label: r.role >= 0 ? roleName(ROLES[r.role]) : tl("Every role"),
-                            sub: `${r.g}G · ${r.w}W–${r.g - r.w}L${r.gd != null ? ` · ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""}`,
-                            value: `${Math.round((r.w / r.g) * 100)}%`,
-                            win: r.w / r.g >= 0.5,
-                          })),
-                        ].map((row, idx) => ({ rank: idx + 1, ...row }))
-                      }
+                          ...vsMatch.roles.map((r) => {
+                            const rLane = formatLaneStats(r, laneLabel).join(" · ");
+                            return {
+                              champ: rawChamp || undefined,
+                              label: r.role >= 0 ? roleName(ROLES[r.role]) : tl("Every role"),
+                              sub: `${r.g}G · ${r.w}W–${r.g - r.w}L${rLane ? ` · ${rLane}` : ""}`,
+                              value: `${Math.round((r.w / r.g) * 100)}%`,
+                              win: r.w / r.g >= 0.5,
+                            };
+                          }),
+                        ].map((row, idx) => ({ rank: idx + 1, ...row }));
+                      }}
                     />
                     <CopyMatchupPost
                       cName={cName}
@@ -1058,7 +1171,25 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                         {vsMatch.avgGd != null && (
                           <span className={vsMatch.avgGd > 150 ? "text-rw-teal" : vsMatch.avgGd < -150 ? "text-rw-red" : ""}>
                             {" · "}
-                            {finderLink(vsMatch.oppCanon, `${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15`)}
+                            {finderLink(vsMatch.oppCanon, `${signedNum(vsMatch.avgGd)} GD@15`)}
+                          </span>
+                        )}
+                        {vsMatch.avgCsd != null && (
+                          <span className={vsMatch.avgCsd >= 3 ? "text-rw-teal" : vsMatch.avgCsd <= -3 ? "text-rw-red" : ""}>
+                            {" · "}
+                            {finderLink(vsMatch.oppCanon, `${signedNum(vsMatch.avgCsd, 1)} CSD@15`)}
+                          </span>
+                        )}
+                        {vsMatch.avgXpd != null && (
+                          <span className={vsMatch.avgXpd > 150 ? "text-rw-teal" : vsMatch.avgXpd < -150 ? "text-rw-red" : ""}>
+                            {" · "}
+                            {finderLink(vsMatch.oppCanon, `${signedNum(vsMatch.avgXpd)} XPD@15`)}
+                          </span>
+                        )}
+                        {vsMatch.avgLane != null && (
+                          <span className={vsMatch.avgLane >= 55 ? "text-rw-teal" : vsMatch.avgLane <= 45 ? "text-rw-red" : ""}>
+                            {" · "}
+                            {finderLink(vsMatch.oppCanon, `${vsMatch.avgLane}% ${tl("Ahead at 15")}`)}
                           </span>
                         )}
                       </div>
@@ -1114,13 +1245,23 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                           </div>
                           <div className="text-[10px] font-mono text-rw-sub">
                             {finderLink(vsMatch.oppCanon, r.g, r.role)}G
-                            {r.gd != null ? (
+                            {r.gd != null && (
                               <>
                                 {" · "}
-                                {finderLink(vsMatch.oppCanon, `${r.gd > 0 ? "+" : ""}${r.gd} GD@15`, r.role)}
+                                {finderLink(vsMatch.oppCanon, `${signedNum(r.gd)} GD@15`, r.role)}
                               </>
-                            ) : (
-                              ""
+                            )}
+                            {r.csd != null && (
+                              <>
+                                {" · "}
+                                {finderLink(vsMatch.oppCanon, `${signedNum(r.csd, 1)} CSD@15`, r.role)}
+                              </>
+                            )}
+                            {r.xpd != null && (
+                              <>
+                                {" · "}
+                                {finderLink(vsMatch.oppCanon, `${signedNum(r.xpd)} XPD@15`, r.role)}
+                              </>
                             )}
                           </div>
                         </div>
@@ -2215,16 +2356,32 @@ const CopyMatchupPost: React.FC<{
   cName: string;
   oppName: string;
   spanLabel: string;
-  vsMatch: { totalG: number; totalW: number; avgGd: number | null; roles: Row[] };
+  vsMatch: {
+    totalG: number;
+    totalW: number;
+    avgGd: number | null;
+    avgCsd: number | null;
+    avgXpd: number | null;
+    avgLane: number | null;
+    roles: Row[];
+  };
   query?: string;
 }> = ({ cName, oppName, spanLabel, vsMatch, query }) => {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = () => {
     const wr = Math.round((vsMatch.totalW / vsMatch.totalG) * 100);
+    const laneLabel = tl("Ahead at 15");
+    const topLane = formatLaneStats(
+      { gd: vsMatch.avgGd, csd: vsMatch.avgCsd, xpd: vsMatch.avgXpd, lane: vsMatch.avgLane },
+      laneLabel,
+    ).join(" · ");
     const lines = [
       `${cName} vs ${oppName} · ${spanLabel}`,
-      `${vsMatch.totalW}W–${vsMatch.totalG - vsMatch.totalW}L (${wr}% · ${vsMatch.totalG}G)${vsMatch.avgGd != null ? ` · ${vsMatch.avgGd > 0 ? "+" : ""}${vsMatch.avgGd} GD@15` : ""}`,
-      ...vsMatch.roles.map((r) => `${r.role >= 0 ? roleName(ROLES[r.role]) : tl("Role")}: ${Math.round((r.w / r.g) * 100)}% (${r.g}G${r.gd != null ? `, ${r.gd > 0 ? "+" : ""}${r.gd} GD@15` : ""})`),
+      `${vsMatch.totalW}W–${vsMatch.totalG - vsMatch.totalW}L (${wr}% · ${vsMatch.totalG}G)${topLane ? ` · ${topLane}` : ""}`,
+      ...vsMatch.roles.map((r) => {
+        const rLane = formatLaneStats(r, laneLabel).join(", ");
+        return `${r.role >= 0 ? roleName(ROLES[r.role]) : tl("Role")}: ${Math.round((r.w / r.g) * 100)}% (${r.g}G${rLane ? `, ${rLane}` : ""})`;
+      }),
       hubShareUrl({ kind: "counters", ...(query ? { query } : {}) }),
     ];
     navigator.clipboard?.writeText(lines.join("\n")).then(
