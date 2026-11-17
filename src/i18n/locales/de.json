@@ -867,7 +867,6 @@
   "The share of all dragons (or barons) in a team's games that the team took.": "Anteil aller Drachen (oder Barone) in den Spielen eines Teams, die das Team geholt hat.",
   "The share of games where a champion was picked or banned.": "Anteil der Spiele, in denen ein Champion gepickt oder gebannt wurde.",
   "How often a champion was picked before the enemy laner was known (games where the draft order is known).": "Wie oft ein Champion gepickt wurde, bevor der Lane-Gegner bekannt war (Spiele mit bekannter Draft-Reihenfolge).",
-  "The first pick of the draft (blue side).": "Der erste Pick im Draft (blaue Seite).",
   "League ranks": "Liga-Ranking",
   "A player against the same role in the same league and year (all splits and playoffs) with at least 30% of the most games played; a team against the league's teams.": "Ein Spieler im Vergleich zu derselben Rolle in derselben Liga und demselben Jahr (alle Splits und Playoffs) mit mindestens 30 % der meisten Spiele; ein Team im Vergleich zu den Teams der Liga.",
   "Averages": "Durchschnitte",
@@ -2242,5 +2241,16 @@
   "All 10 players side by side. Click any stat row to highlight leaders across every role.": "Alle 10 Spieler nebeneinander. Auf eine Stat-Zeile klicken, um die Besten jeder Rolle hervorzuheben.",
   "Open game": "Spiel öffnen",
   "Swiss stage progression": "Swiss-Phase-Verlauf",
-  "Tier list mode": "Tierlist-Modus"
+  "Tier list mode": "Tierlist-Modus",
+  "Share of team kills and share of team deaths (lower DTH% means dying less relative to teammates).": "Anteil an den Team-Kills und Team-Toden (niedrigeres DTH% bedeutet weniger Tode im Vergleich zu den Mitspielern).",
+  "Counter-pick rate: how often a player drafted their champion after their lane opponent (games where draft order is known).": "Counter-Pick-Quote: Wie oft ein Spieler seinen Champion nach dem Lane-Gegner gepickt hat (Spiele mit bekannter Draft-Reihenfolge).",
+  "The first pick of the draft (usually blue side, or red side when choosing first pick).": "Der erste Pick im Draft (meist blaue Seite, oder rote Seite bei Wahl des First Picks).",
+  "Share board": "Board teilen",
+  "Stat highlight": "Wert hervorheben",
+  "Role 1v1": "Rolle 1v1",
+  "Red 1st pick": "Red First Pick",
+  "Blue 1st pick": "Blue First Pick",
+  "MVP": "MVP",
+  "kills": "Kills",
+  "Champions, players and teams ranked in tiers": "Champions, Spieler und Teams in Tiers"
 }

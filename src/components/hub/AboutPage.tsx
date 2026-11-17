@@ -92,6 +92,8 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
           <Term t="KP">{tl("Kill participation: (kills + assists) ÷ the team's kills.")}</Term>
           <Term t={`${tl("CS/m")} · ${tl("GPM")} · ${tl("DPM")}`}>{tl("Creep score, gold and damage to champions per minute of game time.")}</Term>
           <Term t={`${tl("DMG%")} · ${tl("Gold%")} · ${tl("VS%")}`}>{tl("A player's share of the team's damage to champions, gold and vision score.")}</Term>
+          <Term t={`${tl("KS%")} · ${tl("DTH%")}`}>{tl("Share of team kills and share of team deaths (lower DTH% means dying less relative to teammates).")}</Term>
+          <Term t={tl("CTR%")}>{tl("Counter-pick rate: how often a player drafted their champion after their lane opponent (games where draft order is known).")}</Term>
           <Term t={tl("GD/m")}>{tl("The team's gold lead at the end of the game, per minute played.")}</Term>
           <Term t="GD@15 · CSD@15 · XPD@15">
             {tl("Gold, CS and experience lead at 15 minutes: a player against the opponent in the same role, a team against the other team. Also shown at 10 and 20 minutes.")}{" "}
@@ -128,7 +130,7 @@ export const AboutPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ onO
             </HubLink>
           </Term>
           <Term t="B1">
-            {tl("The first pick of the draft (blue side).")}{" "}
+            {tl("The first pick of the draft (usually blue side, or red side when choosing first pick).")}{" "}
             <HubLink to={{ kind: "draft" }} className="text-rw-accent hover:underline font-semibold">
               {tl("Draft board")} →
             </HubLink>

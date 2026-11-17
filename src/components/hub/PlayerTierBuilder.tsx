@@ -1,7 +1,7 @@
 /**
  * Interactive Player & Team Tier List Studio (`TierMaker`-style S/A/B/C/D board + live Oracle's Elixir / tournament stats + inline Dossier inspector).
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { tl, roleName, fmtDec } from "../../i18n";
 import { loadHubEvent, loadHubIndexQuick, prettySlug, resolveTeamAlias } from "../../hub/data";
 import type { EventPlayer, EventTeamStats, HubEvent, SearchEventRow, SeriesRow } from "../../hub/types";
@@ -250,6 +250,65 @@ export function formatTierListMarkdown(
   return lines.join("\n");
 }
 
+/**
+ * Encode board placements as a compact URL-safe token (`S:slug1,slug2~A:slug3`),
+ * preserving only placed items (`S`–`D`).
+ */
+export function encodeTierBoard<T>(
+  placements: Record<string, TierBucket>,
+  items: T[],
+  getId: (item: T) => string,
+  getSlug: (item: T) => string,
+): string {
+  const buckets: Record<TierLevel, string[]> = { S: [], A: [], B: [], C: [], D: [] };
+  const seen = new Set<string>();
+  for (const item of items) {
+    const id = getId(item);
+    const tier = placements[id];
+    if (!tier || tier === "pool") continue;
+    const slug = getSlug(item).trim();
+    if (!slug || seen.has(slug)) continue;
+    seen.add(slug);
+    buckets[tier].push(slug);
+  }
+  return TIER_LEVELS
+    .filter(({ t }) => buckets[t].length > 0)
+    .map(({ t }) => `${t}:${buckets[t].join(",")}`)
+    .join("~");
+}
+
+/**
+ * Decode a `board` query token (`S:slug1,slug2~A:slug3`) back into placements keyed by `getId`.
+ * Matches `slug` case-insensitively against `getSlug(item)` and `getId(item)`.
+ */
+export function decodeTierBoard<T>(
+  raw: string | null | undefined,
+  items: T[],
+  getId: (item: T) => string,
+  getSlug: (item: T) => string,
+): Record<string, TierBucket> {
+  if (!raw || !items.length) return {};
+  const bySlug = new Map<string, string>();
+  for (const item of items) {
+    const id = getId(item);
+    bySlug.set(getSlug(item).trim().toLowerCase(), id);
+    bySlug.set(id.trim().toLowerCase(), id);
+  }
+  const out: Record<string, TierBucket> = {};
+  const validTiers = new Set<string>(TIER_LEVELS.map((x) => x.t));
+  for (const part of raw.split("~")) {
+    const idx = part.indexOf(":");
+    if (idx <= 0) continue;
+    const tier = part.slice(0, idx).trim().toUpperCase();
+    if (!validTiers.has(tier)) continue;
+    for (const tok of part.slice(idx + 1).split(",")) {
+      const id = bySlug.get(tok.trim().toLowerCase());
+      if (id) out[id] = tier as TierBucket;
+    }
+  }
+  return out;
+}
+
 /** Collect every series played by `teamName` / `teamSlug` in `ev.stages`, deduplicated by series slug. */
 export function collectTeamEventSeries(ev: HubEvent, teamName: string, teamSlug?: string | null): { stage: string; row: SeriesRow }[] {
   const targetSlug = (teamSlug || resolveTeamAlias(teamName) || prettySlug(teamName)).toLowerCase();
@@ -300,6 +359,11 @@ export const PlayerTierBuilder: React.FC<{
   }, [askedEvent, idx.data]);
 
   const evState = useLoad(() => loadHubEvent(resolvedDefault), [resolvedDefault]);
+  const qParams = useMemo(() => new URLSearchParams(query || ""), [query]);
+  const qBoard = qParams.get("board") || "";
+  const qRole = qParams.get("role") || "";
+  const qStat = qParams.get("stat") || "";
+
   const [role, setRole] = useState<string>("All");
   const [minGp, setMinGp] = useState<number>(3);
   const [statKey, setStatKey] = useState<string>(mode === "players" ? "kda" : "wr");
@@ -311,19 +375,46 @@ export const PlayerTierBuilder: React.FC<{
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<TierBucket | null>(null);
   const [copiedState, setCopiedState] = useState<"idle" | "copied" | "failed">("idle");
+  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
+  const appliedQueryBoardRef = useRef<string>("");
 
-  // Reset stat keys cleanly when switching between players and teams.
   useEffect(() => {
-    setStatKey(mode === "players" ? "kda" : "wr");
-    setSeedStatKey(mode === "players" ? "kda" : "wr");
-    setSelectedId(null);
-  }, [mode]);
+    if (!qRole) return;
+    const matched = ROLES.find((r) => r.toLowerCase() === qRole.toLowerCase());
+    if (matched) setRole(matched);
+  }, [qRole]);
 
-  // Load saved board from localStorage when tournament or mode changes.
+  // Sync or reset stat keys cleanly when switching between players and teams.
   useEffect(() => {
-    setPlacements(readSavedPlacements(mode, resolvedDefault));
+    const list = mode === "players" ? PLAYER_TIER_STATS : TEAM_TIER_STATS;
+    if (qStat && list.some((s) => s.key === qStat)) {
+      setStatKey(qStat);
+      setSeedStatKey(qStat);
+    } else {
+      setStatKey(mode === "players" ? "kda" : "wr");
+      setSeedStatKey(mode === "players" ? "kda" : "wr");
+    }
     setSelectedId(null);
-  }, [mode, resolvedDefault]);
+  }, [mode, qStat]);
+
+  // Load saved board from localStorage (or hydrate a shared ?board=... URL when event loads).
+  useEffect(() => {
+    if (!qBoard) {
+      appliedQueryBoardRef.current = "";
+      setPlacements(readSavedPlacements(mode, resolvedDefault));
+      setSelectedId(null);
+      return;
+    }
+    const token = `${mode}|${resolvedDefault}|${qBoard}`;
+    if (appliedQueryBoardRef.current === token || !evState.data) return;
+    const decoded =
+      mode === "players"
+        ? decodeTierBoard(qBoard, evState.data.players || [], playerId, (p) => p.u || prettySlug(p.n))
+        : decodeTierBoard(qBoard, evState.data.teamStats || [], teamId, (t) => t.u || prettySlug(t.t));
+    appliedQueryBoardRef.current = token;
+    setPlacements(Object.keys(decoded).length ? decoded : readSavedPlacements(mode, resolvedDefault));
+    setSelectedId(null);
+  }, [mode, resolvedDefault, qBoard, evState.data]);
 
   const updatePlacements = (next: Record<string, TierBucket>) => {
     setPlacements(next);
@@ -450,6 +541,94 @@ export const PlayerTierBuilder: React.FC<{
     return [];
   }, [ev, selectedPlayer, selectedTeam]);
 
+  const playerBench = useMemo(() => {
+    if (!selectedPlayer || !ev?.players?.length) return null;
+    const selRole = normalizeRole(selectedPlayer.r) || selectedPlayer.r;
+    const roleAll = ev.players.filter((p) => (normalizeRole(p.r) || p.r) === selRole);
+    const peers = selectedPlayer.g >= effectiveMinGp ? roleAll.filter((p) => p.g >= effectiveMinGp) : roleAll;
+    const stat = activePlayerStat;
+    const scored = peers
+      .map((p) => ({ p, v: stat.value(p) }))
+      .filter((x): x is { p: EventPlayer; v: number } => x.v !== null)
+      .sort((a, b) => (stat.low ? a.v - b.v : b.v - a.v));
+    const myVal = stat.value(selectedPlayer);
+    const rank =
+      myVal == null ? null : 1 + scored.filter((x) => (stat.low ? x.v < myVal : x.v > myVal)).length;
+    const selKey = playerId(selectedPlayer);
+    const comparePeer = scored.find((x) => playerId(x.p) !== selKey)?.p || peers.find((p) => playerId(p) !== selKey) || null;
+    const mean = (fn: (p: EventPlayer) => number | null): number | null => {
+      const vals = peers.map(fn).filter((v): v is number => v !== null);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    };
+    const statAvg = (k: string): number | null => {
+      const opt = PLAYER_TIER_STATS.find((s) => s.key === k);
+      return opt ? mean(opt.value) : null;
+    };
+    const avgPct = (k: string) => {
+      const v = statAvg(k);
+      return v == null ? null : `${Math.round(v * 100)}%`;
+    };
+    const avgInt = (k: string, sign = false) => {
+      const v = statAvg(k);
+      if (v == null) return null;
+      const s = String(Math.round(v));
+      return sign ? signed(s) : s;
+    };
+    const avgs: Record<string, string | null> = {
+      KDA: (() => { const v = statAvg("kda"); return v == null ? null : fmtDec(v, 2); })(),
+      "KP%": avgPct("kp"),
+      "KS%": avgPct("ks"),
+      "DTH%": avgPct("dth"),
+      DPM: avgInt("dpm"),
+      "DMG%": avgPct("dmgs"),
+      "CS/m": (() => { const v = mean((p) => per(p.cs, p.min, 1)); return v == null ? null : v.toFixed(1); })(),
+      GPM: avgInt("gpm"),
+      "GD@15": avgInt("g15", true),
+      "CSD@15": (() => { const v = statAvg("c15"); return v == null ? null : signed(v.toFixed(1)); })(),
+      "CTR%": avgPct("ctr"),
+    };
+    return { rank, total: scored.length || peers.length, roleLabel: roleName(selRole), comparePeer, avgs };
+  }, [selectedPlayer, ev, effectiveMinGp, activePlayerStat]);
+
+  const teamBench = useMemo(() => {
+    if (!selectedTeam || !ev?.teamStats?.length) return null;
+    const peers = selectedTeam.g >= effectiveMinGp ? ev.teamStats.filter((t) => t.g >= effectiveMinGp) : ev.teamStats;
+    const stat = activeTeamStat;
+    const scored = peers
+      .map((t) => ({ t, v: stat.value(t) }))
+      .filter((x): x is { t: EventTeamStats; v: number } => x.v !== null)
+      .sort((a, b) => (stat.low ? a.v - b.v : b.v - a.v));
+    const myVal = stat.value(selectedTeam);
+    const rank =
+      myVal == null ? null : 1 + scored.filter((x) => (stat.low ? x.v < myVal : x.v > myVal)).length;
+    const selKey = teamId(selectedTeam);
+    const comparePeer = scored.find((x) => teamId(x.t) !== selKey)?.t || peers.find((t) => teamId(t) !== selKey) || null;
+    const mean = (fn: (t: EventTeamStats) => number | null): number | null => {
+      const vals = peers.map(fn).filter((v): v is number => v !== null);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    };
+    const statAvg = (k: string): number | null => {
+      const opt = TEAM_TIER_STATS.find((s) => s.key === k);
+      return opt ? mean(opt.value) : null;
+    };
+    const avgPct = (fn: (t: EventTeamStats) => number | null) => {
+      const v = mean(fn);
+      return v == null ? null : `${Math.round(v * 100)}%`;
+    };
+    const avgs: Record<string, string | null> = {
+      "W%": (() => { const v = statAvg("wr"); return v == null ? null : `${Math.round(v * 100)}%`; })(),
+      "K:D": (() => { const v = statAvg("kd"); return v == null ? null : fmtDec(v, 2); })(),
+      "GD/m": (() => { const v = statAvg("gdm"); return v == null ? null : signed(String(Math.round(v))); })(),
+      GPM: (() => { const v = mean((t) => (t.gold != null ? per(t.gold, t.min, 0) : null)); return v == null ? null : String(Math.round(v)); })(),
+      "GD@15": (() => { const v = statAvg("g15"); return v == null ? null : signed(String(Math.round(v))); })(),
+      "FB%": avgPct((t) => (t.fbn ? (t.fb || 0) / t.fbn : null)),
+      "FT%": avgPct((t) => (t.fbn ? (t.ft || 0) / t.fbn : null)),
+      "DRA%": avgPct((t) => (t.odrag != null && t.drag + t.odrag > 0 ? t.drag / (t.drag + t.odrag) : null)),
+      Avg: (() => { const v = mean((t) => (t.g ? t.min / t.g : null)); return v == null ? null : `${fmtDec(v)}m`; })(),
+    };
+    return { rank, total: scored.length || peers.length, comparePeer, avgs };
+  }, [selectedTeam, ev, effectiveMinGp, activeTeamStat]);
+
   const handleAutoSeed = () => {
     if (mode === "players") {
       const m = availablePlayerStats.find((x) => x.key === seedStatKey) || activePlayerStat;
@@ -461,6 +640,34 @@ export const PlayerTierBuilder: React.FC<{
       const seeded = seedItemsByStat(filteredTeams, teamId, m.value, m.low);
       updatePlacements({ ...placements, ...seeded });
     }
+  };
+
+  const buildBoardShareUrl = () => {
+    const items = mode === "players" ? ev?.players || [] : ev?.teamStats || [];
+    const boardToken =
+      mode === "players"
+        ? encodeTierBoard(placements, items as EventPlayer[], playerId, (p) => p.u || prettySlug(p.n))
+        : encodeTierBoard(placements, items as EventTeamStats[], teamId, (t) => t.u || prettySlug(t.t));
+    const params = new URLSearchParams();
+    params.set("mode", mode);
+    if (resolvedDefault) params.set("event", resolvedDefault);
+    if (mode === "players" && role !== "All") params.set("role", role);
+    if (statKey) params.set("stat", statKey);
+    if (boardToken) params.set("board", boardToken);
+    return hubShareUrl({ kind: "tiers", query: params.toString() });
+  };
+
+  const handleCopyShare = () => {
+    navigator.clipboard?.writeText(buildBoardShareUrl()).then(
+      () => {
+        setShareState("copied");
+        setTimeout(() => setShareState("idle"), 1600);
+      },
+      () => {
+        setShareState("failed");
+        setTimeout(() => setShareState("idle"), 1600);
+      },
+    );
   };
 
   const handleCopyMarkdown = () => {
@@ -479,8 +686,7 @@ export const PlayerTierBuilder: React.FC<{
       }));
       return { bucket: t, items };
     });
-    const url = hubShareUrl({ kind: "tiers", ...(query ? { query } : {}) });
-    navigator.clipboard?.writeText(formatTierListMarkdown(title, rows, url)).then(
+    navigator.clipboard?.writeText(formatTierListMarkdown(title, rows, buildBoardShareUrl())).then(
       () => {
         setCopiedState("copied");
         setTimeout(() => setCopiedState("idle"), 1600);
@@ -662,6 +868,13 @@ export const PlayerTierBuilder: React.FC<{
                       }));
                 }}
               />
+              <button
+                type="button"
+                onClick={handleCopyShare}
+                className="px-2 py-0.5 rounded border border-rw-border bg-rw-surface text-[11px] text-rw-sub hover:text-rw-text hover:border-rw-accent/60"
+              >
+                {shareState === "copied" ? tl("Link copied") : shareState === "failed" ? tl("Couldn't copy") : tl("Share board")}
+              </button>
               <button
                 type="button"
                 onClick={handleCopyMarkdown}
@@ -917,12 +1130,24 @@ export const PlayerTierBuilder: React.FC<{
                         <span>· {roleName(normalizeRole(selectedPlayer.r) || selectedPlayer.r)}</span>
                       </div>
                     )}
-                    <div className="text-[11px] text-rw-muted tabular-nums mt-0.5">
-                      {selectedPlayer
-                        ? `${selectedPlayer.g}G · ${selectedPlayer.w}-${selectedPlayer.g - selectedPlayer.w} (${Math.round((selectedPlayer.w / Math.max(1, selectedPlayer.g)) * 100)}%)`
-                        : selectedTeam
-                          ? `${selectedTeam.g}G · ${selectedTeam.w}-${selectedTeam.g - selectedTeam.w} (${Math.round((selectedTeam.w / Math.max(1, selectedTeam.g)) * 100)}%)`
-                          : ""}
+                    <div className="text-[11px] text-rw-muted tabular-nums mt-0.5 flex flex-wrap items-center gap-x-1.5">
+                      <span>
+                        {selectedPlayer
+                          ? `${selectedPlayer.g}G · ${selectedPlayer.w}-${selectedPlayer.g - selectedPlayer.w} (${Math.round((selectedPlayer.w / Math.max(1, selectedPlayer.g)) * 100)}%)`
+                          : selectedTeam
+                            ? `${selectedTeam.g}G · ${selectedTeam.w}-${selectedTeam.g - selectedTeam.w} (${Math.round((selectedTeam.w / Math.max(1, selectedTeam.g)) * 100)}%)`
+                            : ""}
+                      </span>
+                      {playerBench?.rank != null && (
+                        <span className="px-1.5 py-0.5 rounded bg-rw-accent/15 text-rw-accent font-semibold text-[10px]">
+                          #{playerBench.rank} / {playerBench.total} {playerBench.roleLabel} · {activePlayerStat.short}
+                        </span>
+                      )}
+                      {teamBench?.rank != null && (
+                        <span className="px-1.5 py-0.5 rounded bg-rw-accent/15 text-rw-accent font-semibold text-[10px]">
+                          #{teamBench.rank} / {teamBench.total} · {activeTeamStat.short}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -934,6 +1159,42 @@ export const PlayerTierBuilder: React.FC<{
                 >
                   ×
                 </button>
+              </div>
+
+              {/* Direct head-to-head & leaderboard shortcuts */}
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                {selectedPlayer && (
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "player",
+                      a: selectedPlayer.u || prettySlug(selectedPlayer.n),
+                      ...(playerBench?.comparePeer ? { b: playerBench.comparePeer.u || prettySlug(playerBench.comparePeer.n) } : {}),
+                    }}
+                    className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 font-medium"
+                  >
+                    {playerBench?.comparePeer ? `${tl("Compare")} vs ${playerBench.comparePeer.n}` : tl("Compare")}
+                  </HubLink>
+                )}
+                {selectedTeam && (
+                  <HubLink
+                    to={{
+                      kind: "compare",
+                      mode: "team",
+                      a: selectedTeam.u || prettySlug(selectedTeam.t),
+                      ...(teamBench?.comparePeer ? { b: teamBench.comparePeer.u || prettySlug(teamBench.comparePeer.t) } : {}),
+                    }}
+                    className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 font-medium"
+                  >
+                    {teamBench?.comparePeer ? `${tl("Compare")} vs ${teamBench.comparePeer.t}` : tl("Compare")}
+                  </HubLink>
+                )}
+                <HubLink
+                  to={{ kind: "leaders" }}
+                  className="px-2 py-0.5 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/60 font-medium"
+                >
+                  {tl("Leaderboards")}
+                </HubLink>
               </div>
 
               {/* Quick tier assignment */}
@@ -987,12 +1248,16 @@ export const PlayerTierBuilder: React.FC<{
                     ["GD@15", (selectedPlayer.tn ? signed(fmtPer(selectedPlayer.g15 || 0, selectedPlayer.tn, 0)) : null) || "–"],
                     ["CSD@15", (selectedPlayer.tn ? signed(fmtPer(selectedPlayer.c15 || 0, selectedPlayer.tn, 1)) : null) || "–"],
                     ["CTR%", pctStr(selectedPlayer.ctr, selectedPlayer.ctrg) || "–"],
-                  ].map(([lbl, val]) => (
-                    <div key={lbl} className="rounded border border-rw-border/60 bg-rw-bg/50 px-2 py-1">
-                      <div className="text-[9px] uppercase text-rw-muted">{lbl}</div>
-                      <div className="font-mono font-semibold text-rw-text tabular-nums">{val}</div>
-                    </div>
-                  ))}
+                  ].map(([lbl, val]) => {
+                    const peerAvg = playerBench?.avgs[lbl];
+                    return (
+                      <div key={lbl} className="rounded border border-rw-border/60 bg-rw-bg/50 px-2 py-1">
+                        <div className="text-[9px] uppercase text-rw-muted">{lbl}</div>
+                        <div className="font-mono font-semibold text-rw-text tabular-nums">{val}</div>
+                        {peerAvg && <div className="text-[9px] text-rw-muted tabular-nums">{tl("avg")} {peerAvg}</div>}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -1008,12 +1273,16 @@ export const PlayerTierBuilder: React.FC<{
                     ["FT%", pctStr(selectedTeam.ft, selectedTeam.fbn) || "–"],
                     ["DRA%", selectedTeam.odrag != null ? pctStr(selectedTeam.drag, selectedTeam.drag + selectedTeam.odrag) || "–" : "–"],
                     ["Avg", selectedTeam.g ? `${fmtDec(selectedTeam.min / selectedTeam.g)}m` : "–"],
-                  ].map(([lbl, val]) => (
-                    <div key={lbl} className="rounded border border-rw-border/60 bg-rw-bg/50 px-2 py-1">
-                      <div className="text-[9px] uppercase text-rw-muted">{lbl}</div>
-                      <div className="font-mono font-semibold text-rw-text tabular-nums">{val}</div>
-                    </div>
-                  ))}
+                  ].map(([lbl, val]) => {
+                    const peerAvg = teamBench?.avgs[lbl];
+                    return (
+                      <div key={lbl} className="rounded border border-rw-border/60 bg-rw-bg/50 px-2 py-1">
+                        <div className="text-[9px] uppercase text-rw-muted">{lbl}</div>
+                        <div className="font-mono font-semibold text-rw-text tabular-nums">{val}</div>
+                        {peerAvg && <div className="text-[9px] text-rw-muted tabular-nums">{tl("avg")} {peerAvg}</div>}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 

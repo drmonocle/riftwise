@@ -50,6 +50,12 @@ const PAGES = [
   ["league", "/league/lck"],
   ["champ", "/champion/ahri"],
   ["match", "/match/worlds-2025-main-event-finals-1"],
+  ["worlds-2026", "/stats/worlds/2026"],
+  ["event-worlds26", "/tournament/worlds-2026-main-event"],
+  ["tiers-players", "/stats/tiers?mode=players&event=worlds-2026-main-event"],
+  ["tiers-teams", "/stats/tiers?mode=teams&event=worlds-2026-main-event"],
+  ["match-matrix", "/match/worlds-2026-main-event-finals-1?view=matrix"],
+  ["match-summary", "/match/worlds-2026-main-event-finals-1?view=summary"],
   ["aboutme", "/about"],
 ];
 const edge = findBrowser(); // Edge or Chrome (browser.mjs; BROWSER=<path> to choose)

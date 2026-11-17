@@ -371,6 +371,8 @@ def build(ctx) -> dict:
     # -- series order, stage and score from Leaguepedia's MatchSchedule (sidecar database) --
     sched = {}
     sched_by_op = defaultdict(list)
+    lp_ro = None
+    has_lppb = False
     if ctx.lp_db and os.path.exists(ctx.lp_db):
         try:
             lp = sqlite3.connect(f"file:{ctx.lp_db}?mode=ro", uri=True, timeout=30)
@@ -393,10 +395,21 @@ def build(ctx) -> dict:
                 sched[s["mid"]] = s
                 if s["op"]:
                     sched_by_op[s["op"]].append(s)
-            lp.close()
+            has_lppb = bool(lp.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='lp_picks_and_bans_s7'").fetchone())
+            if has_lppb:
+                lp.row_factory = sqlite3.Row
+                lp_ro = lp
+            else:
+                lp.close()
         except sqlite3.Error as e:
             print(f"hub: sidecar database unreadable ({e}); stages come from the series ids")
             checks["hub: sidecar unreadable"] = 1
+            if lp_ro is not None:
+                try:
+                    lp_ro.close()
+                except sqlite3.Error:
+                    pass
+                lp_ro = None
     checks["hub: series from MatchSchedule"] = len(sched)
 
     # -- slugs -------------------------------------------------------------------------
@@ -920,6 +933,55 @@ def build(ctx) -> dict:
                 f"""SELECT match_id, game_number, team1, team2, team1_bans, team2_bans, team1_picks, team2_picks, team1_roles,
                            team2_roles FROM game_drafts_lp WHERE match_id IN ({q})""", part):
                 drafts[(r["match_id"], r["game_number"])] = r
+        if has_lppb and lp_ro is not None:
+            def _incomplete_draft(row):
+                return (not row
+                        or (row["team1"] or "").strip() in ("", "TBD")
+                        or (row["team2"] or "").strip() in ("", "TBD")
+                        or not jlist(row["team1_picks"])
+                        or not jlist(row["team2_picks"]))
+            want_mids = sorted({m_ for mid_, glist_ in series.items() for g_ in glist_
+                                for m_ in (g_.get("sb_mid") or mid_, mid_)
+                                if m_ and _incomplete_draft(drafts.get((m_, g_["n"])))})
+            for part in chunks(want_mids):
+                q = ",".join("?" * len(part))
+                for r in lp_ro.execute(
+                    f"""SELECT MatchId, N_GameInMatch, Team1, Team2, SwitchedSides,
+                               Team1Ban1, Team1Ban2, Team1Ban3, Team1Ban4, Team1Ban5,
+                               Team2Ban1, Team2Ban2, Team2Ban3, Team2Ban4, Team2Ban5,
+                               Team1Pick1, Team1Pick2, Team1Pick3, Team1Pick4, Team1Pick5,
+                               Team2Pick1, Team2Pick2, Team2Pick3, Team2Pick4, Team2Pick5,
+                               Team1Role1, Team1Role2, Team1Role3, Team1Role4, Team1Role5,
+                               Team2Role1, Team2Role2, Team2Role3, Team2Role4, Team2Role5
+                        FROM lp_picks_and_bans_s7 WHERE MatchId IN ({q})""", part):
+                    gn_ = num(r["N_GameInMatch"]) or 1
+                    key_ = (r["MatchId"], gn_)
+                    if not _incomplete_draft(drafts.get(key_)):
+                        continue
+                    t1_ = clean(r["Team1"])
+                    t2_ = clean(r["Team2"])
+                    p1_ = [r[f"Team1Pick{i}"] for i in range(1, 6) if r[f"Team1Pick{i}"]]
+                    p2_ = [r[f"Team2Pick{i}"] for i in range(1, 6) if r[f"Team2Pick{i}"]]
+                    if not t1_ or not t2_ or t1_ == "TBD" or t2_ == "TBD" or not p1_ or not p2_:
+                        continue
+                    b1_ = [r[f"Team1Ban{i}"] for i in range(1, 6) if r[f"Team1Ban{i}"]]
+                    b2_ = [r[f"Team2Ban{i}"] for i in range(1, 6) if r[f"Team2Ban{i}"]]
+                    r1_ = [r[f"Team1Role{i}"] or "" for i in range(1, 6)]
+                    r2_ = [r[f"Team2Role{i}"] or "" for i in range(1, 6)]
+                    drafts[key_] = {
+                        "match_id": r["MatchId"],
+                        "game_number": gn_,
+                        "team1": t1_,
+                        "team2": t2_,
+                        "team1_bans": json.dumps(b1_),
+                        "team2_bans": json.dumps(b2_),
+                        "team1_picks": json.dumps(p1_),
+                        "team2_picks": json.dumps(p2_),
+                        "team1_roles": json.dumps(r1_),
+                        "team2_roles": json.dumps(r2_),
+                        "switched_sides": r["SwitchedSides"],
+                    }
+                    checks["hub: drafts from lp_picks_and_bans_s7"] += 1
         oe = timeline.load(con, mids, chunks)
 
         # Per-tournament aggregates
@@ -1083,7 +1145,15 @@ def build(ctx) -> dict:
                         item["min"] = rmin(base["min"]) if base["min"] else None
                     t = trow.get(gid) if gid else None
                     sb = sbg.get((g_mid, g["n"])) or sbg.get((mid, g["n"]))
-                    dr = drafts.get((g_mid, g["n"])) or drafts.get((mid, g["n"]))
+                    dr = (
+                        next(
+                            (d_ for d_ in (drafts.get((g_mid, g["n"])), drafts.get((mid, g["n"])))
+                             if d_ is not None and jlist(d_["team1_picks"]) and jlist(d_["team2_picks"])),
+                            None,
+                        )
+                        or drafts.get((g_mid, g["n"]))
+                        or drafts.get((mid, g["n"]))
+                    )
                     sides = {}
                     draft_order = {}  # side -> its picks in pick order (only the draft table has it; the team table is in role order)
                     t_pre = dict(zip(("blue", "red"), blue_red(t["team1"], t["team2"], g["t1"], g["t2"]))) if t is not None else {}
@@ -1125,6 +1195,8 @@ def build(ctx) -> dict:
                                 sd["picks"] = picks
                                 draft_order[side] = picks
                         sides[side] = sd
+                    if dr is not None and d_pre.get("red") == "team1" and (sides.get("red") or {}).get("picks"):
+                        item["fp"] = "r"
                     g_rows = prow.get(gid, []) if gid else []
                     for side, name in (("blue", g["t1"]), ("red", g["t2"])):
                         mine = [r for r in g_rows if r["team"] == name]
@@ -3270,6 +3342,11 @@ def build(ctx) -> dict:
         print(f"hub: ddragon lists skipped: {e}")
         checks["hub: ddragon languages"] = 0
     out.finish()
+    if lp_ro is not None:
+        try:
+            lp_ro.close()
+        except sqlite3.Error:
+            pass
     # search-engine summaries of the Worlds / MSI / First Stand pages, from the files just written (seo_pages.py)
     try:
         import seo_pages

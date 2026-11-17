@@ -1076,6 +1076,18 @@ const SwissNow: React.FC<{ d: Loaded; main: HubEvent; schedule?: Match[]; onPick
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
+                          mode: "players",
+                          event: main.u,
+                        }).toString(),
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Player tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
                           league: "world-championship",
                           scope: "world-championship",
                           year: d.year,
@@ -1768,6 +1780,18 @@ const BracketNow: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Bracket
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
+                          mode: "players",
+                          event: main.u,
+                        }).toString(),
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Player tier list")} →
                     </HubLink>
                     <HubLink
                       to={{
@@ -3100,6 +3124,18 @@ const Pickers: React.FC<{ d: Loaded; year: string; tab: Tab; live: boolean; sche
                       to={{
                         kind: "tiers",
                         query: new URLSearchParams({
+                          mode: "players",
+                          event: main.u,
+                        }).toString(),
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Player tier list")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
                           league: "world-championship",
                           scope: "world-championship",
                           year,
@@ -3930,6 +3966,18 @@ const BracketPicker: React.FC<{ d: Loaded; kind: "msi" | "first-stand"; br: Brac
                       className="text-[11px] text-rw-sub hover:text-rw-accent hover:underline"
                     >
                       {tl("Power rankings")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
+                        kind: "tiers",
+                        query: new URLSearchParams({
+                          mode: "players",
+                          event: main.u,
+                        }).toString(),
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline font-semibold"
+                    >
+                      {tl("Player tier list")} →
                     </HubLink>
                     <HubLink
                       to={{

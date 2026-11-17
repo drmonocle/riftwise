@@ -10,7 +10,7 @@ const only = process.argv[3];
 const T = {
   kills: [/\bkills?\b/i, {
     es: [/kill/i, /asesinat/i], "pt-BR": [/abate/i, /assassinat/i], fr: [/kill/i, /éliminat|meurtre/i], de: [/kill/i, /tötung/i],
-    ko: [/킬/], "zh-CN": [/击杀|杀/], "zh-TW": [/擊殺|殺/], ja: [/キル/], vi: [/hạ gục|mạng/i, /giết/i], tr: [/öldürme|kill|leş/i],
+    ko: [/킬/], "zh-CN": [/击杀|杀/], "zh-TW": [/擊殺|殺/], ja: [/キル/], vi: [/hạ gục|mạng/i, /giết/i], tr: [/skor|öldürme|kill|leş/i],
   }],
   deaths: [/\bdeaths?\b|\bdies\b|\bdied\b/i, {
     es: [/muert|muer/i], "pt-BR": [/mort|morr/i], fr: [/mort|meur/i], de: [/tod|tode|stirb|starb|gestorben/i],

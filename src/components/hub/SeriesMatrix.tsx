@@ -243,6 +243,7 @@ export const SeriesMatrix: React.FC<{ s: HubSeries; initialGame?: number | "all"
     initialGame ?? (playedGames[0]?.n ?? "all"),
   );
   const [highlighted, setHighlighted] = useState<string | null>("dpm");
+  const [compareMode, setCompareMode] = useState<"overall" | "lane">("overall");
   const tableRef = useRef<HTMLTableElement>(null);
 
   const effectiveScope = scope !== "all" && playedGames.some((g) => g.n === scope) ? scope : playedGames.length > 1 ? "all" : playedGames[0]?.n ?? "all";
@@ -276,6 +277,21 @@ export const SeriesMatrix: React.FC<{ s: HubSeries; initialGame?: number | "all"
               {tl("Series totals")}
             </button>
           )}
+          <div className="inline-flex rounded-lg border border-rw-border bg-rw-surface p-0.5 text-[11px]" role="group" aria-label={tl("Stat highlight")}>
+            {(["overall", "lane"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setCompareMode(m)}
+                aria-pressed={compareMode === m}
+                className={`px-2 py-0.5 rounded-md font-medium transition-colors ${
+                  compareMode === m ? "bg-rw-raised text-rw-text shadow-sm" : "text-rw-muted hover:text-rw-text"
+                }`}
+              >
+                {m === "overall" ? tl("All") : tl("Role 1v1")}
+              </button>
+            ))}
+          </div>
           <TableExport tableRef={tableRef} name={`${s.a.c || s.a.n}-vs-${s.b.c || s.b.n}-${effectiveScope === "all" ? "series" : `g${effectiveScope}`}-matrix`} />
         </div>
       }
@@ -363,6 +379,24 @@ export const SeriesMatrix: React.FC<{ s: HubSeries; initialGame?: number | "all"
               const vals = cols.map((p) => row.val(p));
               const valid = vals.filter((v): v is number => v !== null);
               const best = valid.length ? (row.lower ? Math.min(...valid) : Math.max(...valid)) : null;
+              const laneWinners = compareMode === "lane" ? (() => {
+                const map = new Map<string, number>();
+                const byRole = new Map<string, number[]>();
+                cols.forEach((p, i) => {
+                  const v = vals[i];
+                  if (v === null || !p.r) return;
+                  const arr = byRole.get(p.r) ?? [];
+                  arr.push(v);
+                  byRole.set(p.r, arr);
+                });
+                byRole.forEach((arr, r) => {
+                  if (arr.length >= 2) {
+                    const bVal = row.lower ? Math.min(...arr) : Math.max(...arr);
+                    if (arr.filter((x) => x === bVal).length < arr.length) map.set(r, bVal);
+                  }
+                });
+                return map;
+              })() : null;
               const isHi = highlighted === row.key;
               return (
                 <tr
@@ -384,7 +418,10 @@ export const SeriesMatrix: React.FC<{ s: HubSeries; initialGame?: number | "all"
                   {cols.map((p, idx) => {
                     const v = vals[idx];
                     const sep = idx === a.length - 1 ? "border-r border-rw-border" : "";
-                    const isBest = v !== null && best !== null && v === best && valid.filter((x) => x === best).length < valid.length;
+                    const roleBest = laneWinners && p.r ? laneWinners.get(p.r) : undefined;
+                    const isBest = compareMode === "lane"
+                      ? v !== null && roleBest !== undefined && v === roleBest
+                      : v !== null && best !== null && v === best && valid.filter((x) => x === best).length < valid.length;
                     const color =
                       row.diff && v !== null
                         ? v >= 0
@@ -436,10 +473,20 @@ export const SeriesSummaryGrid: React.FC<{ s: HubSeries; onSelectGame?: (n: numb
           return (
             <div key={g.n} className={`${card} p-3 flex flex-col gap-2`}>
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <span className="font-bold text-rw-text">{tl("Game {n}", { n: g.n })}</span>
                   {g.min && <span className="text-rw-muted tabular-nums">{fmtDur(g.min)}</span>}
                   {g.patch && <span className="text-[10px] px-1.5 py-0.5 rounded bg-rw-raised text-rw-sub">{g.patch}</span>}
+                  {(g.fp === "r" || g.p?.some((p) => p.pk === 1)) && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-rw-raised text-rw-sub font-medium">
+                      {g.fp === "r" || g.p?.some((p) => p.s === 2 && p.pk === 1) ? tl("Red 1st pick") : tl("Blue 1st pick")}
+                    </span>
+                  )}
+                  {g.mvp?.n && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-rw-gold/15 text-rw-gold font-semibold">
+                      {tl("MVP")}: {g.mvp.n}
+                    </span>
+                  )}
                 </div>
                 {onSelectGame && (
                   <button
@@ -469,10 +516,20 @@ export const SeriesSummaryGrid: React.FC<{ s: HubSeries; onSelectGame?: (n: numb
                         <span className="truncate">{side.team.n}</span>
                         {side.won && <span className="text-[10px] font-bold text-rw-teal uppercase">{tl("Win")}</span>}
                       </span>
-                      <span className="text-[11px] text-rw-sub tabular-nums shrink-0">
-                        {side.stats?.k != null ? `${side.stats.k} K` : ""}
-                        {side.stats?.gold != null ? ` · ${fmtDec(side.stats.gold / 1000)}k` : ""}
-                        {si === 0 && goldDiff !== null ? ` (${goldDiff >= 0 ? "+" : ""}${fmtDec(goldDiff / 1000)}k)` : ""}
+                      <span className="flex flex-col items-end gap-0.5 text-[11px] text-rw-sub tabular-nums shrink-0">
+                        <span>
+                          {side.stats?.k != null ? `${side.stats.k} ${tl("kills")}` : ""}
+                          {side.stats?.gold != null ? ` · ${fmtDec(side.stats.gold / 1000)}k` : ""}
+                          {si === 0 && goldDiff !== null ? ` (${goldDiff >= 0 ? "+" : ""}${fmtDec(goldDiff / 1000)}k)` : ""}
+                        </span>
+                        {(side.stats?.towers != null || side.stats?.drag != null || side.stats?.barons != null || side.stats?.grubs != null) && (
+                          <span className="inline-flex flex-wrap justify-end gap-1 text-[10px] text-rw-muted">
+                            {side.stats?.towers != null && <span className="px-1 rounded bg-rw-raised" title={tl("Towers")}>T {side.stats.towers}</span>}
+                            {side.stats?.drag != null && <span className="px-1 rounded bg-rw-raised" title={tl("Dragons")}>D {side.stats.drag}</span>}
+                            {side.stats?.barons != null && <span className="px-1 rounded bg-rw-raised" title={tl("Barons")}>B {side.stats.barons}</span>}
+                            {side.stats?.grubs != null && <span className="px-1 rounded bg-rw-raised" title={tl("Void grubs")}>G {side.stats.grubs}</span>}
+                          </span>
+                        )}
                       </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">

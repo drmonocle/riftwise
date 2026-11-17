@@ -309,7 +309,10 @@ export const HubHome: React.FC<{
         <section className={`${card} flex flex-col`}>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <h2 className="font-head text-lg font-bold text-rw-text flex items-center gap-2"><ClipboardList className="w-4 h-4 text-rw-accent" />{tl("Tools")}</h2>
-            <span className="flex items-center gap-2 text-[11px]">
+            <span className="flex flex-wrap items-center gap-2 text-[11px]">
+              <HubLink to={{ kind: "tiers", query: "mode=players" }} className="text-rw-accent hover:underline font-semibold">
+                {tl("Player tier list")} →
+              </HubLink>
               <HubLink to={{ kind: "tiers" }} className="text-rw-sub hover:text-rw-accent hover:underline">
                 {tl("Pro tier list")} →
               </HubLink>

@@ -71,7 +71,7 @@ export const MENU: MenuGroup[] = [
     icon: ic(Swords),
     items: [
       { kind: "champions", label: tk("Champions"), sub: tk("Pick, ban and win rates"), icon: ic(Swords), also: ["pick rate", "ban rate", "presence"] },
-      { kind: "tiers", label: tk("Tier list"), sub: tk("What pros play on each patch, by role"), icon: ic(Rows3), also: ["meta", "pro tier list"] },
+      { kind: "tiers", label: tk("Tier list"), sub: tk("Champions, players and teams ranked in tiers"), icon: ic(Rows3), also: ["meta", "pro tier list", "player tier list", "team tier list", "tiermaker", "s tier"] },
       { kind: "counters", label: tk("Counters"), sub: tk("Every pro lane matchup, by champion"), icon: ic(Crosshair), also: ["counter picks", "matchups", "lane matchup"] },
       { kind: "patches", label: tk("Patches"), sub: tk("The pro meta on every patch"), icon: ic(History), also: ["patch", "meta changes"] },
     ],

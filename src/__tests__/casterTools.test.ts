@@ -3,6 +3,8 @@ import { buildSeriesMatrixPlayers } from "../components/hub/SeriesMatrix";
 import { buildSwissMatrix } from "../components/hub/SwissProgression";
 import {
   collectTeamEventSeries,
+  decodeTierBoard,
+  encodeTierBoard,
   formatTierListMarkdown,
   pickDefaultTierEvent,
   playerId,
@@ -309,5 +311,49 @@ describe("PlayerTierBuilder pure helpers", () => {
     };
     const series = collectTeamEventSeries(ev, "Gen.G", "geng");
     expect(series.map((x) => x.row.g)).toEqual(["r1-1", "fin-1"]);
+  });
+
+  it("round-trips shareable board query tokens across player slugs", () => {
+    const mkP = (n: string, u: string): EventPlayer => ({
+      n,
+      u,
+      t: "Gen.G",
+      tu: "geng",
+      r: "Mid",
+      g: 4,
+      w: 3,
+      k: 12,
+      d: 4,
+      a: 20,
+      tk: 40,
+      tdth: 20,
+      min: 120,
+      cs: 1000,
+      dmg: 60000,
+      gold: 50000,
+      vis: 80,
+      vmin: 120,
+      nc: 2,
+      c: ["Azir"],
+      mvp: 1,
+    });
+    const chovy = mkP("Chovy", "chovy");
+    const faker = mkP("Faker", "faker");
+    const knight = mkP("knight", "knight");
+    const items = [chovy, faker, knight];
+    const encoded = encodeTierBoard(
+      { [playerId(chovy)]: "S", [playerId(faker)]: "A", [playerId(knight)]: "pool" },
+      items,
+      playerId,
+      (p) => p.u || p.n.toLowerCase(),
+    );
+    expect(encoded).toBe("S:chovy~A:faker");
+    expect(
+      decodeTierBoard("S:CHOVY,unknown~A:faker~Z:bad", items, playerId, (p) => p.u || p.n.toLowerCase()),
+    ).toEqual({
+      [playerId(chovy)]: "S",
+      [playerId(faker)]: "A",
+    });
+    expect(decodeTierBoard("", items, playerId, (p) => p.u || p.n.toLowerCase())).toEqual({});
   });
 });

@@ -371,6 +371,8 @@ export interface HubGame {
   /** Player of the Game */
   mvp?: { n: string; u: string | null };
   min?: number | null;
+  /** "r" when red side picked first (2026 First Selection) */
+  fp?: "r";
   t?: { blue: SideStats; red: SideStats };
   p?: GamePlayer[];
   /** game rating 0-100 (MEPI): action, closeness, length, stakes, series drama, comebacks */

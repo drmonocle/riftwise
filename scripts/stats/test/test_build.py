@@ -228,6 +228,9 @@ def main() -> int:
             with open(os.path.join(game_dir, fn), encoding="utf-8") as mf:
                 mdata = json.load(mf)
             for gm in mdata.get("games") or []:
+                if "fp" in gm and gm["fp"] != "r":
+                    print(f"FAIL: unexpected fp={gm['fp']} in {fn}")
+                    return 1
                 for gp in gm.get("p") or []:
                     if "pk" in gp:
                         if not (1 <= gp["pk"] <= 10):

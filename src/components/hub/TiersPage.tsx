@@ -85,7 +85,12 @@ export const TiersPage: React.FC<{ meta: StatsMeta; query?: string }> = ({ meta,
         mode={tierMode}
         eventSlug={q.get("event") || undefined}
         query={query}
-        onSelectEvent={(slug) => set({ mode: tierMode, event: slug || undefined })}
+        onSelectEvent={(slug) =>
+          navigateHub(
+            { kind: "tiers", query: new URLSearchParams({ mode: tierMode, ...(slug ? { event: slug } : {}) }).toString() },
+            { replace: true },
+          )
+        }
         headerSwitcher={headerSwitcher}
       />
     );

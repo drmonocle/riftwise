@@ -1609,12 +1609,16 @@ const GameView: React.FC<{ s: HubSeries; g: HubGame; hidden: boolean; onReveal: 
           <SideHeader name={blueTeam.n} u={blueTeamSlug} oppU={redTeamSlug} p0={blue[0]} oppP0={red[0]} side="blue" won={!hidden && blueWon} st={hidden ? undefined : g.t?.blue} period={gamePeriod} eventSlug={s.e} patch={g.patch} />
           <SideHeader name={redTeam.n} u={redTeamSlug} oppU={blueTeamSlug} p0={red[0]} oppP0={blue[0]} side="red" won={!hidden && redWon} st={hidden ? undefined : g.t?.red} right period={gamePeriod} eventSlug={s.e} patch={g.patch} />
         </div>
-        {(g.t?.blue?.picks?.length || g.t?.blue?.bans?.length) && (
+        {(g.t?.blue?.picks?.length || g.t?.blue?.bans?.length || g.t?.red?.picks?.length || g.t?.red?.bans?.length) && (() => {
+          const redFirstPick = g.fp === "r" || red.some((p) => p.pk === 1) || blue.some((p) => p.pk === 2);
+          const showFpTag = Boolean(redFirstPick || blue.some((p) => p.pk === 1));
+          return (
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-rw-border">
-            <Draft st={g.t?.blue} side="blue" teamSlug={blueTeamSlug} oppSlug={redTeamSlug} p0={blue[0]} oppP0={red[0]} period={gamePeriod} eventSlug={s.e} />
-            <Draft st={g.t?.red} side="red" right teamSlug={redTeamSlug} oppSlug={blueTeamSlug} p0={red[0]} oppP0={blue[0]} period={gamePeriod} eventSlug={s.e} />
+            <Draft st={g.t?.blue} side="blue" firstPick={showFpTag ? !redFirstPick : undefined} redFirst={redFirstPick} teamSlug={blueTeamSlug} oppSlug={redTeamSlug} p0={blue[0]} oppP0={red[0]} period={gamePeriod} eventSlug={s.e} />
+            <Draft st={g.t?.red} side="red" right firstPick={showFpTag ? redFirstPick : undefined} redFirst={redFirstPick} teamSlug={redTeamSlug} oppSlug={blueTeamSlug} p0={red[0]} oppP0={blue[0]} period={gamePeriod} eventSlug={s.e} />
           </div>
-        )}
+          );
+        })()}
         {!hidden && blue.length === 5 && red.length === 5 && (
           <GameRoleMatchups blue={blue} red={red} blueU={blueTeamSlug} redU={redTeamSlug} period={gamePeriod || (s.e ? `e:${s.e}` : undefined)} />
         )}
@@ -3033,15 +3037,17 @@ const SideHeader: React.FC<{ name: string; u: string | null; oppU?: string | nul
 /** +1,234 / -56 */
 const sgn = (v: number | null | undefined) => (v == null ? "–" : `${v > 0 ? "+" : ""}${fmtNum(v)}`);
 
-// Draft order: blue picks 1st, 4th, 5th, 8th, 9th; red 2nd, 3rd, 6th, 7th, 10th. Bans and picks come in two phases (3 + 2).
-const PICK_NO: Record<"blue" | "red", number[]> = { blue: [1, 4, 5, 8, 9], red: [2, 3, 6, 7, 10] };
+// Draft order: standard blue picks 1st, 4th, 5th, 8th, 9th; red 2nd, 3rd, 6th, 7th, 10th (flipped under First Selection when redFirst=true).
+const FIRST_PICK_NO = [1, 4, 5, 8, 9];
+const SECOND_PICK_NO = [2, 3, 6, 7, 10];
 
-const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; teamSlug?: string | null; oppSlug?: string | null; p0?: GamePlayer; oppP0?: GamePlayer; period?: string; eventSlug?: string }> = ({ st, side, right, teamSlug, oppSlug, p0, oppP0, period, eventSlug }) => {
+const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; firstPick?: boolean; redFirst?: boolean; teamSlug?: string | null; oppSlug?: string | null; p0?: GamePlayer; oppP0?: GamePlayer; period?: string; eventSlug?: string }> = ({ st, side, right, firstPick, redFirst, teamSlug, oppSlug, p0, oppP0, period, eventSlug }) => {
   const effPeriod = period || (eventSlug ? `e:${eventSlug}` : undefined);
   const p0Slug = p0 ? pSlug(p0.n, p0.u) : "";
   const oppP0Slug = oppP0 ? pSlug(oppP0.n, oppP0.u) : "";
   const p0Role = p0?.r ? normalizeRole(p0.r) : "";
   const oppP0Champ = oppP0?.c ? resolveChampSlug(oppP0.c) : "";
+  const pickOrder = redFirst ? (side === "red" ? FIRST_PICK_NO : SECOND_PICK_NO) : side === "blue" ? FIRST_PICK_NO : SECOND_PICK_NO;
   return (
   <div className={`space-y-1.5 min-w-0 ${right ? "text-right" : ""}`}>
     {st?.bans && st.bans.length > 0 && (
@@ -3131,10 +3137,12 @@ const Draft: React.FC<{ st?: SideStats; side: "blue" | "red"; right?: boolean; t
                 : { kind: "champ", slug: resolveChampSlug(c), ...(effPeriod ? { query: `p=${encodeURIComponent(effPeriod)}` } : {}) }
             }
             className={`flex flex-col items-center hover:opacity-85 ${i === 3 ? "ml-2" : ""}`}
-            title={`${champName(c)} · ${tl("Pick {n} of the draft", { n: PICK_NO[side][i] ?? i + 1 })}`}
+            title={`${champName(c)} · ${tl("Pick {n} of the draft", { n: pickOrder[i] ?? i + 1 })}`}
           >
             <ChampIcon name={c} size={24} />
-            <span className="text-[9px] text-rw-muted tabular-nums leading-tight">{`${side === "blue" ? "B" : "R"}${i + 1}`}</span>
+            <span className="text-[9px] text-rw-muted tabular-nums leading-tight">
+              {firstPick && i === 0 ? `#1` : `${side === "blue" ? "B" : "R"}${i + 1}`}
+            </span>
           </HubLink>
         ))}
       </div>

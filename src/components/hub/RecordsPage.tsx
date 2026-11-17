@@ -2019,7 +2019,7 @@ export const RecordsPanel: React.FC = () => {
               )}{" "}
               {tl("The top records were checked against Leaguepedia.")}
             </p>
-            <div className="grid gap-3 md:grid-cols-2 3xl:grid-cols-3 items-start">
+            <div className="grid gap-3 md:grid-cols-2 3xl:grid-cols-3 items-stretch [&>section]:h-full">
               {!intlActive && year === "all" && !matchText && thisYearState.data && <ClosestToFalling all={all} year={thisYearState.data} label={thisYear} />}
               {gameList(tl("Fastest wins"), r.game.fastest, mmss)}
               {gameList(tl("Longest games"), r.game.longest, mmss)}
