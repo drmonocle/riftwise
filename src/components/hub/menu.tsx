@@ -5,7 +5,7 @@
  */
 import React from "react";
 import {
-  CalendarRange, ClipboardList, Crosshair, Database, Flag, Flame, GitCompare, Globe, History, Home, Layers, LayoutGrid, ListOrdered, Medal,
+  ArrowLeftRight, CalendarRange, ClipboardList, Crosshair, Database, Flag, Flame, GitCompare, Globe, History, Home, Layers, LayoutGrid, ListOrdered, Medal,
   Package, Rows3, Search, Swords, TrendingUp, Trophy, User, Users, Wrench, type LucideIcon,
 } from "lucide-react";
 import { tk } from "../../i18n";
@@ -63,6 +63,7 @@ export const MENU: MenuGroup[] = [
     items: [
       { kind: "players", label: tk("Players"), sub: tk("Every pro player, by role and team"), icon: ic(User), also: ["all players", "player list", "pros"] },
       { kind: "leaders", label: tk("Leaderboards"), sub: tk("Every player on every stat, by league and role"), icon: ic(ListOrdered), also: ["leaders", "stat leaders", "kda"] },
+      { kind: "moves", label: tk("Roster moves"), sub: tk("Transfers and expiring contracts"), icon: ic(ArrowLeftRight), also: ["transfers", "free agents", "contracts", "stove league", "offseason"] },
     ],
   },
   {

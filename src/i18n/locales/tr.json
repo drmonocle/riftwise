@@ -2252,5 +2252,14 @@
   "Blue 1st pick": "Mavi 1. pick",
   "MVP": "MVP",
   "kills": "skor",
-  "Champions, players and teams ranked in tiers": "Tier sırasına göre şampiyonlar, oyuncular ve takımlar"
+  "Champions, players and teams ranked in tiers": "Tier sırasına göre şampiyonlar, oyuncular ve takımlar",
+  "Active pro players whose listed Leaguepedia contract ends soonest, with recent form and games played.": "Leaguepedia’da kayıtlı sözleşmesi en yakında sona erecek aktif profesyonel oyuncular, son form ve oyun sayılarıyla.",
+  "Contract": "Sözleşme",
+  "Expiring contracts": "Biten sözleşmeler",
+  "No expiring contracts match those filters.": "Bu filtrelere uyan biten sözleşme yok.",
+  "Off-season hub": "Sezon dışı merkezi",
+  "Transfers": "Transferler",
+  "Transfers and expiring contracts": "Transferler ve biten sözleşmeler",
+  "{n} career games": "Kariyer: {n} oyun",
+  "{year} Champions & Stove League": "{year} Şampiyonlar & Transfer Dönemi"
 }

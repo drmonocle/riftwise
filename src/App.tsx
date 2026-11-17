@@ -321,20 +321,23 @@ export default function App() {
     return () => window.clearTimeout(t);
   }, [activeTab, extrasWanted]);
 
-  // All-time H2H table: the cached download if there is one (newest, instant), otherwise the copy
-  // bundled with the app; then the latest download. Kept out of the startup bundle either way.
+  // All-time H2H table: the cached download if there is one (newest, instant), otherwise live fetch
+  // with the bundled snapshot strictly as offline fallback. Kept out of the startup bundle either way.
   const [, setH2hVersion] = useState(0);
   useEffect(() => {
     if (!extrasWanted) return;
     const cached = loadCachedH2HData();
-    if (cached && applyH2HData(cached)) setH2hVersion((v) => v + 1);
-    else loadBundledH2H().then((loaded) => loaded && setH2hVersion((v) => v + 1)).catch(() => {});
+    const hadCached = !!(cached && applyH2HData(cached));
+    if (hadCached) setH2hVersion((v) => v + 1);
+    const fallbackToBundled = () => {
+      if (!hadCached) loadBundledH2H().then((loaded) => loaded && setH2hVersion((v) => v + 1)).catch(() => {});
+    };
     const refresh = () =>
       fetchH2HData()
         .then((data) => {
           if (applyH2HData(data)) setH2hVersion((v) => v + 1);
         })
-        .catch(() => {}); // offline or not published yet: keep what we have
+        .catch(fallbackToBundled); // offline or unreachable: fall back to bundled snapshot once
     refresh();
     const timer = window.setInterval(refresh, H2H_POLL_MS);
     return () => window.clearInterval(timer);
@@ -825,9 +828,9 @@ export default function App() {
     }
   }, [pendingMatchId, liveMatches, schedule, lastSync, showToast, selectTab]);
 
-  // Refresh from Riot in the background if the saved copy is older than 24 hours
+  // Refresh from Riot in the background if the saved copy is older than 24 hours; skip on web Stats tabs until needed.
   useEffect(() => {
-    if (!extrasWanted) return;
+    if (!extrasWanted || (IS_WEB && activeTab === "stats")) return;
     const cached = loadCachedCatalog();
     const age = Date.now() - (cached?.updatedAt || 0);
     if (age > 24 * 60 * 60 * 1000) {
@@ -841,7 +844,7 @@ export default function App() {
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [extrasWanted]);
+  }, [extrasWanted, activeTab]);
 
   const handleRefreshCatalog = async () => {
     setIsRefreshing(true);

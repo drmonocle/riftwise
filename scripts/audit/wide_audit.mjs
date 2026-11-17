@@ -34,6 +34,7 @@ const PAGES = [
   ["leagues", "/stats/leagues"],
   ["titles", "/stats/titles"],
   ["rankings", "/stats/rankings"],
+  ["moves", "/stats/moves"],
   ["compare", "/stats/compare?teams=t1,geng"],
   ["records", "/stats/records"],
   ["champions", "/stats/champions"],

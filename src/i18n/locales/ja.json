@@ -2252,5 +2252,14 @@
   "Blue 1st pick": "ブルー 1st ピック",
   "MVP": "MVP",
   "kills": "キル",
-  "Champions, players and teams ranked in tiers": "チャンピオン・選手・チーム別のティア表"
+  "Champions, players and teams ranked in tiers": "チャンピオン・選手・チーム別のティア表",
+  "Active pro players whose listed Leaguepedia contract ends soonest, with recent form and games played.": "Leaguepedia記載の契約満了が近い現役プロ選手（直近フォーム・ゲーム数付き）。",
+  "Contract": "契約",
+  "Expiring contracts": "契約満了間近",
+  "No expiring contracts match those filters.": "条件に一致する契約満了選手はいません。",
+  "Off-season hub": "オフシーズンハブ",
+  "Transfers": "移籍情報",
+  "Transfers and expiring contracts": "移籍・契約満了選手一覧",
+  "{n} career games": "通算 {n} ゲーム",
+  "{year} Champions & Stove League": "{year} 王者＆ストーブリーグ"
 }

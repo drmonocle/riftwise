@@ -34,6 +34,7 @@ const SECTIONS = {
   "first-stand": ["event::First Stand", "Winners, records and region stats"],
   teams: ["Every team", "Every team since 2011, by region"],
   players: ["Every player", "Every pro player, by role and team"],
+  moves: ["Roster moves", "Transfers and expiring contracts"],
 };
 
 // a team's, player's and tournament's page tabs (/ko/team/t1/matches): the tab's name, as on screen

@@ -2252,5 +2252,14 @@
   "Blue 1st pick": "1er pick bleu",
   "MVP": "MVP",
   "kills": "kills",
-  "Champions, players and teams ranked in tiers": "Champions, joueurs et équipes classés par tiers"
+  "Champions, players and teams ranked in tiers": "Champions, joueurs et équipes classés par tiers",
+  "Active pro players whose listed Leaguepedia contract ends soonest, with recent form and games played.": "Joueurs professionnels actifs dont le contrat indiqué sur Leaguepedia expire le plus tôt, avec forme récente et parties jouées.",
+  "Contract": "Contrat",
+  "Expiring contracts": "Contrats expirant bientôt",
+  "No expiring contracts match those filters.": "Aucun contrat expirant ne correspond à ces filtres.",
+  "Off-season hub": "Centre d’intersaison",
+  "Transfers": "Transferts",
+  "Transfers and expiring contracts": "Transferts et contrats expirants",
+  "{n} career games": "{n} parties en carrière",
+  "{year} Champions & Stove League": "Champions {year} & mercato"
 }

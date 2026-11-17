@@ -2457,6 +2457,7 @@ def build(ctx) -> dict:
                 for nt in notes:
                     all_notes.append((note_score(nt), lu_last, {**nt, "t": "team", "name": name, "u": u, "asOf": as_of}))
         starters = []
+        t_contracts = {}
         if (to_dt or "") >= active_cut:
             year_pages = ctx.team_players[fid].get(max(ctx.team_players[fid])) if ctx.team_players[fid] else {}
             last_for = {pg: max((v["to"] for v in ctx.players[pg]["teams"].values() if v["fid"] == fid), default="")
@@ -2467,9 +2468,16 @@ def build(ctx) -> dict:
                 best_s = max(cands, key=lambda pg: (last_for[pg], year_pages[pg]), default=None)
                 if best_s:
                     starters.append([ctx.pname(best_s), player_slug[best_s], role_s])
+            for pg in (year_pages or {}):
+                u_p = player_slug.get(pg)
+                ct_raw = ((lp_player.get(pg) or {}).get("Contract") or "").strip()[:10]
+                if u_p and re.match(r"^\d{4}-\d{2}-\d{2}$", ct_raw):
+                    t_contracts[u_p] = ct_raw
             stakes_team[u] = {"n": name, "a": obj["notes"]["asOf"] if notes else None, "l": notes or [], "p": starters}
         if starters:
             obj["starters"] = starters  # [name, slug, role]: who played the team's latest games, by role
+        if t_contracts:
+            obj["contracts"] = t_contracts
         if t_has2y:
             obj["g2y"] = 1  # teamgames2y/<slug>.json exists
         out.json(f"team/{u}.json", obj)
@@ -2513,6 +2521,7 @@ def build(ctx) -> dict:
     # roster moves (hub/moves.json): players who started at a new club in the last 150 days, newest first (not
     # "moves": the patch notes below use that name for champions moving up and down)
     roster_moves = []
+    expiring_candidates = []
     moves_cut = (datetime.date.today() - datetime.timedelta(days=150)).isoformat()
     club_of = {}  # page -> (current club, its slug)
     titles_by_event = defaultdict(list)
@@ -2530,6 +2539,16 @@ def build(ctx) -> dict:
     # games won with an item in the final inventory: by item page name, (item, champion) and (item, year - 2000)
     item_wins, item_cw, item_yw = Counter(), Counter(), Counter()
     search_us = []  # each search_players row's player slug (the item files point at rows of search/players.json)
+    INTL_LUS = {"world-championship", "mid-season-invitational", "first-stand", "esports-world-cup"}
+
+    def club_lu(ev_list, tu):
+        if not tu or not ev_list:
+            return None
+        for ev_ in ev_list:
+            if ev_.get("tu") == tu and ev_.get("lu") and ev_.get("lu") not in INTL_LUS:
+                return ev_["lu"]
+        return next((ev_.get("lu") for ev_ in ev_list if ev_.get("tu") == tu and ev_.get("lu")), None)
+
     for page, p in ctx.players.items():
         u = player_slug.get(page)
         if not u or p["g"] < 1:
@@ -2624,11 +2643,25 @@ def build(ctx) -> dict:
         if p["g"] >= 30 and len(clubs) >= 2 and (clubs[0].get("from") or "") >= moves_cut:
             prev = next((t for t in clubs[1:] if t["u"] != clubs[0]["u"]), None)
             if prev and (prev.get("to") or "") >= (datetime.date.fromisoformat(clubs[0]["from"][:10]) - datetime.timedelta(days=400)).isoformat():
-                roster_moves.append({"d": clubs[0]["from"][:10], "n": name, "u": u, "r": role or "",
+                roster_moves.append({"_pg": page, "d": clubs[0]["from"][:10], "n": name, "u": u, "r": role or "",
                               "from": {"n": prev["n"], "u": prev["u"], "to": (prev.get("to") or "")[:10]},
                               "to": {"n": clubs[0]["n"], "u": clubs[0]["u"], "g": clubs[0]["g"]}, "g": p["g"],
                               # the league the new club plays in (its newest event), so the app can show top leagues only
-                              "lu": next((e.get("lu") for e in obj.get("events") or [] if e.get("tu") == clubs[0]["u"] and e.get("lu")), None)})
+                              "lu": club_lu(obj.get("events"), clubs[0]["u"])})
+        ct_raw = (bio.get("Contract") or "").strip()[:10]
+        if (not bio.get("IsRetired") and club and "national team" not in club.lower()
+                and p["g"] >= 15 and (last_date or "")[:4] >= str(int(today[:4]) - 1)
+                and re.match(r"^\d{4}-\d{2}-\d{2}$", ct_raw)):
+            ct_yr = int(ct_raw[:4])
+            cur_yr = int(today[:4])
+            if cur_yr <= ct_yr <= cur_yr + 1:
+                expiring_candidates.append((page, {
+                    "n": name, "u": u, "r": role or "",
+                    "t": club, "tu": obj.get("clubU"),
+                    "ct": ct_raw, "g": p["g"],
+                    "gy": p["years"].get(this_year, {}).get("g", 0),
+                    "lu": club_lu(obj.get("events"), obj.get("clubU")),
+                }))
         club_of[page] = (obj.get("club") or "", obj.get("clubU"))
         out.json(f"player/{u}.json", obj)
         at = defaultdict(list)
@@ -3213,8 +3246,6 @@ def build(ctx) -> dict:
             search_events.append([x["n"], short_slug(x["n"], x["u"]), year, x.get("l") or "", (x.get("lv") or "")[:1],
                                   x.get("en") or "", x.get("g") or 0])
     search_events.sort(key=lambda x: (x[5] or "", x[6]), reverse=True)
-    roster_moves.sort(key=lambda m: (m["d"], m["g"]), reverse=True)
-    out.json("moves.json", {"since": moves_cut, "list": roster_moves[:1000]})
     out.json("search/teams.json", search_teams)
     out.json("search/players.json", search_players)
     out.json("search/events.json", search_events)
@@ -3282,7 +3313,31 @@ def build(ctx) -> dict:
     checks["hub: players of the week"] = len(weekly_doc["players"])
     checks["hub: players of the month"] = len(potm)
     checks["hub: leagues for players of the week"] = len(top_leagues)
+    top_league_slugs = {league_slug[lg] for lg in top_leagues if lg in league_slug}
     this_year = today[:4]
+    recent_cut_yr = str(int(this_year) - 1)
+
+    def recent_player_rating(pg):
+        rows_pg = [r for r in p_games.get(pg, []) if r[0][:4] >= recent_cut_yr]
+        vals = [v for v in (prating.rate(r, r_base, r_scale) for r in rows_pg) if v is not None]
+        return round(sum(vals) / len(vals), 1) if len(vals) >= 5 else None
+
+    for m in roster_moves:
+        pg_m = m.pop("_pg", None)
+        rt_m = recent_player_rating(pg_m) if pg_m else None
+        if rt_m is not None:
+            m["rt"] = rt_m
+    roster_moves.sort(key=lambda m: (m["d"], m["g"]), reverse=True)
+
+    expiring_out = []
+    for pg_e, row_e in expiring_candidates:
+        rt_e = recent_player_rating(pg_e)
+        if rt_e is not None:
+            row_e["rt"] = rt_e
+        expiring_out.append(row_e)
+    expiring_out.sort(key=lambda e: (e["ct"][:4], e.get("lu") not in top_league_slugs, -(e.get("rt") or 0), -e["gy"], -e["g"]))
+    out.json("moves.json", {"since": moves_cut, "list": roster_moves[:1000], "expiring": expiring_out[:400]})
+
     busiest = sorted(((x, p) for x, p in ((ctx.players[pg], pg) for pg in ctx.players)
                       if x["years"].get(this_year, {}).get("g", 0) >= 10),
                      key=lambda t: -t[0]["years"][this_year]["g"])[:12]
@@ -3296,6 +3351,8 @@ def build(ctx) -> dict:
         # the best average player ratings of the last 30 days (builds from 0.7.54 on)
         "potm": potm,
         "potmFrom": MONTH_FROM,
+        "moves": [m for m in roster_moves if m.get("lu") in top_league_slugs][:6],
+        "expiring": [e for e in expiring_out if e.get("lu") in top_league_slugs and e["ct"][:4] == this_year][:6],
     }
     out.json("home.json", home)
     # Headline counts: games with a recorded result (not slots with only a VOD link), and tournaments counted once

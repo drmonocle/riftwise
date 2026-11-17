@@ -439,6 +439,8 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                   ...(rC0Slug ? { champ: rC0Slug } : {}),
                   ...(rC1Slug ? { vschamp: rC1Slug } : {}),
                 }).toString();
+                const ct = yr.y === t.roster[0]?.y && p.u ? t.contracts?.[p.u] : undefined;
+                const ctExpiredSoon = ct ? ct.slice(0, 4) <= String(new Date().getFullYear()) : false;
                 return (
                 <span key={p.n + i} className="inline-flex items-center gap-1.5 whitespace-nowrap">
                   {i > 0 && !overview && <span className="text-rw-muted/60 mr-0.5">·</span>}
@@ -456,6 +458,19 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     </HubLink>
                   ) : (
                     <span className="text-rw-muted">{roleName(p.r)}</span>
+                  )}
+                  {ct && (
+                    <HubLink
+                      to={{ kind: "moves", query: `tab=contracts&q=${encodeURIComponent(p.u || p.n)}` }}
+                      title={tl("Contract until {date}", { date: fmtDate(ct) })}
+                      className={`text-[10px] font-mono tabular-nums px-1 rounded border leading-4 ${
+                        ctExpiredSoon
+                          ? "border-rw-accent/45 bg-rw-accent/10 text-rw-accent hover:border-rw-accent"
+                          : "border-rw-border text-rw-muted hover:text-rw-text hover:border-rw-accent/40"
+                      }`}
+                    >
+                      &apos;{ct.slice(2, 4)}
+                    </HubLink>
                   )}
                   {overview && <PhotosLink q={p.n} iconOnly className="text-rw-muted hover:text-rw-accent" />}
                 </span>

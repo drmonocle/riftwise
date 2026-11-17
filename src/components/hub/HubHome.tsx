@@ -7,16 +7,17 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { HomeStorylines } from "./Storylines";
 import { AtStakeToday } from "./AtStake";
 import type { AppSettings, Match } from "../../types";
-import { Crown, ClipboardList, TrendingUp, Users, User, Globe, Trophy, Flag, Swords, LayoutGrid, GitCompare, Search, Package, Database, Star } from "lucide-react";
+import { Crown, ClipboardList, TrendingUp, Users, User, Globe, Trophy, Flag, Swords, LayoutGrid, GitCompare, Search, Package, Database, Star, ArrowRight } from "lucide-react";
 import { tl, tn, tk, tc, regionName, roleName, LANGUAGES } from "../../i18n";
-import { loadEventsOfYear, loadHubHome, loadHubMeta, loadLeagues, loadPatches, loadRatings } from "../../hub/data";
+import { loadEventsOfYear, loadHubHome, loadHubMeta, loadLeagues, loadMoves, loadPatches, loadRatings } from "../../hub/data";
+import { statsReigning } from "../../stats";
 import { UpNextTable } from "../UpNextTable";
 import { formatMatchTime } from "../../matchTime";
 import { fmtRating, RatingBadge } from "./PlayerRating";
 import { useRecentPages } from "../../hub/recent";
 import { loadPopular } from "../../hub/popular";
 import { champName } from "../../champions";
-import type { EventListItem, HubMeta, PatchMove, PatchRow, RatingRow } from "../../hub/types";
+import type { EventListItem, HubHome as HubHomeData, HubMeta, PatchMove, PatchRow, RatingRow } from "../../hub/types";
 import { HubRoute, navigateHub } from "../../hub/route";
 import { HubSearch } from "./HubSearch";
 import { IS_WEB } from "../../platform";
@@ -142,7 +143,7 @@ export const HubHome: React.FC<{
       {/* the event that is on (Worlds, MSI, First Stand) or the tournaments running now, and the month's best players */}
       {/* grid-cols-1 on phones: a grid's one automatic column grows to its widest row and pushes past the screen */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-stretch">
-        <EventNow intl={intl} schedule={schedule} settings={settings} now={home.data?.now} onSelectTab={onSelectTab} />
+        <EventNow intl={intl} schedule={schedule} settings={settings} now={home.data?.now} homeData={home.data} onSelectTab={onSelectTab} />
         {home.data?.potm && home.data.potm.length > 0 ? (
           <PlayersOfTheMonth rows={home.data.potm} from={home.data.potmFrom} />
         ) : (
@@ -690,30 +691,47 @@ const FeaturedMatch: React.FC<{
 
 // ── The event that is on ──────────────────────────────────────────────────
 
-const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSettings; now?: EventListItem[]; onSelectTab?: (tab: TabKey) => void }> = ({
+const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSettings; now?: EventListItem[]; homeData?: HubHomeData | null; onSelectTab?: (tab: TabKey) => void }> = ({
   intl,
   schedule,
   settings,
   now,
+  homeData,
   onSelectTab,
 }) => {
   const ev = intl ? INTL_EVENTS[intl.leagueSlug] : undefined;
-  const year = intl?.startTimeUtc.slice(0, 4) || "";
+  const year = intl?.startTimeUtc.slice(0, 4) || homeData?.year || String(new Date().getFullYear());
   const running = (now || []).filter((e) => e.sp != null || e.g);
-  const title = ev ? `${tc("event", ev.name)} ${year}` : tl("Happening now");
+  const offSeason = !ev && running.length === 0;
+  const reigning = useLoad(() => (offSeason ? statsReigning() : Promise.resolve([])), [offSeason]);
+  const offMoves = useLoad(
+    () => (offSeason && !homeData?.moves?.length ? loadMoves().catch(() => null) : Promise.resolve(null)),
+    [offSeason, Boolean(homeData?.moves?.length)],
+  );
+  const title = ev ? `${tc("event", ev.name)} ${year}` : offSeason ? tl("{year} Champions & Stove League", { year }) : tl("Happening now");
   const open = () => {
     if (ev) navigateHub({ kind: ev.kind });
+    else if (offSeason) navigateHub({ kind: "worlds" });
     else navigateHub({ kind: "tournaments" });
   };
   const line = (e: EventListItem) =>
     [e.sp != null ? tn("{n} series played", "{n} series played", e.sp) : null, e.g ? tn("{n} game", "{n} games", e.g) : null, e.m ? tl("{t} average game", { t: mmss(e.m) }) : null]
       .filter(Boolean)
       .join(" · ");
+  const spotMoves = useMemo(() => {
+    if (homeData?.moves?.length) return homeData.moves.slice(0, 4);
+    const list = offMoves.data?.list || [];
+    const seen = new Set<string>();
+    return list
+      .filter((m) => m.g >= 80 && !seen.has(m.u) && (seen.add(m.u), true))
+      .slice(0, 4);
+  }, [homeData?.moves, offMoves.data]);
+  const spotExpiring = (homeData?.expiring?.length ? homeData.expiring : offMoves.data?.expiring || []).slice(0, 4);
   return (
     <section className={`${ev ? hot : card} flex flex-col gap-3`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <Eyebrow>{ev ? tl("Happening now") : tl("Tournaments")}</Eyebrow>
+          <Eyebrow>{ev ? tl("Happening now") : offSeason ? tl("Off-season hub") : tl("Tournaments")}</Eyebrow>
           <h2 {...clickable(open)} className="font-head text-2xl font-bold text-rw-text hover:text-rw-accent cursor-pointer leading-tight mt-1">{title}</h2>
           {ev && running[0] && (
             <p className="text-[11px] text-rw-muted font-num">
@@ -729,7 +747,7 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
             </p>
           )}
         </div>
-        {ev && (
+        {ev ? (
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={open} className="px-3 py-1.5 rounded-lg bg-rw-accent hover:bg-rw-text text-rw-bg font-bold text-xs transition-colors">
               {ev.kind === "worlds" ? tl("Swiss and bracket pickers") : tl("Bracket picker")}
@@ -738,16 +756,27 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
               {tl("Stats and records")}
             </button>
           </div>
-        )}
+        ) : offSeason ? (
+          <div className="flex flex-wrap gap-1.5 text-xs">
+            <HubLink to={{ kind: "worlds" }} className="px-2.5 py-1 rounded-lg bg-rw-accent hover:bg-rw-text text-rw-bg font-bold transition-colors">
+              {tl("Worlds")}
+            </HubLink>
+            <HubLink to={{ kind: "moves" }} className="px-2.5 py-1 rounded-lg border border-rw-border hover:border-rw-accent/60 text-rw-text font-semibold transition-colors">
+              {tl("Roster moves")}
+            </HubLink>
+            <HubLink to={{ kind: "tiers" }} className="px-2.5 py-1 rounded-lg border border-rw-border hover:border-rw-accent/60 text-rw-sub hover:text-rw-text font-semibold transition-colors">
+              {tl("Pro tier list")}
+            </HubLink>
+          </div>
+        ) : null}
       </div>
       {/* the Swiss table while that stage is on; the event's latest results (spoiler-safe) */}
       {ev && schedule && !settings?.spoilerMode && <SwissStandings schedule={schedule} onOpen={open} narrow />}
       {ev && intl && schedule && settings && (
         <LatestResults oneEvent schedule={schedule.filter((m) => m.leagueSlug === intl.leagueSlug)} settings={settings} onSelectTab={(t) => onSelectTab?.(t)} />
       )}
-      {!ev && (
+      {!ev && !offSeason && (
         <ul className="text-xs space-y-1.5">
-          {running.length === 0 && <li className="text-rw-muted">{tl("No tournament is running this week.")}</li>}
           {running.slice(0, 5).map((e) => {
             const wSlug = e.w ? teamSlug(e.w, undefined, e.wu) : "";
             return (
@@ -773,6 +802,91 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
             );
           })}
         </ul>
+      )}
+      {offSeason && (
+        <div className="space-y-3">
+          {reigning.data && reigning.data.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {reigning.data.map((r) => {
+                const kind = r.k === "Worlds" ? "worlds" : r.k === "MSI" ? "msi" : "first-stand";
+                const tSlug = teamSlug(r.t, r.c);
+                return (
+                  <div key={`${r.k}-${r.y}`} className="rounded-lg border border-rw-border bg-rw-bg/55 px-2.5 py-2 flex items-center justify-between gap-2 min-w-0">
+                    <div className="min-w-0">
+                      <HubLink to={{ kind }} className="text-[10px] font-semibold uppercase tracking-wider text-rw-accent hover:underline block truncate">
+                        <Crown className="w-3 h-3 inline mr-1 -mt-0.5" />
+                        {tc("event", r.k)} {r.y}
+                      </HubLink>
+                      <TeamLink name={r.t} u={tSlug} className="text-xs font-bold text-rw-text hover:text-rw-accent truncate block" />
+                    </div>
+                    <HubLink to={{ kind: "team", slug: tSlug }} className="shrink-0" title={r.t}>
+                      <TeamLogo name={r.t} code={r.c} size={22} />
+                    </HubLink>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="space-y-1.5 min-w-0">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Latest tournaments")}</div>
+              <ul className="space-y-1">
+                {(homeData?.latest || []).slice(0, 4).map((e) => (
+                  <li key={e.u} className="flex items-center justify-between gap-2 min-w-0">
+                    <EventLink name={e.n} u={e.u} className="text-rw-text hover:text-rw-accent truncate" />
+                    {e.w && (
+                      <span className="inline-flex items-center gap-1 shrink-0 text-[11px] text-rw-sub">
+                        <TeamLogo name={e.w} size={13} />
+                        <TeamLink name={e.w} u={e.wu} className="hover:text-rw-accent truncate max-w-[7rem]" />
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="space-y-1.5 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-rw-muted">{tl("Roster moves")}</span>
+                <HubLink to={{ kind: "moves" }} className="text-[11px] font-semibold text-rw-accent hover:underline">
+                  {tl("Roster moves")} →
+                </HubLink>
+              </div>
+              {spotMoves.length > 0 ? (
+                <ul className="space-y-1">
+                  {spotMoves.map((m) => (
+                    <li key={`${m.u}-${m.d}`} className="flex items-center justify-between gap-2 min-w-0">
+                      <span className="inline-flex items-center gap-1.5 min-w-0">
+                        <PlayerPhoto name={m.n} team={m.to.n} slug={m.u} size={16} linkFallback={false} />
+                        <PlayerLink name={m.n} u={m.u} className="font-semibold text-rw-text hover:text-rw-accent truncate" />
+                      </span>
+                      <span className="inline-flex items-center gap-1 shrink-0 text-[11px] text-rw-sub">
+                        <TeamLogo name={m.from.n} size={13} />
+                        <ArrowRight className="w-2.5 h-2.5 text-rw-muted" />
+                        <TeamLogo name={m.to.n} size={13} />
+                        <TeamLink name={m.to.n} u={m.to.u} className="hover:text-rw-accent max-w-[6.5rem] truncate" />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[11px] text-rw-muted">{tl("No tournament is running this week.")}</p>
+              )}
+              {spotExpiring.length > 0 && (
+                <div className="pt-1 border-t border-rw-border/60 flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <HubLink to={{ kind: "moves", query: "tab=contracts" }} className="text-rw-accent font-semibold hover:underline shrink-0">
+                    {tl("Expiring contracts")}:
+                  </HubLink>
+                  {spotExpiring.slice(0, 3).map((e, i) => (
+                    <React.Fragment key={e.u}>
+                      {i > 0 && <span className="text-rw-muted">·</span>}
+                      <PlayerLink name={e.n} u={e.u} className="text-rw-sub hover:text-rw-text" />
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
       {ev && intl && (
         <p className="text-[11px] text-rw-sub mt-auto">

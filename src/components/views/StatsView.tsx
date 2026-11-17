@@ -51,6 +51,7 @@ const ChampPage = lazyPart(() => pageCode.champ().then((m) => m.ChampPage));
 const WorldsPage = lazyPart(() => pageCode.worlds().then((m) => m.WorldsPage));
 const TeamsDirectory = lazyPart(() => pageCode.teams().then((m) => m.TeamsDirectory));
 const PlayersDirectory = lazyPart(() => pageCode.players().then((m) => m.PlayersDirectory));
+const MovesPage = lazyPart(() => pageCode.moves().then((m) => m.MovesPage));
 
 interface StatsViewProps {
   settings: AppSettings;
@@ -68,13 +69,13 @@ interface StatsViewProps {
 
 type SectionKind = HubRoute["kind"];
 /** pages whose own title is their <h1> (the others get the page's name over them as theirs) */
-const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "items", "leaders", "tiers", "team", "player", "event", "champ", "league", "match", "aboutme"]);
+const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "finder", "best", "counters", "items", "leaders", "tiers", "moves", "team", "player", "event", "champ", "league", "match", "aboutme"]);
 
 /** pages whose address carries what they show (teams, filters): their link is worth copying */
-const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players", "data", "rankings", "records", "tournaments", "leagues", "patches", "titles", "weekly", "worlds", "msi", "first-stand"]);
+const LINKABLE = new Set<SectionKind>(["prep", "draft", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players", "moves", "data", "rankings", "records", "tournaments", "leagues", "patches", "titles", "weekly", "worlds", "msi", "first-stand"]);
 
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
-const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "items", "leaders", "teams", "players"]);
+const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "items", "leaders", "teams", "players", "moves"]);
 
 /** what a page about one thing is called in the breadcrumb over it */
 const KIND_NAME: Partial<Record<SectionKind, string>> = {
@@ -306,13 +307,14 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     const qs = next.toString();
     return { kind: "rankings", ...(qs ? { query: qs } : {}) };
   }
-  if (targetKind === "players") {
+  if (targetKind === "players" || targetKind === "moves") {
     const next = new URLSearchParams();
     if (role) next.set("role", role);
+    if (targetKind === "moves" && league) next.set("league", league);
     const pq = q || [playerA, playerB, teamA, teamB].filter(Boolean).join(",");
     if (pq) next.set("q", pq);
     const qs = next.toString();
-    return { kind: "players", ...(qs ? { query: qs } : {}) };
+    return { kind: targetKind, ...(qs ? { query: qs } : {}) };
   }
   if (targetKind === "leaders") {
     const next = new URLSearchParams();
@@ -493,6 +495,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
         )}
         {route.kind === "teams" && <TeamsDirectory query={"query" in route ? route.query : undefined} />}
         {route.kind === "players" && <PlayersDirectory query={"query" in route ? route.query : undefined} />}
+        {route.kind === "moves" && <MovesPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "tournaments" && (
           <EventsBrowse
             year={route.year}

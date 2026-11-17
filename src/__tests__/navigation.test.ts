@@ -49,6 +49,8 @@ describe("page tabs in the address", () => {
     expect(hubPath({ kind: "leagues", query: "scope=past&q=Korea" })).toBe("/stats/leagues?scope=past&q=Korea");
     expect(parseHubPath("/stats/patches", "?q=Azir")).toEqual({ kind: "patches", query: "q=Azir" });
     expect(hubPath({ kind: "patches", query: "q=Azir" })).toBe("/stats/patches?q=Azir");
+    expect(parseHubPath("/stats/moves", "?tab=contracts&role=Mid")).toEqual({ kind: "moves", query: "tab=contracts&role=Mid" });
+    expect(hubPath({ kind: "moves", query: "tab=contracts" })).toBe("/stats/moves?tab=contracts");
   });
   it("resolves legacy and alternate entity/compare URLs and slug aliases", () => {
     expect(parseHubPath("/event/worlds-2026-main-event", "")).toEqual({ kind: "event", slug: "worlds-2026-main-event" });
@@ -120,7 +122,7 @@ describe("the menu", () => {
   it("has every page once, and a group for every kind of page", () => {
     const kinds = MENU_ITEMS.map((i) => i.kind);
     expect(new Set(kinds).size).toBe(kinds.length);
-    for (const k of ["weekly", "worlds", "rankings", "teams", "players", "tiers", "prep", "data"]) expect(kinds).toContain(k);
+    for (const k of ["weekly", "worlds", "rankings", "teams", "players", "moves", "tiers", "prep", "data"]) expect(kinds).toContain(k);
     expect(groupOf("team")?.key).toBe("teams");
     expect(groupOf("event")?.key).toBe("tournaments");
     expect(groupOf("champ")?.key).toBe("champions");

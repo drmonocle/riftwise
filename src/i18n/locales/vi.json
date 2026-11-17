@@ -2252,5 +2252,14 @@
   "Blue 1st pick": "Đội xanh pick đầu",
   "MVP": "MVP",
   "kills": "hạ gục",
-  "Champions, players and teams ranked in tiers": "Tướng, tuyển thủ và đội tuyển theo tier"
+  "Champions, players and teams ranked in tiers": "Tướng, tuyển thủ và đội tuyển theo tier",
+  "Active pro players whose listed Leaguepedia contract ends soonest, with recent form and games played.": "Tuyển thủ chuyên nghiệp có hợp đồng trên Leaguepedia sắp hết hạn nhất, kèm phong độ gần đây và số ván đã đấu.",
+  "Contract": "Hợp đồng",
+  "Expiring contracts": "Hợp đồng sắp hết hạn",
+  "No expiring contracts match those filters.": "Không có hợp đồng sắp hết hạn nào khớp bộ lọc này.",
+  "Off-season hub": "Trung tâm tiền mùa giải",
+  "Transfers": "Chuyển nhượng",
+  "Transfers and expiring contracts": "Chuyển nhượng và hợp đồng sắp hết hạn",
+  "{n} career games": "{n} ván trong sự nghiệp",
+  "{year} Champions & Stove League": "Nhà vô địch {year} & Thị trường chuyển nhượng"
 }

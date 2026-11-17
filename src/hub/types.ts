@@ -60,6 +60,9 @@ export interface HubHome {
   /** the best average player ratings since potmFrom (the last 30 days), top leagues and internationals (0.7.54 on) */
   potm?: RatedPlayer[];
   potmFrom?: string;
+  /** recent club transfers and expiring contracts in top leagues (v1.6.26+) */
+  moves?: RosterMovesFile["list"];
+  expiring?: ExpiringContractRow[];
 }
 
 /** A player's average rating over some games, with their best one (hub.py best_rated) */
@@ -508,6 +511,8 @@ export interface HubTeam {
   titles: (Omit<Title, "s"> & { e?: string | null })[];
   bestStreak: { n: number; date: string } | null;
   roster: { y: string; p: { n: string; u: string | null; g: number; r: string }[] }[];
+  /** player slug -> YYYY-MM-DD contract expiry date for active teams */
+  contracts?: Record<string, string>;
   /** prize money in USD as listed on Leaguepedia */
   earnings?: number;
   /** [blue games, blue wins, red games, red wins] */
@@ -871,8 +876,33 @@ export interface LeagueSeason {
   teamStats: EventTeamStats[];
 }
 
+/** Player with a contract expiring this year or next */
+export interface ExpiringContractRow {
+  n: string;
+  u: string;
+  r: string;
+  t: string;
+  tu?: string | null;
+  ct: string;
+  g: number;
+  gy: number;
+  rt?: number | null;
+  lu?: string | null;
+}
+
 /** hub/moves.json: players who started at a new club recently (d: first game there), newest first */
 export interface RosterMovesFile {
   since: string;
-  list: { d: string; n: string; u: string; r: string; from: { n: string; u: string; to: string }; to: { n: string; u: string; g: number }; g: number; lu: string | null }[];
+  list: {
+    d: string;
+    n: string;
+    u: string;
+    r: string;
+    from: { n: string; u: string; to: string };
+    to: { n: string; u: string; g: number };
+    g: number;
+    lu: string | null;
+    rt?: number | null;
+  }[];
+  expiring?: ExpiringContractRow[];
 }

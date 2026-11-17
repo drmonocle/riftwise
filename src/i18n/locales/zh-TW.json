@@ -2252,5 +2252,14 @@
   "Blue 1st pick": "藍方第一手選用",
   "MVP": "MVP",
   "kills": "擊殺",
-  "Champions, players and teams ranked in tiers": "英雄、選手與戰隊梯隊榜"
+  "Champions, players and teams ranked in tiers": "英雄、選手與戰隊梯隊榜",
+  "Active pro players whose listed Leaguepedia contract ends soonest, with recent form and games played.": "Leaguepedia 登記合約即將到期的現役職業選手，附近期狀態與出賽小局數。",
+  "Contract": "合約",
+  "Expiring contracts": "即將到期合約",
+  "No expiring contracts match those filters.": "沒有符合這些篩選條件的到期合約。",
+  "Off-season hub": "休賽期中心",
+  "Transfers": "轉會動態",
+  "Transfers and expiring contracts": "轉會動態與即將到期合約",
+  "{n} career games": "職業生涯 {n} 小局",
+  "{year} Champions & Stove League": "{year} 冠軍與轉會期"
 }

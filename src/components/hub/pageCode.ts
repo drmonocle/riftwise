@@ -35,6 +35,7 @@ export const pageCode = {
   "first-stand": () => import("./WorldsPage"),
   teams: () => import("./DirectoryPages"),
   players: () => import("./DirectoryPages"),
+  moves: () => import("./RosterMoves"),
 };
 
 /** Start downloading one page's code (a failure shows, and is retried, where the page loads it). */

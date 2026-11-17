@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.6.25" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "1.6.26" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -270,6 +270,7 @@ var sections = map[string][2]string{
 	"about":       {"How RiftWise counts pro LoL stats", "Where RiftWise's pro League of Legends numbers come from and what every stat means: KDA, KP, DMG%, GD per minute, presence, blind picks, the player rating and more."},
 	"teams":       {"Every pro LoL team since 2011", "Every professional League of Legends team since 2011 in one list: filter by region and by the last year played, sorted by games."},
 	"players":     {"Every pro LoL player since 2011", "Every professional League of Legends player since 2011 in one list: filter by role and by the last year played, sorted by games."},
+	"moves":       {"Pro LoL roster moves and expiring contracts", "Recent pro League of Legends team transfers and expiring player contracts across every region, sorted by date and player rating."},
 }
 
 // entityTabs: the other tabs of a team's, player's and tournament's page (/team/t1/matches), the app's ENTITY_TABS

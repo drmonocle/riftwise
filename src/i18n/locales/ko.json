@@ -2252,5 +2252,14 @@
   "Blue 1st pick": "블루 선픽",
   "MVP": "MVP",
   "kills": "킬",
-  "Champions, players and teams ranked in tiers": "챔피언·선수·팀별 티어 리스트"
+  "Champions, players and teams ranked in tiers": "챔피언·선수·팀별 티어 리스트",
+  "Active pro players whose listed Leaguepedia contract ends soonest, with recent form and games played.": "Leaguepedia 기준 계약 만료가 임박한 현역 프로 선수 목록입니다. 최근 폼과 세트 수를 함께 보여줍니다.",
+  "Contract": "계약",
+  "Expiring contracts": "계약 만료 예정",
+  "No expiring contracts match those filters.": "조건에 맞는 계약 만료 선수가 없습니다.",
+  "Off-season hub": "스토브리그 허브",
+  "Transfers": "이적 현황",
+  "Transfers and expiring contracts": "이적 현황 및 계약 만료 선수",
+  "{n} career games": "통산 {n}세트",
+  "{year} Champions & Stove League": "{year} 챔피언 & 스토브리그"
 }

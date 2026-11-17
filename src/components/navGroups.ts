@@ -23,6 +23,7 @@ export const NAV_GROUP: Record<string, NavGroup> = {
   team: "teams",
   players: "players",
   leaders: "players",
+  moves: "players",
   player: "players",
   champions: "champions",
   tiers: "champions",

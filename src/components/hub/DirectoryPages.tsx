@@ -14,7 +14,7 @@ import { SectionCard } from "./BroadcastCard";
 import { card, fmtNum, HubLink, Page, PlayerLink, PlayerPhoto, TeamLink, TeamLogo, useLoad, usePageTitle } from "./ui";
 
 /** rows shown before "Show more" (the whole list sorts and filters either way) */
-const STEP = 200;
+const STEP = 80;
 const ROLE_OF: Record<string, string> = { T: "Top", J: "Jungle", M: "Mid", B: "Bot", S: "Support" };
 const THIS_YEAR = String(new Date().getFullYear());
 
@@ -152,6 +152,22 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
     return res;
   }, [rows, region, since, words, aliases.data]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((t) => t[2] || 0)), [list]);
+  const topByGroup = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const row of list) {
+      const u = teamRowSlug(row);
+      const grp = row[6] || "";
+      const arr = map.get(grp);
+      if (!arr) map.set(grp, [u]);
+      else if (arr.length < 2 && !arr.includes(u)) arr.push(u);
+    }
+    const all = list.slice(0, 2).map((row) => teamRowSlug(row));
+    return { map, all };
+  }, [list, aliases.data]);
+  const rivalOfTeam = (u: string, grp: string) => {
+    const arr = topByGroup.map.get(grp);
+    return arr?.find((s) => s !== u) || topByGroup.all.find((s) => s !== u) || "";
+  };
   const columns: Column<SearchTeamRow>[] = [
     {
       key: "n",
@@ -159,8 +175,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       value: (t) => t[0].toLowerCase(),
       render: (t) => {
         const u = teamRowSlug(t);
-        const otherTeam = list.find((x) => teamRowSlug(x) !== u && (x[6] || "") === (t[6] || "")) || list.find((x) => teamRowSlug(x) !== u);
-        const rivalSlug = otherTeam ? teamRowSlug(otherTeam) : "";
+        const rivalSlug = rivalOfTeam(u, t[6] || "");
         const tq = new URLSearchParams({
           ...(since !== "all" ? { p: `y${since}` } : {}),
           ...(rivalSlug ? { q: rivalSlug } : {}),
@@ -183,8 +198,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
         const c = (t[5] || "").split(" | ")[0];
         if (!c) return null;
         const u = teamRowSlug(t);
-        const otherTeam = list.find((x) => teamRowSlug(x) !== u && (x[6] || "") === (t[6] || "")) || list.find((x) => teamRowSlug(x) !== u);
-        const rivalSlug = otherTeam ? teamRowSlug(otherTeam) : "";
+        const rivalSlug = rivalOfTeam(u, t[6] || "");
         const tq = new URLSearchParams({
           ...(since !== "all" ? { p: `y${since}` } : {}),
           ...(rivalSlug ? { q: rivalSlug } : {}),
@@ -235,8 +249,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       value: (t) => t[2],
       render: (t) => {
         const u = teamRowSlug(t);
-        const otherTeam = words.length > 0 ? list.find((x) => teamRowSlug(x) !== u && (x[6] || "") === (t[6] || "")) || list.find((x) => teamRowSlug(x) !== u) : undefined;
-        const rivalSlug = otherTeam ? teamRowSlug(otherTeam) : "";
+        const rivalSlug = words.length > 0 ? rivalOfTeam(u, t[6] || "") : "";
         return (
           <div className="min-w-[4.25rem] space-y-0.5">
             <HubLink
@@ -283,8 +296,7 @@ const TeamsTable: React.FC<{ rows: SearchTeamRow[]; query?: string }> = ({ rows,
       value: () => null,
       render: (t) => {
         const u = teamRowSlug(t);
-        const otherTeam = list.find((x) => teamRowSlug(x) !== u && (x[6] || "") === (t[6] || "")) || list.find((x) => teamRowSlug(x) !== u);
-        const rivalSlug = otherTeam ? teamRowSlug(otherTeam) : "";
+        const rivalSlug = rivalOfTeam(u, t[6] || "");
         const yr = since !== "all" ? since : undefined;
         return (
           <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">
@@ -676,6 +688,21 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
     return res;
   }, [rows, role, since, words, aliases.data]);
   const maxGames = useMemo(() => Math.max(1, ...list.map((p) => p[3] || 0)), [list]);
+  const topByRole = useMemo(() => {
+    const map = new Map<string, { slug: string; team: string }[]>();
+    for (const row of list) {
+      const u = playerRowSlug(row);
+      const t = row[2] ? teamSlugOf(row[2]) : "";
+      const rKey = row[5] || "";
+      const arr = map.get(rKey);
+      if (!arr) map.set(rKey, [{ slug: u, team: t }]);
+      else if (arr.length < 2 && !arr.some((x) => x.slug === u)) arr.push({ slug: u, team: t });
+    }
+    const all = list.slice(0, 2).map((row) => ({ slug: playerRowSlug(row), team: row[2] ? teamSlugOf(row[2]) : "" }));
+    return { map, all };
+  }, [list, aliases.data]);
+  const rivalOfPlayer = (u: string, rKey: string) =>
+    topByRole.map.get(rKey)?.find((x) => x.slug !== u) || topByRole.all.find((x) => x.slug !== u);
   const columns: Column<SearchPlayerRow>[] = [
     {
       key: "n",
@@ -758,9 +785,9 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       render: (p) => {
         const u = playerRowSlug(p);
         const pTeamSlug = p[2] ? teamSlugOf(p[2]) : "";
-        const otherPlayer = words.length > 0 ? list.find((x) => playerRowSlug(x) !== u && x[5] === p[5]) || list.find((x) => playerRowSlug(x) !== u) : undefined;
-        const rivalPlayerSlug = otherPlayer ? playerRowSlug(otherPlayer) : "";
-        const rivalTeamSlug = otherPlayer?.[2] && teamSlugOf(otherPlayer[2]) !== pTeamSlug ? teamSlugOf(otherPlayer[2]) : "";
+        const rival = words.length > 0 ? rivalOfPlayer(u, p[5] || "") : undefined;
+        const rivalPlayerSlug = rival ? rival.slug : "";
+        const rivalTeamSlug = rival?.team && rival.team !== pTeamSlug ? rival.team : "";
         return (
           <div className="min-w-[4.25rem] space-y-0.5">
             <HubLink
@@ -814,10 +841,10 @@ const PlayersTable: React.FC<{ rows: SearchPlayerRow[]; query?: string }> = ({ r
       value: () => null,
       render: (p) => {
         const u = playerRowSlug(p);
-        const otherPlayer = list.find((x) => playerRowSlug(x) !== u && x[5] === p[5]) || list.find((x) => playerRowSlug(x) !== u);
-        const rivalPlayerSlug = otherPlayer ? playerRowSlug(otherPlayer) : "";
+        const rival = rivalOfPlayer(u, p[5] || "");
+        const rivalPlayerSlug = rival ? rival.slug : "";
         const teamSlug = p[2] ? teamSlugOf(p[2]) : "";
-        const rivalTeamSlug = otherPlayer?.[2] && teamSlugOf(otherPlayer[2]) !== teamSlug ? teamSlugOf(otherPlayer[2]) : "";
+        const rivalTeamSlug = rival?.team && rival.team !== teamSlug ? rival.team : "";
         const yr = since !== "all" ? since : undefined;
         return (
           <span className="inline-flex items-center gap-2 text-[11px] whitespace-nowrap">

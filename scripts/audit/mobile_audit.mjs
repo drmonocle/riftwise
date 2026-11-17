@@ -44,6 +44,7 @@ const PAGES = [
   ["player-matches", "/player/faker/matches"],
   ["teams", "/stats/teams"],
   ["players", "/stats/players"],
+  ["moves", "/stats/moves"],
   ["weekly", "/stats/weekly"],
   ["event", "/tournament/worlds-2025-main-event"],
   ["event-stats", "/tournament/worlds-2025-main-event/stats"],

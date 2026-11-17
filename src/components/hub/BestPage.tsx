@@ -11,13 +11,14 @@ import { bare, loadAliases, loadBest, loadBestIndex, normText, prettySlug, resol
 import { matchesPeriodEvent } from "../../hub/period";
 import type { BestGame, BestSeries } from "../../hub/types";
 import { hubShareUrl, navigateHub } from "../../hub/route";
-import { card, EventLink, Failed, fmtDate, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, TeamLink, TeamLogo, th, useHidden, useLoad, usePageTitle } from "./ui";
+import { card, EventLink, Failed, fmtDate, fmtNum, HubLink, isFresh, Loading, RatingBadge, ratingTextClass, ratingTier, RevealButton, TeamLink, TeamLogo, th, useHidden, useLoad, usePageTitle } from "./ui";
 import { STable } from "../STable";
 import { SectionCard } from "./BroadcastCard";
 
 export { ratingTier, ratingTextClass, RatingBadge };
 const TIERS = ["S", "A", "B", "C", "D"] as const;
 const TIER_FLOOR: Record<string, number> = { S: 90, A: 80, B: 70, C: 55, D: 0 };
+const BEST_STEP = 100;
 
 const sel = "bg-rw-bg border border-rw-border rounded-lg px-2 py-1.5 text-xs text-rw-text max-w-full";
 const tabBtn = (on: boolean) =>
@@ -196,6 +197,10 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
       setQ({ tier: [...next].join(",") || undefined });
       return next;
     });
+  const [limit, setLimit] = useState(BEST_STEP);
+  useEffect(() => {
+    setLimit(BEST_STEP);
+  }, [view, year, league, urlTiers, vodOnly, team]);
 
   return (
     <div className="space-y-3">
@@ -626,7 +631,7 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                 </tr>
               </thead>
               <tbody>
-                {shown.map((r, i) =>
+                {shown.slice(0, limit).map((r, i) =>
                   view === "series" ? (
                     <SeriesRow key={r[1]} r={r as BestSeries} rank={i + 1} league={league || undefined} />
                   ) : (
@@ -635,6 +640,17 @@ export const BestPage: React.FC<{ query?: string }> = ({ query }) => {
                 )}
               </tbody>
             </STable>
+            {limit < shown.length && (
+              <div className="mt-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => setLimit((n) => n + BEST_STEP)}
+                  className="px-3 py-1.5 rounded-lg border border-rw-border text-xs text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
+                >
+                  {tl("Show {n} more", { n: fmtNum(Math.min(BEST_STEP, shown.length - limit)) })}
+                </button>
+              </div>
+            )}
           </div>
         )}
         {held > 0 && (

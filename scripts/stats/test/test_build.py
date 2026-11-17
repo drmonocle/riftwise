@@ -32,6 +32,7 @@ EXPECT = [
     "{v}/hub/weekly.json",
     "{v}/hub/rating.json",
     "{v}/hub/leagues.json",
+    "{v}/hub/moves.json",
     "{v}/hub/titles.json",
     "{v}/hub/patches.json",
     "{v}/hub/csv/index.json",
@@ -204,6 +205,16 @@ def main() -> int:
             return 1
         with open(os.path.join(out, v, "hub", "records.json"), encoding="utf-8") as f:
             rec = json.load(f)
+        with open(os.path.join(out, v, "hub", "moves.json"), encoding="utf-8") as f:
+            mv = json.load(f)
+        if not isinstance(mv.get("list"), list) or not isinstance(mv.get("expiring"), list):
+            print(f"FAIL: moves.json invalid keys: {list(mv.keys())}")
+            return 1
+        with open(os.path.join(out, v, "hub", "home.json"), encoding="utf-8") as f:
+            hm = json.load(f)
+        if not isinstance(hm.get("moves"), list) or not isinstance(hm.get("expiring"), list):
+            print(f"FAIL: home.json invalid keys: {list(hm.keys())}")
+            return 1
         if not isinstance(rec.get("intl"), dict):
             print("FAIL: records.json missing 'intl' scope dict")
             return 1
