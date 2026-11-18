@@ -63,24 +63,45 @@ export async function launch({ width = 1440, height = 900 } = {}) {
   let id = 0;
   const pending = new Map();
   const listeners = new Map();
+  const rejectAll = (why) => {
+    for (const [k, p] of pending.entries()) {
+      clearTimeout(p.timer);
+      p.rej(new Error(why));
+      pending.delete(k);
+    }
+  };
+  ws.onclose = () => rejectAll("browser socket closed");
+  ws.onerror = () => rejectAll("browser socket error");
   ws.onmessage = (m) => {
     const d = JSON.parse(m.data);
     if (d.id && pending.has(d.id)) {
       const p = pending.get(d.id);
       pending.delete(d.id);
+      clearTimeout(p.timer);
       d.error ? p.rej(new Error(d.error.message)) : p.res(d.result);
     } else if (d.method) {
       for (const fn of listeners.get(d.method) || []) fn(d.params);
     }
   };
-  const send = (method, params = {}) =>
+  const send = (method, params = {}, timeoutMs = 30000) =>
     new Promise((res, rej) => {
+      if (ws.readyState !== WebSocket.OPEN) {
+        rej(new Error(`${method}: browser socket not open`));
+        return;
+      }
       const i = ++id;
-      pending.set(i, { res, rej });
+      const timer = setTimeout(() => {
+        if (!pending.has(i)) return;
+        pending.delete(i);
+        rej(new Error(`${method} timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+      timer.unref?.();
+      pending.set(i, { res, rej, timer });
       ws.send(JSON.stringify({ id: i, method, params }));
     });
   const on = (method, fn) => listeners.set(method, [...(listeners.get(method) || []), fn]);
   const close = () => {
+    rejectAll("browser closed");
     try {
       ws.close();
     } catch {

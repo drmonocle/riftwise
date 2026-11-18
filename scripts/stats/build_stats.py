@@ -70,7 +70,29 @@ MANUAL_LINKS = [
     ("2025-01-01", "Lyon Gaming (2017 Latin America North Team)", "LYON (2024 American Team)"),
 ]
 RENAME_VERBS = {"rename", "rebrand", "reband"}
+# Leaguepedia TeamRenames rows tagged as "rebrand"/"rename" that were franchise-slot transitions between distinct
+# organizations rather than continuations of the same brand (IGC bought Infinite in 2019 and replaced OpTic with
+# Immortals before H3CZ bought OpTic back in 2020; in 2027 OpTic steps into Dignitas's LCS partner slot while
+# Dignitas goes on hiatus keeping underlying slot ownership). Keep all three brands separate.
+NOT_RENAMES = {
+    ("OpTic Gaming", "Immortals"),
+    ("OpTic Gaming Academy", "Immortals Academy"),
+    ("Dignitas", "OpTic Gaming"),
+    ("Dignitas Challengers", "OpTic Gaming Academy"),
+    ("Dignitas Academy", "OpTic Gaming Academy"),
+}
+MULTI_ERA_BRANDS = ("Dignitas", "Immortals", "OpTic Gaming")
 LEAGUEPEDIA_UA = {"User-Agent": "RiftWise-stats/1.0 (lolworlds.com; nightly stats build)"}
+
+
+def rename_links(renames) -> list:
+    return [
+        (x["Date"][:10], x["OriginalName"], x["NewName"])
+        for x in renames
+        if (x.get("Verb") or "").lower() in RENAME_VERBS
+        and x.get("Date")
+        and (x.get("OriginalName"), x.get("NewName")) not in NOT_RENAMES
+    ] + list(MANUAL_LINKS)
 
 FINAL_STAGE = re.compile(r"^(grand )?finals?$", re.I)
 # League tournaments that crown a champion (the regular season and promotion events don't)
@@ -557,9 +579,7 @@ def main() -> None:
         names_dates[g["t1"]].append(g["date"])
         names_dates[g["t2"]].append(g["date"])
     renames = load_renames(args.renames_cache)
-    links = [(x["Date"][:10], x["OriginalName"], x["NewName"]) for x in renames
-             if (x.get("Verb") or "").lower() in RENAME_VERBS and x.get("Date")]
-    links += MANUAL_LINKS
+    links = rename_links(renames)
     team_shorts = load_team_shorts(os.path.join(os.path.dirname(os.path.abspath(args.renames_cache)), "team_shorts.json"))
     lineage = Lineage(links, names_dates)
     shorts_by_key = {}
@@ -582,7 +602,7 @@ def main() -> None:
             spans[k] = (min(lo, dte), max(hi, dte))
     lineage.merge_strays(spans)
     lineage.populated = set(spans)
-    for brand in ("Dignitas", "Immortals"):
+    for brand in MULTI_ERA_BRANDS:
         ks = [k for k in spans if k[0] == brand]
         for k in ks[1:]:
             lineage._union(ks[0], k)

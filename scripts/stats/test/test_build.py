@@ -116,6 +116,7 @@ def copies_check() -> str:
 def data_fixes_check() -> str:
     """Known Leaguepedia same-side duplicate champion fixes in names.champ_name, patch normalization, and team canonicalization."""
     sys.path.insert(0, STATS)
+    import build_stats
     import hub_util
     import names
 
@@ -123,6 +124,46 @@ def data_fixes_check() -> str:
         return "expected fix_patch to restore dropped trailing zeros for late-season 26.x patches"
     if hub_util.fix_patch("26.02", "2026-01-25") != "26.02" or hub_util.fix_patch("25.2", "2025-10-15") != "25.20":
         return "expected fix_patch to preserve 26.02 and normalize 25.2 -> 25.20"
+
+    # OpTic Gaming (2018-2019 & 2027+), Immortals, and Dignitas remain distinct teams even if Leaguepedia marks slot swaps as "rebrand",
+    # while true mergers (Clutch Gaming -> Dignitas) and multi-era stretches of the same brand stay united.
+    synth_renames = [
+        {"Date": "2019-10-09 00:00:00", "OriginalName": "OpTic Gaming", "NewName": "Immortals", "Verb": "rebrand"},
+        {"Date": "2019-10-28 00:00:00", "OriginalName": "Clutch Gaming", "NewName": "Dignitas", "Verb": "rebrand"},
+        {"Date": "2026-11-16 00:00:00", "OriginalName": "Dignitas", "NewName": "OpTic Gaming", "Verb": "rebrand"},
+    ]
+    synth_dates = {
+        "Immortals": ["2016-06-01", "2020-06-01"],
+        "OpTic Gaming": ["2018-06-01", "2027-02-01"],
+        "Clutch Gaming": ["2018-06-01", "2019-10-01"],
+        "Dignitas": ["2015-06-01", "2024-06-01"],
+    }
+    links = build_stats.rename_links(synth_renames)
+    lin = build_stats.Lineage(links, synth_dates)
+    spans = {}
+    for nm, ds in synth_dates.items():
+        if nm in lin.bounds:
+            for dte in ds:
+                k = lin.key(nm, dte)
+                lo, hi = spans.get(k, (dte, dte))
+                spans[k] = (min(lo, dte), max(hi, dte))
+    lin.merge_strays(spans)
+    lin.populated = set(spans)
+    for brand in build_stats.MULTI_ERA_BRANDS:
+        ks = [k for k in spans if k[0] == brand]
+        for k in ks[1:]:
+            lin._union(ks[0], k)
+    f_imt_16, f_imt_20 = lin.team("Immortals", "2016-06-01"), lin.team("Immortals", "2020-06-01")
+    f_opt_18, f_opt_27 = lin.team("OpTic Gaming", "2018-06-01"), lin.team("OpTic Gaming", "2027-02-01")
+    f_cg, f_dig_15, f_dig_24 = lin.team("Clutch Gaming", "2018-06-01"), lin.team("Dignitas", "2015-06-01"), lin.team("Dignitas", "2024-06-01")
+    if f_imt_16 != f_imt_20:
+        return "expected Immortals 2016 and 2020 eras to stay one team"
+    if f_opt_18 != f_opt_27:
+        return "expected OpTic Gaming 2018 and 2027 eras to stay one team"
+    if len({f_imt_16, f_opt_18, f_dig_24}) != 3:
+        return f"expected OpTic, Immortals, and Dignitas to remain distinct ({f_opt_18}, {f_imt_16}, {f_dig_24})"
+    if not (f_cg == f_dig_15 == f_dig_24):
+        return "expected Clutch Gaming and both Dignitas eras to remain one team"
 
     if names.champ_name("Morgana", "Champions/2012 Season/Spring_Finals_1_G2", "Support") != "Janna":
         return "expected Janna for Champions 2012 Spring Finals G2 Support"

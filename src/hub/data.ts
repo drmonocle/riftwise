@@ -456,6 +456,7 @@ const TEAM_EXTRA_CODES: Record<string, string[]> = {
   "Gen.G": ["GEN", "SSG", "SSW", "SSB"],
   "Hanwha Life Esports": ["HLE", "ROX", "KOO", "GE"],
   "Dplus Kia": ["DK", "DWG"],
+  "OpTic Gaming": ["OPT"],
   "Royal Club": ["RYL", "SHRC", "SHR"],
   "KT Rolster Bullets": ["KTB", "KT.B"],
   "KT Rolster Arrows": ["KTA", "KT.A"],

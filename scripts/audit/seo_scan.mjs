@@ -2,7 +2,7 @@
 // usage: node seo_scan.mjs [base] [perSitemap]
 const base = process.argv[2] || "https://riftwise.gg";
 const per = Number(process.argv[3] || 40);
-const get = async (u) => (await fetch(u, { headers: { "user-agent": process.env.AUDIT_UA || "Mozilla/5.0 (compatible; bingbot/2.0)" } })).text();
+const get = async (u) => (await fetch(u, { signal: AbortSignal.timeout(20000), headers: { "user-agent": process.env.AUDIT_UA || "Mozilla/5.0 (compatible; bingbot/2.0)" } })).text();
 const idx = await get(`${base}/sitemap.xml`);
 const maps = [...idx.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 const urls = [];

@@ -60,35 +60,39 @@ await b.send("Page.addScriptToEvaluateOnNewDocument", { source: `try { localStor
 // had those gets one more try (the weekly audit failed on "/" with ERR_CERT_VERIFIER_CHANGED on 2026-10-28)
 const HICCUP = /ERR_CERT_VERIFIER_CHANGED|ERR_NETWORK_CHANGED|ERR_CONNECTION_RESET/;
 
-for (const p of PAGES) {
-  page = p;
-  const t0 = Date.now();
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    await b.send("Page.navigate", { url: base + p });
-    // loaded, then a moment for the page's own files (stats parts are fetched as they're shown)
-    for (let i = 0; i < 40; i++) {
-      await b.sleep(250);
-      const r = await b.send("Runtime.evaluate", { expression: "document.readyState", returnByValue: true });
-      if (r.result.value === "complete") break;
+try {
+  for (const p of PAGES) {
+    page = p;
+    const t0 = Date.now();
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      await b.send("Page.navigate", { url: base + p });
+      // loaded, then a moment for the page's own files (stats parts are fetched as they're shown)
+      for (let i = 0; i < 40; i++) {
+        await b.sleep(250);
+        const r = await b.send("Runtime.evaluate", { expression: "document.readyState", returnByValue: true });
+        if (r.result.value === "complete") break;
+      }
+      await b.sleep(2500);
+      const issues = pageIssues();
+      if (attempt === 1 && issues.length && issues.every((x) => x.what === "request failed" && HICCUP.test(x.detail))) {
+        for (const x of issues) problems.splice(problems.indexOf(x), 1);
+        console.log(`  ${p}: ${issues[0].detail}; loading it again`);
+        continue;
+      }
+      break;
     }
-    await b.sleep(2500);
-    const issues = pageIssues();
-    if (attempt === 1 && issues.length && issues.every((x) => x.what === "request failed" && HICCUP.test(x.detail))) {
-      for (const x of issues) problems.splice(problems.indexOf(x), 1);
-      console.log(`  ${p}: ${issues[0].detail}; loading it again`);
-      continue;
-    }
-    break;
+    const text = (await b.send("Runtime.evaluate", { expression: "document.body ? document.body.innerText : ''", returnByValue: true })).result.value || "";
+    for (const re of ERROR_TEXT) if (re.test(text)) problems.push({ page, what: "error shown", detail: re.source });
+    if (text.trim().length < 40) problems.push({ page, what: "empty page", detail: `${text.trim().length} characters` });
+    console.log(`${pageIssues().length ? "FAIL" : "ok  "} ${p} (${Date.now() - t0} ms)`);
   }
-  const text = (await b.send("Runtime.evaluate", { expression: "document.body ? document.body.innerText : ''", returnByValue: true })).result.value || "";
-  for (const re of ERROR_TEXT) if (re.test(text)) problems.push({ page, what: "error shown", detail: re.source });
-  if (text.trim().length < 40) problems.push({ page, what: "empty page", detail: `${text.trim().length} characters` });
-  console.log(`${pageIssues().length ? "FAIL" : "ok  "} ${p} (${Date.now() - t0} ms)`);
+} finally {
+  b.close();
 }
-b.close();
 if (problems.length) {
   console.log(`\n${problems.length} problem(s):`);
   for (const x of problems) console.log(`  ${x.page}: ${x.what}: ${x.detail}`);
   process.exit(1);
 }
 console.log(`\nall ${PAGES.length} pages fine`);
+process.exit(0);

@@ -125,6 +125,8 @@ EXTRA_CODES = {
     "KT Rolster Bullets": ["KT.B", "KTB"],
     "KT Rolster Arrows": ["KT.A", "KTA"],
     "Taipei Assassins": ["TPA"],
+    "OpTic Gaming": ["OPT"],
+    "OpTic Gaming Academy": ["OPT.A", "OPTA"],
     "Counter Logic Gaming": ["CLG"],
     "Counter Logic Gaming Europe": ["CLG.EU", "CLGEU"],
 }
