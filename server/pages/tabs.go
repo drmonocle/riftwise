@@ -263,24 +263,33 @@ func breadcrumbs(items [][2]string) json.RawMessage {
 	return b
 }
 
+func canonicalBase(canonical string) string {
+	rest := strings.TrimPrefix(canonical, publicURL)
+	if seg, _, _ := splitLang(rest); seg != "" {
+		return publicURL + seg + "/"
+	}
+	return publicURL
+}
+
 // entityCrumbs: where a team, player, tournament, match, champion or league page sits under the site's home.
 func entityCrumbs(kind, title, canonical string) json.RawMessage {
 	name := strings.TrimSuffix(title, brand)
 	if i := strings.Index(name, " – "); i > 0 {
 		name = name[:i]
 	}
-	items := [][2]string{{"RiftWise", publicURL}}
+	base := canonicalBase(canonical)
+	items := [][2]string{{"RiftWise", base}}
 	switch kind {
 	case "event", "game":
-		items = append(items, [2]string{"Tournaments", publicURL + "stats/tournaments"})
+		items = append(items, [2]string{"Tournaments", base + "stats/tournaments"})
 	case "league":
-		items = append(items, [2]string{"Leagues", publicURL + "stats/leagues"})
+		items = append(items, [2]string{"Leagues", base + "stats/leagues"})
 	case "champ":
-		items = append(items, [2]string{"Champions", publicURL + "stats/champions"})
+		items = append(items, [2]string{"Champions", base + "stats/champions"})
 	case "team":
-		items = append(items, [2]string{"Teams", publicURL + "stats/teams"})
+		items = append(items, [2]string{"Teams", base + "stats/teams"})
 	case "player":
-		items = append(items, [2]string{"Players", publicURL + "stats/players"})
+		items = append(items, [2]string{"Players", base + "stats/players"})
 	}
 	return breadcrumbs(append(items, [2]string{name, canonical}))
 }

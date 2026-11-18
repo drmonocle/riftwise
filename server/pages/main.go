@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.6.32" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "1.6.33" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -314,6 +314,7 @@ type entry struct {
 	title, desc string
 	index       bool
 	summary     string // a few sentences with numbers for the page itself (bigger pages; the build's 5th column)
+	games       int    // pro game count extracted from desc for crawl/IndexNow prioritization
 }
 
 // intlPage: what the stats build wrote for one Worlds / MSI / First Stand page (seo_pages.py): its title and
@@ -326,19 +327,25 @@ type intlPage struct {
 }
 
 type store struct {
-	mu        sync.RWMutex
-	site      string // the web build (index.html)
-	stats     string // the stats data (latest.json, <version>/hub/...)
-	version   string
-	pages     map[string]map[string]entry  // kind -> slug -> entry
-	order     map[string][]string          // kind -> slugs in file order (for sitemaps)
-	alias     map[string]map[string]string // kind -> old slug or short name -> current (team: "sk-telecom-t1", league: "lck")
-	intl      map[string]intlPage          // "worlds", "worlds/2025", "msi/all"... -> the page's summary (hub/seo/pages)
-	ratings   *ratingsFile                 // hub/ratings.json: the power ratings behind /og/today.png (og_today.go)
-	failed    string                       // a build without hub files (logged once, not retried)
-	indexHTML string
-	indexMod  time.Time
-	checked   time.Time
+	mu          sync.RWMutex
+	site        string // the web build (index.html)
+	stats       string // the stats data (latest.json, <version>/hub/...)
+	version     string
+	pages       map[string]map[string]entry  // kind -> slug -> entry
+	order       map[string][]string          // kind -> slugs in file order (for sitemaps)
+	alias       map[string]map[string]string // kind -> old slug or short name -> current (team: "sk-telecom-t1", league: "lck")
+	intl        map[string]intlPage          // "worlds", "worlds/2025", "msi/all"... -> the page's summary (hub/seo/pages)
+	ratings     *ratingsFile                 // hub/ratings.json: the power ratings behind /og/today.png (og_today.go)
+	logos       map[string]bool              // hub/logos.json: slugs with /stats/logos/<slug>.webp
+	photos      map[string]bool              // hub/photos.json: slugs with /stats/photos/<slug>.webp
+	champByName map[string]string            // lower-case champion display name -> slug
+	ssrMu       sync.Mutex
+	ssrCache    map[string]ssrResult
+	ssrVer      string
+	failed      string // a build without hub files (logged once, not retried)
+	indexHTML   string
+	indexMod    time.Time
+	checked     time.Time
 }
 
 // IndexNow: after a new stats build, the pages that are new or changed are reported to the search engines that take
@@ -454,7 +461,7 @@ func (s *store) refresh() {
 			if len(p) < 4 || p[0] == "" {
 				continue
 			}
-			e := entry{title: p[1], desc: p[2], index: p[3] == "1"}
+			e := entry{title: p[1], desc: p[2], index: p[3] == "1", games: gamesFromDesc(p[2])}
 			if len(p) > 4 {
 				e.summary = p[4]
 			}
@@ -483,9 +490,17 @@ func (s *store) refresh() {
 			}
 		}
 	}
-	indexNow(s.changedPages(pages, intl))
+	changed := s.changedPages(pages, intl)
+	if s.version == "" {
+		changed = startupPriorityURLs(changed, pages, order)
+	}
+	indexNow(changed)
 	s.pages, s.order, s.alias, s.version, s.intl = pages, order, alias, latest.Version, intl
 	s.ratings = loadRatings(hub)
+	s.logos = loadSlugSet(filepath.Join(hub, "logos.json"))
+	s.photos = loadSlugSet(filepath.Join(hub, "photos.json"))
+	s.champByName = buildChampSlugMap(pages["champ"])
+	s.clearSSRCache(latest.Version)
 	log.Printf("stats %s loaded: %d teams, %d players, %d events, %d matches, %d champions, %d leagues",
 		latest.Version, len(pages["team"]), len(pages["player"]), len(pages["event"]), len(pages["game"]), len(pages["champ"]), len(pages["league"]))
 }
@@ -506,6 +521,8 @@ var noscriptLinks = [][2]string{
 	{"stats/first-stand", "First Stand"}, {"stats/rankings", "Power Rankings"}, {"stats/best", "Best games"}, {"stats/tournaments", "Tournaments"},
 	{"stats/leagues", "Leagues"}, {"stats/champions", "Champions"}, {"stats/patches", "Patches"}, {"stats/records", "Records"},
 	{"stats/titles", "Title winners"}, {"stats/compare", "Compare"}, {"stats/prep", "Match prep"}, {"stats/draft", "Draft board"},
+	{"stats/counters", "Counters"}, {"stats/synergy", "Duo synergies"}, {"stats/tiers", "Tier list"}, {"stats/items", "Item history"},
+	{"stats/gm", "Roster builder"}, {"stats/pickem", "Pick'Em"}, {"stats/teams", "Teams"}, {"stats/players", "Players"},
 	{"stats/finder", "Game finder"}, {"schedule", "Schedule"}, {"results", "Results"}, {"stats/data", "CSV data"}, {"team/t1", "T1"}, {"team/geng", "Gen.G"},
 	{"team/bilibili-gaming", "BLG"}, {"team/g2-esports", "G2"}, {"team/fnatic", "Fnatic"}, {"player/faker", "Faker"},
 	{"player/chovy", "Chovy"}, {"player/caps", "Caps"}, {"player/keria", "Keria"}, {"player/ruler", "Ruler"},
@@ -668,18 +685,18 @@ func (s *store) page(title, desc, canonical string, index bool, og string, about
 	tags.WriteString("  </head>")
 	doc = strings.Replace(doc, "</head>", tags.String(), 1)
 	var ns strings.Builder
-	// the page's main heading in the page itself (crawlers skip <noscript>); the app replaces it once it starts
+	// the page's main heading and Wave-1 SSR content sit inside #root (crawlers skip <noscript>); React replaces #root cleanly on mount.
 	h1 := html.EscapeString(strings.TrimSuffix(title, brand))
 	ns.WriteString(`<div id="root"><h1 style="font:600 16px system-ui,sans-serif;color:#c8aa6e;margin:16px">` + h1 + `</h1>`)
 	if summary != "" {
 		// the page in a few sentences with numbers, readable without scripts (the app replaces it like the heading)
 		ns.WriteString(`<p style="font:14px/1.5 system-ui,sans-serif;color:#b9b0dc;margin:0 16px 16px;max-width:60em">` + html.EscapeString(summary) + `</p>`)
 	}
+	if extra != nil && extra.HTML != "" {
+		ns.WriteString(`<div data-rw-ssr="1" style="font:14px/1.55 system-ui,sans-serif;color:#b9b0dc;margin:0 16px 24px;max-width:72rem">` + extra.HTML + `</div>`)
+	}
 	ns.WriteString(`</div>`)
 	ns.WriteString(`<noscript><main><p><strong>` + t + `</strong></p><p>` + d + `</p>`)
-	if extra != nil {
-		ns.WriteString(extra.HTML) // built and escaped by the stats build
-	}
 	ns.WriteString(`<nav aria-label="RiftWise">`)
 	for i, l := range noscriptLinks {
 		if i > 0 {
@@ -916,24 +933,30 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		title, desc, index = e.title, e.desc, e.index
+		baseTitle := title
 		if lang == "" && len(parts) == 2 {
 			summary = e.summary // English sentences: the English page only
 		}
 		og = "og/" + parts[0] + "/" + slug + ".png"
+		langRootAbs := langPublicBase(seg)
+		pageCanonical := langRootAbs + strings.Trim(rest, "/")
 		if len(parts) == 2 {
-			about = aboutOf(kind, title)
-			extra = &intlPage{LD: []json.RawMessage{entityCrumbs(kind, title, publicURL+rest)}}
+			about = aboutOf(kind, baseTitle)
+			extra = &intlPage{LD: []json.RawMessage{entityCrumbs(kind, baseTitle, pageCanonical)}}
+			if lang == "" && index && r.URL.RawQuery == "" {
+				title, desc = s.enrichEntityMeta(kind, slug, title, desc)
+			}
 		}
 		if tabbed { // one tab of the page: /team/t1/matches
-			name := englishName(title)
+			name := englishName(baseTitle)
 			if lang == "" {
 				title = strings.ReplaceAll(tab[0], "{name}", name) + brand
 				desc = strings.ReplaceAll(tab[1], "{name}", name)
 			} // (another language: localize() puts the tab's name after the page's)
 			about = aboutOf(kind, name+brand)
-			extra = &intlPage{LD: []json.RawMessage{entityTabCrumbs(kind, name, publicURL+strings.Join(parts[:2], "/"), strings.ToLower(parts[2]), publicURL+rest)}}
+			extra = &intlPage{LD: []json.RawMessage{entityTabCrumbs(kind, name, langRootAbs+strings.Join(parts[:2], "/"), strings.ToLower(parts[2]), pageCanonical)}}
 		} else if len(parts) == 3 { // one season of a league: /league/lck/2025
-			name := strings.TrimSuffix(title, " | RiftWise")
+			name := strings.TrimSuffix(baseTitle, " | RiftWise")
 			if i := strings.Index(name, " – "); i > 0 {
 				name = name[:i] // "LCK – every season, champions and results" -> "LCK"
 			}
@@ -958,6 +981,25 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusOK {
 		if lang != "" {
 			title, desc = localize(lang, parts, title, desc)
+		}
+		if index && (parts[0] == "" || parts[0] == "stats" || kinds[parts[0]] != "") {
+			ssr := s.buildSSR(seg, lang, parts, strings.TrimSuffix(title, brand), desc, canonical)
+			if ssr.html != "" && (extra == nil || extra.HTML == "") {
+				if extra == nil {
+					extra = &intlPage{}
+				}
+				extra.HTML = ssr.html
+				summary = "" // full SSR <article> supersedes short 5th-column summary
+			}
+			if len(ssr.lds) > 0 {
+				if extra == nil {
+					extra = &intlPage{}
+				}
+				merged := make([]json.RawMessage, 0, len(extra.LD)+len(ssr.lds))
+				merged = append(merged, extra.LD...)
+				merged = append(merged, ssr.lds...)
+				extra.LD = merged
+			}
 		}
 		pl.alts = alternates(path)
 	}
@@ -1015,7 +1057,11 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "public, max-age=3600")
 	if name == "sitemap" {
 		fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?>`+"\n"+`<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`+"\n")
-		fmt.Fprintf(w, "<sitemap><loc>%ssitemap-sections-1.xml</loc></sitemap>\n", publicURL)
+		if lastmod != "" {
+			fmt.Fprintf(w, "<sitemap><loc>%ssitemap-sections-1.xml</loc><lastmod>%s</lastmod></sitemap>\n", publicURL, lastmod)
+		} else {
+			fmt.Fprintf(w, "<sitemap><loc>%ssitemap-sections-1.xml</loc></sitemap>\n", publicURL)
+		}
 		for _, kind := range []string{"team", "player", "event", "league", "champ", "game"} {
 			n := 0
 			for _, slug := range s.order[kind] {
@@ -1025,6 +1071,17 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 			}
 			for i := 1; i <= (n+perMap-1)/perMap; i++ {
 				fmt.Fprintf(w, "<sitemap><loc>%ssitemap-%s-%d.xml</loc><lastmod>%s</lastmod></sitemap>\n", publicURL, kind, i, lastmod)
+			}
+		}
+		for _, extraMap := range []struct {
+			name string
+			n    int
+		}{
+			{"tabs", len(s.entityTabURLs())},
+			{"intl", len(s.intlURLs())},
+		} {
+			for i := 1; i <= (extraMap.n+perMap-1)/perMap; i++ {
+				fmt.Fprintf(w, "<sitemap><loc>%ssitemap-%s-%d.xml</loc><lastmod>%s</lastmod></sitemap>\n", publicURL, extraMap.name, i, lastmod)
 			}
 		}
 		fmt.Fprint(w, "</sitemapindex>\n")
@@ -1041,16 +1098,23 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?>`+"\n"+`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`+"\n")
+	writeURL := func(rel string, withMod bool) {
+		if withMod && lastmod != "" {
+			fmt.Fprintf(w, "<url><loc>%s%s</loc><lastmod>%s</lastmod></url>\n", publicURL, html.EscapeString(rel), lastmod)
+			return
+		}
+		fmt.Fprintf(w, "<url><loc>%s%s</loc></url>\n", publicURL, html.EscapeString(rel))
+	}
 	if p[0] == "sections" {
 		for sec := range sections {
-			fmt.Fprintf(w, "<url><loc>%s%s</loc></url>\n", publicURL, map[bool]string{true: "", false: "stats/" + sec}[sec == ""])
+			writeURL(map[bool]string{true: "", false: "stats/" + sec}[sec == ""], true)
 		}
 		// the tabs with a page worth finding, and each league on the schedule now
 		for _, tab := range []string{"matches", "schedule", "results", "stream", "news"} {
-			fmt.Fprintf(w, "<url><loc>%s%s</loc></url>\n", publicURL, tab)
+			writeURL(tab, true)
 		}
 		for _, lg := range scheduleLeagues() {
-			fmt.Fprintf(w, "<url><loc>%sschedule/%s</loc></url>\n", publicURL, lg)
+			writeURL("schedule/"+lg, true)
 		}
 		// every year (and every year together) of Worlds, MSI and First Stand
 		keys := make([]string, 0, len(s.intl))
@@ -1061,9 +1125,25 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			fmt.Fprintf(w, "<url><loc>%sstats/%s</loc></url>\n", publicURL, k)
+			writeURL("stats/"+k, true)
 		}
-		fmt.Fprintf(w, "<url><loc>%sabout</loc></url>\n", publicURL)
+		writeURL("about", true)
+	} else if p[0] == "tabs" || p[0] == "intl" {
+		var list []string
+		if p[0] == "tabs" {
+			list = s.entityTabURLs()
+		} else {
+			list = s.intlURLs()
+		}
+		start, end := (part-1)*perMap, part*perMap
+		if start < len(list) {
+			if end > len(list) {
+				end = len(list)
+			}
+			for _, rel := range list[start:end] {
+				writeURL(rel, true)
+			}
+		}
 	} else if _, ok := s.pages[p[0]]; ok {
 		i := 0
 		for _, slug := range s.order[p[0]] {
@@ -1139,6 +1219,10 @@ func main() {
 		}
 		if r.URL.Path == basePath+"feed.xml" {
 			s.serveFeed(w, r) // feed.go
+			return
+		}
+		if r.URL.Path == basePath+"opensearch.xml" {
+			serveOpenSearch(w) // ssr.go
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, basePath+"sitemap") && strings.HasSuffix(r.URL.Path, ".xml") {

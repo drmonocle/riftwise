@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+  <ShortName>RiftWise</ShortName>
+  <Description>Search pro League of Legends teams, players, champions, tournaments and matches since 2011</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image width="48" height="48" type="image/png">https://riftwise.gg/icon-48.png</Image>
+  <Url type="text/html" method="get" template="https://riftwise.gg/?q={searchTerms}" />
+  <moz:SearchForm>https://riftwise.gg/</moz:SearchForm>
+</OpenSearchDescription>
