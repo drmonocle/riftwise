@@ -10,6 +10,7 @@ export const NAV_GROUP: Record<string, NavGroup> = {
   worlds: "tournaments",
   msi: "tournaments",
   "first-stand": "tournaments",
+  pickem: "tournaments",
   leagues: "tournaments",
   weekly: "tournaments",
   best: "tournaments",

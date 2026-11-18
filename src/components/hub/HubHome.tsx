@@ -405,11 +405,16 @@ const TodayMatches: React.FC<{
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Eyebrow>{live.length > 0 ? tn("{n} match live now", "{n} matches live now", live.length) : tl("Next up")}</Eyebrow>
-        {onSelectTab && (
-          <button type="button" onClick={() => onSelectTab("schedule")} className="text-xs font-semibold text-rw-accent hover:underline">
-            {tl("Full schedule, results and standings →")}
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <HubLink to={{ kind: "pickem" }} className="text-xs font-semibold text-rw-accent hover:underline">
+            {tl("Pick'Em")} →
+          </HubLink>
+          {onSelectTab && (
+            <button type="button" onClick={() => onSelectTab("schedule")} className="text-xs font-semibold text-rw-accent hover:underline">
+              {tl("Full schedule, results and standings →")}
+            </button>
+          )}
+        </div>
       </div>
       <FeaturedMatch m={featured} live={live.includes(featured)} schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} onSelectTab={onSelectTab} onSelectTeam={onSelectTeam} />
       {rest.length > 0 && <UpNextTable matches={rest} schedule={schedule} settings={settings} onOpenUrl={onOpenUrl} onSelectTeam={onSelectTeam} timeOf={formatMatchTime} />}
@@ -762,7 +767,10 @@ const EventNow: React.FC<{ intl?: Match; schedule?: Match[]; settings?: AppSetti
           </div>
         ) : offSeason ? (
           <div className="flex flex-wrap gap-1.5 text-xs">
-            <HubLink to={{ kind: "worlds" }} className="px-2.5 py-1 rounded-lg bg-rw-accent hover:bg-rw-text text-rw-bg font-bold transition-colors">
+            <HubLink to={{ kind: "pickem" }} className="px-2.5 py-1 rounded-lg bg-rw-accent hover:bg-rw-text text-rw-bg font-bold transition-colors">
+              {tl("Pick'Em")}
+            </HubLink>
+            <HubLink to={{ kind: "worlds" }} className="px-2.5 py-1 rounded-lg border border-rw-border hover:border-rw-accent/60 text-rw-text font-semibold transition-colors">
               {tl("Worlds")}
             </HubLink>
             <HubLink to={{ kind: "moves" }} className="px-2.5 py-1 rounded-lg border border-rw-border hover:border-rw-accent/60 text-rw-text font-semibold transition-colors">

@@ -22,6 +22,13 @@ export const ChangelogPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
       <Section title={tl("Analyst & broadcast tools")} id="tools">
         <ul className="list-disc pl-4 space-y-2 text-rw-sub">
           <li>
+            <strong className="text-rw-text">{tl("Pick'Em")} &amp; {tl("Friends leagues")}</strong> —{" "}
+            {tl("Predict upcoming LCK, LPL, LEC, LCS and off-season tournament series with kickoff locks and shareable invite-code friends league leaderboards.")}{" "}
+            <HubLink to={{ kind: "pickem" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Pick'Em")} →
+            </HubLink>
+          </li>
+          <li>
             <strong className="text-rw-text">{tl("Roster builder")}</strong> —{" "}
             {tl("Choose any five pro players to check composite form, Gold% and DMG% fit, Fearless flex depth, teammate history and club/season deltas.")}{" "}
             <HubLink to={{ kind: "gm" }} className="text-rw-accent hover:underline font-semibold">
@@ -96,7 +103,7 @@ export const ChangelogPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
 
       <Section title={tl("Roadmap & feedback")} id="roadmap">
         <p className="text-rw-sub">
-          {tl("Coming up next: year-round regional Pick'Em leagues, automated international seed simulations, and richer item build paths.")}{" "}
+          {tl("Coming up next: automated international seed simulations, richer item build paths, and live solo-queue tracking links.")}{" "}
           <a
             href={sendIdea}
             onClick={(e) => {

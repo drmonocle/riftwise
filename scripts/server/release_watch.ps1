@@ -36,6 +36,14 @@ $build = 'C:\Sites\riftwise-build'
 $services = @('pages', 'push', 'sync')
 $env:Path = "C:\Program Files\nodejs;C:\Program Files\Git\cmd;$env:Path"
 New-Item -ItemType Directory -Force "$root\logs" | Out-Null
+# Upgrade legacy PT2H task timeout so a slower full stats check never gets killed mid-deploy
+try {
+  $rwTask = Get-ScheduledTask -TaskName 'RiftWiseReleaseWatch' -ErrorAction SilentlyContinue
+  if ($rwTask -and $rwTask.Settings.ExecutionTimeLimit -eq 'PT2H') {
+    $rwTask.Settings.ExecutionTimeLimit = 'PT4H'
+    Set-ScheduledTask -InputObject $rwTask | Out-Null
+  }
+} catch { }
 
 # A native program's output and exit code. Windows PowerShell 5.1 turns a program's stderr lines (git, npm and go
 # print progress there) into errors that stop the script, so they run with errors allowed and the exit code decides.
@@ -74,9 +82,15 @@ if ($Rollback) {
   $target = "$newest"
 }
 
-# one run at a time (a full stats check takes ~15 minutes)
+# one run at a time: check whether the locked PID is actually alive before backing off
 $lock = "$root\release.lock"
-if ((Test-Path $lock) -and ((Get-Date) - (Get-Item $lock).LastWriteTime).TotalHours -lt 2) { Write-Output 'another release run is busy'; exit 0 }
+if (Test-Path $lock) {
+  $lockAge = ((Get-Date) - (Get-Item $lock).LastWriteTime).TotalHours
+  $lockPid = 0
+  [void][int]::TryParse(((Get-Content $lock -Raw -ErrorAction SilentlyContinue) + '').Trim(), [ref]$lockPid)
+  $alive = $lockPid -gt 0 -and $lockPid -ne $PID -and (Get-Process -Id $lockPid -ErrorAction SilentlyContinue)
+  if ($alive -and $lockAge -lt 4) { Write-Output "another release run ($lockPid) is busy"; exit 0 }
+}
 Set-Content $lock $PID
 
 $log = "$root\logs\$target-$(Get-Date -Format yyyyMMdd-HHmmss).log"
@@ -172,6 +186,11 @@ try {
   if ($changed.Count) {
     Log "stats scripts changed: $(($changed | ForEach-Object Name) -join ', ')"
     Run 'stats test build' { & $py -u "$repo\scripts\stats\test\test_build.py" } | Out-Null
+    # Avoid concurrent 235k-file NTFS MFT thrashing if a production stats build is already active
+    $waitUntil = (Get-Date).AddMinutes(60)
+    while ((Get-ScheduledTask -TaskName $statsTask -ErrorAction SilentlyContinue).State -eq 'Running' -and (Get-Date) -lt $waitUntil) {
+      Start-Sleep -Seconds 30
+    }
     $check = "$root\statscheck"
     if (Test-Path $check) { Remove-Item $check -Recurse -Force }
     Log '-- full stats build into a scratch folder (below-normal priority)'
@@ -250,7 +269,11 @@ try {
   if ($Rollback) { Add-Content "$root\skip.txt" $installed.version } # don't put the version just rolled back from live again
   Status 'installed' 'done'
   Log "v$target is live"
-  if ($changed.Count) { Start-StatsBuild }
+  $latestStats = Read-Json 'C:\inetpub\wwwroot\riftwise\stats\latest.json'
+  $latestBuilt = [datetime]::MinValue
+  if ($latestStats -and $latestStats.built) { try { $latestBuilt = [datetime]::Parse("$($latestStats.built)").ToUniversalTime() } catch { } }
+  $newestPy = (Get-ChildItem "$scripts\*.py" -ErrorAction SilentlyContinue | Measure-Object LastWriteTimeUtc -Maximum).Maximum
+  if ($changed.Count -or ($newestPy -and $newestPy -gt $latestBuilt)) { Start-StatsBuild }
 } catch {
   $err = $_.Exception.Message
   Log "FAILED at '$step': $err"

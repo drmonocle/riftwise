@@ -339,3 +339,160 @@ func TestPickemRefresh(t *testing.T) {
 		t.Fatalf("unexpected refreshed results: %+v", results)
 	}
 }
+
+func TestPickemRegionalMatchesAndLock(t *testing.T) {
+	resetSched := func() {
+		pickemSched.mu.Lock()
+		pickemSched.at = time.Time{}
+		pickemSched.body = riotSched{}
+		pickemSched.mu.Unlock()
+	}
+	resetSched()
+	defer resetSched()
+
+	schedJSON := `{}`
+	sched := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(schedJSON)) }))
+	defer sched.Close()
+	prev := pickemScheduleURL
+	pickemScheduleURL = sched.URL
+	defer func() { pickemScheduleURL = prev }()
+
+	future := time.Now().Add(2 * time.Hour).UTC().Format(time.RFC3339)
+	past := time.Now().Add(-15 * time.Minute).UTC().Format(time.RFC3339)
+	schedJSON = `{"events":[
+		{"type":"match","league":{"slug":"lck"},"startTime":"` + future + `","state":"unstarted","blockName":"Regular Season","match":{"id":"m-reg","teams":[{"code":"T1","name":"T1","result":{"gameWins":0}},{"code":"GEN","name":"Gen.G","result":{"gameWins":0}}]}},
+		{"type":"match","league":{"slug":"lck"},"startTime":"` + future + `","state":"unstarted","blockName":"Playoffs","match":{"id":"m-po","teams":[{"code":"T1","name":"T1","result":{"gameWins":0}},{"code":"GEN","name":"Gen.G","result":{"gameWins":0}}]}},
+		{"type":"match","league":{"slug":"lck"},"startTime":"` + past + `","state":"unstarted","blockName":"Regular Season","match":{"id":"m-started","teams":[{"code":"T1","name":"T1","result":{"gameWins":0}},{"code":"DK","name":"Dplus KIA","result":{"gameWins":0}}]}}
+	]}`
+
+	st, _ := openStore(t.TempDir())
+	h := newServer(st, loadOAuth(st.dir)).routes()
+	a := &client{t: t, h: h}
+	_, regOut := a.call("POST", "register", map[string]string{"username": "LckFan", "password": "blue side wins 2026"})
+	a.token, _ = regOut["token"].(string)
+
+	teams := []map[string]string{
+		{"u": "t1", "c": "T1", "n": "T1"},
+		{"u": "geng", "c": "GEN", "n": "Gen.G"},
+		{"u": "dplus-kia", "c": "DK", "n": "Dplus KIA"},
+	}
+	// Submit unstarted m-reg (1pt), m-po (2pt), plus past-kickoff m-started (must be ignored)
+	code, out := a.call("POST", "pickem/submit", map[string]any{
+		"event": "lck-2026",
+		"teams": teams,
+		"picks": []map[string]any{
+			{"s": "match", "m": "m-reg", "r": 1, "a": "t1", "b": "geng", "w": "t1"},
+			{"s": "match", "m": "m-po", "r": 2, "a": "t1", "b": "geng", "w": "geng"},
+			{"s": "match", "m": "m-started", "r": 1, "a": "t1", "b": "dplus-kia", "w": "t1"},
+		},
+	})
+	if code != 200 {
+		t.Fatalf("submit failed: %d %v", code, out)
+	}
+	myPicks, _ := out["myPicks"].([]any)
+	if len(myPicks) != 2 {
+		t.Fatalf("expected 2 stored picks (started match ignored), got %v", myPicks)
+	}
+
+	// Lock m-reg (inProgress) and complete m-po + m-reg; try flipping m-reg -> geng (must stay t1!)
+	resetSched()
+	schedJSON = `{"events":[
+		{"type":"match","league":{"slug":"lck"},"startTime":"2026-04-01T10:00:00Z","state":"completed","blockName":"Regular Season","match":{"id":"m-reg","teams":[{"code":"T1","name":"T1","result":{"gameWins":2}},{"code":"GEN","name":"Gen.G","result":{"gameWins":1}}]}},
+		{"type":"match","league":{"slug":"lck"},"startTime":"2026-04-10T10:00:00Z","state":"completed","blockName":"Playoffs","match":{"id":"m-po","teams":[{"code":"T1","name":"T1","result":{"gameWins":2}},{"code":"GEN","name":"Gen.G","result":{"gameWins":3}}]}}
+	]}`
+	code, out = a.call("POST", "pickem/submit", map[string]any{
+		"event": "lck-2026",
+		"teams": teams,
+		"picks": []map[string]any{
+			{"s": "match", "m": "m-reg", "r": 1, "a": "t1", "b": "geng", "w": "geng"},
+		},
+	})
+	if code != 200 {
+		t.Fatalf("resubmit failed: %d %v", code, out)
+	}
+	me, _ := out["me"].(map[string]any)
+	if me["score"] != float64(3) || me["right"] != float64(2) || me["scored"] != float64(2) {
+		t.Fatalf("expected 1+2=3 points and 2/2 right even though client tried flipping m-reg and omitted m-po, got %v", me)
+	}
+	_, getOut := a.call("GET", "pickem/board?event=lck-2026", nil)
+	if gp, _ := getOut["myPicks"].([]any); len(gp) != 2 {
+		t.Fatalf("expected myPicks persisted on GET board, got %v", getOut["myPicks"])
+	}
+}
+
+func TestPickemFriendsGroups(t *testing.T) {
+	resetSched := func() {
+		pickemSched.mu.Lock()
+		pickemSched.at = time.Time{}
+		pickemSched.body = riotSched{}
+		pickemSched.mu.Unlock()
+	}
+	resetSched()
+	defer resetSched()
+
+	sched := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"events":[
+			{"type":"match","league":{"slug":"lec"},"startTime":"2026-02-01T17:00:00Z","state":"completed","blockName":"Regular Season","match":{"id":"lec-1","teams":[{"code":"G2","name":"G2 Esports","result":{"gameWins":2}},{"code":"FNC","name":"Fnatic","result":{"gameWins":0}}]}}
+		]}`))
+	}))
+	defer sched.Close()
+	prev := pickemScheduleURL
+	pickemScheduleURL = sched.URL
+	defer func() { pickemScheduleURL = prev }()
+
+	st, _ := openStore(t.TempDir())
+	h := newServer(st, loadOAuth(st.dir)).routes()
+	alice, bob, outsider := &client{t: t, h: h}, &client{t: t, h: h}, &client{t: t, h: h}
+	for _, x := range []struct {
+		c *client
+		u string
+	}{{alice, "Alice"}, {bob, "Bob"}, {outsider, "Outsider"}} {
+		_, out := x.c.call("POST", "register", map[string]string{"username": x.u, "password": "blue side wins 2026"})
+		x.c.token, _ = out["token"].(string)
+	}
+
+	// Outsider submits picks globally, Alice submits pre-match or before completion? Actually test group filtering!
+	_, _ = outsider.call("POST", "pickem/submit", map[string]any{
+		"event": "season-2026",
+		"teams": []map[string]string{{"u": "g2", "c": "G2", "n": "G2 Esports"}, {"u": "fnc", "c": "FNC", "n": "Fnatic"}},
+		"picks": []map[string]any{{"s": "ko", "r": 1, "a": "g2", "b": "fnc", "w": "g2"}},
+	})
+
+	cCode, cOut := alice.call("POST", "pickem/group/create", map[string]string{"name": "Friday Watch Party"})
+	if cCode != 200 {
+		t.Fatalf("create group failed: %d %v", cCode, cOut)
+	}
+	grp := cOut["group"].(map[string]any)
+	codeStr := grp["code"].(string)
+	if !groupCodeRe.MatchString(codeStr) {
+		t.Fatalf("invalid generated code: %q", codeStr)
+	}
+
+	jCode, jOut := bob.call("POST", "pickem/group/join", map[string]string{"code": strings.ToLower(codeStr)})
+	if jCode != 200 || jOut["group"].(map[string]any)["members"] != float64(2) {
+		t.Fatalf("join failed: %d %v", jCode, jOut)
+	}
+
+	bCode, bOut := bob.call("GET", "pickem/board?event=season-2026&group="+codeStr, nil)
+	if bCode != 200 {
+		t.Fatalf("group board failed: %d %v", bCode, bOut)
+	}
+	rows := bOut["rows"].([]any)
+	if len(rows) != 2 {
+		t.Fatalf("expected 2 members (Alice & Bob, excluding Outsider), got %v", rows)
+	}
+	joinedNames := ""
+	for _, r := range rows {
+		joinedNames += r.(map[string]any)["name"].(string) + ","
+	}
+	if !strings.Contains(joinedNames, "Alice") || !strings.Contains(joinedNames, "Bob") || strings.Contains(joinedNames, "Outsider") {
+		t.Fatalf("unexpected group members: %s", joinedNames)
+	}
+
+	if gc, _ := alice.call("GET", "pickem/groups", nil); gc != 200 {
+		t.Fatalf("GET pickem/groups failed: %d", gc)
+	}
+	if lc, lOut := bob.call("POST", "pickem/group/leave", map[string]string{"code": codeStr}); lc != 200 || len(lOut["groups"].([]any)) != 0 {
+		t.Fatalf("leave group failed: %d %v", lc, lOut)
+	}
+}

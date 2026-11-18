@@ -2,21 +2,23 @@ package main
 
 // The Worlds Pick'Em leaderboard: each account's Swiss and bracket picks, scored against Riot's results.
 //
-// - POST pickem/submit {event, picks:[{s,r,a,b,w}], teams:[{u,c,n}]} (signed in): enters or updates the picks.
-//   A pick for a series already played is ignored, and a stored pick can't change once its series is done, so
+// - POST pickem/submit {event, picks:[{s,m,r,a,b,w}], teams:[{u,c,n}], group?} (signed in): enters or updates the picks.
+//   A pick for a series already started or played is ignored, and a stored pick can't change once started/done, so
 //   nobody can pick with the result in hand. Each pick is stamped when first seen.
-// - GET pickem/board?event=worlds-2026: the top 50 by score, how many entered, how many series are decided, and
-//   the caller's own row when signed in.
+// - GET pickem/board?event=worlds-2026[&group=CODE]: the top 50 by score (all members when filtered to a friends league),
+//   how many entered, how many series are decided, the caller's own row and picks when signed in.
 // - POST pickem/leave {event} (signed in): deletes the account's picks for that event.
+// - GET pickem/groups | POST pickem/group/create | POST pickem/group/join | POST pickem/group/leave (signed in):
+//   private friends league boards keyed by 6-character invite code.
 //
 // Results come from the push service's copy of Riot's schedule (/api/push/schedule, one request a minute for
 // everyone) and are kept in <data>/pickem/<event>/results.json, so a series that leaves Riot's schedule window
-// still counts. Teams are matched the way the picker does it: by code (TLAW = TL), by name, else the one team
-// whose name starts Riot's ("Team Liquid Alienware").
+// still counts. Teams are matched the way the picker does it: by code+name, name, code (TLAW = TL), else prefix.
 //
-// Points: 1 per Swiss series, 2 per quarterfinal, 3 per semifinal, 4 for the final.
+// Points: Swiss 1, Quarterfinal 2, Semifinal 3, Final 4; regional/season match picks: 1 regular season, 2 playoffs.
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -31,8 +33,9 @@ import (
 var pickemScheduleURL = "http://127.0.0.1:8092/riftwise/api/push/schedule"
 
 type pickemPick struct {
-	S string `json:"s"` // "swiss" | "ko"
-	R int    `json:"r"` // round (Swiss 1..5; knockouts 1 = quarterfinal, 2 = semifinal, 3 = final)
+	S string `json:"s"` // "swiss" | "ko" | "match"
+	M string `json:"m,omitempty"`
+	R int    `json:"r"` // round (Swiss 1..5; knockouts 1 = quarterfinal, 2 = semifinal, 3 = final; match 1 = regular, 2 = playoff)
 	A string `json:"a"` // team page slugs
 	B string `json:"b"`
 	W string `json:"w"` // the winner picked (a or b)
@@ -72,12 +75,44 @@ type pickemRow struct {
 	sortBy string // the real name, for ties: a hidden name keeps its place
 }
 
-var eventRe = regexp.MustCompile(`^(worlds|msi|first-stand)-(20\d\d)$`)
-var koRe = regexp.MustCompile(`(?i)quarter|semi|final|knockout`)
+var eventRe = regexp.MustCompile(`^(season|worlds|msi|first-stand|lck|lpl|lec|lcs|lcp|cblol|emea-masters|demacia-cup)-(20\d\d)$`)
+var matchIDRe = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+var groupCodeRe = regexp.MustCompile(`^[A-HJ-NP-Z2-9]{6}$`)
+var koRe = regexp.MustCompile(`(?i)quarter|semi|final|knockout|playoff`)
+
+const groupAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 var pickemMu sync.Mutex
 
 func (s *Server) pickemDir(event string) string { return filepath.Join(s.st.dir, "pickem", event) }
+func (s *Server) pickemGroupsDir() string       { return filepath.Join(s.st.dir, "pickem-groups") }
+
+type pickemGroup struct {
+	Code    string   `json:"code"`
+	Name    string   `json:"name"`
+	Owner   string   `json:"owner"`
+	Created int64    `json:"created"`
+	Members []string `json:"members"`
+}
+
+func matchPickemLeague(prefix, riotSlug string) bool {
+	switch prefix {
+	case "season":
+		return riotSlug != ""
+	case "first-stand":
+		return riotSlug == "first_stand" || riotSlug == "first-stand"
+	case "cblol":
+		return riotSlug == "cblol-brazil" || riotSlug == "cblol"
+	case "emea-masters":
+		return riotSlug == "emea_masters" || riotSlug == "emea-masters"
+	case "demacia-cup":
+		return riotSlug == "demacia_cup" || riotSlug == "demacia-cup"
+	case "lcs":
+		return riotSlug == "lcs" || riotSlug == "lta_n" || riotSlug == "lta_north"
+	default:
+		return riotSlug == prefix
+	}
+}
 
 func teamCode(c string) string {
 	c = strings.ToUpper(strings.TrimSpace(c))
@@ -98,16 +133,28 @@ func normName(n string) string {
 }
 
 // slugOf finds the team page for Riot's code and name among the teams the entrants sent.
+// Prefer an exact (code+name) or exact-name match before code-only so cross-league boards don't collide.
 func slugOf(teams []pickemTeam, code, name string) string {
 	c, n := teamCode(code), normName(name)
-	for _, t := range teams {
-		if teamCode(t.C) == c {
-			return t.U
+	if c != "" && n != "" {
+		for _, t := range teams {
+			if teamCode(t.C) == c && normName(t.N) == n {
+				return t.U
+			}
 		}
 	}
-	for _, t := range teams {
-		if normName(t.N) == n {
-			return t.U
+	if n != "" {
+		for _, t := range teams {
+			if normName(t.N) == n {
+				return t.U
+			}
+		}
+	}
+	if c != "" {
+		for _, t := range teams {
+			if teamCode(t.C) == c {
+				return t.U
+			}
 		}
 	}
 	var lead []string
@@ -183,7 +230,7 @@ func (s *Server) pickemResults(event string, teams []pickemTeam) []pickemResult 
 	}
 	changed := false
 	for _, e := range loadRiotSchedule().Events {
-		if e.Type != "match" || e.League.Slug != league || !strings.HasPrefix(e.StartTime, year) || e.State != "completed" || len(e.Match.Teams) != 2 {
+		if e.Type != "match" || !matchPickemLeague(league, e.League.Slug) || !strings.HasPrefix(e.StartTime, year) || e.State != "completed" || len(e.Match.Teams) != 2 {
 			continue
 		}
 		a, b := e.Match.Teams[0], e.Match.Teams[1]
@@ -223,9 +270,41 @@ func pair(a, b string) string {
 	return a + "|" + b
 }
 
-// decided: the result of a pick's series, if played (Swiss picks match a non-knockout series between the pair,
-// knockout picks a knockout one).
+func pickKey(p pickemPick) string {
+	if p.S == "match" {
+		return "match:" + p.M
+	}
+	return p.S + ":" + pair(p.A, p.B)
+}
+
+func startedMatchIDs(sched riotSched, now time.Time) map[string]bool {
+	out := map[string]bool{}
+	for _, e := range sched.Events {
+		if e.Type != "match" || e.Match.ID == "" {
+			continue
+		}
+		if e.State == "inProgress" || e.State == "completed" {
+			out[e.Match.ID] = true
+			continue
+		}
+		if t, err := time.Parse(time.RFC3339, e.StartTime); err == nil && !t.After(now) {
+			out[e.Match.ID] = true
+		}
+	}
+	return out
+}
+
+// decided: the result of a pick's series, if played (schedule match picks match by match id; Swiss picks match a
+// non-knockout series between the pair, knockout picks a knockout one).
 func decided(results []pickemResult, p pickemPick) *pickemResult {
+	if p.S == "match" {
+		for i := range results {
+			if results[i].ID == p.M {
+				return &results[i]
+			}
+		}
+		return nil
+	}
 	for i := range results {
 		r := &results[i]
 		if pair(r.A, r.B) == pair(p.A, p.B) && r.KO == (p.S == "ko") {
@@ -235,7 +314,13 @@ func decided(results []pickemResult, p pickemPick) *pickemResult {
 	return nil
 }
 
-func points(p pickemPick) int {
+func points(p pickemPick, r *pickemResult) int {
+	if p.S == "match" {
+		if p.R >= 2 || (r != nil && r.KO) {
+			return 2
+		}
+		return 1
+	}
 	if p.S != "ko" {
 		return 1
 	}
@@ -282,13 +367,106 @@ func displayName(a *Account) string {
 	return "Fan " + id
 }
 
+func containsStr(list []string, v string) bool {
+	for _, x := range list {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Server) newGroupCode() (string, error) {
+	dir := s.pickemGroupsDir()
+	for attempt := 0; attempt < 16; attempt++ {
+		var raw [6]byte
+		if _, err := rand.Read(raw[:]); err != nil {
+			return "", err
+		}
+		var b [6]byte
+		for i := range b {
+			b[i] = groupAlphabet[int(raw[i])&31]
+		}
+		code := string(b[:])
+		if _, err := os.Stat(filepath.Join(dir, code+".json")); os.IsNotExist(err) {
+			return code, nil
+		}
+	}
+	return "", os.ErrExist
+}
+
+func (s *Server) loadGroup(code string) (*pickemGroup, error) {
+	var g pickemGroup
+	if err := readJSON(filepath.Join(s.pickemGroupsDir(), code+".json"), &g); err != nil {
+		return nil, err
+	}
+	return &g, nil
+}
+
+func (s *Server) saveGroup(g *pickemGroup) error {
+	if err := os.MkdirAll(s.pickemGroupsDir(), 0o755); err != nil {
+		return err
+	}
+	return writeJSON(filepath.Join(s.pickemGroupsDir(), g.Code+".json"), g)
+}
+
+func (s *Server) memberGroupCodes(id string) []string {
+	var codes []string
+	_ = readJSON(filepath.Join(s.pickemGroupsDir(), "member-"+id+".json"), &codes)
+	return codes
+}
+
+func (s *Server) saveMemberGroupCodes(id string, codes []string) error {
+	if err := os.MkdirAll(s.pickemGroupsDir(), 0o755); err != nil {
+		return err
+	}
+	return writeJSON(filepath.Join(s.pickemGroupsDir(), "member-"+id+".json"), codes)
+}
+
+func groupSummary(g *pickemGroup, me string) map[string]any {
+	return map[string]any{
+		"code":    g.Code,
+		"name":    g.Name,
+		"members": len(g.Members),
+		"owner":   me != "" && g.Owner == me,
+		"joined":  me != "" && containsStr(g.Members, me),
+	}
+}
+
+func (s *Server) myPickemGroups(me string) []map[string]any {
+	codes := s.memberGroupCodes(me)
+	out := make([]map[string]any, 0, len(codes))
+	for _, c := range codes {
+		if g, err := s.loadGroup(c); err == nil && containsStr(g.Members, me) {
+			out = append(out, groupSummary(g, me))
+		}
+	}
+	return out
+}
+
 // board: everyone's score, ranked; me is the caller's account id ("" when not signed in).
-func (s *Server) pickemBoard(event, me string) map[string]any {
+func (s *Server) pickemBoard(event, me, groupCode string) (map[string]any, int, string) {
+	var grp *pickemGroup
+	var memberSet map[string]bool
+	if groupCode != "" {
+		code := strings.ToUpper(strings.TrimSpace(groupCode))
+		if !groupCodeRe.MatchString(code) {
+			return nil, 400, "bad_group"
+		}
+		g, err := s.loadGroup(code)
+		if err != nil {
+			return nil, 404, "group_not_found"
+		}
+		grp = g
+		memberSet = map[string]bool{}
+		for _, id := range g.Members {
+			memberSet[id] = true
+		}
+	}
 	teams := s.pickemTeams(event)
 	results := s.pickemResults(event, teams)
 	entries := s.pickemEntries(event)
-	rows := make([]pickemRow, 0, len(entries))
-	for id, e := range entries {
+	scoreEntry := func(id string, e pickemEntry) pickemRow {
 		row := pickemRow{Name: e.Name, Me: id == me, Hidden: e.Hidden, sortBy: strings.ToLower(e.Name)}
 		if e.Hidden && !row.Me {
 			row.Name = ""
@@ -301,10 +479,27 @@ func (s *Server) pickemBoard(event, me string) map[string]any {
 			row.Scored++
 			if r.W == p.W {
 				row.Right++
-				row.Score += points(p)
+				row.Score += points(p, r)
 			}
 		}
-		rows = append(rows, row)
+		return row
+	}
+	var rows []pickemRow
+	if grp != nil {
+		rows = make([]pickemRow, 0, len(grp.Members))
+		for _, id := range grp.Members {
+			if e, ok := entries[id]; ok {
+				rows = append(rows, scoreEntry(id, e))
+			} else if acct := s.st.account(id); acct != nil {
+				name := displayName(acct)
+				rows = append(rows, pickemRow{Name: name, Me: id == me, sortBy: strings.ToLower(name)})
+			}
+		}
+	} else {
+		rows = make([]pickemRow, 0, len(entries))
+		for id, e := range entries {
+			rows = append(rows, scoreEntry(id, e))
+		}
 	}
 	sort.SliceStable(rows, func(i, j int) bool {
 		if rows[i].Score != rows[j].Score {
@@ -327,14 +522,20 @@ func (s *Server) pickemBoard(event, me string) map[string]any {
 		}
 	}
 	top := rows
-	if len(top) > 50 {
+	if grp == nil && len(top) > 50 {
 		top = top[:50]
 	}
 	out := map[string]any{"event": event, "players": len(rows), "results": len(results), "rows": top}
+	if grp != nil {
+		out["group"] = groupSummary(grp, me)
+	}
 	if me != "" {
 		out["me"] = mine
+		if mineEntry, ok := entries[me]; ok {
+			out["myPicks"] = mineEntry.Picks
+		}
 	}
-	return out
+	return out, 200, ""
 }
 
 func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
@@ -355,13 +556,171 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 			fail(w, 400, "bad_event")
 			return
 		}
+		group := r.URL.Query().Get("group")
 		me := ""
 		if a := s.st.session(bearer(r)); a != nil {
 			me = a.ID
 		}
 		pickemMu.Lock()
 		defer pickemMu.Unlock()
-		reply(w, 200, s.pickemBoard(event, me))
+		board, code, errMsg := s.pickemBoard(event, me, group)
+		if errMsg != "" {
+			fail(w, code, errMsg)
+			return
+		}
+		reply(w, 200, board)
+	})
+
+	mux.HandleFunc(p+"pickem/groups", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			fail(w, 405, "get_only")
+			return
+		}
+		if !s.lim.allow("pickem-board|"+clientIP(r), 60, time.Minute) {
+			fail(w, 429, "too_many")
+			return
+		}
+		a := signedIn(w, r)
+		if a == nil {
+			return
+		}
+		pickemMu.Lock()
+		defer pickemMu.Unlock()
+		reply(w, 200, map[string]any{"groups": s.myPickemGroups(a.ID)})
+	})
+
+	mux.HandleFunc(p+"pickem/group/create", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Name string `json:"name"`
+		}
+		if !read(w, r, "pickem-group", 10, time.Minute, &req) {
+			return
+		}
+		a := signedIn(w, r)
+		if a == nil {
+			return
+		}
+		name := strings.TrimSpace(req.Name)
+		nr := len([]rune(name))
+		if nr < 1 || nr > 40 {
+			fail(w, 400, "bad_name")
+			return
+		}
+		pickemMu.Lock()
+		defer pickemMu.Unlock()
+		codes := s.memberGroupCodes(a.ID)
+		if len(codes) >= 12 {
+			fail(w, 400, "too_many_groups")
+			return
+		}
+		code, err := s.newGroupCode()
+		if err != nil {
+			fail(w, 500, "failed")
+			return
+		}
+		g := &pickemGroup{Code: code, Name: name, Owner: a.ID, Created: time.Now().UnixMilli(), Members: []string{a.ID}}
+		if err := s.saveGroup(g); err != nil {
+			fail(w, 500, "failed")
+			return
+		}
+		codes = append(codes, code)
+		if err := s.saveMemberGroupCodes(a.ID, codes); err != nil {
+			fail(w, 500, "failed")
+			return
+		}
+		reply(w, 200, map[string]any{"group": groupSummary(g, a.ID), "groups": s.myPickemGroups(a.ID)})
+	})
+
+	mux.HandleFunc(p+"pickem/group/join", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Code string `json:"code"`
+		}
+		if !read(w, r, "pickem-group", 15, time.Minute, &req) {
+			return
+		}
+		a := signedIn(w, r)
+		if a == nil {
+			return
+		}
+		code := strings.ToUpper(strings.TrimSpace(req.Code))
+		if !groupCodeRe.MatchString(code) {
+			fail(w, 400, "bad_group")
+			return
+		}
+		pickemMu.Lock()
+		defer pickemMu.Unlock()
+		g, err := s.loadGroup(code)
+		if err != nil {
+			fail(w, 404, "group_not_found")
+			return
+		}
+		if !containsStr(g.Members, a.ID) {
+			if len(g.Members) >= 200 {
+				fail(w, 400, "group_full")
+				return
+			}
+			codes := s.memberGroupCodes(a.ID)
+			if len(codes) >= 12 {
+				fail(w, 400, "too_many_groups")
+				return
+			}
+			g.Members = append(g.Members, a.ID)
+			if err := s.saveGroup(g); err != nil {
+				fail(w, 500, "failed")
+				return
+			}
+			if !containsStr(codes, code) {
+				codes = append(codes, code)
+				_ = s.saveMemberGroupCodes(a.ID, codes)
+			}
+		}
+		reply(w, 200, map[string]any{"group": groupSummary(g, a.ID), "groups": s.myPickemGroups(a.ID)})
+	})
+
+	mux.HandleFunc(p+"pickem/group/leave", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Code string `json:"code"`
+		}
+		if !read(w, r, "pickem-group", 15, time.Minute, &req) {
+			return
+		}
+		a := signedIn(w, r)
+		if a == nil {
+			return
+		}
+		code := strings.ToUpper(strings.TrimSpace(req.Code))
+		if !groupCodeRe.MatchString(code) {
+			fail(w, 400, "bad_group")
+			return
+		}
+		pickemMu.Lock()
+		defer pickemMu.Unlock()
+		codes := s.memberGroupCodes(a.ID)
+		keptCodes := codes[:0]
+		for _, c := range codes {
+			if c != code {
+				keptCodes = append(keptCodes, c)
+			}
+		}
+		_ = s.saveMemberGroupCodes(a.ID, keptCodes)
+		if g, err := s.loadGroup(code); err == nil && containsStr(g.Members, a.ID) {
+			kept := make([]string, 0, len(g.Members))
+			for _, m := range g.Members {
+				if m != a.ID {
+					kept = append(kept, m)
+				}
+			}
+			if len(kept) == 0 {
+				_ = os.Remove(filepath.Join(s.pickemGroupsDir(), code+".json"))
+			} else {
+				g.Members = kept
+				if g.Owner == a.ID {
+					g.Owner = kept[0]
+				}
+				_ = s.saveGroup(g)
+			}
+		}
+		reply(w, 200, map[string]any{"ok": true, "groups": s.myPickemGroups(a.ID)})
 	})
 
 	mux.HandleFunc(p+"pickem/submit", func(w http.ResponseWriter, r *http.Request) {
@@ -369,6 +728,7 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 			Event string       `json:"event"`
 			Picks []pickemPick `json:"picks"`
 			Teams []pickemTeam `json:"teams"`
+			Group string       `json:"group,omitempty"`
 		}
 		if !read(w, r, "pickem", 20, time.Minute, &req) {
 			return
@@ -377,7 +737,7 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 		if a == nil {
 			return
 		}
-		if !eventRe.MatchString(req.Event) || len(req.Picks) > 200 || len(req.Teams) > 64 {
+		if !eventRe.MatchString(req.Event) || len(req.Picks) > 500 || len(req.Teams) > 256 {
 			fail(w, 400, "bad_request")
 			return
 		}
@@ -399,25 +759,36 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 		}
 		writeJSON(filepath.Join(dir, "teams.json"), teams)
 		results := s.pickemResults(req.Event, teams)
+		started := startedMatchIDs(loadRiotSchedule(), time.Now())
+		isLocked := func(p pickemPick) bool {
+			return decided(results, p) != nil || (p.S == "match" && started[p.M])
+		}
 		var old pickemEntry
 		readJSON(filepath.Join(dir, "entry-"+a.ID+".json"), &old)
 		stored := map[string]pickemPick{}
 		for _, p := range old.Picks {
-			stored[p.S+":"+pair(p.A, p.B)] = p
+			stored[pickKey(p)] = p
 		}
 		now := time.Now().UnixMilli()
 		next := map[string]pickemPick{}
 		for _, p := range req.Picks {
-			if (p.S != "swiss" && p.S != "ko") || p.A == "" || p.B == "" || p.A == p.B || (p.W != p.A && p.W != p.B) || p.R < 1 || p.R > 9 {
+			if p.S == "match" {
+				if !matchIDRe.MatchString(p.M) {
+					continue
+				}
+			} else if p.S != "swiss" && p.S != "ko" {
 				continue
 			}
-			key := p.S + ":" + pair(p.A, p.B)
-			if prev, ok := stored[key]; ok && decided(results, prev) != nil {
-				next[key] = prev // played: the stored pick stands
+			if p.A == "" || p.B == "" || p.A == p.B || (p.W != p.A && p.W != p.B) || p.R < 1 || p.R > 9 {
 				continue
 			}
-			if decided(results, p) != nil {
-				continue // already played: not a pick
+			key := pickKey(p)
+			if prev, ok := stored[key]; ok && isLocked(prev) {
+				next[key] = prev // started or played: the stored pick stands
+				continue
+			}
+			if isLocked(p) {
+				continue // already started or played: not a pick
 			}
 			p.T = now
 			if prev, ok := stored[key]; ok && prev.W == p.W {
@@ -425,9 +796,9 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 			}
 			next[key] = p
 		}
-		// a stored pick for a played series stays even when the client no longer sends it (it's locked there too)
+		// a stored pick for a started/played series stays even when the client no longer sends it
 		for key, prev := range stored {
-			if _, ok := next[key]; !ok && decided(results, prev) != nil {
+			if _, ok := next[key]; !ok && isLocked(prev) {
 				next[key] = prev
 			}
 		}
@@ -436,13 +807,20 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 			entry.Picks = append(entry.Picks, p)
 		}
 		sort.Slice(entry.Picks, func(i, j int) bool {
-			return entry.Picks[i].S+":"+pair(entry.Picks[i].A, entry.Picks[i].B) < entry.Picks[j].S+":"+pair(entry.Picks[j].A, entry.Picks[j].B)
+			return pickKey(entry.Picks[i]) < pickKey(entry.Picks[j])
 		})
 		if err := writeJSON(filepath.Join(dir, "entry-"+a.ID+".json"), entry); err != nil {
 			fail(w, 500, "failed")
 			return
 		}
-		reply(w, 200, s.pickemBoard(req.Event, a.ID))
+		if req.Group != "" {
+			if board, code, errMsg := s.pickemBoard(req.Event, a.ID, req.Group); errMsg == "" && code == 200 {
+				reply(w, 200, board)
+				return
+			}
+		}
+		board, _, _ := s.pickemBoard(req.Event, a.ID, "")
+		reply(w, 200, board)
 	})
 
 	// hide (or show again) the caller's name on the board: the row stays, scored as before, shown as a hidden player
@@ -450,6 +828,7 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 		var req struct {
 			Event string `json:"event"`
 			Hide  bool   `json:"hide"`
+			Group string `json:"group,omitempty"`
 		}
 		if !read(w, r, "pickem", 20, time.Minute, &req) {
 			return
@@ -475,7 +854,14 @@ func (s *Server) pickemRoutes(mux *http.ServeMux, p string,
 			fail(w, 500, "failed")
 			return
 		}
-		reply(w, 200, s.pickemBoard(req.Event, a.ID))
+		if req.Group != "" {
+			if board, code, errMsg := s.pickemBoard(req.Event, a.ID, req.Group); errMsg == "" && code == 200 {
+				reply(w, 200, board)
+				return
+			}
+		}
+		board, _, _ := s.pickemBoard(req.Event, a.ID, "")
+		reply(w, 200, board)
 	})
 
 	mux.HandleFunc(p+"pickem/leave", func(w http.ResponseWriter, r *http.Request) {

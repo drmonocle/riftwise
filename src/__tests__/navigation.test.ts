@@ -53,6 +53,9 @@ describe("page tabs in the address", () => {
     expect(hubPath({ kind: "moves", query: "tab=contracts" })).toBe("/stats/moves?tab=contracts");
     expect(parseHubPath("/stats/gm", "?mid=faker&p=y2026")).toEqual({ kind: "gm", query: "mid=faker&p=y2026" });
     expect(hubPath({ kind: "gm", query: "team=t1" })).toBe("/stats/gm?team=t1");
+    expect(parseHubPath("/stats/pickem", "?league=lck&group=K7M4P9")).toEqual({ kind: "pickem", query: "league=lck&group=K7M4P9" });
+    expect(parseHubPath("/pickem", "?group=K7M4P9")).toEqual({ kind: "pickem", query: "group=K7M4P9" });
+    expect(hubPath({ kind: "pickem", query: "league=lck" })).toBe("/stats/pickem?league=lck");
     expect(parseHubPath("/stats/changelog", "")).toEqual({ kind: "changelog" });
     expect(hubPath({ kind: "changelog" })).toBe("/stats/changelog");
   });

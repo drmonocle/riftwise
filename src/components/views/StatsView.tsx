@@ -53,6 +53,7 @@ const TeamsDirectory = lazyPart(() => pageCode.teams().then((m) => m.TeamsDirect
 const PlayersDirectory = lazyPart(() => pageCode.players().then((m) => m.PlayersDirectory));
 const MovesPage = lazyPart(() => pageCode.moves().then((m) => m.MovesPage));
 const RosterBuilderPage = lazyPart(() => pageCode.gm().then((m) => m.RosterBuilderPage));
+const PickemPage = lazyPart(() => pageCode.pickem().then((m) => m.PickemPage));
 const ChangelogPage = lazyPart(() => pageCode.changelog().then((m) => m.ChangelogPage));
 
 interface StatsViewProps {
@@ -71,10 +72,10 @@ interface StatsViewProps {
 
 type SectionKind = HubRoute["kind"];
 /** pages whose own title is their <h1> (the others get the page's name over them as theirs) */
-const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "rankings", "records", "prep", "draft", "gm", "finder", "best", "counters", "items", "leaders", "tiers", "moves", "team", "player", "event", "champ", "league", "match", "aboutme"]);
+const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "pickem", "rankings", "records", "prep", "draft", "gm", "finder", "best", "counters", "items", "leaders", "tiers", "moves", "team", "player", "event", "champ", "league", "match", "aboutme"]);
 
 /** pages whose address carries what they show (teams, filters): their link is worth copying */
-const LINKABLE = new Set<SectionKind>(["prep", "draft", "gm", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players", "moves", "data", "rankings", "records", "tournaments", "leagues", "patches", "titles", "weekly", "worlds", "msi", "first-stand"]);
+const LINKABLE = new Set<SectionKind>(["prep", "draft", "gm", "pickem", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players", "moves", "data", "rankings", "records", "tournaments", "leagues", "patches", "titles", "weekly", "worlds", "msi", "first-stand"]);
 
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
 const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "items", "leaders", "teams", "players", "moves"]);
@@ -500,6 +501,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
         {route.kind === "players" && <PlayersDirectory query={"query" in route ? route.query : undefined} />}
         {route.kind === "moves" && <MovesPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "gm" && <RosterBuilderPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "pickem" && <PickemPage query={"query" in route ? route.query : undefined} schedule={schedule} />}
         {route.kind === "changelog" && <ChangelogPage onOpenUrl={IS_WEB ? undefined : onOpenUrl} />}
         {route.kind === "tournaments" && (
           <EventsBrowse

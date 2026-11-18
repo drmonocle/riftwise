@@ -443,16 +443,25 @@ export async function oauthSignIn(provider: "discord" | "twitch", openUrl?: (url
 
 /** One pick: the stage, its round, the two teams (stats slugs, with Riot's code and name for matching) and the winner picked. */
 export interface PickemPick {
-  s: "swiss" | "ko";
+  s: "swiss" | "ko" | "match";
+  m?: string;
   r: number;
   a: string;
   b: string;
   w: string;
+  t?: number;
 }
 export interface PickemTeam {
   u: string;
   c: string;
   n: string;
+}
+export interface PickemGroupSummary {
+  code: string;
+  name: string;
+  members: number;
+  owner?: boolean;
+  joined?: boolean;
 }
 export interface PickemRow {
   rank: number;
@@ -470,14 +479,29 @@ export interface PickemBoard {
   results: number;
   rows: PickemRow[];
   me?: PickemRow | null;
+  myPicks?: PickemPick[];
+  group?: PickemGroupSummary | null;
 }
 
 /** Enters (or updates) the signed-in account's picks for an event; the board comes back. */
-export const submitPickem = (event: string, picks: PickemPick[], teams: PickemTeam[]) =>
-  call<PickemBoard>("pickem/submit", { event, picks, teams });
+export const submitPickem = (event: string, picks: PickemPick[], teams: PickemTeam[], group?: string) =>
+  call<PickemBoard>("pickem/submit", { event, picks, teams, ...(group ? { group } : {}) });
 /** The leaderboard (no sign-in needed; the caller's own row is marked when signed in). */
-export const pickemBoard = (event: string) => call<PickemBoard>(`pickem/board?event=${encodeURIComponent(event)}`);
+export const pickemBoard = (event: string, group?: string) =>
+  call<PickemBoard>(`pickem/board?event=${encodeURIComponent(event)}${group ? `&group=${encodeURIComponent(group)}` : ""}`);
 /** Leaves the leaderboard (the account's picks for that event are deleted). */
 export const leavePickem = (event: string) => call<{ ok: boolean }>("pickem/leave", { event });
 /** Hides the account's name on the board (or shows it again); its row and score stay. The board comes back. */
-export const hidePickem = (event: string, hide: boolean) => call<PickemBoard>("pickem/hide", { event, hide });
+export const hidePickem = (event: string, hide: boolean, group?: string) =>
+  call<PickemBoard>("pickem/hide", { event, hide, ...(group ? { group } : {}) });
+/** Signed-in user's friends Pick'Em leagues. */
+export const fetchPickemGroups = () => call<{ groups: PickemGroupSummary[] }>("pickem/groups");
+/** Creates a private friends league and returns it alongside the updated list. */
+export const createPickemGroup = (name: string) =>
+  call<{ group: PickemGroupSummary; groups: PickemGroupSummary[] }>("pickem/group/create", { name });
+/** Joins a friends league by its 6-character invite code. */
+export const joinPickemGroup = (code: string) =>
+  call<{ group: PickemGroupSummary; groups: PickemGroupSummary[] }>("pickem/group/join", { code });
+/** Leaves a friends league by its 6-character invite code. */
+export const leavePickemGroup = (code: string) =>
+  call<{ ok: boolean; groups: PickemGroupSummary[] }>("pickem/group/leave", { code });

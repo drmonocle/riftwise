@@ -683,5 +683,11 @@ func TestTeamAliasesAndQueryNoindex(t *testing.T) {
 			t.Errorf("%s should be noindex without hreflang: %d", p, w.Code)
 		}
 	}
+	if w := get(s, "/riftwise/stats/pickem"); w.Code != 200 || !strings.Contains(w.Body.String(), "Pro LoL Pick'Em and friends leagues") {
+		t.Errorf("stats/pickem: %d %s", w.Code, w.Body.String())
+	}
+	if w := get(s, "/riftwise/pickem?group=ABC234"); w.Code != http.StatusMovedPermanently || w.Header().Get("Location") != "/stats/pickem?group=ABC234" {
+		t.Errorf("/pickem redirect: %d %q", w.Code, w.Header().Get("Location"))
+	}
 }
 

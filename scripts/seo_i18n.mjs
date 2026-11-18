@@ -36,6 +36,7 @@ const SECTIONS = {
   players: ["Every player", "Every pro player, by role and team"],
   moves: ["Roster moves", "Transfers and expiring contracts"],
   gm: ["Roster builder", "Build a 5-player lineup and test its fit"],
+  pickem: ["Pick'Em", "Predict pro matches and compete with friends"],
   changelog: ["What's new", "New tools, stats and broadcast features on RiftWise."],
 };
 

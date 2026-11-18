@@ -175,6 +175,17 @@ func (st *Store) counts() map[string]int {
 	return c
 }
 
+func (st *Store) account(id string) *Account {
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	a := st.accounts[id]
+	if a == nil {
+		return nil
+	}
+	cp := *a
+	return &cp
+}
+
 // create adds a new account (its fields already filled in) and saves it; it fails if the username, code or
 // Discord/Twitch id is already taken.
 func (st *Store) create(a *Account) error {

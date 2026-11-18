@@ -20,7 +20,7 @@ if (-not (Test-Path "$root\installed.json")) {
 
 $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
 foreach ($t in @(
-    @{ name = 'RiftWiseReleaseWatch'; file = 'release_watch.ps1'; limit = 2; what = 'Puts a new RiftWise release (a vX.Y.Z tag on main) live, with rollback (scripts/server/release_watch.ps1).' },
+    @{ name = 'RiftWiseReleaseWatch'; file = 'release_watch.ps1'; limit = 4; what = 'Puts a new RiftWise release (a vX.Y.Z tag on main) live, with rollback (scripts/server/release_watch.ps1).' },
     @{ name = 'RiftWiseStatusWatch'; file = 'status_watch.ps1'; limit = 1; what = 'Phone notification (ntfy) for RiftWise problems from riftwise.gg/status.json (scripts/server/status_watch.ps1).' })) {
   if (-not (Test-Path "$bin\$($t.file)")) { throw "$bin\$($t.file) missing: stage the scripts first" }
   $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$bin\$($t.file)`""

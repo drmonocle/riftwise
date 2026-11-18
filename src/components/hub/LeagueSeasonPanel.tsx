@@ -14,6 +14,16 @@ import { SectionCard } from "./BroadcastCard";
 import { PLAYER_METRICS } from "./Ranks";
 
 const STANDOUT = ["kda", "dpm", "g15", "csm", "vsm", "kp"];
+const PICKEM_LEAGUE_SLUGS = new Set([
+  "lol-champions-korea",
+  "tencent-lol-pro-league",
+  "lol-emea-championship",
+  "league-of-legends-championship-series",
+  "league-of-legends-championship-pacific",
+  "circuit-brazilian-league-of-legends",
+  "emea-masters",
+  "demacia-cup",
+]);
 
 export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: string }> = ({ league, year, name }) => {
   const state = useLoad(() => loadLeagueSeason(league, year), [league, year]);
@@ -118,6 +128,14 @@ export const LeagueSeasonPanel: React.FC<{ league: string; year: string; name: s
               data-nocapture="1"
               className="bg-rw-bg border border-rw-border rounded px-2 py-0.5 text-[11px] font-normal text-rw-text w-36"
             />
+          )}
+          {PICKEM_LEAGUE_SLUGS.has(lgSlug) && (
+            <HubLink
+              to={{ kind: "pickem", query: `league=${encodeURIComponent(lgSlug)}&year=${encodeURIComponent(year)}` }}
+              className="text-rw-accent hover:underline"
+            >
+              {tl("Pick'Em")}
+            </HubLink>
           )}
           {topChampsList[0] && (
             <HubLink

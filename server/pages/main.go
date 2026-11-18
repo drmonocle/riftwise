@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.6.29" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "1.6.30" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -272,6 +272,7 @@ var sections = map[string][2]string{
 	"players":     {"Every pro LoL player since 2011", "Every professional League of Legends player since 2011 in one list: filter by role and by the last year played, sorted by games."},
 	"moves":       {"Pro LoL roster moves and expiring contracts", "Recent pro League of Legends team transfers and expiring player contracts across every region, sorted by date and player rating."},
 	"gm":          {"Pro LoL roster builder and lineup simulator", "Build any five-player pro League of Legends lineup: combined rating, gold and damage share fit, Fearless flex depth and teammate chemistry."},
+	"pickem":      {"Pro LoL Pick'Em and friends leagues", "Predict upcoming professional League of Legends matches across LCK, LPL, LEC, LCS and international events, and compete on private friends league leaderboards."},
 	"changelog":   {"What's new on RiftWise", "Recent analyst tools, broadcast overlays, pro stats features and roadmap updates on RiftWise."},
 }
 
@@ -743,6 +744,14 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 				to += "&p=" + p
 			}
 		} else if r.URL.RawQuery != "" {
+			to += "?" + r.URL.RawQuery
+		}
+		http.Redirect(w, r, to, http.StatusMovedPermanently)
+		return
+	}
+	if len(parts) == 1 && parts[0] == "pickem" {
+		to := langRoot + "stats/pickem"
+		if r.URL.RawQuery != "" {
 			to += "?" + r.URL.RawQuery
 		}
 		http.Redirect(w, r, to, http.StatusMovedPermanently)

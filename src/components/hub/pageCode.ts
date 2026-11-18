@@ -37,6 +37,7 @@ export const pageCode = {
   players: () => import("./DirectoryPages"),
   moves: () => import("./RosterMoves"),
   gm: () => import("./RosterBuilderPage"),
+  pickem: () => import("./PickemPage"),
   changelog: () => import("./ChangelogPage"),
 };
 

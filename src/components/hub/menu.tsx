@@ -40,6 +40,7 @@ export const MENU: MenuGroup[] = [
       { kind: "worlds", label: tk("Worlds"), sub: tk("Winners, records and region stats"), icon: ic(Globe), also: ["world championship", "pick'em", "pickem", "swiss"] },
       { kind: "msi", label: tk("MSI"), sub: tk("Winners, records and region stats"), icon: ic(Trophy), also: ["mid-season invitational"] },
       { kind: "first-stand", label: tk("First Stand"), sub: tk("Winners, records and region stats"), icon: ic(Flag) },
+      { kind: "pickem", label: tk("Pick'Em"), sub: tk("Predict pro matches and compete with friends"), icon: ic(Trophy), also: ["predictions", "friends league", "leaderboard", "pickem", "pick'em"] },
       { kind: "leagues", label: tk("Leagues"), sub: tk("Every season and its champion"), icon: ic(Layers), also: ["lck", "lpl", "lec", "lcs"] },
       { kind: "weekly", label: tk("This week"), sub: tk("Upsets, ranking movers, records, best games"), icon: ic(CalendarRange), also: ["weekly", "recap", "upsets"] },
       { kind: "best", label: tk("Best games"), sub: tk("Highest-rated games and series"), icon: ic(Flame), also: ["greatest games", "top games", "vod"] },

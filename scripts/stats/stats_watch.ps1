@@ -46,8 +46,10 @@ try {
     }
     $last = ($task | Get-ScheduledTaskInfo).LastRunTime
     if (-not $last -or $last.Year -lt 2000) { $last = [datetime]::MinValue }
+    $scriptMod = (Get-ChildItem "C:\Scripts\riftwise\*.py" -ErrorAction SilentlyContinue | Measure-Object LastWriteTime -Maximum).Maximum
     $why = $null
     if ($changed -gt $last -and $now - $changed -ge $Quiet) { $why = "database changed at {0:HH:mm}" -f $changed }
+    elseif ($scriptMod -and $scriptMod -gt $last -and $now - $scriptMod -ge $Quiet) { $why = "stats scripts updated at {0:HH:mm}" -f $scriptMod }
     elseif ($now - $last -ge $Daily) { $why = "daily build" }
     if (-not $why) { exit 0 }
     if ($now - $last -lt $MinGap) { exit 0 }
