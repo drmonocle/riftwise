@@ -56,6 +56,9 @@ describe("page tabs in the address", () => {
     expect(parseHubPath("/stats/pickem", "?league=lck&group=K7M4P9")).toEqual({ kind: "pickem", query: "league=lck&group=K7M4P9" });
     expect(parseHubPath("/pickem", "?group=K7M4P9")).toEqual({ kind: "pickem", query: "group=K7M4P9" });
     expect(hubPath({ kind: "pickem", query: "league=lck" })).toBe("/stats/pickem?league=lck");
+    expect(parseHubPath("/stats/synergy", "?pair=mid-jg&champ=azir")).toEqual({ kind: "synergy", query: "pair=mid-jg&champ=azir" });
+    expect(parseHubPath("/synergy", "?pair=mid-jg")).toEqual({ kind: "synergy", query: "pair=mid-jg" });
+    expect(hubPath({ kind: "synergy", query: "pair=mid-jg" })).toBe("/stats/synergy?pair=mid-jg");
     expect(parseHubPath("/stats/changelog", "")).toEqual({ kind: "changelog" });
     expect(hubPath({ kind: "changelog" })).toBe("/stats/changelog");
   });
@@ -187,10 +190,18 @@ const INDEX: HubIndex = {
     ["Chovy", "chovy", "Gen.G", 900, "2026", "M", ""],
   ],
   events: [],
-  champs: [["Azir", "azir", 19000]],
+  champs: [
+    ["Azir", "azir", 19000],
+    ["Ahri", "ahri", 16000],
+  ],
 };
 
 describe("search shortcuts", () => {
+  it("opens Synergy, Game finder, Draft board and Counters for two champions joined by + or with", () => {
+    const s = matchupShortcuts(INDEX, "Azir + Ahri");
+    expect(s.map((x) => x.key)).toEqual(["synergy", "finder", "draft", "counters"]);
+    expect(hubPath(s[0].route)).toBe("/stats/synergy?champ=azir&with=ahri");
+  });
   it("opens Match prep, Draft board, Compare and Game finder for two teams", () => {
     const s = matchupShortcuts(INDEX, "t1 vs gen.g");
     expect(s.map((x) => x.key)).toEqual(["prep", "draft", "compare", "finder"]);
@@ -303,6 +314,14 @@ describe("search shortcuts", () => {
       a: "t1",
       b: "geng",
       period: "y2025",
+    });
+    expect(siblingSectionRoute({ kind: "champions", query: "scope=lck&key=y2026&q=azir" }, "synergy")).toEqual({
+      kind: "synergy",
+      query: "champ=azir&scope=lck&year=2026",
+    });
+    expect(siblingSectionRoute({ kind: "synergy", query: "champ=azir&with=vi&scope=lck&year=2026" }, "finder")).toEqual({
+      kind: "finder",
+      query: "champ=azir&vschamp=vi&league=lck&year=2026",
     });
   });
   it("leaves other searches alone", () => {

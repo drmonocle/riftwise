@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.6.31" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "1.6.32" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -262,6 +262,7 @@ var sections = map[string][2]string{
 	"tiers":       {"Pro LoL tier list by role and patch", "What pro League of Legends teams actually pick and ban on each patch, by role: every champion placed in a tier by its presence and win rate in pro games."},
 	"items":       {"Has a pro ever built it? LoL pro item history", "Look up whether a pro League of Legends player has ever finished a game with an item, every game they did, and which pros built an item most, from the final inventory of every pro game since 2011."},
 	"counters":    {"LoL counter-pick finder: every pro lane matchup", "Pick a champion and see every lane opponent pro play has put against it, with its win rate and gold lead at 15 minutes in that matchup, from every pro game since 2011."},
+	"synergy":     {"LoL champion duo synergies: 2v2 and role-pair win rates", "Find the best professional League of Legends 2v2 and role-pair champion synergies across Mid + Jungle, Bot + Support, Top + Jungle and every league, with synergy win-rate lift and 15-minute gold leads."},
 	"weekly":      {"The week in pro LoL: upsets, records, best games", "The last seven days of professional League of Legends in one page: the biggest upsets, who moved in the power rankings, all-time records set, the best games and every result."},
 	"best":        {"The best pro LoL games ever, rated", "Every professional League of Legends game since 2011 rated 0 to 100 for action, closeness, stakes and drama: the best games and series of all time, by year and by league."},
 	"worlds":      {"LoL Worlds hub: facts, Swiss stage and bracket picker", "The League of Legends World Championship on one page: the standout stats from every game so far, a Swiss stage and knockout picker with each team's win chances, and the chances of every team to win Worlds."},
@@ -751,6 +752,14 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(parts) == 1 && parts[0] == "pickem" {
 		to := langRoot + "stats/pickem"
+		if r.URL.RawQuery != "" {
+			to += "?" + r.URL.RawQuery
+		}
+		http.Redirect(w, r, to, http.StatusMovedPermanently)
+		return
+	}
+	if len(parts) == 1 && parts[0] == "synergy" {
+		to := langRoot + "stats/synergy"
 		if r.URL.RawQuery != "" {
 			to += "?" + r.URL.RawQuery
 		}

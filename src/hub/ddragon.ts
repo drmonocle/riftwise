@@ -206,6 +206,36 @@ export function isTrinketItem(keyOrName: string | null | undefined, id?: number)
   return TRINKET_KEYS.has(norm(keyOrName));
 }
 
+const BOOTS_KEYS = new Set([
+  "boots",
+  "bootsofspeed",
+  "slightlymagicalfootwear",
+  "platedsteelcaps",
+  "ninjatabi",
+  "mercurystreads",
+  "ionianbootsoflucidity",
+  "berserkersgreaves",
+  "sorcerersshoes",
+  "bootsofswiftness",
+  "symbioticsoles",
+  "synchronizedsouls",
+  "bootsofmobility",
+  "mobilityboots",
+  "armoredadvance",
+  "chainlacedcrushers",
+  "crimsonlucidity",
+  "foreverforward",
+  "gunmetalgreaves",
+  "spellslingersshoes",
+  "swiftmarch",
+]);
+
+/** True for Tier-1, Tier-2, or Season-15/16 Tier-3 boots items. */
+export function isBootsItem(name: string | null | undefined): boolean {
+  if (!name) return false;
+  return BOOTS_KEYS.has(norm(name));
+}
+
 /** True for finished items (worth showing in a build); unknown items (removed from the game) count as finished. */
 export function isFinishedItem(name: string): boolean {
   if (!maps) return true;

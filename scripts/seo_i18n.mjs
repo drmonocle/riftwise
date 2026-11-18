@@ -27,6 +27,7 @@ const SECTIONS = {
   draft: ["Draft board", "Plan a draft with both teams' pools"],
   best: ["Best games", "Highest-rated games and series"],
   counters: ["Counter-picks", "Every pro lane matchup, by champion"],
+  synergy: ["Synergies", "Best 2v2 and role-pair champion duos"],
   leaders: ["Leaderboards", "Every player on every stat, by league and role"],
   tiers: ["Pro tier list", "What pros play on each patch, by role"],
   worlds: ["event::Worlds", "Winners, records and region stats"],

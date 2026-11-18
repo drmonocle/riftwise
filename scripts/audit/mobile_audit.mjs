@@ -31,6 +31,7 @@ const PAGES = [
   ["records", "/stats/records"],
   ["champions", "/stats/champions"],
   ["counters", "/stats/counters"],
+  ["synergy", "/stats/synergy"],
   ["patches", "/stats/patches"],
   ["prep", "/stats/prep?teams=t1,geng"],
   ["draft", "/stats/draft?teams=t1,geng"],

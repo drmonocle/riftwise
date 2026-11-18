@@ -1,14 +1,16 @@
 /** Champion page: pro picks, bans and wins by year and patch, builds, matchups, best players and the latest pro games. */
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { tl, tc, roleName, fmtN } from "../../i18n";
+import { tl, tc, roleName, fmtN, fmtDec } from "../../i18n";
 import { winRate } from "../../stats";
 import { champName } from "../../champions";
-import { bare, loadAliases, loadHubChamp, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveItemSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
+import { bare, loadAliases, loadChampGames, loadChampIndex, loadHubChamp, matchesChampSearch, matchesItemSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveItemSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, searchAlias } from "../../hub/data";
 import { latestYearRow, matchesPeriodEvent, patchYear } from "../../hub/period";
-import { normalizeRole } from "../../hub/champAgg";
+import { normalizeRole, ROLES } from "../../hub/champAgg";
+import { extractCoreCombos, splitBuildItems } from "../../hub/buildPaths";
+import { computeDuoSynergy, ROLE_PAIRS, type RolePairKey } from "../../hub/duoSynergy";
 import { currentHubRoute, hubShareUrl, navigateHub } from "../../hub/route";
-import type { HubChamp } from "../../hub/types";
-import { isFinishedItem, useDDragon } from "../../hub/ddragon";
+import type { ChampGamesFile, HubChamp } from "../../hub/types";
+import { useDDragon } from "../../hub/ddragon";
 import {
   card,
   ChampIcon,
@@ -18,6 +20,7 @@ import {
   fmtNum,
   HubLink,
   ItemIcon,
+  Loading,
   OeCredit,
   Page,
   PlayerLink,
@@ -400,7 +403,18 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
       [...m.entries()].sort((a, b) => b[1][0] - a[1][0]).slice(0, lim).map(([k, [g, w]]) => [k, g, w]);
     return { since: c.builds.since, g: rg.length, items: toList(itMap, 18), keys: toList(ksMap, 6), spells: toList(spMap, 6) };
   }, [c.builds, c.recent, buildRole]);
-  const items = useMemo(() => (activeBuilds?.items || []).filter(([it]) => isFinishedItem(it)).slice(0, 8), [activeBuilds, ddReady]); // eslint-disable-line react-hooks/exhaustive-deps
+  const buildGroups = useMemo(
+    () => splitBuildItems(activeBuilds?.items || [], activeBuilds?.g || 0),
+    [activeBuilds, ddReady], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const coreCombos = useMemo(
+    () => extractCoreCombos(c.recent, activeBuilds?.items || [], { role: buildRole || undefined }),
+    [c.recent, activeBuilds, buildRole, ddReady], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const items = useMemo(
+    () => [...buildGroups.core, ...buildGroups.situational, ...buildGroups.boots].slice(0, 8),
+    [buildGroups],
+  );
   const pickUsed = (kind: "item" | "key" | "spells", v: string) => {
     setUsed((u) => (u && u.kind === kind && u.v === v ? null : { kind, v }));
     window.setTimeout(() => document.getElementById("champ-latest")?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
@@ -903,34 +917,79 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
               {tl("From {n} pro games since {date}. Share of games and win rate.", { n: fmtNum(activeBuilds.g), date: fmtDate(c.builds.since) })}
             </HubLink>
           </p>
-          <div className="grid gap-3 md:grid-cols-3">
-            <div>
-              <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Items")}</div>
-              <ul className="space-y-1.5 text-xs">
-                {items.map(([it, g, w]) => {
-                  const sharePct = Math.min(100, Math.round((g / Math.max(1, activeBuilds.g)) * 100));
-                  const wrColor = g >= 5 ? (w / g >= 0.52 ? "text-rw-teal font-semibold" : w / g <= 0.48 ? "text-rw-red" : "text-rw-sub") : "text-rw-muted";
-                  return (
-                    <li key={it}>
-                      <button type="button" onClick={() => pickUsed("item", it)} className={pickRow(usedOnly?.kind === "item" && usedOnly.v === it)} title={tl("Show the latest pro games with it")}>
+          {coreCombos.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-[10px] font-semibold text-rw-muted">{tl("Core item combinations")}</div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                {coreCombos.map((combo) => (
+                  <button
+                    key={combo.items.join("+")}
+                    type="button"
+                    onClick={() => pickUsed("item", combo.items[0])}
+                    title={combo.items.map(itemName).join(" + ")}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 hover:bg-rw-raised transition-colors ${
+                      usedOnly?.kind === "item" && combo.items.includes(usedOnly.v)
+                        ? "border-rw-accent bg-rw-accent/10"
+                        : "border-rw-border bg-rw-bg/60"
+                    }`}
+                  >
+                    {combo.items.map((it, idx) => (
+                      <React.Fragment key={it}>
+                        {idx > 0 && <span className="text-rw-muted text-[10px]">+</span>}
                         <ItemIcon name={it} size={22} />
-                        <span className="flex-1 min-w-0">
-                          <span className="flex items-center justify-between gap-2">
-                            <span className="truncate text-rw-text">{itemName(it)}</span>
-                            <span className="flex items-center gap-2 shrink-0 tabular-nums">
-                              <span className="text-rw-sub">{pctOf(g, activeBuilds.g)}</span>
-                              <span className={`${wrColor} w-10 text-right`}>{pctOf(w, g)}</span>
-                            </span>
-                          </span>
-                          <span className="block h-1 mt-0.5 rounded-full bg-rw-raised overflow-hidden">
-                            <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${Math.max(4, sharePct)}%` }} />
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                      </React.Fragment>
+                    ))}
+                    <span className="font-mono tabular-nums text-[11px] pl-1">
+                      <span className={combo.w / combo.g >= 0.5 ? "text-rw-teal font-semibold" : "text-rw-red"}>
+                        {pctOf(combo.w, combo.g)}
+                      </span>
+                      <span className="text-rw-muted ml-1">({combo.g}G)</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="space-y-3">
+              {(
+                [
+                  [tl("Core items"), buildGroups.core],
+                  [tl("Situational items"), buildGroups.situational],
+                  [tl("Boots"), buildGroups.boots],
+                ] as const
+              )
+                .filter(([, rows]) => rows.length > 0)
+                .map(([bucketLabel, rows]) => (
+                  <div key={bucketLabel}>
+                    <div className="text-[10px] font-semibold text-rw-muted mb-1">{bucketLabel}</div>
+                    <ul className="space-y-1.5 text-xs">
+                      {rows.map(([it, g, w]) => {
+                        const sharePct = Math.min(100, Math.round((g / Math.max(1, activeBuilds.g)) * 100));
+                        const wrColor = g >= 5 ? (w / g >= 0.52 ? "text-rw-teal font-semibold" : w / g <= 0.48 ? "text-rw-red" : "text-rw-sub") : "text-rw-muted";
+                        return (
+                          <li key={it}>
+                            <button type="button" onClick={() => pickUsed("item", it)} className={pickRow(usedOnly?.kind === "item" && usedOnly.v === it)} title={tl("Show the latest pro games with it")}>
+                              <ItemIcon name={it} size={22} />
+                              <span className="flex-1 min-w-0">
+                                <span className="flex items-center justify-between gap-2">
+                                  <span className="truncate text-rw-text">{itemName(it)}</span>
+                                  <span className="flex items-center gap-2 shrink-0 tabular-nums">
+                                    <span className="text-rw-sub">{pctOf(g, activeBuilds.g)}</span>
+                                    <span className={`${wrColor} w-10 text-right`}>{pctOf(w, g)}</span>
+                                  </span>
+                                </span>
+                                <span className="block h-1 mt-0.5 rounded-full bg-rw-raised overflow-hidden">
+                                  <span className="block h-full rounded-full bg-rw-accent/80" style={{ width: `${Math.max(4, sharePct)}%` }} />
+                                </span>
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
             </div>
             <div>
               <div className="text-[10px] font-semibold text-rw-muted mb-1">{tl("Keystones")}</div>
@@ -1618,6 +1677,15 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
                     )}
                     <HubLink
                       to={{
+                        kind: "synergy",
+                        query: `champ=${encodeURIComponent(cSlug)}&pair=bot-sup`,
+                      }}
+                      className="text-[11px] text-rw-accent hover:underline"
+                    >
+                      {tl("Synergies")} →
+                    </HubLink>
+                    <HubLink
+                      to={{
                         kind: "items",
                         query: `champ=${encodeURIComponent(cSlug)}${topDuo ? `&vschamp=${encodeURIComponent(resolveChampSlug(topDuo[0]))}` : ""}&role=Bot${
                           topPlayerSlug ? `&player=${encodeURIComponent(topPlayerSlug)}` : ""
@@ -1818,6 +1886,7 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
           </STable>
         </Section>
       )}
+      {!showDuos && <ChampNonBotSynergies cName={c.name} cSlug={cSlug} primaryRole={heroRole} />}
 
       <Section
         title={tl("Most games on {champion}", { champion: champName(c.name) })}
@@ -3365,6 +3434,137 @@ const CopyChampPost: React.FC<{ c: HubChamp }> = ({ c }) => {
     <button type="button" onClick={copy} className={heroBtn()} title={tl("Copy post")}>
       {state === "copied" ? tl("Copied") : state === "failed" ? tl("Couldn't copy") : tl("Copy post")}
     </button>
+  );
+};
+
+const QUICK_PAIRS_BY_ROLE: Record<string, RolePairKey[]> = {
+  Top: ["top-jg", "top-mid", "all"],
+  Jungle: ["mid-jg", "top-jg", "jg-sup", "all"],
+  Mid: ["mid-jg", "top-mid", "mid-bot", "all"],
+};
+
+const ChampNonBotSynergies: React.FC<{ cName: string; cSlug: string; primaryRole: string }> = ({ cName, cSlug, primaryRole }) => {
+  const [pair, setPair] = useState<RolePairKey | null>(null);
+  const [seasonData, setSeasonData] = useState<{ year: string; files: ChampGamesFile[] } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const pairKeys: RolePairKey[] = QUICK_PAIRS_BY_ROLE[primaryRole] || ["mid-jg", "top-jg", "jg-sup", "all"];
+
+  const pickPair = (next: RolePairKey) => {
+    setPair(next);
+    if (seasonData || loading) return;
+    setLoading(true);
+    loadChampIndex()
+      .then(async (idx) => {
+        const primary = idx.filter((l) => l.pr);
+        const pool = primary.length ? primary : idx;
+        const years = [...new Set(pool.flatMap((l) => Object.keys(l.y)))].sort((a, b) => Number(b) - Number(a));
+        const yr = years[0] || "";
+        if (!yr) return { year: "", files: [] as ChampGamesFile[] };
+        const targets = pool.filter((l) => (l.y[yr] || 0) > 0).slice(0, 12);
+        const files = (await Promise.all(targets.map((l) => loadChampGames(l.u, yr).catch(() => null)))).filter(
+          (f): f is ChampGamesFile => !!f,
+        );
+        return { year: yr, files };
+      })
+      .then((res) => setSeasonData(res))
+      .catch(() => setSeasonData({ year: "", files: [] }))
+      .finally(() => setLoading(false));
+  };
+
+  const rows = useMemo(() => {
+    if (!pair || !seasonData?.files.length) return [];
+    return computeDuoSynergy(
+      seasonData.files.map((f) => ({ games: f.games })),
+      { pair, champ: cSlug, minGames: 2 },
+    ).rows.slice(0, 8);
+  }, [pair, seasonData, cSlug]);
+
+  const pairBtnLabel = (k: RolePairKey) => {
+    const def = ROLE_PAIRS.find((p) => p.key === k);
+    if (!def || def.roles[0] < 0) return tl("All role pairs");
+    return `${roleName(ROLES[def.roles[0]])} + ${roleName(ROLES[def.roles[1]])}`;
+  };
+
+  return (
+    <Section
+      title={tl("2v2 & team synergies")}
+      right={
+        <HubLink
+          to={{ kind: "synergy", query: `champ=${encodeURIComponent(cSlug)}${pairKeys[0] !== "all" ? `&pair=${pairKeys[0]}` : ""}` }}
+          className="text-[11px] text-rw-accent hover:underline font-semibold"
+        >
+          {tl("Synergies")} →
+        </HubLink>
+      }
+    >
+      <div className="flex flex-wrap items-center gap-1.5 text-xs">
+        {pairKeys.map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => pickPair(k)}
+            className={`px-2.5 py-1 rounded-lg border transition-colors ${
+              pair === k ? "bg-rw-accent text-rw-bg font-bold border-rw-accent" : "border-rw-border text-rw-sub hover:text-rw-text"
+            }`}
+          >
+            {pairBtnLabel(k)}
+          </button>
+        ))}
+      </div>
+      {!pair ? (
+        <p className="text-[11px] text-rw-muted">
+          {tl("Choose a role pair above to inspect {champion}'s 2v2 synergies this season.", { champion: champName(cName) })}
+        </p>
+      ) : loading ? (
+        <Loading />
+      ) : rows.length === 0 ? (
+        <p className="text-xs text-rw-sub">{tl("No duos meet these filters yet. Try lowering the minimum games.")}</p>
+      ) : (
+        <STable className="w-full text-xs">
+          <thead>
+            <tr>
+              <th className={th}>{tl("Duo")}</th>
+              <th className={th}>{tl("Games")}</th>
+              <th className={th}>{tl("Win %")}</th>
+              <th className={th}>{tl("Synergy Δ")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={`${r.b}:${r.roleB}`} className="border-t border-rw-border">
+                <td className={td} data-sort={champName(r.b)}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <ChampLink name={r.b} size={20} query={seasonData?.year ? `year=${encodeURIComponent(seasonData.year)}` : undefined} />
+                    <span className="text-[10px] text-rw-muted">{roleName(ROLES[r.roleB] || "")}</span>
+                  </span>
+                </td>
+                <td className={`${td} font-mono tabular-nums`} data-sort={r.g}>
+                  <HubLink
+                    to={{
+                      kind: "finder",
+                      query: `champ=${encodeURIComponent(`${cSlug},${resolveChampSlug(r.b)}`)}${seasonData?.year ? `&year=${encodeURIComponent(seasonData.year)}` : ""}`,
+                    }}
+                    className="hover:text-rw-accent hover:underline"
+                  >
+                    {fmtNum(r.g)}
+                  </HubLink>
+                </td>
+                <td className={td} data-sort={r.wr.toFixed(4)}>
+                  <WinBar w={r.w} g={r.g} />
+                </td>
+                <td
+                  className={`${td} font-mono tabular-nums ${r.lift >= 0.02 ? "text-rw-teal font-semibold" : r.lift <= -0.02 ? "text-rw-red" : "text-rw-sub"}`}
+                  data-sort={r.lift.toFixed(4)}
+                >
+                  {`${r.lift > 0 ? "+" : ""}${fmtDec(r.lift * 100)}%`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </STable>
+      )}
+    </Section>
   );
 };
 

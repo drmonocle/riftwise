@@ -33,13 +33,55 @@ interface Shortcut {
 
 /** "a vs b" (also "a v b", "a versus b", "a x b", "a - b") */
 const VS = /^(.+?)\s+(?:vs\.?|v\.?|versus|x|[-–])\s+(.+)$/i;
+/** "a + b" (also "a & b", "a with b", "a and b") for champion duo synergies */
+const DUO_SEP = /^(.+?)\s*(?:\+|&|\bwith\b|\band\b)\s*(.+)$/i;
 
-/** The pair in "a vs b" when both sides are teams, or both are players: Match prep and Compare for them. */
+/** The pair in "a vs b" when both sides are teams, players, or champions, or "a + b" when both are champions. */
 export function matchupShortcuts(index: HubIndex, q: string): Shortcut[] {
-  const m = VS.exec(q.trim());
+  const trimmed = q.trim();
+  const good = (h: HubHit | undefined) => !!h && (h.score ?? 9) <= 1.5;
+  const dm = !VS.test(trimmed) ? DUO_SEP.exec(trimmed) : null;
+  if (dm) {
+    const [ha, hb] = [dm[1], dm[2]].map((side) => searchHub(index, side, 1));
+    const ca = ha.champ[0];
+    const cb = hb.champ[0];
+    if (good(ca) && good(cb) && ca.slug !== cb.slug) {
+      return [
+        {
+          key: "synergy",
+          route: { kind: "synergy", query: `champ=${encodeURIComponent(ca.slug)}&with=${encodeURIComponent(cb.slug)}` },
+          label: `${tl("Champion synergies")}: ${champName(ca.name)} + ${champName(cb.name)}`,
+          sub: tl("Best 2v2 and role-pair champion duos"),
+          icon: <Users className="w-3.5 h-3.5" />,
+        },
+        {
+          key: "finder",
+          route: { kind: "finder", query: `champ=${encodeURIComponent(`${ca.slug},${cb.slug}`)}` },
+          label: `${tl("Game finder")}: ${champName(ca.name)} + ${champName(cb.name)}`,
+          sub: tl("Any game by team, champion, player"),
+          icon: <Compass className="w-3.5 h-3.5" />,
+        },
+        {
+          key: "draft",
+          route: { kind: "draft", query: `champ=${encodeURIComponent(`${ca.slug},${cb.slug}`)}` },
+          label: `${tl("Draft board")}: ${champName(ca.name)} + ${champName(cb.name)}`,
+          sub: `${tl("Champion pool")} · ${tl("Fearless")}`,
+          icon: <Swords className="w-3.5 h-3.5" />,
+        },
+        {
+          key: "counters",
+          route: { kind: "counters", query: `champ=${encodeURIComponent(ca.slug)}&vs=${encodeURIComponent(cb.slug)}` },
+          label: `${champName(ca.name)} vs ${champName(cb.name)} · ${tl("Matchups")}`,
+          sub: tl("Every pro lane matchup, by champion"),
+          icon: <Swords className="w-3.5 h-3.5" />,
+        },
+      ];
+    }
+    return [];
+  }
+  const m = VS.exec(trimmed);
   if (!m) return [];
   const [ha, hb] = [m[1], m[2]].map((side) => searchHub(index, side, 1));
-  const good = (h: HubHit | undefined) => !!h && (h.score ?? 9) <= 1.5;
   const ta = ha.team[0];
   const tb = hb.team[0];
   const pa = ha.player[0];

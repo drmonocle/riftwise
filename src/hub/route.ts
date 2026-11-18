@@ -21,7 +21,7 @@ import { IS_WEB, SITE_URL } from "../platform";
 
 export type HubSection =
   | "tournaments" | "leagues" | "champions" | "patches" | "records" | "titles" | "compare" | "data" | "about" | "prep"
-  | "rankings" | "finder" | "draft" | "best" | "counters" | "worlds" | "msi" | "first-stand" | "leaders" | "tiers"
+  | "rankings" | "finder" | "draft" | "best" | "counters" | "synergy" | "worlds" | "msi" | "first-stand" | "leaders" | "tiers"
   | "weekly" | "teams" | "players" | "moves" | "items" | "gm" | "pickem" | "changelog"
   | "aboutme"; // riftwise.gg/about (not under /stats)
 export type HubEntity = "team" | "player" | "event" | "match" | "champ" | "league";
@@ -50,14 +50,14 @@ export type CompareRoute = { kind: "compare"; mode?: "team" | "player"; a?: stri
 export type PrepRoute = { kind: "prep"; a?: string; b?: string; period?: string };
 const SECTIONS: HubSection[] = [
   "tournaments", "leagues", "champions", "patches", "records", "titles", "compare", "data", "about", "prep", "rankings", "finder", "draft",
-  "best", "counters", "worlds", "msi", "first-stand", "leaders", "tiers", "weekly", "teams", "players", "moves", "items", "gm", "pickem", "changelog",
+  "best", "counters", "synergy", "worlds", "msi", "first-stand", "leaders", "tiers", "weekly", "teams", "players", "moves", "items", "gm", "pickem", "changelog",
 ];
 /** Pages that keep their filters in the address (?league=lck&year=2026...). */
 /** Worlds, MSI and First Stand: one page each, for a year or every year (/stats/msi/2024, /stats/worlds/all). */
 const INTL_SECTIONS: HubSection[] = ["worlds", "msi", "first-stand"];
 const QUERY_SECTIONS: HubSection[] = [
   "tournaments", "leagues", "patches", "weekly",
-  "champions", "finder", "draft", "best", "counters", "leaders", "tiers", "teams", "players", "moves", "items", "gm", "pickem", "records", "titles", "data", "rankings",
+  "champions", "finder", "draft", "best", "counters", "synergy", "leaders", "tiers", "teams", "players", "moves", "items", "gm", "pickem", "records", "titles", "data", "rankings",
 ];
 const ENTITY_PATH: Record<HubEntity, string> = {
   team: "team", player: "player", event: "tournament", match: "match", champ: "champion", league: "league",
@@ -110,6 +110,10 @@ export function parseHubPath(pathname: string, search = ""): HubRoute | null {
   if (parts[0] === "pickem" && parts.length === 1) {
     const q = search.replace(/^\?/, "");
     return q ? { kind: "pickem", query: q } : { kind: "pickem" };
+  }
+  if (parts[0] === "synergy" && parts.length === 1) {
+    const q = search.replace(/^\?/, "");
+    return q ? { kind: "synergy", query: q } : { kind: "synergy" };
   }
   if (parts[0] === "compare" && parts.length === 1) return { kind: "compare", ...parseCompare(search) };
   if (parts[0] === "prep" && parts.length === 1) {

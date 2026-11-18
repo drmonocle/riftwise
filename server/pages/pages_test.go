@@ -351,6 +351,12 @@ func TestUnknownAndOldNames(t *testing.T) {
 	if w := get(s, "/riftwise/embed"); w.Code != 200 || !strings.Contains(w.Body.String(), "noindex") {
 		t.Errorf("embed page: %d", w.Code)
 	}
+	if w := get(s, "/riftwise/stats/synergy"); w.Code != 200 || !strings.Contains(w.Body.String(), "duo synergies") {
+		t.Errorf("synergy page: %d", w.Code)
+	}
+	if w := get(s, "/riftwise/synergy?pair=mid-jg"); w.Code != 301 || w.Header().Get("Location") != "/stats/synergy?pair=mid-jg" {
+		t.Errorf("synergy redirect: %d %q", w.Code, w.Header().Get("Location"))
+	}
 	if w := get(s, "/riftwise/stats/best"); w.Code != 200 || !strings.Contains(w.Body.String(), "best pro LoL games") {
 		t.Errorf("best games: %d", w.Code)
 	}

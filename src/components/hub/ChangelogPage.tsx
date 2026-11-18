@@ -22,6 +22,13 @@ export const ChangelogPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
       <Section title={tl("Analyst & broadcast tools")} id="tools">
         <ul className="list-disc pl-4 space-y-2 text-rw-sub">
           <li>
+            <strong className="text-rw-text">{tl("Champion synergies")} &amp; {tl("Core item combinations")}</strong> —{" "}
+            {tl("Explore best 2v2 and role-pair champion duos with expected win rates, synergy lift and 2v2 GD@15, plus core item combinations and boots splits on champion pages.")}{" "}
+            <HubLink to={{ kind: "synergy" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Synergies")} →
+            </HubLink>
+          </li>
+          <li>
             <strong className="text-rw-text">{tl("Pick'Em")} &amp; {tl("Friends leagues")}</strong> —{" "}
             {tl("Predict upcoming LCK, LPL, LEC, LCS and off-season tournament series with kickoff locks and shareable invite-code friends league leaderboards.")}{" "}
             <HubLink to={{ kind: "pickem" }} className="text-rw-accent hover:underline font-semibold">
@@ -110,7 +117,7 @@ export const ChangelogPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
 
       <Section title={tl("Roadmap & feedback")} id="roadmap">
         <p className="text-rw-sub">
-          {tl("Coming up next: richer item build paths, champion duo synergy tables, and live solo-queue tracking links.")}{" "}
+          {tl("Coming up next: live solo-queue tracking links and expanded tournament broadcast widgets.")}{" "}
           <a
             href={sendIdea}
             onClick={(e) => {

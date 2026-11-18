@@ -51,6 +51,7 @@ const HUB_KIND_PREFETCH: Partial<Record<string, string[]>> = {
   best: ["hub/best/index.json", "hub/best/all.json", "hub/leagues.json", "hub/alias.json"],
   finder: ["hub/champgames/index.json", "hub/leagues.json", "hub/alias.json"],
   counters: ["hub/search/teams.json", "hub/search/events.json", "hub/search/champs.json", "hub/leagues.json"],
+  synergy: ["hub/champgames/index.json", "hub/leagues.json", "hub/alias.json"],
   prep: ["hub/search/teams.json", "hub/ratings.json", "hub/leagues.json"],
   compare: ["hub/search/teams.json", "hub/leagues.json"],
   draft: ["hub/search/teams.json", "hub/leagues.json", "hub/alias.json"],
@@ -80,6 +81,7 @@ if (IS_WEB && !overlay && STARTED_ON_HUB) {
     r.kind === "tiers" ||
     r.kind === "items" ||
     r.kind === "counters" ||
+    r.kind === "synergy" ||
     r.kind === "best" ||
     r.kind === "weekly" ||
     r.kind === "prep" ||

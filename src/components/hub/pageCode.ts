@@ -20,6 +20,7 @@ export const pageCode = {
   draft: () => import("./DraftPage"),
   best: () => import("./BestPage"),
   counters: () => import("./CountersPage"),
+  synergy: () => import("./SynergyPage"),
   items: () => import("./ItemsPage"),
   leaders: () => import("./LeadersPage"),
   tiers: () => import("./TiersPage"),

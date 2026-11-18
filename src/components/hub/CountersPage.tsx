@@ -450,7 +450,27 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
   return (
     <div className="rw-page">
       <div className={`rw-span ${card} space-y-2`}>
-        <h1 className="text-lg font-bold text-rw-text">{tl("Counter-pick finder")}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-lg font-bold text-rw-text">{tl("Counter-pick finder")}</h1>
+          <HubLink
+            to={{
+              kind: "synergy",
+              ...(slug
+                ? {
+                    query: new URLSearchParams({
+                      champ: slug,
+                      ...(leagueParam ? { league: leagueParam } : {}),
+                      ...(yearParam ? { year: yearParam } : {}),
+                      ...(patchParam ? { patch: patchParam } : {}),
+                    }).toString(),
+                  }
+                : {}),
+            }}
+            className="text-xs text-rw-accent hover:underline font-semibold"
+          >
+            {tl("Synergies")} →
+          </HubLink>
+        </div>
         <p className="text-[11px] text-rw-sub">
           {tl("Pick a champion: every lane opponent pro play has put against it, with its win rate and gold lead at 15 minutes in that matchup. Same role on each side; every pro game with known roles since 2011.")}
         </p>
@@ -602,6 +622,19 @@ export const CountersPage: React.FC<{ query?: string }> = ({ query }) => {
                 className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
               >
                 {tl("Champions")} →
+              </HubLink>
+              <HubLink
+                to={{
+                  kind: "synergy",
+                  query: new URLSearchParams({
+                    champ: slug,
+                    ...(leagueParam ? { league: leagueParam } : {}),
+                    ...(patchParam ? { patch: patchParam } : yearParam ? { year: yearParam } : {}),
+                  }).toString(),
+                }}
+                className="px-2 py-1 rounded border border-rw-border bg-rw-bg text-rw-sub hover:text-rw-accent hover:border-rw-accent/50 font-semibold"
+              >
+                {tl("Synergies")} →
               </HubLink>
               {topTeam && (
                 <>

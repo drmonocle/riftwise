@@ -38,6 +38,7 @@ const FinderPage = lazyPart(() => pageCode.finder().then((m) => m.FinderPage));
 const DraftPage = lazyPart(() => pageCode.draft().then((m) => m.DraftPage));
 const BestPage = lazyPart(() => pageCode.best().then((m) => m.BestPage));
 const CountersPage = lazyPart(() => pageCode.counters().then((m) => m.CountersPage));
+const SynergyPage = lazyPart(() => pageCode.synergy().then((m) => m.SynergyPage));
 const ItemsPage = lazyPart(() => pageCode.items().then((m) => m.ItemsPage));
 const LeadersPage = lazyPart(() => pageCode.leaders().then((m) => m.LeadersPage));
 const TiersPage = lazyPart(() => pageCode.tiers().then((m) => m.TiersPage));
@@ -72,13 +73,13 @@ interface StatsViewProps {
 
 type SectionKind = HubRoute["kind"];
 /** pages whose own title is their <h1> (the others get the page's name over them as theirs) */
-const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "pickem", "rankings", "records", "prep", "draft", "gm", "finder", "best", "counters", "items", "leaders", "tiers", "moves", "team", "player", "event", "champ", "league", "match", "aboutme"]);
+const OWN_H1 = new Set(["home", "worlds", "msi", "first-stand", "pickem", "rankings", "records", "prep", "draft", "gm", "finder", "best", "counters", "synergy", "items", "leaders", "tiers", "moves", "team", "player", "event", "champ", "league", "match", "aboutme"]);
 
 /** pages whose address carries what they show (teams, filters): their link is worth copying */
-const LINKABLE = new Set<SectionKind>(["prep", "draft", "gm", "pickem", "finder", "compare", "best", "champions", "counters", "items", "leaders", "tiers", "teams", "players", "moves", "data", "rankings", "records", "tournaments", "leagues", "patches", "titles", "weekly", "worlds", "msi", "first-stand"]);
+const LINKABLE = new Set<SectionKind>(["prep", "draft", "gm", "pickem", "finder", "compare", "best", "champions", "counters", "synergy", "items", "leaders", "tiers", "teams", "players", "moves", "data", "rankings", "records", "tournaments", "leagues", "patches", "titles", "weekly", "worlds", "msi", "first-stand"]);
 
 /** pages that are one big table: kept at the two-column width on very wide screens (App.css .rw-capped) */
-const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "items", "leaders", "teams", "players", "moves"]);
+const CAPPED_KINDS = new Set(["weekly", "tournaments", "leagues", "rankings", "titles", "best", "champions", "patches", "data", "finder", "counters", "synergy", "items", "leaders", "teams", "players", "moves"]);
 
 /** what a page about one thing is called in the breadcrumb over it */
 const KIND_NAME: Partial<Record<SectionKind, string>> = {
@@ -161,7 +162,7 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
   const metaKey = patchNum ? `p${patchNum}` : periodYearMatch ? `y${periodYearMatch[1]}` : year ? `y${year}` : rawPeriod === "all" ? "all" : "";
   const league =
     params.get("league") ||
-    (current.kind === "champions" || current.kind === "tiers" ? params.get("scope") || "" : "") ||
+    (current.kind === "champions" || current.kind === "tiers" || current.kind === "synergy" ? params.get("scope") || "" : "") ||
     (current.kind === "worlds" || current.kind === "msi" || current.kind === "first-stand" ? current.kind : "");
   const role = params.get("role") || "";
   const rawQ = params.get("q") || "";
@@ -180,7 +181,12 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
         .filter(Boolean)
     : [];
   const champ = paramChampParts[0] || rawChampParam || champParts[0] || "";
-  const vsChamp = (current.kind === "counters" ? params.get("vs") : params.get("vschamp")) || paramChampParts[1] || champParts[1] || "";
+  const vsChamp =
+    (current.kind === "counters" ? params.get("vs") : params.get("vschamp")) ||
+    (current.kind === "synergy" ? params.get("with") || "" : "") ||
+    paramChampParts[1] ||
+    champParts[1] ||
+    "";
   const item = params.get("item") || "";
   const region = params.get("region") || "";
   const q = champParts.length ? "" : rawQ;
@@ -285,6 +291,20 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
     if (cPatch) next.set("patch", cPatch);
     const qs = next.toString();
     return { kind: "counters", ...(qs ? { query: qs } : {}) };
+  }
+  if (targetKind === "synergy") {
+    const next = new URLSearchParams();
+    const qParts = !champ && q ? q.split(",").map((s) => s.trim()).filter(Boolean) : [];
+    const c1 = champ || qParts[0] || "";
+    const c2 = params.get("with") || (current.kind !== "counters" ? vsChamp : "") || qParts[1] || "";
+    if (c1) next.set("champ", c1);
+    if (c2 && c2 !== c1) next.set("with", c2);
+    if (league) next.set("scope", league);
+    if (event) next.set("event", event);
+    if (patchNum) next.set("patch", patchNum);
+    else if (year) next.set("year", year);
+    const qs = next.toString();
+    return { kind: "synergy", ...(qs ? { query: qs } : {}) };
   }
   if (targetKind === "patches") {
     const next = new URLSearchParams();
@@ -536,6 +556,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
         {route.kind === "draft" && <DraftPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "best" && <BestPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "counters" && <CountersPage query={"query" in route ? route.query : undefined} />}
+        {route.kind === "synergy" && <SynergyPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "items" && <ItemsPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "leaders" && <LeadersPage query={"query" in route ? route.query : undefined} />}
         {route.kind === "tiers" &&

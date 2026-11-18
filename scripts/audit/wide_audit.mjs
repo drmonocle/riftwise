@@ -39,6 +39,7 @@ const PAGES = [
   ["records", "/stats/records"],
   ["champions", "/stats/champions"],
   ["counters", "/stats/counters"],
+  ["synergy", "/stats/synergy"],
   ["patches", "/stats/patches"],
   ["tiers", "/stats/tiers"],
   ["leaders", "/stats/leaders"],
