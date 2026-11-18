@@ -2326,7 +2326,6 @@
   "Pick'Em": "Pick'Em",
   "Friends leagues": "Arkadaş ligleri",
   "Predict upcoming LCK, LPL, LEC, LCS and off-season tournament series with kickoff locks and shareable invite-code friends league leaderboards.": "Başlangıç anında kilitlenen tahminler ve davet kodlu özel arkadaş ligi sıralamalarıyla LCK, LPL, LEC, LCS ve sezon dışı turnuva serilerini tahmin et.",
-  "Coming up next: automated international seed simulations, richer item build paths, and live solo-queue tracking links.": "Yakında: otomatik uluslararası seribaşı simülasyonları, daha ayrıntılı eşya dizilimleri ve canlı tekli sıra takip bağlantıları.",
   "Friends league not found.": "Arkadaş ligi bulunamadı.",
   "You can join at most 12 friends leagues.": "En fazla 12 arkadaş ligine katılabilirsin.",
   "Enter a valid 6-character invite code.": "Geçerli 6 karakterli bir davet kodu gir.",
@@ -2350,5 +2349,12 @@
   "Correct": "Doğru",
   "Missed": "Yanlış",
   "{event}: predict pro series before kickoff and compete globally or inside a private friends league. 1 point per regular-season series, 2 points per playoff series.": "{event}: başlangıç öncesi profesyonel serileri tahmin et, genel sıralamada veya özel arkadaş liginde yarış. Normal sezonda 1 puan, playofflarda 2 puan.",
-  "Predict pro matches and compete with friends": "Profesyonel maçları tahmin et ve arkadaşlarınla yarış"
+  "Predict pro matches and compete with friends": "Profesyonel maçları tahmin et ve arkadaşlarınla yarış",
+  "Projected international field": "Öngörülen uluslararası kadro",
+  "Projected qualifiers from regional tier-1 Elo standings; title odds from {n} simulated tournaments.": "Bölgesel 1. kademe Elo sıralamasına göre öngörülen takımlar; şampiyonluk oranları {n} simülasyona dayanır.",
+  "Seed": "Seribaşı",
+  "Win title": "Şampiyonluk",
+  "On the bubble": "Sınırda",
+  "Monte Carlo Worlds, MSI and First Stand qualification projections and title odds from regional Elo standings.": "Bölgesel Elo sıralamasına göre Worlds, MSI ve First Stand katılım ve şampiyonluk Monte Carlo tahminleri.",
+  "Coming up next: richer item build paths, champion duo synergy tables, and live solo-queue tracking links.": "Yakında: daha ayrıntılı eşya dizilimleri, şampiyon ikili sinerji tabloları ve canlı tekli sıra takip bağlantıları."
 }

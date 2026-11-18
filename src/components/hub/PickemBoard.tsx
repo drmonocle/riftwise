@@ -26,7 +26,7 @@ import {
   type PickemTeam,
 } from "../../sync";
 import { normText, resolveLeagueSlug, searchAlias } from "../../hub/data";
-import { currentHubRoute } from "../../hub/route";
+import { BASE, currentHubRoute } from "../../hub/route";
 import { Section, HubLink } from "./ui";
 import { BroadcastCardButton, listCard } from "./BroadcastCard";
 
@@ -526,6 +526,15 @@ export const PickemBoard: React.FC<{
               className="bg-rw-bg border border-rw-border rounded-md px-2 py-0.5 text-[11px] text-rw-text placeholder:text-rw-muted focus:border-rw-accent focus:outline-none w-36"
             />
           )}
+          <a
+            href={`${BASE}embed?studio=1&mode=pickem&event=${encodeURIComponent(event)}${activeGroup ? `&group=${encodeURIComponent(activeGroup)}` : ""}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] font-semibold text-rw-accent hover:underline"
+            data-nocapture="1"
+          >
+            {tl("Embed / OBS")} →
+          </a>
           {rows.length > 0 && (
             <BroadcastCardButton
               compact

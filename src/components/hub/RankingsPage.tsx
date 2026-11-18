@@ -10,6 +10,7 @@ import { BASE, hubShareUrl, navigateHub, useHubRoute } from "../../hub/route";
 import { Sparkline } from "./Sparkline";
 import type { HubRatings, RatingRow } from "../../hub/types";
 import { chanceContext, matchChance, pct, seriesChance } from "../../hub/winChance";
+import { simulateInternationalField, type IntlEventKey } from "../../hub/intlSim";
 import { SortTable, type Column } from "./SortTable";
 import {
   card,
@@ -179,6 +180,18 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
     const filtered = d.teams.filter((r) => (league === "*" ? true : league ? r[3] === league : r[9] === 1));
     return rankList(filtered);
   }, [d.teams, league, asOf, hist.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const simParam = q.get("sim");
+  const [intlEvent, setIntlEvent] = useState<IntlEventKey>(
+    simParam === "msi" || simParam === "first-stand" ? simParam : "worlds",
+  );
+  const tier1AsOf = useMemo(
+    () => rankList(d.teams.filter((r) => r[9] === 1)).map((x) => x.r),
+    [d.teams, asOf, hist.data], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const intlSim = useMemo(
+    () => (!league ? simulateInternationalField(tier1AsOf, intlEvent, d.adjust) : null),
+    [league, tier1AsOf, intlEvent, d.adjust],
+  );
   const topLeagueCards = useMemo(() => {
     return d.leagues.slice(0, 6).map(([l, u, top4Avg, count]) => {
       const lTeams = d.teams.filter((t) => t[3] === l).sort((a, b) => b[5] - a[5]);
@@ -1125,6 +1138,128 @@ const RankingsView: React.FC<{ d: HubRatings }> = ({ d }) => {
           </p>
         )}
       </Section>
+
+      {intlSim && intlSim.qualifiers.length > 0 && (
+        <Section
+          id="intl-sim"
+          title={tl("Projected international field")}
+          share={`riftwise-projected-${intlEvent}`}
+          right={
+            <span className="flex flex-wrap items-center gap-1.5 text-xs" data-nocapture="1">
+              {(
+                [
+                  ["worlds", tl("Worlds")],
+                  ["msi", tl("MSI")],
+                  ["first-stand", tl("First Stand")],
+                ] as [IntlEventKey, string][]
+              ).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setIntlEvent(k)}
+                  aria-pressed={intlEvent === k}
+                  className={`px-2.5 py-1 rounded-lg border font-semibold transition-colors ${
+                    intlEvent === k
+                      ? "bg-rw-accent text-rw-bg border-rw-accent"
+                      : "border-rw-border text-rw-sub hover:text-rw-text hover:border-rw-accent/50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+              <HubLink to={{ kind: intlEvent }} className="text-[11px] font-semibold text-rw-accent hover:underline ml-1">
+                {intlEvent === "worlds" ? tl("Worlds") : intlEvent === "msi" ? tl("MSI") : tl("First Stand")} →
+              </HubLink>
+              <SectionCard
+                section={tl("Projected international field")}
+                name={intlEvent === "worlds" ? tl("Worlds") : intlEvent === "msi" ? tl("MSI") : tl("First Stand")}
+                sub={asOf ? fmtDate(asOf) : fmtDate(d.asof)}
+                rows={() =>
+                  intlSim.qualifiers.slice(0, 10).map((item, i) => ({
+                    rank: i + 1,
+                    team: item.name,
+                    label: item.name,
+                    sub: `${item.leagueShort} #${item.seed} · ${Math.round(item.rating)}`,
+                    value: pct(item.winProb),
+                  }))
+                }
+              />
+            </span>
+          }
+        >
+          <p className="text-[11px] text-rw-muted">
+            {tl("Projected qualifiers from regional tier-1 Elo standings; title odds from {n} simulated tournaments.", {
+              n: fmtNum(intlSim.trials),
+            })}
+          </p>
+          <div className="overflow-x-auto">
+            <STable className="w-full text-xs">
+              <thead>
+                <tr>
+                  <th className={th}>#</th>
+                  <th className={th}>{tl("Seed")}</th>
+                  <th className={th}>{tl("Team")}</th>
+                  <th className={`${th} text-right`}>Elo</th>
+                  <th className={`${th} text-right`}>
+                    {intlEvent === "worlds" ? tl("Quarterfinals") : tl("Semifinals")}
+                  </th>
+                  <th className={`${th} text-right`}>{tl("Finals")}</th>
+                  <th className={`${th} text-right`}>{tl("Win title")}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-rw-border/60">
+                {intlSim.qualifiers.map((item, i) => (
+                  <tr key={item.slug || `${item.leagueShort}-${item.seed}`} className="hover:bg-rw-bg/40">
+                    <td className={`${td} font-num text-rw-muted`}>{i + 1}</td>
+                    <td className={td}>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded border border-rw-border bg-rw-bg text-[10px] font-num font-semibold text-rw-sub">
+                        {item.leagueShort} #{item.seed}
+                      </span>
+                    </td>
+                    <td className={td}>
+                      <span className="inline-flex items-center gap-2 min-w-0">
+                        <TeamLogo name={item.name} code={item.code} size={18} />
+                        <TeamLink name={item.name} u={item.slug} className="font-semibold text-rw-text hover:text-rw-accent hover:underline" />
+                      </span>
+                    </td>
+                    <td className={`${td} text-right font-num text-rw-sub`}>{fmtNum(Math.round(item.rating))}</td>
+                    <td className={`${td} text-right font-num text-rw-sub`}>{pct(item.topProb)}</td>
+                    <td className={`${td} text-right font-num text-rw-sub`}>{pct(item.finProb)}</td>
+                    <td className={`${td} text-right`}>
+                      <span className="inline-flex items-center justify-end gap-2">
+                        <span className="hidden sm:inline-block w-14 h-1.5 rounded-full bg-rw-border/70 overflow-hidden" aria-hidden="true">
+                          <span
+                            className="block h-full rounded-full bg-rw-accent"
+                            style={{ width: `${Math.min(100, Math.round(item.winProb * 250))}%` }}
+                          />
+                        </span>
+                        <span className="font-num font-bold text-rw-accent w-9 text-right">{pct(item.winProb)}</span>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </STable>
+          </div>
+          {intlSim.bubble.length > 0 && (
+            <div className="pt-2 border-t border-rw-border/60 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="font-semibold text-rw-muted">{tl("On the bubble")}:</span>
+              {intlSim.bubble.map((b) => (
+                <span
+                  key={b.slug}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-rw-border bg-rw-bg/50 text-rw-sub"
+                >
+                  <span className="font-num text-rw-muted">
+                    {b.leagueShort} #{b.seed}
+                  </span>
+                  <TeamLink name={b.code || b.name} u={b.slug} className="font-semibold text-rw-text hover:text-rw-accent" />
+                  <span className="font-num text-rw-red">−{b.gap}</span>
+                </span>
+              ))}
+            </div>
+          )}
+        </Section>
+      )}
 
       <div className="grid gap-3 md:grid-cols-2">
         <Section

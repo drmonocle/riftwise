@@ -9,9 +9,10 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Check, Code2, Copy, ExternalLink, MonitorPlay, X } from "lucide-react";
-import { tl, tc, roleName, fmtDec } from "../i18n";
+import { tl, tc, roleName, fmtDec, tn } from "../i18n";
 import { SITE_URL } from "../platform";
 import { fetchSchedule } from "../api";
+import { pickemBoard, type PickemBoard as PickemBoardData } from "../sync";
 import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamSeries, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../hub/data";
 import { useDDragon } from "../hub/ddragon";
 import { liveRating } from "../hub/liveRatings";
@@ -702,9 +703,122 @@ const RankingsOverlay: React.FC<{ league: string; count: number; transparent: bo
   );
 };
 
+// ── 4b. Pick'Em leaderboard card (?mode=pickem&event=season-2026&group=CODE&n=8) ────
+
+const PickemOverlay: React.FC<{ event: string; group?: string; count: number; transparent: boolean; scale: number; embedded?: boolean; linkOut?: boolean }> = ({
+  event,
+  group,
+  count,
+  transparent,
+  scale,
+  embedded,
+  linkOut,
+}) => {
+  const [data, setData] = useState<PickemBoardData | null>(null);
+  const [error, setError] = useState("");
+  const capped = Math.min(12, Math.max(3, count || 8));
+
+  useEffect(() => {
+    let alive = true;
+    setError("");
+    const load = () =>
+      pickemBoard(event, group || undefined)
+        .then((b) => {
+          if (alive) setData(b);
+        })
+        .catch(() => alive && setError(tl("Couldn't load the stats right now. Check your connection and try again in a minute.")));
+    load();
+    const t = setInterval(load, 60 * 1000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [event, group]);
+
+  const bg = transparent ? "transparent" : "var(--rw-bg)";
+  if (error) return <div style={{ padding: 24, color: "var(--rw-red)", background: bg }}>{error}</div>;
+  if (!data) return <div style={{ padding: 24, color: "var(--rw-muted)", background: bg }}>…</div>;
+
+  const rows = (data.rows || []).slice(0, capped);
+  const maxScore = Math.max(1, ...rows.map((r) => r.score));
+  const evBase = event.replace(/-\d{4}$/, "");
+  const linkPath = evBase === "worlds" || evBase === "msi" || evBase === "first-stand"
+    ? `stats/${evBase}`
+    : `stats/pickem?league=${encodeURIComponent(evBase)}${group ? `&group=${encodeURIComponent(group)}` : ""}`;
+
+  return (
+    <div style={{ background: embedded ? "transparent" : bg, minHeight: embedded ? undefined : "100vh", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: 16 }}>
+      <div
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: "top center",
+          width: 440,
+          maxWidth: "100%",
+          padding: "18px 22px",
+          borderRadius: 16,
+          background: transparent ? "rgba(12, 10, 29, 0.88)" : "var(--rw-surface)",
+          border: "1px solid var(--rw-border)",
+          color: "var(--rw-text)",
+          fontFamily: "inherit",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+            <span style={{ fontSize: 18, fontWeight: 900 }}>{tl("Pick'Em")}</span>
+            <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999, border: "1px solid var(--rw-border)", background: "rgba(9, 8, 22, 0.7)", color: "var(--rw-accent)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {data.group?.name || event.toUpperCase()}
+            </span>
+          </div>
+          <span style={{ fontSize: 11, color: "var(--rw-muted)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+            {data.group ? data.group.code : tn("{n} player entered", "{n} players entered", data.players)}
+          </span>
+        </div>
+        {rows.length > 0 ? (
+          <div style={{ display: "grid", gap: 6 }}>
+            {rows.map((r, i) => {
+              const barPct = Math.max(8, Math.round((r.score / maxScore) * 100));
+              return (
+                <div
+                  key={`${r.rank}-${r.name}-${i}`}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "28px 1fr auto 74px 40px",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "6px 10px",
+                    borderRadius: 10,
+                    background: "rgba(9, 8, 22, 0.65)",
+                    border: "1px solid var(--rw-border)",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 800, color: r.rank === 1 ? "var(--rw-accent)" : "var(--rw-muted)" }}>#{r.rank}</span>
+                  <span style={{ fontSize: 13, fontWeight: r.rank === 1 ? 800 : 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontStyle: r.name ? "normal" : "italic", color: r.name ? "var(--rw-text)" : "var(--rw-muted)" }}>
+                    {r.name || tl("Hidden player")}
+                  </span>
+                  <span style={{ fontSize: 11, color: "var(--rw-muted)" }}>{r.right}/{r.scored}</span>
+                  <div style={{ width: 74, height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                    <div style={{ width: `${barPct}%`, height: "100%", borderRadius: 999, background: r.rank <= 3 ? "var(--rw-accent)" : "var(--rw-teal)" }} />
+                  </div>
+                  <span style={{ fontSize: 14, fontWeight: 900, textAlign: "right", color: "var(--rw-accent)" }}>{r.score}</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p style={{ fontSize: 12, color: "var(--rw-muted)", margin: "8px 0" }}>{tl("Nobody has entered yet. Be the first.")}</p>
+        )}
+        <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end", fontSize: 12, color: "var(--rw-muted)" }}>
+          <BrandFoot linkOut={linkOut} href={siteLink(linkPath)} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── 5. Interactive OBS & Embed Studio (/overlay or /embed?studio=1) ──────
 
-type OverlayMode = "teams" | "player" | "roster" | "rankings";
+type OverlayMode = "teams" | "player" | "roster" | "rankings" | "pickem";
 const RANKING_LEAGUES: [string, string][] = [
   ["", "Global"],
   ["lck", "LCK"],
@@ -712,6 +826,7 @@ const RANKING_LEAGUES: [string, string][] = [
   ["lec", "LEC"],
   ["lcs", "LCS"],
 ];
+const PICKEM_EVENTS = ["season-2026", "lck-2026", "lpl-2026", "lec-2026", "lcs-2026", "worlds-2026"];
 
 const OverlayStudio: React.FC<{
   initMode: OverlayMode;
@@ -722,9 +837,11 @@ const OverlayStudio: React.FC<{
   initPeriod: string;
   initLeague: string;
   initCount: number;
+  initEvent: string;
+  initGroup: string;
   initTransparent: boolean;
   initScale: number;
-}> = ({ initMode, initTeams, initPlayer, initRoster, initTitle, initPeriod, initLeague, initCount, initTransparent, initScale }) => {
+}> = ({ initMode, initTeams, initPlayer, initRoster, initTitle, initPeriod, initLeague, initCount, initEvent, initGroup, initTransparent, initScale }) => {
   const [mode, setMode] = useState<OverlayMode>(initMode);
   const [teamA, setTeamA] = useState(initTeams[0] || "t1");
   const [teamB, setTeamB] = useState(initTeams[1] || "geng");
@@ -736,6 +853,8 @@ const OverlayStudio: React.FC<{
   const [period, setPeriod] = useState(initPeriod || `y${new Date().getFullYear()}`);
   const [rankLeague, setRankLeague] = useState(initLeague);
   const [rankCount, setRankCount] = useState(Math.min(15, Math.max(3, initCount || 8)));
+  const [pickemEvent, setPickemEvent] = useState(initEvent || "season-2026");
+  const [pickemGroup, setPickemGroup] = useState(initGroup || "");
   const [transparent, setTransparent] = useState(initTransparent);
   const [scale, setScale] = useState(initScale || 1);
   const [copiedObs, setCopiedObs] = useState(false);
@@ -754,15 +873,21 @@ const OverlayStudio: React.FC<{
       p.set("players", rosterSlugs.map((s) => resolvePlayerSlug(s)).join(","));
       if (rosterTitle.trim()) p.set("title", rosterTitle.trim());
       p.set("p", period);
-    } else {
+    } else if (mode === "rankings") {
       p.set("mode", "rankings");
       if (rankLeague.trim()) p.set("league", rankLeague.trim());
+      p.set("n", String(rankCount));
+    } else {
+      p.set("mode", "pickem");
+      p.set("event", pickemEvent);
+      const grp = pickemGroup.trim().toUpperCase();
+      if (/^[A-HJ-NP-Z2-9]{6}$/.test(grp)) p.set("group", grp);
       p.set("n", String(rankCount));
     }
     if (transparent) p.set("bg", "transparent");
     if (scale !== 1) p.set("scale", String(scale));
     return p.toString();
-  }, [mode, teamA, teamB, playerSlug, rosterSlugs, rosterTitle, period, rankLeague, rankCount, transparent, scale]);
+  }, [mode, teamA, teamB, playerSlug, rosterSlugs, rosterTitle, period, rankLeague, rankCount, pickemEvent, pickemGroup, transparent, scale]);
 
   const builtUrl = `${window.location.origin}${BASE}overlay?${queryString}`;
   const embedUrl = `${window.location.origin}${BASE}embed?${queryString}`;
@@ -802,6 +927,7 @@ const OverlayStudio: React.FC<{
                 ["player", tl("Player card")],
                 ["roster", tl("5-player roster")],
                 ["rankings", tl("Power rankings")],
+                ["pickem", tl("Pick'Em")],
               ] as [OverlayMode, string][]
             ).map(([m, label]) => (
               <button
@@ -936,6 +1062,48 @@ const OverlayStudio: React.FC<{
             </div>
           )}
 
+          {mode === "pickem" && (
+            <div className="flex flex-wrap items-center gap-4 text-xs">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-semibold text-rw-text">{tl("Pick'Em")}:</span>
+                {PICKEM_EVENTS.map((ev) => (
+                  <button
+                    key={ev}
+                    type="button"
+                    onClick={() => setPickemEvent(ev)}
+                    aria-pressed={pickemEvent === ev}
+                    className={`px-2.5 py-1 rounded-lg border font-num uppercase ${pickemEvent === ev ? "border-rw-accent text-rw-accent font-semibold" : "border-rw-border text-rw-sub"}`}
+                  >
+                    {ev.replace(/-20\d\d$/, "")}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={pickemGroup}
+                maxLength={6}
+                onChange={(e) => setPickemGroup(e.target.value.toUpperCase())}
+                placeholder={tl("6-letter invite code")}
+                aria-label={tl("6-letter invite code")}
+                className="bg-rw-bg border border-rw-border rounded-lg px-2.5 py-1 text-xs font-num uppercase tracking-wider text-rw-text w-40"
+              />
+              <div className="flex items-center gap-1.5">
+                <span className="text-rw-muted">{tl("Show")}:</span>
+                {[5, 8, 10].map((cnt) => (
+                  <button
+                    key={cnt}
+                    type="button"
+                    onClick={() => setRankCount(cnt)}
+                    aria-pressed={rankCount === cnt}
+                    className={`px-2 py-1 rounded-lg border tabular-nums ${rankCount === cnt ? "border-rw-accent text-rw-accent font-semibold" : "border-rw-border text-rw-sub"}`}
+                  >
+                    {cnt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-rw-border text-xs">
             <label className="inline-flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={transparent} onChange={(e) => setTransparent(e.target.checked)} />
@@ -1015,6 +1183,17 @@ const OverlayStudio: React.FC<{
           {mode === "player" && <PlayerOverlay slug={playerSlug} period={period} transparent={transparent} scale={1} embedded linkOut={IS_EMBED} />}
           {mode === "roster" && <RosterOverlay slugs={rosterSlugs} title={rosterTitle} period={period} transparent={transparent} scale={1} embedded linkOut={IS_EMBED} />}
           {mode === "rankings" && <RankingsOverlay league={rankLeague} count={rankCount} transparent={transparent} scale={1} embedded linkOut={IS_EMBED} />}
+          {mode === "pickem" && (
+            <PickemOverlay
+              event={pickemEvent}
+              group={/^[A-HJ-NP-Z2-9]{6}$/.test(pickemGroup.trim().toUpperCase()) ? pickemGroup.trim().toUpperCase() : undefined}
+              count={rankCount}
+              transparent={transparent}
+              scale={1}
+              embedded
+              linkOut={IS_EMBED}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -1032,12 +1211,26 @@ const TITLE_PARAM = q.get("title") || "";
 const PERIOD_PARAM = q.get("p") || `y${new Date().getFullYear()}`;
 const LEAGUE_PARAM = q.get("league") || "";
 const COUNT_PARAM = Number(q.get("n")) || 8;
+const EVENT_PARAM = q.get("event") || "season-2026";
+const GROUP_PARAM = (q.get("group") || "").trim().toUpperCase();
 const STUDIO = q.get("studio") === "1";
 const TRANSPARENT = q.get("bg") === "transparent";
 const SCALE = Math.min(3, Math.max(0.5, Number(q.get("scale")) || 1));
 
 export const Overlay: React.FC = () => {
   if (!STUDIO) {
+    if (MODE_PARAM === "pickem") {
+      return (
+        <PickemOverlay
+          event={EVENT_PARAM}
+          group={/^[A-HJ-NP-Z2-9]{6}$/.test(GROUP_PARAM) ? GROUP_PARAM : undefined}
+          count={COUNT_PARAM}
+          transparent={TRANSPARENT}
+          scale={SCALE}
+          linkOut={IS_EMBED}
+        />
+      );
+    }
     if (MODE_PARAM === "rankings" || (!MODE_PARAM && !SLUGS.length && !PLAYER_PARAM && !PLAYERS_PARAM.length && LEAGUE_PARAM)) {
       return <RankingsOverlay league={LEAGUE_PARAM} count={COUNT_PARAM} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />;
     }
@@ -1055,13 +1248,15 @@ export const Overlay: React.FC = () => {
   }
 
   const initMode: OverlayMode =
-    MODE_PARAM === "rankings" || (!SLUGS.length && !PLAYER_PARAM && !PLAYERS_PARAM.length && LEAGUE_PARAM)
-      ? "rankings"
-      : MODE_PARAM === "player" || (!SLUGS.length && PLAYER_PARAM)
-        ? "player"
-        : MODE_PARAM === "roster" || (!SLUGS.length && PLAYERS_PARAM.length > 0)
-          ? "roster"
-          : "teams";
+    MODE_PARAM === "pickem"
+      ? "pickem"
+      : MODE_PARAM === "rankings" || (!SLUGS.length && !PLAYER_PARAM && !PLAYERS_PARAM.length && LEAGUE_PARAM)
+        ? "rankings"
+        : MODE_PARAM === "player" || (!SLUGS.length && PLAYER_PARAM)
+          ? "player"
+          : MODE_PARAM === "roster" || (!SLUGS.length && PLAYERS_PARAM.length > 0)
+            ? "roster"
+            : "teams";
 
   return (
     <OverlayStudio
@@ -1073,6 +1268,8 @@ export const Overlay: React.FC = () => {
       initPeriod={PERIOD_PARAM}
       initLeague={LEAGUE_PARAM}
       initCount={COUNT_PARAM}
+      initEvent={EVENT_PARAM}
+      initGroup={GROUP_PARAM}
       initTransparent={TRANSPARENT}
       initScale={SCALE}
     />

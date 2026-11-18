@@ -2326,7 +2326,6 @@
   "Pick'Em": "Pick'Em",
   "Friends leagues": "Ligues d'amis",
   "Predict upcoming LCK, LPL, LEC, LCS and off-season tournament series with kickoff locks and shareable invite-code friends league leaderboards.": "Pronostiquez les prochaines séries LCK, LPL, LEC, LCS et hors-saison avec verrouillage au coup d'envoi et classements privés entre amis par code d'invitation.",
-  "Coming up next: automated international seed simulations, richer item build paths, and live solo-queue tracking links.": "Prochainement : simulateur automatique de têtes de série internationales, parcours d'objets enrichis et liens de suivi soloQ en direct.",
   "Friends league not found.": "Ligue d'amis introuvable.",
   "You can join at most 12 friends leagues.": "Vous pouvez rejoindre au maximum 12 ligues d'amis.",
   "Enter a valid 6-character invite code.": "Entrez un code d'invitation valide à 6 caractères.",
@@ -2350,5 +2349,12 @@
   "Correct": "Correct",
   "Missed": "Manqué",
   "{event}: predict pro series before kickoff and compete globally or inside a private friends league. 1 point per regular-season series, 2 points per playoff series.": "{event} : pronostiquez les séries pro avant le début et affrontez le classement mondial ou une ligue d'amis. 1 point par série en saison régulière, 2 en playoffs.",
-  "Predict pro matches and compete with friends": "Pronostiquez les matchs pro entre amis"
+  "Predict pro matches and compete with friends": "Pronostiquez les matchs pro entre amis",
+  "Projected international field": "Participants internationaux projetés",
+  "Projected qualifiers from regional tier-1 Elo standings; title odds from {n} simulated tournaments.": "Qualifiés projetés selon le classement Elo des ligues majeures ; cotes de titre sur {n} tournois simulés.",
+  "Seed": "Seed",
+  "Win title": "Titre",
+  "On the bubble": "Aux portes",
+  "Monte Carlo Worlds, MSI and First Stand qualification projections and title odds from regional Elo standings.": "Projections Monte Carlo de qualification et cotes de titre pour les Worlds, le MSI et le First Stand à partir de l'Elo régional.",
+  "Coming up next: richer item build paths, champion duo synergy tables, and live solo-queue tracking links.": "Prochainement : parcours d'objets enrichis, tableaux de synergie de duos de champions et liens de suivi soloQ en direct."
 }

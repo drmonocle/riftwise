@@ -77,6 +77,13 @@ export const ChangelogPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
       <Section title={tl("Global data & ratings")} id="coverage">
         <ul className="list-disc pl-4 space-y-1.5 text-rw-sub">
           <li>
+            <strong className="text-rw-text">{tl("Projected international field")}</strong> —{" "}
+            {tl("Monte Carlo Worlds, MSI and First Stand qualification projections and title odds from regional Elo standings.")}{" "}
+            <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline font-semibold">
+              {tl("Power rankings")} →
+            </HubLink>
+          </li>
+          <li>
             {tl("Cross-region Elo power rankings on one global scale, updating after every pro match.")}{" "}
             <HubLink to={{ kind: "rankings" }} className="text-rw-accent hover:underline font-semibold">
               {tl("Power rankings")} →
@@ -103,7 +110,7 @@ export const ChangelogPage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({
 
       <Section title={tl("Roadmap & feedback")} id="roadmap">
         <p className="text-rw-sub">
-          {tl("Coming up next: automated international seed simulations, richer item build paths, and live solo-queue tracking links.")}{" "}
+          {tl("Coming up next: richer item build paths, champion duo synergy tables, and live solo-queue tracking links.")}{" "}
           <a
             href={sendIdea}
             onClick={(e) => {
