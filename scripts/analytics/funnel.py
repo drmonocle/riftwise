@@ -1,4 +1,4 @@
-"""RiftWise funnel for the analytics hub (C:\\goaccess, tab "RiftWise funnel"): how many visitors go past the first
+"""RiftWise funnel for the analytics hub (tab "RiftWise funnel"): how many visitors go past the first
 page, which themes, languages and apps they use, how many entered Pick'Em, and how many read the results feed or
 subscribe to the calendar. Days are US Eastern (midnight rollover), like the hub's other reports.
 
@@ -9,7 +9,7 @@ second pages, searches, the stats pages opened, and the visits the hub's filter 
 logs of riftwise.gg (feed.xml and calendar.ics requests: one reader = one address + user agent a day). Days the hub's
 filter file lists as unreliable are shown but left out of the totals.
 
-  python scripts/analytics/funnel.py [--days 30] [--out C:\\goaccess\\www\\reports]
+  python scripts/analytics/funnel.py [--days 30] [--out reports]
 Writes riftwise-funnel.html and riftwise-funnel.json. The hub's update_reports.ps1 runs it every 10 minutes.
 """
 import argparse
@@ -24,9 +24,9 @@ from collections import Counter, defaultdict
 USAGE = r"C:\Sites\riftwise-push-data\usage\people"
 PICKEM = r"C:\Sites\riftwise-sync-data\pickem"
 LOGS = r"C:\inetpub\logs\LogFiles\W3SVC4"
-OUT = r"C:\goaccess\www\reports"
-FILTERS = r"C:\goaccess\riftwise_filters.json"
-HUB_CACHE = r"C:\goaccess\www\reports\et_daycache_riftwise_v1.json"
+OUT = os.environ.get("RIFTWISE_REPORTS_DIR", "reports")
+FILTERS = os.environ.get("RIFTWISE_FILTERS_FILE", "")
+HUB_CACHE = os.environ.get("RIFTWISE_DAYCACHE_FILE", "")
 FEEDS = {"/feed.xml": "feed", "/calendar.ics": "calendar"}
 # the front page and the live scores, in any language (/, /ko/, /matches, /pt-br/matches)
 HOME = re.compile(r"^/(?:[a-z]{2}(?:-[a-z]{2})?/?)?$")

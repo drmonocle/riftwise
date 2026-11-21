@@ -28,7 +28,7 @@ import (
 )
 
 // the app's version (package.json; npm run set-version), reported by the health check
-const version = "1.6.33"
+const version = "1.6.34"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -39,7 +39,7 @@ func main() {
 	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
 	dataDir := fs.String("data", `C:\Sites\riftwise-push-data`, "data folder (keys, subscriptions, locales, logs)")
 	statsDir := fs.String("stats", `C:\inetpub\wwwroot\riftwise\stats`, "the stats builds (latest.json, <version>/hub/stakes.json) for the on-the-line alerts")
-	filters := fs.String("filters", `C:\goaccess\riftwise_filters.json`, "the analytics hub's filter file, for the usage counts")
+	filters := fs.String("filters", os.Getenv("RIFTWISE_FILTERS_FILE"), "optional filter file for usage counts (or RIFTWISE_FILTERS_FILE)")
 	addr := fs.String("addr", "127.0.0.1:8092", "listen address (serve)")
 	kind := fs.String("kind", "test", "sample: kickoff, pregame, banger or test")
 	team := fs.String("team", "T1", "sample: send to people following this team")

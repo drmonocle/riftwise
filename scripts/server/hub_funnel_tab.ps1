@@ -1,12 +1,14 @@
 # Runs ON HOMESERVER once, after the release that brings scripts/analytics/funnel.py (through the remote wrapper).
-# Analytics hub (C:\goaccess): a "RiftWise funnel" tab. The report (www\reports\riftwise-funnel.html) is written by the
+# Analytics hub: adds a "RiftWise funnel" tab. The report (www\reports\riftwise-funnel.html) is written by the
 # RiftWise repository's scripts\analytics\funnel.py, which the hub's update_reports.ps1 now runs every 10 minutes from
 # the release watcher's checkout. Both hub files are backed up first (.bak-<time>); both are UTF-8 without BOM, LF.
+param([string]$Hub = $env:RIFTWISE_ANALYTICS_DIR)
 $ErrorActionPreference = 'Stop'
-$hub = 'C:\goaccess'
+if (-not $Hub) { throw 'Pass -Hub <dir> or set RIFTWISE_ANALYTICS_DIR' }
+$hub = $Hub
 $stamp = Get-Date -Format yyyyMMddHHmm
 $utf8 = New-Object Text.UTF8Encoding $false
-$py = 'C:\Users\TV\AppData\Local\Programs\Python\Python313\python.exe'
+$py = if ($env:RIFTWISE_PYTHON) { $env:RIFTWISE_PYTHON } else { 'python' }
 $funnel = 'C:\Sites\riftwise-release\repo\scripts\analytics\funnel.py'
 if (-not (Test-Path $funnel)) { throw "$funnel not there yet (release first)" }
 
@@ -32,7 +34,7 @@ if ($i -notmatch 'riftwise-funnel') {
 # 2. update_reports.ps1 runs the funnel report after the RiftWise stats
 $u = [IO.File]::ReadAllText("$hub\update_reports.ps1", $utf8)
 if ($u -notmatch 'funnel\.py') {
-  $anchor = '# 2. Only regenerate raw GoAccess log dumps'
+  $anchor = '# 2. Only regenerate raw'
   if ($u.IndexOf($anchor) -lt 0) { throw 'update_reports.ps1 anchor not found' }
   $block = @"
 # RiftWise funnel (the RiftWise repo's scripts\analytics\funnel.py, in the release watcher's checkout): visits past

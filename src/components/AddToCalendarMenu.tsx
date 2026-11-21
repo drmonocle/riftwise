@@ -91,7 +91,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
       "BEGIN:VEVENT",
-      `UID:riftwise-${match.matchId || Date.now()}@monocle.gg`,
+      `UID:riftwise-${match.matchId || Date.now()}@riftwise.gg`,
       `DTSTAMP:${formatGoogleDate(new Date())}`,
       `DTSTART:${formatGoogleDate(startDate)}`,
       `DTEND:${formatGoogleDate(endDate)}`,

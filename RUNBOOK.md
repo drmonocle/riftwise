@@ -1,7 +1,7 @@
 # RiftWise runbook
 
 How to put a new version live, take it back, restart things, and where to look when something is wrong.
-Everything live runs on HomeServer (`192.168.1.8`, hostname `TV`); its `C:` is `W:` on the main PC.
+Everything live runs on HomeServer (`C:\Sites\`, `C:\Scripts\riftwise\`, `C:\inetpub\riftwise.gg`).
 **Never edit the live files on HomeServer by hand**: every deploy below overwrites them from this repo.
 
 ## What runs where
@@ -67,18 +67,18 @@ that database with `scripts/stats/test/make_fixture.py` when the build starts re
 powershell -ExecutionPolicy Bypass -File scripts\deploy_web.ps1
 ```
 
-Builds `dist-web` and copies it to `W:\inetpub\riftwise.gg`: new bundles first, `index.html` last, old bundles kept a
+Builds `dist-web` and copies it to `<server-share>\inetpub\riftwise.gg`: new bundles first, `index.html` last, old bundles kept a
 week so open pages never miss a file. Check `https://riftwise.gg/` afterwards (a hard reload: the service worker
 caches the shell).
 
 ### The Go services
 
 They are compiled on HomeServer (Go isn't on the main PC). Changes on the server go only through
-`C:\Users\TV\.claude\tools\Invoke-HomeServer.ps1 -ScriptPath <file.ps1>`, which takes no arguments, so write a
+`Invoke-HomeServer.ps1 -ScriptPath <file.ps1>`, which takes no arguments, so write a
 one-line launcher for it.
 
 1. Stage the source: `powershell -ExecutionPolicy Bypass -File scripts\stage_services.ps1 -Services pages,push`
-   (copies `server\<svc>` to `W:\Sites\riftwise-build\<svc>`, the push translations, and `scripts\server\*.ps1`).
+   (copies `server\<svc>` to `<server-share>\Sites\riftwise-build\<svc>`, the push translations, and `scripts\server\*.ps1`).
 2. Build and test there: launcher `& 'C:\Sites\riftwise-build\scripts\build_services.ps1' -Services pages,push`.
    Exit 1 means `go vet`, `go test` or `go build` failed; nothing changed.
 3. Install: launcher `& 'C:\Sites\riftwise-build\scripts\install_services.ps1' -Services pages,push`. Each service:
@@ -92,7 +92,7 @@ Translations used by push alerts are copied in step 1 and installed in step 3: r
 
 1. Run `npm run test:stats`, then a full local build (about 8 minutes) and check it ends with `done:`:
    ```
-   py -3 -u scripts/stats/build_stats.py --db C:\Users\TV\Tools\riftwatch-hub-dev\catalog_mepi.db --out C:\Users\TV\Tools\riftwatch-hub-dev\out --renames-cache C:\Users\TV\Tools\riftwatch-hub-dev\team_renames.json
+   py -3 -u scripts/stats/build_stats.py --db <dev-dir>\catalog_mepi.db --out <dev-dir>\out --renames-cache <dev-dir>\team_renames.json
    ```
    A compile check alone is not enough (it missed the 2026-10-24 crash).
 2. Copy the old one aside on the server (`hub.py.bak-YYYYMMDD` in `C:\Scripts\riftwise`), then copy the changed
@@ -120,7 +120,7 @@ Translations used by push alerts are copied in step 1 and installed in step 3: r
 
 ## Numbers (what visitors use)
 
-- **Funnel**: the analytics hub (HomeServer `:8088`) tab "RiftWise funnel": visits, how many go past the first page,
+- **Funnel**: the analytics hub (local analytics dashboard) tab "RiftWise funnel": visits, how many go past the first page,
   themes, languages, web vs desktop app, Pick'Em entries, results-feed and calendar readers. Written every 10 minutes
   by `scripts/analytics/funnel.py` (run by the hub's `update_reports.ps1` from the release watcher's checkout).
 - The visits come from the app itself (`src/usage.ts` → `/api/push/usage`): once a day per browser, no cookie, no
