@@ -11,22 +11,32 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Check, Code2, Copy, ExternalLink, MonitorPlay, X } from "lucide-react";
 import { tl, tc, roleName, fmtDec, tn } from "../i18n";
 import { SITE_URL } from "../platform";
-import { fetchSchedule } from "../api";
+import { EMPTY_CATALOG, fetchLiveCatalog, fetchSchedule, loadBundledCatalog, loadCachedCatalog } from "../api";
 import { pickemBoard, type PickemBoard as PickemBoardData } from "../sync";
-import { loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamSeries, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../hub/data";
+import { loadAliases, loadHubPlayer, loadHubTeam, loadPlayerGames, loadRatings, loadTeamSeries, resolveChampSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias } from "../hub/data";
 import { useDDragon } from "../hub/ddragon";
 import { liveRating } from "../hub/liveRatings";
 import { inPeriod, playerAgg, playerRowRef } from "../hub/period";
-import { playerRowLine, rateLine, type RatingFile } from "../hub/playerRating";
+import { loadRatingFile, type RatingFile } from "../hub/playerRating";
 import { BASE } from "../hub/route";
-import { loadHubLogos, loadHubPhotos } from "../hub/riotCatalog";
+import { loadHubLogos, loadHubPhotos, RiotCatalogContext, useTeamLogo } from "../hub/riotCatalog";
 import type { HubPlayer, HubRatings, HubTeam, PlayerGameRow, TeamSeriesRow } from "../hub/types";
 import { chanceContext, matchChance, seriesChance } from "../hub/winChance";
 import { ComparePick } from "../components/hub/ComparePage";
 import { fmtRating, RatingBadge, useRatingFile } from "../components/hub/PlayerRating";
-import { ROSTER_ROLES } from "../components/hub/RosterBuilderPage";
+import {
+  avgRatingInPeriod,
+  computeRosterDelta,
+  computeRosterEconomy,
+  computeRosterFlexes,
+  computeRosterSynergy,
+  ROSTER_ROLES,
+  teamLineupForPeriod,
+  type RosterDeltaSlotInput,
+  type RosterRole,
+} from "../components/hub/RosterBuilderPage";
 import { ChampIcon, fmtNum, PlayerPhoto, TeamLogo } from "../components/hub/ui";
-import type { Match } from "../types";
+import type { CatalogData, Match } from "../types";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
 const IS_EMBED = typeof window !== "undefined" && /^(?:\/(?:es|pt-br|ko|vi|zh-cn|zh-tw|ja|fr|de|tr))?\/embed\/?$/i.test(window.location.pathname);
@@ -289,19 +299,7 @@ const MatchupOverlay: React.FC<{ slugs: [string, string]; transparent: boolean; 
 
 // ── 2. Player Spotlight lower-third (?mode=player&player=faker&p=y2026) ───
 
-function avgPlayerRating(rows: PlayerGameRow[], rf: RatingFile | null): number | null {
-  if (!rf || !rows.length) return null;
-  let sum = 0;
-  let n = 0;
-  for (const r of rows) {
-    const v = rateLine(playerRowLine(r), rf);
-    if (v != null) {
-      sum += v;
-      n++;
-    }
-  }
-  return n ? Number((sum / n).toFixed(1)) : null;
-}
+const avgPlayerRating = avgRatingInPeriod;
 
 const PlayerOverlay: React.FC<{ slug: string; period: string; transparent: boolean; scale: number; embedded?: boolean; linkOut?: boolean }> = ({
   slug,
@@ -566,6 +564,767 @@ const RosterOverlay: React.FC<{ slugs: string[]; title: string; period: string; 
         </div>
         <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end", fontSize: 12, color: "var(--rw-muted)" }}>
           <BrandFoot linkOut={linkOut} href={siteLink(`stats/gm?players=${encodeURIComponent(cards.map((c) => c.slug).join(","))}`)} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── 3b. 16:9 Roster Report Card (?mode=report&team=t1&players=...&vs=t1&vp=y2026) ──
+
+interface ReportLoadedPlayer {
+  slug: string;
+  player: HubPlayer | null;
+  games: PlayerGameRow[];
+}
+
+interface ReportOverlayProps {
+  teamParam: string;
+  roleSlugs: Partial<Record<RosterRole, string>>;
+  playersList: string[];
+  vsParam: string;
+  vp: string;
+  period: string;
+  newSlugs: string[];
+  title: string;
+  transparent: boolean;
+  scale: number;
+  linkOut?: boolean;
+  catalogReady: boolean;
+}
+
+const ReportWatermark: React.FC<{ name: string; code?: string }> = ({ name, code }) => {
+  const logo = useTeamLogo(name, code);
+  if (!logo) return null;
+  const httpsLogo = logo.replace(/^http:\/\//, "https://");
+  return (
+    <img
+      src={httpsLogo}
+      alt=""
+      aria-hidden
+      style={{
+        position: "absolute",
+        right: -90,
+        top: 120,
+        width: 640,
+        height: 640,
+        objectFit: "contain",
+        opacity: 0.06,
+        filter: "blur(1.5px)",
+        pointerEvents: "none",
+        zIndex: 0,
+      }}
+    />
+  );
+};
+
+const ReportOverlay: React.FC<ReportOverlayProps> = ({
+  teamParam,
+  roleSlugs,
+  playersList,
+  vsParam,
+  vp,
+  period,
+  newSlugs,
+  title,
+  transparent,
+  scale,
+  linkOut,
+  catalogReady,
+}) => {
+  useDDragon();
+  const [ratingFile, setRatingFile] = useState<RatingFile | null>(null);
+  const [teamObj, setTeamObj] = useState<HubTeam | null>(null);
+  const [vsTeamObj, setVsTeamObj] = useState<HubTeam | null>(null);
+  const [resolvedSlots, setResolvedSlots] = useState<Record<RosterRole, string>>({
+    Top: "",
+    Jungle: "",
+    Mid: "",
+    Bot: "",
+    Support: "",
+  });
+  const [playerData, setPlayerData] = useState<Record<string, ReportLoadedPlayer>>({});
+  const [dataSettled, setDataSettled] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState("");
+  const cardRef = React.useRef<HTMLDivElement | null>(null);
+
+  const slotsSig = ROSTER_ROLES.map((r) => roleSlugs[r] || "").join("|") + "::" + playersList.join(",");
+
+  useEffect(() => {
+    let alive = true;
+    setError("");
+    setDataSettled(false);
+    setReady(false);
+
+    (async () => {
+      try {
+        await Promise.all([loadAliases(), loadHubLogos(), loadHubPhotos()]);
+        const rf = await loadRatingFile().catch(() => null);
+        if (!alive) return;
+        setRatingFile(rf);
+
+        const normTeam = teamParam ? resolveTeamAlias(teamParam) || teamParam : "";
+        const normVs = vsParam ? resolveTeamAlias(vsParam) || vsParam : "";
+        const [loadedTeam, loadedVs] = await Promise.all([
+          normTeam ? loadHubTeam(normTeam).catch(() => null) : Promise.resolve(null),
+          normVs
+            ? normVs === normTeam
+              ? Promise.resolve(null)
+              : loadHubTeam(normVs).catch(() => null)
+            : Promise.resolve(null),
+        ]);
+        if (!alive) return;
+        const effectiveVs = normVs && normVs === normTeam ? loadedTeam : loadedVs;
+        setTeamObj(loadedTeam);
+        setVsTeamObj(effectiveVs);
+
+        const baseFallback = loadedTeam ? teamLineupForPeriod(loadedTeam, period) : {};
+        const nextSlots = {} as Record<RosterRole, string>;
+        const hasAnyExplicit = ROSTER_ROLES.some((r) => Boolean(roleSlugs[r])) || playersList.length > 0;
+        ROSTER_ROLES.forEach((role, idx) => {
+          const explicit = roleSlugs[role] || playersList[idx] || "";
+          const raw = explicit || (!hasAnyExplicit ? baseFallback[role] || "" : "");
+          nextSlots[role] = raw ? resolvePlayerSlug(raw) : "";
+        });
+        setResolvedSlots(nextSlots);
+
+        const baseLineup = effectiveVs ? teamLineupForPeriod(effectiveVs, vp) : {};
+        const wanted = [...new Set([...ROSTER_ROLES.map((r) => nextSlots[r]), ...ROSTER_ROLES.map((r) => baseLineup[r] || "")].filter(Boolean))];
+        const entries = await Promise.all(
+          wanted.map(async (slug): Promise<[string, ReportLoadedPlayer]> => {
+            try {
+              const [player, games] = await Promise.all([loadHubPlayer(slug), loadPlayerGames(slug).catch(() => [] as PlayerGameRow[])]);
+              return [slug, { slug, player, games }];
+            } catch {
+              return [slug, { slug, player: null, games: [] }];
+            }
+          }),
+        );
+        if (!alive) return;
+        setPlayerData(Object.fromEntries(entries));
+        setDataSettled(true);
+      } catch {
+        if (alive) {
+          setError(tl("Couldn't load the stats right now. Check your connection and try again in a minute."));
+          setDataSettled(true);
+        }
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamParam, vsParam, vp, period, slotsSig]);
+
+  useEffect(() => {
+    if (!dataSettled || !catalogReady) return;
+    let alive = true;
+    const deadline = Date.now() + 2500;
+    const checkImages = () => {
+      if (!alive) return;
+      const imgs = cardRef.current ? Array.from(cardRef.current.querySelectorAll("img")) : [];
+      const allDone = imgs.every((img) => img.complete);
+      if (allDone || Date.now() >= deadline) {
+        requestAnimationFrame(() => requestAnimationFrame(() => alive && setReady(true)));
+        return;
+      }
+      window.setTimeout(checkImages, 50);
+    };
+    const t = window.setTimeout(checkImages, 40);
+    return () => {
+      alive = false;
+      window.clearTimeout(t);
+    };
+  }, [dataSettled, catalogReady]);
+
+  const explicitNewSet = useMemo(() => new Set(newSlugs.map((s) => resolvePlayerSlug(s))), [newSlugs]);
+  const baseLineup = useMemo(() => (vsTeamObj ? teamLineupForPeriod(vsTeamObj, vp) : {}), [vsTeamObj, vp]);
+
+  const roleCards = useMemo(() => {
+    return ROSTER_ROLES.map((role) => {
+      const slug = resolvedSlots[role];
+      const rec = slug ? playerData[slug] : undefined;
+      const player = rec?.player ?? null;
+      const games = rec?.games ?? [];
+      const sub = inPeriod(games, period, playerRowRef);
+      const usedGames = sub.length ? sub : games;
+      const fallback = Boolean(player && period !== "all" && sub.length === 0 && games.length > 0);
+      const agg = usedGames.length ? playerAgg(usedGames) : null;
+      const rt = avgRatingInPeriod(usedGames, ratingFile);
+
+      const baseSlug = baseLineup[role] ? resolvePlayerSlug(baseLineup[role]!) : "";
+      const teamCanon = teamObj ? resolveTeamAlias(teamObj.u) || teamObj.u : "";
+      const playerClubCanon = player?.clubU ? resolveTeamAlias(player.clubU) || player.clubU : "";
+      const playedForTeamInPeriod = Boolean(
+        teamObj &&
+          usedGames.some((g) => {
+            const gt = resolveTeamAlias(g[7] || "") || g[7].toLowerCase();
+            return gt === teamCanon || g[7].toLowerCase() === teamObj.name.toLowerCase();
+          }),
+      );
+      const isNew =
+        Boolean(slug) &&
+        (explicitNewSet.has(slug) ||
+          (Boolean(baseSlug) && baseSlug !== slug) ||
+          (Boolean(teamObj) && !explicitNewSet.size && Boolean(playerClubCanon && playerClubCanon !== teamCanon && !playedForTeamInPeriod)));
+
+      const contractDate = (slug && teamObj?.contracts?.[slug]) || player?.bio?.contract || "";
+      const contractYY = /^\d{4}/.test(contractDate) ? `'${contractDate.slice(2, 4)}` : "";
+
+      return { role, slug, player, games, agg, rt, fallback, isNew, baseSlug, contractYY };
+    });
+  }, [resolvedSlots, playerData, period, ratingFile, baseLineup, teamObj, explicitNewSet]);
+
+  const filledCards = useMemo(() => roleCards.filter((c) => Boolean(c.player && c.agg)), [roleCards]);
+
+  const economy = useMemo(
+    () =>
+      computeRosterEconomy(
+        filledCards.map((c) => ({
+          role: c.role,
+          games: c.agg!.g,
+          rating: c.rt,
+          goldShare: c.agg!.goldShare,
+          dmgShare: c.agg!.dmgShare,
+          gd15: c.agg!.tl?.gd15 ?? null,
+        })),
+      ),
+    [filledCards],
+  );
+
+  const flexReport = useMemo(
+    () =>
+      computeRosterFlexes(
+        filledCards.map((c) => ({
+          slug: c.slug,
+          name: c.player!.name,
+          role: c.role,
+          champs: c.agg!.champs.map((ch) => ({ champ: ch.c, games: ch.g, wins: ch.w })),
+        })),
+      ),
+    [filledCards],
+  );
+
+  const synergyPairs = useMemo(
+    () =>
+      computeRosterSynergy(
+        filledCards.map((c) => ({
+          slug: c.slug,
+          name: c.player!.name,
+          role: c.role,
+          games: c.games,
+        })),
+      ),
+    [filledCards],
+  );
+
+  const deltaSummary = useMemo(() => {
+    if (!vsTeamObj) return null;
+    const currMap = {} as Partial<Record<RosterRole, RosterDeltaSlotInput | null>>;
+    const baseMap = {} as Partial<Record<RosterRole, RosterDeltaSlotInput | null>>;
+    for (const c of roleCards) {
+      currMap[c.role] =
+        c.player && c.agg
+          ? {
+              role: c.role,
+              slug: c.slug,
+              name: c.player.name,
+              games: c.agg.g,
+              rating: c.rt,
+              kda: c.agg.kda,
+              dpm: c.agg.dpm,
+              goldShare: c.agg.goldShare,
+              gd15: c.agg.tl?.gd15 ?? null,
+            }
+          : null;
+      const bRec = c.baseSlug ? playerData[c.baseSlug] : undefined;
+      if (bRec?.player) {
+        const bSub = inPeriod(bRec.games, vp, playerRowRef);
+        const bUsed = bSub.length ? bSub : bRec.games;
+        const bAgg = bUsed.length ? playerAgg(bUsed) : null;
+        baseMap[c.role] = bAgg
+          ? {
+              role: c.role,
+              slug: c.baseSlug,
+              name: bRec.player.name,
+              games: bAgg.g,
+              rating: avgRatingInPeriod(bUsed, ratingFile),
+              kda: bAgg.kda,
+              dpm: bAgg.dpm,
+              goldShare: bAgg.goldShare,
+              gd15: bAgg.tl?.gd15 ?? null,
+            }
+          : null;
+      } else {
+        baseMap[c.role] = null;
+      }
+    }
+    return computeRosterDelta(currMap, baseMap, period === vp);
+  }, [vsTeamObj, roleCards, playerData, vp, period, ratingFile]);
+
+  const bg = transparent ? "transparent" : "var(--rw-bg)";
+  if (error) return <div style={{ padding: 24, color: "var(--rw-red)", background: bg }}>{error}</div>;
+  if (!dataSettled) return <div style={{ padding: 24, color: "var(--rw-muted)", background: bg }}>…</div>;
+
+  const periodLabel = period === "all" ? tl("All time") : period.startsWith("y") ? period.slice(1) : period;
+  const vpLabel = vp === "all" ? tl("All time") : vp.startsWith("y") ? vp.slice(1) : vp;
+  const headerTitle = title || (teamObj ? teamObj.name : tl("Roster builder"));
+  const gmParams = new URLSearchParams({ p: period });
+  for (const c of roleCards) {
+    if (c.slug) gmParams.set(c.role === "Jungle" ? "jg" : c.role === "Support" ? "sup" : c.role.toLowerCase(), c.slug);
+  }
+  if (vsTeamObj) {
+    gmParams.set("vs", vsTeamObj.u);
+    gmParams.set("vp", vp);
+  }
+  const gmHref = siteLink(`stats/gm?${gmParams.toString()}`);
+
+  const econLabel =
+    economy.economyStatus === "balanced"
+      ? tl("Balanced")
+      : economy.economyStatus === "greedy"
+        ? tl("Greedy")
+        : economy.economyStatus === "low-econ"
+          ? tl("Low-econ")
+          : tl("Incomplete");
+  const econColor =
+    economy.economyStatus === "balanced"
+      ? "var(--rw-teal)"
+      : economy.economyStatus === "greedy"
+        ? "var(--rw-red)"
+        : "var(--rw-sub)";
+  const gradeColor =
+    economy.grade === "S"
+      ? "var(--rw-teal)"
+      : economy.grade === "A"
+        ? "var(--rw-accent)"
+        : economy.grade === "B"
+          ? "var(--rw-text)"
+          : "var(--rw-sub)";
+
+  return (
+    <div style={{ background: bg, minHeight: "100vh", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
+      <div
+        id="rw-roster-report-card"
+        ref={cardRef}
+        data-ready={ready ? "1" : "0"}
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          isolation: "isolate",
+          transform: scale !== 1 ? `scale(${scale})` : undefined,
+          transformOrigin: "top center",
+          width: 1600,
+          height: 900,
+          boxSizing: "border-box",
+          padding: "28px 44px 20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          color: "var(--rw-text)",
+          fontFamily: "inherit",
+          background: "linear-gradient(135deg, var(--rw-surface) 0%, var(--rw-bg) 74%)",
+        }}
+      >
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 6,
+            background: "linear-gradient(90deg, var(--rw-accent) 0%, var(--rw-teal) 100%)",
+            zIndex: 2,
+          }}
+        />
+        {teamObj && <ReportWatermark name={teamObj.name} code={teamObj.codes?.[0]} />}
+
+        {/* Header */}
+        <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, minHeight: 74 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
+            {teamObj && <TeamLogo name={teamObj.name} code={teamObj.codes?.[0]} size={64} />}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2.2, textTransform: "uppercase", color: "var(--rw-accent)" }}>
+                  {tl("Roster report card")}
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 10px", borderRadius: 999, border: "1px solid var(--rw-border)", background: "rgba(9, 8, 22, 0.72)", color: "var(--rw-teal)" }}>
+                  {periodLabel}
+                </span>
+                {teamObj?.rating?.league && (
+                  <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 10px", borderRadius: 999, border: "1px solid var(--rw-border)", background: "rgba(9, 8, 22, 0.72)", color: "var(--rw-sub)" }}>
+                    {teamObj.rating.league}
+                    {teamObj.rating.rank != null ? ` · #${teamObj.rating.rank}` : ""}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 36, fontWeight: 900, lineHeight: 1.08, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {headerTitle}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+            {deltaSummary && deltaSummary.comparedRoles > 0 && (deltaSummary.netRatingDelta != null || deltaSummary.netGd15Delta != null) && (
+              <div
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 12,
+                  background: "rgba(9, 8, 22, 0.72)",
+                  border: "1px solid var(--rw-border)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 3,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--rw-muted)" }}>
+                  {tl("Baseline")} ({vpLabel})
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 16, fontWeight: 800 }}>
+                  {deltaSummary.netRatingDelta != null && (
+                    <span style={{ color: deltaSummary.netRatingDelta > 0 ? "var(--rw-teal)" : deltaSummary.netRatingDelta < 0 ? "var(--rw-red)" : "var(--rw-sub)" }}>
+                      {deltaSummary.netRatingDelta > 0 ? `+${fmtDec(deltaSummary.netRatingDelta, 1)}` : fmtDec(deltaSummary.netRatingDelta, 1)} {tl("Rating")}
+                    </span>
+                  )}
+                  {deltaSummary.netGd15Delta != null && (
+                    <span style={{ color: deltaSummary.netGd15Delta > 0 ? "var(--rw-teal)" : deltaSummary.netGd15Delta < 0 ? "var(--rw-red)" : "var(--rw-sub)" }}>
+                      {deltaSummary.netGd15Delta > 0 ? `+${fmtNum(deltaSummary.netGd15Delta)}` : fmtNum(deltaSummary.netGd15Delta)} GD@15
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                padding: "8px 14px 8px 18px",
+                borderRadius: 14,
+                background: "rgba(9, 8, 22, 0.78)",
+                border: "1px solid var(--rw-line)",
+              }}
+            >
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--rw-muted)" }}>
+                  {tl("Rating")}
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.05, fontVariantNumeric: "tabular-nums", color: "var(--rw-text)" }}>
+                  {economy.avgRating != null ? fmtRating(economy.avgRating) : "–"}
+                </div>
+              </div>
+              {economy.grade && (
+                <div
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 30,
+                    fontWeight: 900,
+                    background: "rgba(179, 157, 255, 0.14)",
+                    border: `2px solid ${gradeColor}`,
+                    color: gradeColor,
+                  }}
+                >
+                  {economy.grade}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 5 Role Columns */}
+        <div style={{ position: "relative", zIndex: 1, flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 14 }}>
+          {roleCards.map((c) => {
+            const p = c.player;
+            const agg = c.agg;
+            const wr = agg && agg.g ? Math.round((agg.w / agg.g) * 100) : null;
+            const dRow = deltaSummary?.rows.find((r) => r.role === c.role);
+            const subLabel = c.isNew
+              ? p?.club || tl("Free agent")
+              : teamObj && p
+                ? tl("Returning")
+                : p?.club || tl("Free agent");
+            const showPredDelta = Boolean(dRow?.baseline && dRow.baseline.slug !== c.slug && dRow.dRating != null);
+
+            return (
+              <div
+                key={c.role}
+                style={{
+                  background: "rgba(9, 8, 22, 0.74)",
+                  border: c.isNew ? "1px solid rgba(224, 184, 107, 0.65)" : "1px solid var(--rw-border)",
+                  borderRadius: 14,
+                  padding: "14px 16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  minWidth: 0,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 8, borderBottom: "1px solid var(--rw-border)" }}>
+                  <span style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.4, color: "var(--rw-accent)" }}>
+                    {roleName(c.role)}
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {c.isNew && (
+                      <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 0.9, padding: "2px 8px", borderRadius: 999, background: "rgba(224, 184, 107, 0.2)", border: "1px solid var(--rw-teal)", color: "var(--rw-teal)" }}>
+                        NEW
+                      </span>
+                    )}
+                    {c.contractYY && (
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "1px 7px", borderRadius: 6, border: "1px solid var(--rw-border)", color: "var(--rw-muted)", fontVariantNumeric: "tabular-nums" }}>
+                        {c.contractYY}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {p ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12, minWidth: 0 }}>
+                      <div style={{ borderRadius: "50%", padding: 2, background: c.isNew ? "var(--rw-teal)" : "var(--rw-accent)", flexShrink: 0 }}>
+                        <PlayerPhoto name={p.name} team={p.club} slug={c.slug} img={p.img} size={70} linkFallback={false} />
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 21, fontWeight: 900, lineHeight: 1.12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {linkOut ? (
+                            <a href={siteLink(`player/${encodeURIComponent(c.slug)}`)} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
+                              {p.name}
+                            </a>
+                          ) : (
+                            p.name
+                          )}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 4, fontSize: 12, color: c.isNew ? "var(--rw-teal)" : "var(--rw-sub)", fontWeight: c.isNew ? 700 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {c.isNew && p.club && <TeamLogo name={p.club} size={14} />}
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{subLabel}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: "7px 10px",
+                        borderRadius: 10,
+                        background: "rgba(21, 18, 48, 0.78)",
+                        border: "1px solid var(--rw-border)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 8,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {c.rt != null ? <RatingBadge v={c.rt} /> : <span style={{ fontSize: 12, color: "var(--rw-muted)" }}>–</span>}
+                      {showPredDelta ? (
+                        <span style={{ fontSize: 11, fontWeight: 800, color: dRow!.dRating! > 0 ? "var(--rw-teal)" : dRow!.dRating! < 0 ? "var(--rw-red)" : "var(--rw-sub)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {dRow!.dRating! > 0 ? `+${fmtDec(dRow!.dRating!, 1)}` : fmtDec(dRow!.dRating!, 1)} vs {dRow!.baseline!.name}
+                        </span>
+                      ) : (
+                        agg && (
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--rw-sub)" }}>
+                            {fmtNum(agg.g)}G{wr != null ? ` · ${wr}%` : ""}
+                            {c.fallback ? " *" : ""}
+                          </span>
+                        )
+                      )}
+                    </div>
+
+                    {agg && (
+                      <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr auto", rowGap: 9, columnGap: 10, fontSize: 14, fontVariantNumeric: "tabular-nums" }}>
+                        {[
+                          [tl("Games"), `${fmtNum(agg.g)}${wr != null ? ` (${wr}%)` : ""}`, "var(--rw-text)"],
+                          ["KDA", fmtDec(agg.kda, 1), "var(--rw-text)"],
+                          ["DPM", agg.dpm != null ? fmtNum(agg.dpm) : "–", "var(--rw-sub)"],
+                          ["Gold%", agg.goldShare != null ? `${fmtDec(agg.goldShare, 1)}%` : "–", "var(--rw-sub)"],
+                          ["DMG%", agg.dmgShare != null ? `${fmtDec(agg.dmgShare, 1)}%` : "–", "var(--rw-sub)"],
+                          [
+                            "GD@15",
+                            agg.tl?.gd15 != null ? `${agg.tl.gd15 > 0 ? "+" : ""}${fmtNum(agg.tl.gd15)}` : "–",
+                            (agg.tl?.gd15 || 0) > 0 ? "var(--rw-teal)" : (agg.tl?.gd15 || 0) < 0 ? "var(--rw-red)" : "var(--rw-sub)",
+                          ],
+                        ].map(([k, v, col]) => (
+                          <React.Fragment key={k}>
+                            <span style={{ color: "var(--rw-muted)", fontWeight: 600 }}>{k}</span>
+                            <span style={{ textAlign: "right", fontWeight: 800, color: col }}>{v}</span>
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    )}
+
+                    {agg && agg.champs.length > 0 && (
+                      <div style={{ marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--rw-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {agg.champs.slice(0, 3).map((ch) => (
+                            <div
+                              key={ch.c}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                padding: "3px 7px",
+                                borderRadius: 8,
+                                background: "rgba(21, 18, 48, 0.85)",
+                                border: "1px solid var(--rw-border)",
+                                fontSize: 11,
+                                fontWeight: 700,
+                                fontVariantNumeric: "tabular-nums",
+                                color: "var(--rw-sub)",
+                              }}
+                            >
+                              <ChampIcon name={ch.c} size={22} />
+                              <span>{ch.g}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ marginTop: 24, fontSize: 13, color: "var(--rw-muted)" }}>—</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Bottom 3 Analyst Summary Panels */}
+        <div style={{ position: "relative", zIndex: 1, height: 162, display: "grid", gridTemplateColumns: "1.05fr 1fr 1.15fr", gap: 14 }}>
+          {/* 1. Economy & Resource Fit */}
+          <div style={{ background: "rgba(9, 8, 22, 0.74)", border: "1px solid var(--rw-border)", borderRadius: 14, padding: "12px 16px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--rw-accent)" }}>
+                {tl("Rating & resource fit")}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 9px", borderRadius: 999, border: `1px solid ${econColor}`, color: econColor }}>
+                {econLabel}
+              </span>
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5, fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ color: "var(--rw-muted)" }}>{tl("Combined Gold%")}</span>
+                <span style={{ fontWeight: 800 }}>{economy.totalGoldShare != null ? `${fmtDec(economy.totalGoldShare, 1)}%` : "–"}</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.07)", border: "1px solid var(--rw-border)", overflow: "hidden" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${economy.totalGoldShare != null ? Math.min(100, (economy.totalGoldShare / 120) * 100) : 0}%`,
+                    background: econColor,
+                    borderRadius: 999,
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, paddingTop: 8, borderTop: "1px solid var(--rw-border)", fontVariantNumeric: "tabular-nums" }}>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--rw-muted)" }}>{tl("Combined DMG%")}</div>
+                <div style={{ fontSize: 18, fontWeight: 900 }}>{economy.totalDmgShare != null ? `${fmtDec(economy.totalDmgShare, 1)}%` : "–"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--rw-muted)" }}>{tl("Combined GD@15")}</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: (economy.sumGd15 || 0) > 0 ? "var(--rw-teal)" : (economy.sumGd15 || 0) < 0 ? "var(--rw-red)" : "var(--rw-sub)" }}>
+                  {economy.sumGd15 != null ? `${economy.sumGd15 > 0 ? "+" : ""}${fmtNum(economy.sumGd15)}` : "–"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Duo Chemistry */}
+          <div style={{ background: "rgba(9, 8, 22, 0.74)", border: "1px solid var(--rw-border)", borderRadius: 14, padding: "12px 16px", display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--rw-accent)", marginBottom: 8 }}>
+              {tl("Teammate chemistry")}
+            </div>
+            {synergyPairs.length > 0 ? (
+              <div style={{ display: "grid", gap: 6, fontVariantNumeric: "tabular-nums" }}>
+                {synergyPairs.slice(0, 3).map((pair) => (
+                  <div
+                    key={`${pair.a.slug}-${pair.b.slug}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      padding: "5px 10px",
+                      borderRadius: 8,
+                      background: "rgba(21, 18, 48, 0.72)",
+                      border: "1px solid var(--rw-border)",
+                      fontSize: 13,
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {pair.a.name} + {pair.b.name}
+                    </span>
+                    <span style={{ whiteSpace: "nowrap", fontWeight: 800 }}>
+                      <span style={{ color: "var(--rw-sub)", fontWeight: 600 }}>{fmtNum(pair.games)}G · </span>
+                      <span style={{ color: pair.winPct >= 55 ? "var(--rw-teal)" : pair.winPct < 45 ? "var(--rw-red)" : "var(--rw-text)" }}>
+                        {fmtDec(pair.winPct, 1)}%
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: 12, color: "var(--rw-muted)", margin: "auto 0", lineHeight: 1.45 }}>
+                {tl("None of these selected players have shared an official pro match together yet.")}
+              </p>
+            )}
+          </div>
+
+          {/* 3. Bo5 Fearless & Flex Depth */}
+          <div style={{ background: "rgba(9, 8, 22, 0.74)", border: "1px solid var(--rw-border)", borderRadius: 14, padding: "12px 16px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--rw-accent)" }}>
+              {tl("Bo5 Fearless & flex depth")}
+            </div>
+            {flexReport.flexPicks.length > 0 ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, overflow: "hidden", maxHeight: 74 }}>
+                {flexReport.flexPicks.slice(0, 6).map((f) => (
+                  <span
+                    key={f.champ}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "4px 9px",
+                      borderRadius: 8,
+                      background: "rgba(21, 18, 48, 0.85)",
+                      border: "1px solid var(--rw-border)",
+                      fontSize: 12,
+                    }}
+                  >
+                    <ChampIcon name={f.champ} size={20} />
+                    <span style={{ fontWeight: 800 }}>{f.champ}</span>
+                    <span style={{ color: "var(--rw-muted)", fontSize: 11, fontVariantNumeric: "tabular-nums" }}>{f.totalGames}</span>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: "var(--rw-muted)" }}>
+                {tl("No shared multi-role flex champions with 3+ games yet in this period.")}
+              </div>
+            )}
+            <div style={{ fontSize: 11, fontWeight: 700, paddingTop: 7, borderTop: "1px solid var(--rw-border)", color: flexReport.shallowPools.length > 0 ? "var(--rw-red)" : "var(--rw-teal)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {flexReport.shallowPools.length > 0
+                ? `${tl("Fearless pinch watch (<5 picks with 2+ games):")} ${flexReport.shallowPools.map((s) => `${s.name} (${s.usableCount})`).join(", ")}`
+                : tl("All filled roles have 5+ proven champions (2+ games) for deep Bo5 Fearless drafts.")}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid var(--rw-border)", paddingTop: 10, fontSize: 13, color: "var(--rw-muted)" }}>
+          <BrandFoot linkOut={linkOut} href={gmHref} />
+          <span style={{ fontVariantNumeric: "tabular-nums" }}>
+            Leaguepedia (CC BY-SA 3.0) · Oracle's Elixir · {new Date().toISOString().slice(0, 10)}
+          </span>
         </div>
       </div>
     </div>
@@ -1205,6 +1964,17 @@ const OverlayStudio: React.FC<{
 const q = new URLSearchParams(window.location.search);
 const SLUGS = (q.get("teams") || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
 const MODE_PARAM = (q.get("mode") || "").toLowerCase();
+const TEAM_PARAM = (q.get("team") || "").trim().toLowerCase();
+const VS_PARAM = (q.get("vs") || "").trim().toLowerCase();
+const VP_PARAM = q.get("vp") || "y2026";
+const NEW_PARAM = (q.get("new") || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
+const ROLE_SLUGS_PARAM: Partial<Record<RosterRole, string>> = {
+  Top: (q.get("top") || "").trim().toLowerCase(),
+  Jungle: (q.get("jg") || "").trim().toLowerCase(),
+  Mid: (q.get("mid") || "").trim().toLowerCase(),
+  Bot: (q.get("bot") || "").trim().toLowerCase(),
+  Support: (q.get("sup") || "").trim().toLowerCase(),
+};
 const PLAYER_PARAM = (q.get("player") || "").trim().toLowerCase();
 const PLAYERS_PARAM = (q.get("players") || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
 const TITLE_PARAM = q.get("title") || "";
@@ -1218,9 +1988,59 @@ const TRANSPARENT = q.get("bg") === "transparent";
 const SCALE = Math.min(3, Math.max(0.5, Number(q.get("scale")) || 1));
 
 export const Overlay: React.FC = () => {
+  const [catalog, setCatalog] = useState<CatalogData>(() => loadCachedCatalog() ?? EMPTY_CATALOG);
+  const [catalogReady, setCatalogReady] = useState<boolean>(() => {
+    const cached = loadCachedCatalog();
+    return Boolean(cached && cached.teams.length > 0);
+  });
+
+  useEffect(() => {
+    let alive = true;
+    const cached = loadCachedCatalog();
+    if (cached && cached.teams.length > 0) {
+      setCatalogReady(true);
+      return;
+    }
+    fetchLiveCatalog(cached ?? undefined)
+      .catch(() => null)
+      .then((updated) => {
+        if (!alive) return;
+        if (updated) {
+          setCatalog(updated);
+          return null;
+        }
+        return loadBundledCatalog().then((b) => alive && setCatalog((p) => (p.teams.length ? p : b)));
+      })
+      .catch(() => {})
+      .finally(() => alive && setCatalogReady(true));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const wrap = (node: React.ReactNode) => <RiotCatalogContext.Provider value={catalog}>{node}</RiotCatalogContext.Provider>;
+
   if (!STUDIO) {
+    if (MODE_PARAM === "report") {
+      return wrap(
+        <ReportOverlay
+          teamParam={TEAM_PARAM}
+          roleSlugs={ROLE_SLUGS_PARAM}
+          playersList={PLAYERS_PARAM}
+          vsParam={VS_PARAM}
+          vp={VP_PARAM}
+          period={PERIOD_PARAM}
+          newSlugs={NEW_PARAM}
+          title={TITLE_PARAM}
+          transparent={TRANSPARENT}
+          scale={SCALE}
+          linkOut={IS_EMBED}
+          catalogReady={catalogReady}
+        />,
+      );
+    }
     if (MODE_PARAM === "pickem") {
-      return (
+      return wrap(
         <PickemOverlay
           event={EVENT_PARAM}
           group={/^[A-HJ-NP-Z2-9]{6}$/.test(GROUP_PARAM) ? GROUP_PARAM : undefined}
@@ -1228,37 +2048,37 @@ export const Overlay: React.FC = () => {
           transparent={TRANSPARENT}
           scale={SCALE}
           linkOut={IS_EMBED}
-        />
+        />,
       );
     }
     if (MODE_PARAM === "rankings" || (!MODE_PARAM && !SLUGS.length && !PLAYER_PARAM && !PLAYERS_PARAM.length && LEAGUE_PARAM)) {
-      return <RankingsOverlay league={LEAGUE_PARAM} count={COUNT_PARAM} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />;
+      return wrap(<RankingsOverlay league={LEAGUE_PARAM} count={COUNT_PARAM} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />);
     }
     if (MODE_PARAM === "player" || (!MODE_PARAM && !SLUGS.length && PLAYER_PARAM)) {
-      if (PLAYER_PARAM) return <PlayerOverlay slug={PLAYER_PARAM} period={PERIOD_PARAM} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />;
+      if (PLAYER_PARAM) return wrap(<PlayerOverlay slug={PLAYER_PARAM} period={PERIOD_PARAM} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />);
     }
     if (MODE_PARAM === "roster" || (!MODE_PARAM && !SLUGS.length && PLAYERS_PARAM.length > 0)) {
       if (PLAYERS_PARAM.length > 0) {
-        return <RosterOverlay slugs={PLAYERS_PARAM} title={TITLE_PARAM} period={PERIOD_PARAM} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />;
+        return wrap(<RosterOverlay slugs={PLAYERS_PARAM} title={TITLE_PARAM} period={PERIOD_PARAM} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />);
       }
     }
     if (SLUGS.length >= 2) {
-      return <MatchupOverlay slugs={[SLUGS[0], SLUGS[1]]} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />;
+      return wrap(<MatchupOverlay slugs={[SLUGS[0], SLUGS[1]]} transparent={TRANSPARENT} scale={SCALE} linkOut={IS_EMBED} />);
     }
   }
 
   const initMode: OverlayMode =
     MODE_PARAM === "pickem"
       ? "pickem"
-      : MODE_PARAM === "rankings" || (!SLUGS.length && !PLAYER_PARAM && !PLAYERS_PARAM.length && LEAGUE_PARAM)
+      : MODE_PARAM === "rankings" || (!MODE_PARAM && !SLUGS.length && !PLAYER_PARAM && !PLAYERS_PARAM.length && LEAGUE_PARAM)
         ? "rankings"
-        : MODE_PARAM === "player" || (!SLUGS.length && PLAYER_PARAM)
+        : MODE_PARAM === "player" || (!MODE_PARAM && !SLUGS.length && PLAYER_PARAM)
           ? "player"
-          : MODE_PARAM === "roster" || (!SLUGS.length && PLAYERS_PARAM.length > 0)
+          : MODE_PARAM === "roster" || (!MODE_PARAM && !SLUGS.length && PLAYERS_PARAM.length > 0)
             ? "roster"
             : "teams";
 
-  return (
+  return wrap(
     <OverlayStudio
       initMode={initMode}
       initTeams={SLUGS}
@@ -1272,6 +2092,6 @@ export const Overlay: React.FC = () => {
       initGroup={GROUP_PARAM}
       initTransparent={TRANSPARENT}
       initScale={SCALE}
-    />
+    />,
   );
 };

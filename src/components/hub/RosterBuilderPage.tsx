@@ -359,7 +359,7 @@ export function computeRosterDelta(
   };
 }
 
-function avgRatingInPeriod(rows: PlayerGameRow[], ratingFile: RatingFile | null): number | null {
+export function avgRatingInPeriod(rows: PlayerGameRow[], ratingFile: RatingFile | null): number | null {
   if (!ratingFile || !rows.length) return null;
   let sum = 0;
   let n = 0;
@@ -631,6 +631,24 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
   const rosterPlayersParam = ROSTER_ROLES.map((r) => slotSlugs[r]).filter(Boolean).join(",");
   const periodLabel = period === "all" ? tl("All time") : period.startsWith("y") ? period.slice(1) : period;
   const shareUrl = hubShareUrl({ kind: "gm", ...(query ? { query } : {}) });
+  const reportUrl = useMemo(() => {
+    const p = new URLSearchParams({ mode: "report", p: period });
+    if (ROSTER_ROLES.every((r) => Boolean(slotSlugs[r]))) {
+      p.set("players", ROSTER_ROLES.map((r) => slotSlugs[r]).join(","));
+    } else {
+      for (const r of ROSTER_ROLES) {
+        if (slotSlugs[r]) p.set(ROLE_PARAM[r], slotSlugs[r]);
+      }
+    }
+    if (vsSlug) {
+      p.set("team", vsSlug);
+      p.set("vs", vsSlug);
+      p.set("vp", vp);
+    } else if (teamSeed) {
+      p.set("team", resolveTeamAlias(teamSeed) || teamSeed);
+    }
+    return `${BASE}embed?${p.toString()}`;
+  }, [period, slotSlugs, vsSlug, vp, teamSeed]);
 
   const copyPost = () => {
     const lines = [
@@ -731,6 +749,15 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
               >
                 <MonitorPlay className="w-3.5 h-3.5" />
                 {tl("Embed / OBS")} →
+              </a>
+              <a
+                href={reportUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rw-teal/50 bg-rw-teal/10 text-rw-teal hover:bg-rw-teal hover:text-rw-bg font-semibold transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {tl("Report card")} →
               </a>
             </>
           )}

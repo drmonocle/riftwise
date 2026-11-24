@@ -2387,5 +2387,12 @@
   "Show all {n} duos": "Hiện tất cả {n} cặp đôi",
   "Synergy Δ compares actual duo win rate against each champion's solo win rate on that side.": "Chênh lệch Δ so sánh tỷ lệ thắng thực tế của cặp với tỷ lệ thắng đơn từng tướng ở bên đó.",
   "Coming up next: live solo-queue tracking links and expanded tournament broadcast widgets.": "Sắp ra mắt: liên kết theo dõi xếp hạng đơn trực tiếp và tiện ích phát sóng giải đấu mở rộng.",
-  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "Chọn một cặp vị trí ở trên để xem phối hợp 2v2 của {champion} mùa này."
+  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "Chọn một cặp vị trí ở trên để xem phối hợp 2v2 của {champion} mùa này.",
+  "Report card": "Bảng đánh giá",
+  "Roster report card": "Bảng đánh giá đội hình",
+  "Returning": "Ở lại",
+  "Balanced": "Cân bằng",
+  "Greedy": "Ngốn tài nguyên",
+  "Low-econ": "Ít tài nguyên",
+  "Incomplete": "Chưa đủ"
 }

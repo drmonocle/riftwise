@@ -39,16 +39,47 @@ function send(body: Record<string, unknown>) {
 
 /** a crawler or a test browser: it would count every page it renders (the service checks the user agent too) */
 const botLike = () =>
-  typeof navigator === "undefined" || !!navigator.webdriver || /bot|crawl|spider|slurp|headless|lighthouse|preview/i.test(navigator.userAgent);
+  typeof navigator === "undefined" ||
+  !!navigator.webdriver ||
+  /bot|crawl|spider|slurp|headless|lighthouse|preview/i.test(navigator.userAgent) ||
+  (typeof window !== "undefined" && (window.innerWidth === 0 || window.innerHeight === 0));
 const INPUTS = ["pointerdown", "pointermove", "keydown", "touchstart", "wheel"];
 let person = false;
+let prevMove: { x: number; y: number } | null = null;
+let firstMoveAt = 0;
+let moveCount = 0;
+let moveDist = 0;
 const waiting: (() => void)[] = [];
 
-function onInput(e: Event) {
-  if (person || !e.isTrusted) return;
+function confirmPerson() {
+  if (person) return;
   person = true;
   for (const t of INPUTS) window.removeEventListener(t, onInput, true);
   for (const f of waiting.splice(0)) f();
+}
+
+function onInput(e: Event) {
+  if (person || !e.isTrusted) return;
+  const vis = typeof document !== "undefined" ? document.visibilityState : "visible";
+  if (e.type !== "pointermove") {
+    if (vis !== "hidden") confirmPerson();
+    return;
+  }
+  if (vis !== "visible") return;
+  const pe = e as PointerEvent;
+  const x = pe.clientX ?? 0;
+  const y = pe.clientY ?? 0;
+  const now = e.timeStamp || Date.now();
+  if (!prevMove) {
+    prevMove = { x, y };
+    firstMoveAt = now;
+    moveCount = 1;
+    return;
+  }
+  moveDist += Math.hypot(x - prevMove.x, y - prevMove.y);
+  prevMove = { x, y };
+  moveCount++;
+  if (moveCount >= 2 && now - firstMoveAt >= 40 && moveDist >= 12) confirmPerson();
 }
 
 if (typeof window !== "undefined" && typeof window.addEventListener === "function")

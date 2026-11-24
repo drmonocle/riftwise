@@ -2387,5 +2387,12 @@
   "Show all {n} duos": "显示全部 {n} 组组合",
   "Synergy Δ compares actual duo win rate against each champion's solo win rate on that side.": "协同差值对比该阵营下各英雄单独胜率与组合实际胜率。",
   "Coming up next: live solo-queue tracking links and expanded tournament broadcast widgets.": "即将推出：实时单排追踪链接与扩展赛事直播组件。",
-  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "选择上方位置组合，查看{champion}本赛季的2v2协同。"
+  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "选择上方位置组合，查看{champion}本赛季的2v2协同。",
+  "Report card": "阵容报告卡",
+  "Roster report card": "阵容评估报告卡",
+  "Returning": "留队",
+  "Balanced": "均衡配置",
+  "Greedy": "高吃资源",
+  "Low-econ": "低吃资源",
+  "Incomplete": "未完整"
 }

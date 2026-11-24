@@ -2387,5 +2387,12 @@
   "Show all {n} duos": "전체 {n}개 듀오 보기",
   "Synergy Δ compares actual duo win rate against each champion's solo win rate on that side.": "시너지 Δ는 해당 진영에서 각 챔피언의 개별 승률 기준 대비 실제 듀오 승률 차이를 나타냅니다.",
   "Coming up next: live solo-queue tracking links and expanded tournament broadcast widgets.": "다음 예정 기능: 실시간 솔로 랭크 전적 연동 링크 및 확장된 대회 방송 위젯.",
-  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "위에서 포지션 조합을 선택하면 이번 시즌 {champion}의 2v2 시너지를 확인할 수 있습니다."
+  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "위에서 포지션 조합을 선택하면 이번 시즌 {champion}의 2v2 시너지를 확인할 수 있습니다.",
+  "Report card": "로스터 성적표",
+  "Roster report card": "로스터 성적표",
+  "Returning": "잔류",
+  "Balanced": "균형형",
+  "Greedy": "고투자형",
+  "Low-econ": "저투자형",
+  "Incomplete": "미완성"
 }

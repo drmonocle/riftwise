@@ -2387,5 +2387,12 @@
   "Show all {n} duos": "Mostrar los {n} dúos",
   "Synergy Δ compares actual duo win rate against each champion's solo win rate on that side.": "Sinergia Δ compara el porcentaje real del dúo con el rendimiento individual de cada campeón en ese lado.",
   "Coming up next: live solo-queue tracking links and expanded tournament broadcast widgets.": "Próximamente: enlaces de seguimiento de solo queue en vivo y widgets ampliados para retransmisiones de torneos.",
-  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "Elige arriba una pareja de rol para ver las sinergias 2v2 de {champion} esta temporada."
+  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "Elige arriba una pareja de rol para ver las sinergias 2v2 de {champion} esta temporada.",
+  "Report card": "Informe",
+  "Roster report card": "Informe de plantilla",
+  "Returning": "Continúa",
+  "Balanced": "Equilibrado",
+  "Greedy": "Exigente en oro",
+  "Low-econ": "Bajo en oro",
+  "Incomplete": "Incompleto"
 }

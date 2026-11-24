@@ -2387,5 +2387,12 @@
   "Show all {n} duos": "Tüm {n} ikiliyi göster",
   "Synergy Δ compares actual duo win rate against each champion's solo win rate on that side.": "Sinerji Δ, gerçek ikili kazanma oranını her şampiyonun o taraftaki tekil oranıyla karşılaştırır.",
   "Coming up next: live solo-queue tracking links and expanded tournament broadcast widgets.": "Sırada: canlı tekli sıra takip bağlantıları ve genişletilmiş turnuva yayın widget'ları.",
-  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "Bu sezon {champion} için 2v2 sinerjilerini görmek üzere yukarıdan bir rol ikilisi seçin."
+  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "Bu sezon {champion} için 2v2 sinerjilerini görmek üzere yukarıdan bir rol ikilisi seçin.",
+  "Report card": "Kadro karnesi",
+  "Roster report card": "Kadro değerlendirme karnesi",
+  "Returning": "Devam ediyor",
+  "Balanced": "Dengeli",
+  "Greedy": "Altın odaklı",
+  "Low-econ": "Düşük ekonomi",
+  "Incomplete": "Eksik"
 }

@@ -2387,5 +2387,12 @@
   "Show all {n} duos": "顯示全部 {n} 組組合",
   "Synergy Δ compares actual duo win rate against each champion's solo win rate on that side.": "協同差值對比該陣營下各英雄單獨勝率與組合實際勝率。",
   "Coming up next: live solo-queue tracking links and expanded tournament broadcast widgets.": "即將推出：即時單排追蹤連結與擴展賽事直播元件。",
-  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "選擇上方路線組合，查看{champion}本賽季的2v2協同。"
+  "Choose a role pair above to inspect {champion}'s 2v2 synergies this season.": "選擇上方路線組合，查看{champion}本賽季的2v2協同。",
+  "Report card": "陣容報告卡",
+  "Roster report card": "陣容評估報告卡",
+  "Returning": "留隊",
+  "Balanced": "均衡配置",
+  "Greedy": "高吃資源",
+  "Low-econ": "低吃資源",
+  "Incomplete": "未完整"
 }

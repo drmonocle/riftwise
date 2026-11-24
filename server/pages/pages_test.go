@@ -697,3 +697,30 @@ func TestTeamAliasesAndQueryNoindex(t *testing.T) {
 	}
 }
 
+func TestEdgeCacheHeaders(t *testing.T) {
+	s := testSite(t)
+	okResp := get(s, "/riftwise/player/faker")
+	if okResp.Code != http.StatusOK {
+		t.Fatalf("player/faker status %d", okResp.Code)
+	}
+	if got := okResp.Header().Get("Cache-Control"); got != "no-cache" {
+		t.Errorf("200 Cache-Control = %q, want no-cache", got)
+	}
+	if got := okResp.Header().Get("CDN-Cache-Control"); got != "public, max-age=3600, stale-while-revalidate=86400" {
+		t.Errorf("200 CDN-Cache-Control = %q, want public, max-age=3600, stale-while-revalidate=86400", got)
+	}
+	notFound := get(s, "/riftwise/player/nobody-here-999")
+	if notFound.Code != http.StatusNotFound {
+		t.Fatalf("missing player status %d", notFound.Code)
+	}
+	if cdn := notFound.Header().Get("CDN-Cache-Control"); strings.Contains(cdn, "public") {
+		t.Errorf("404 emitted public CDN-Cache-Control: %q", cdn)
+	}
+	st := httptest.NewRecorder()
+	s.serveStatusJSON(st, httptest.NewRequest(http.MethodGet, "/riftwise/status.json", nil))
+	if cdn := st.Header().Get("CDN-Cache-Control"); strings.Contains(cdn, "public") {
+		t.Errorf("status.json emitted public CDN-Cache-Control: %q", cdn)
+	}
+}
+
+
