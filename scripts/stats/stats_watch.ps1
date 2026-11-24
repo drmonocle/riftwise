@@ -39,6 +39,8 @@ try {
     foreach ($f in $Files) {
         $p = Join-Path $Data $f
         if (Test-Path "$p-journal") { exit 0 }  # something is writing it right now
+        $wal = Get-Item "$p-wal" -ErrorAction SilentlyContinue
+        if ($wal -and $wal.Length -gt 0 -and ((Get-Date) - $wal.LastWriteTime).TotalMinutes -lt 3) { exit 0 }  # WAL written recently
         if (Test-Path $p) {
             $m = (Get-Item $p).LastWriteTime
             if ($m -gt $changed) { $m_dt = $m; $changed = $m_dt }

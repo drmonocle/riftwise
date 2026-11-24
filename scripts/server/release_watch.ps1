@@ -141,6 +141,8 @@ function Start-StatsBuild {
     }
     foreach ($f in 'pro_games_catalog.db', 'lp_all_games.db') {
       if (Test-Path "$(Split-Path $catalog)\$f-journal") { Log "stats build: not started, $f is being written (stats_watch.ps1 builds after it)"; return }
+      $wal = Get-Item "$(Split-Path $catalog)\$f-wal" -ErrorAction SilentlyContinue
+      if ($wal -and $wal.Length -gt 0 -and ((Get-Date) - $wal.LastWriteTime).TotalMinutes -lt 3) { Log "stats build: not started, $f-wal was written recently (stats_watch.ps1 builds after it)"; return }
     }
     Start-ScheduledTask -TaskName $statsTask
     Log "stats build started with the new scripts ($statsTask)"

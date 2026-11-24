@@ -404,6 +404,7 @@ def main() -> None:
     ap.add_argument("--lp-db", help="Leaguepedia sidecar database (default: lp_all_games.db next to --db)")
     ap.add_argument("--no-hub", action="store_true", help="skip the stats hub pages")
     ap.add_argument("--offline", action="store_true", help="no downloads (Leaguepedia, Riot, Data Dragon): saved copies only")
+    ap.add_argument("--allow-shrink", action="store_true", help="publish even if game/series/team/player counts shrank >2% vs previous build")
     args = ap.parse_args()
     global OFFLINE
     OFFLINE = args.offline
@@ -1261,8 +1262,21 @@ def main() -> None:
     for k, v in checks.items():
         print(f"  check: {k}: {v}")
 
-    # Point readers at the new build, then remove old builds (keep the newest three: the build runs whenever
-    # the database changes, a few times a day, and an open page may still be reading an older one).
+    if prev_vdir and not args.allow_shrink:
+        try:
+            with open(os.path.join(prev_vdir, "meta.json"), encoding="utf-8") as f:
+                prev_meta = json.load(f)
+        except (OSError, ValueError):
+            prev_meta = {}
+        cur_meta = {"games": len(games), "series": len(series_list), "teams": len(search_teams), "players": len(search_players)}
+        shrunk = [f"{k} {prev_meta[k]}->{cur_meta[k]}" for k in ("games", "series", "teams", "players")
+                  if prev_meta.get(k, 0) >= 100 and cur_meta[k] < prev_meta[k] * 0.98]
+        if shrunk:
+            shutil.rmtree(vdir, ignore_errors=True)
+            raise RuntimeError(f"refusing to publish {version}: counts shrank (<98%): {', '.join(shrunk)} (pass --allow-shrink if intentional)")
+
+    # Point readers at the new build, then remove old builds (keep the newest six: the build runs whenever
+    # the database changes, a few times a day, and an open page or edge SWR may still be reading an older one).
     # the reigning Worlds, MSI and First Stand champions, for the app's floating team logos (src/components/TeamBubbles.tsx):
     # a few bytes, so they ride along with the version instead of a file of their own
     reigning = []
@@ -1275,7 +1289,7 @@ def main() -> None:
         json.dump({"version": version, "built": datetime.datetime.now(datetime.timezone.utc).isoformat(), "reigning": reigning}, f)
     os.replace(tmp, os.path.join(args.out, "latest.json"))
     builds = sorted(d for d in os.listdir(args.out) if d.isdigit() and os.path.isdir(os.path.join(args.out, d)))
-    for old in builds[:-3]:
+    for old in builds[:-6]:
         shutil.rmtree(os.path.join(args.out, old), ignore_errors=True)
     print(f"done: {version} in {time.time() - t0:.0f}s")
 

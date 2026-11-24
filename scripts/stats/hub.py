@@ -374,42 +374,60 @@ def build(ctx) -> dict:
     lp_ro = None
     has_lppb = False
     if ctx.lp_db and os.path.exists(ctx.lp_db):
-        try:
-            lp = sqlite3.connect(f"file:{ctx.lp_db}?mode=ro", uri=True, timeout=30)
-            for r in lp.execute(
-                """SELECT MatchId, OverviewPage, Tab, N_TabInPage, N_MatchInTab, BestOf, Team1, Team2, Team1Score, Team2Score,
-                          Winner, DateTime_UTC, FF, IsTiebreaker FROM lp_match_schedule WHERE MatchId IS NOT NULL"""
-            ):
-                dt_s = (r[11] or "")[:16]
-                op_s = r[1]
-                tfix_s = op_series_team_fix.get((op_s, r[0]), {})
-                sa_s = canon_team(clean(r[6]), dt_s, op_s)
-                sb_s = canon_team(clean(r[7]), dt_s, op_s)
-                s = {
-                    "mid": r[0], "op": op_s, "tab": html.unescape(r[2] or ""), "ntab": num(r[3]), "n": num(r[4]), "bo": num(r[5]),
-                    "a": tfix_s.get(sa_s, sa_s), "b": tfix_s.get(sb_s, sb_s), "sa": num(r[8]), "sb": num(r[9]), "w": str(r[10] or ""), "date": dt_s,
-                    "ff": r[12], "tb": r[13],
-                }
-                if s["mid"] in ctx.dupes.series or s["mid"] in emptied:
-                    continue  # every game of it is a duplicate (Leaguepedia's second page: build_stats.duplicates)
-                sched[s["mid"]] = s
-                if s["op"]:
-                    sched_by_op[s["op"]].append(s)
-            has_lppb = bool(lp.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='lp_picks_and_bans_s7'").fetchone())
-            if has_lppb:
-                lp.row_factory = sqlite3.Row
-                lp_ro = lp
-            else:
-                lp.close()
-        except sqlite3.Error as e:
-            print(f"hub: sidecar database unreadable ({e}); stages come from the series ids")
-            checks["hub: sidecar unreadable"] = 1
-            if lp_ro is not None:
-                try:
-                    lp_ro.close()
-                except sqlite3.Error:
-                    pass
+        lp_size = os.path.getsize(ctx.lp_db)
+        last_err = None
+        for attempt in range(4):
+            if attempt > 0:
+                time.sleep(5)
+            lp = None
+            sched.clear()
+            sched_by_op.clear()
+            has_lppb = False
+            try:
+                lp = sqlite3.connect(f"file:{ctx.lp_db}?mode=ro", uri=True, timeout=60)
+                for r in lp.execute(
+                    """SELECT MatchId, OverviewPage, Tab, N_TabInPage, N_MatchInTab, BestOf, Team1, Team2, Team1Score, Team2Score,
+                              Winner, DateTime_UTC, FF, IsTiebreaker FROM lp_match_schedule WHERE MatchId IS NOT NULL"""
+                ):
+                    dt_s = (r[11] or "")[:16]
+                    op_s = r[1]
+                    tfix_s = op_series_team_fix.get((op_s, r[0]), {})
+                    sa_s = canon_team(clean(r[6]), dt_s, op_s)
+                    sb_s = canon_team(clean(r[7]), dt_s, op_s)
+                    s = {
+                        "mid": r[0], "op": op_s, "tab": html.unescape(r[2] or ""), "ntab": num(r[3]), "n": num(r[4]), "bo": num(r[5]),
+                        "a": tfix_s.get(sa_s, sa_s), "b": tfix_s.get(sb_s, sb_s), "sa": num(r[8]), "sb": num(r[9]), "w": str(r[10] or ""), "date": dt_s,
+                        "ff": r[12], "tb": r[13],
+                    }
+                    if s["mid"] in ctx.dupes.series or s["mid"] in emptied:
+                        continue  # every game of it is a duplicate (Leaguepedia's second page: build_stats.duplicates)
+                    sched[s["mid"]] = s
+                    if s["op"]:
+                        sched_by_op[s["op"]].append(s)
+                has_lppb = bool(lp.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='lp_picks_and_bans_s7'").fetchone())
+                if has_lppb:
+                    lp.row_factory = sqlite3.Row
+                    lp_ro = lp
+                else:
+                    lp.close()
+                last_err = None
+                break
+            except sqlite3.Error as e:
+                last_err = e
+                for h in (lp_ro, lp):
+                    if h is not None:
+                        try:
+                            h.close()
+                        except sqlite3.Error:
+                            pass
                 lp_ro = None
+        if last_err is not None or (lp_size > 1_000_000 and not sched):
+            if lp_size > 1_000_000:
+                raise RuntimeError(
+                    f"hub: sidecar database {ctx.lp_db} ({lp_size} bytes) unreadable or empty MatchSchedule ({last_err or '0 rows'})"
+                )
+            print(f"hub: sidecar database unreadable ({last_err}); stages come from the series ids")
+            checks["hub: sidecar unreadable"] = 1
     checks["hub: series from MatchSchedule"] = len(sched)
 
     # -- slugs -------------------------------------------------------------------------

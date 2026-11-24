@@ -309,6 +309,40 @@ def main() -> int:
             print(audit.stderr[-3000:])
             print("FAIL: the data check found broken files")
             return 1
+        # Verify shrinkage guard refuses unexpected >2% drops unless --allow-shrink is passed
+        shrink_out = os.path.join(work, "shrink_out")
+        os.makedirs(os.path.join(shrink_out, "20200101000000"), exist_ok=True)
+        with open(os.path.join(shrink_out, "20200101000000", "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"games": 50000, "series": 20000, "teams": 1000, "players": 5000}, f)
+        with open(os.path.join(shrink_out, "latest.json"), "w", encoding="utf-8") as f:
+            json.dump({"version": "20200101000000"}, f)
+        base_cmd = [
+            sys.executable, "-u", os.path.join(STATS, "build_stats.py"),
+            "--db", os.path.join(work, "fixture.db"),
+            "--lp-db", os.path.join(work, "fixture_lp.db"),
+            "--out", shrink_out,
+            "--renames-cache", os.path.join(work, "team_renames.json"),
+            "--offline",
+        ]
+        refused = subprocess.run(base_cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                 env={**os.environ, "RIFTWISE_WEEK_TO": "2026-10-17"})
+        if refused.returncode == 0 or "refusing to publish" not in (refused.stderr + refused.stdout):
+            print(f"FAIL: expected shrinkage guard to fail, got rc={refused.returncode}")
+            return 1
+        with open(os.path.join(shrink_out, "latest.json"), encoding="utf-8") as f:
+            if json.load(f).get("version") != "20200101000000":
+                print("FAIL: shrinkage guard still overwrote latest.json")
+                return 1
+        allowed = subprocess.run(base_cmd + ["--allow-shrink"], capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                 env={**os.environ, "RIFTWISE_WEEK_TO": "2026-10-17"})
+        if allowed.returncode != 0:
+            print(allowed.stderr[-3000:])
+            print(f"FAIL: --allow-shrink failed with exit {allowed.returncode}")
+            return 1
+        with open(os.path.join(shrink_out, "latest.json"), encoding="utf-8") as f:
+            if json.load(f).get("version") == "20200101000000":
+                print("FAIL: --allow-shrink did not update latest.json")
+                return 1
         print(f"ok: test build {v} checked in {time.time() - t0:.0f}s")
         return 0
     finally:
