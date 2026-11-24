@@ -36,12 +36,21 @@ $build = 'C:\Sites\riftwise-build'
 $services = @('pages', 'push', 'sync')
 $env:Path = "C:\Program Files\nodejs;C:\Program Files\Git\cmd;$env:Path"
 New-Item -ItemType Directory -Force "$root\logs" | Out-Null
-# Upgrade legacy PT2H task timeout so a slower full stats check never gets killed mid-deploy
+# Upgrade legacy PT2H task timeout so a slower full stats check or production stats build never gets killed mid-run,
+# and ensure riftwise-pages (LOCAL SERVICE) can read build_stats.log and audit_latest.json in $scripts.
 try {
   $rwTask = Get-ScheduledTask -TaskName 'RiftWiseReleaseWatch' -ErrorAction SilentlyContinue
   if ($rwTask -and $rwTask.Settings.ExecutionTimeLimit -eq 'PT2H') {
     $rwTask.Settings.ExecutionTimeLimit = 'PT4H'
     Set-ScheduledTask -InputObject $rwTask | Out-Null
+  }
+  $sbTask = Get-ScheduledTask -TaskName $statsTask -ErrorAction SilentlyContinue
+  if ($sbTask -and $sbTask.Settings.ExecutionTimeLimit -in @('PT1H', 'PT2H', 'PT3H')) {
+    $sbTask.Settings.ExecutionTimeLimit = 'PT4H'
+    Set-ScheduledTask -InputObject $sbTask | Out-Null
+  }
+  if (Test-Path $scripts) {
+    & icacls $scripts /grant "NT AUTHORITY\LOCAL SERVICE:(OI)(CI)(RX)" | Out-Null
   }
 } catch { }
 

@@ -86,14 +86,14 @@ export const AboutMePage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ o
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             {(
               [
-                [{ kind: "team", slug: "tsm", query: "q=flyquest" }, "TSM"],
-                [{ kind: "team", slug: "flyquest", query: "q=inspired,massu" }, "FlyQuest"],
-                [{ kind: "player", slug: "inspired", query: "team=flyquest&q=massu" }, "Inspired"],
-                [{ kind: "player", slug: "massu", query: "team=flyquest&q=inspired" }, "Massu"],
-                [{ kind: "player", slug: "faker", query: "team=t1&champ=galio&q=zeus" }, "Faker"],
-                [{ kind: "player", slug: "zeus", query: "team=t1&q=faker" }, "Zeus"],
-                [{ kind: "team", slug: "t1", query: "p=e:worlds-2024&q=bilibili-gaming,faker,zeus&champ=galio" }, "T1"],
-                [{ kind: "team", slug: "bilibili-gaming", query: "p=e:worlds-2024&q=t1,faker,zeus&champ=galio" }, "BLG"],
+                [{ kind: "team", slug: "tsm" }, "TSM"],
+                [{ kind: "team", slug: "flyquest" }, "FlyQuest"],
+                [{ kind: "player", slug: "inspired" }, "Inspired"],
+                [{ kind: "player", slug: "massu" }, "Massu"],
+                [{ kind: "player", slug: "faker" }, "Faker"],
+                [{ kind: "player", slug: "zeus" }, "Zeus"],
+                [{ kind: "team", slug: "t1" }, "T1"],
+                [{ kind: "team", slug: "bilibili-gaming" }, "BLG"],
               ] as const
             ).map(([to, name]) => (
               <HubLink
@@ -122,7 +122,7 @@ export const AboutMePage: React.FC<{ onOpenUrl?: (url: string) => void }> = ({ o
               {tl("Compare")} →
             </HubLink>
             <HubLink
-              to={{ kind: "finder", query: "event=worlds-2024&team=t1&vs=bilibili-gaming&player=faker&vsplayer=zeus&champ=galio" }}
+              to={{ kind: "finder", query: "event=worlds-2024&team=t1&vs=bilibili-gaming&player=faker&champ=galio" }}
               className="px-2 py-0.5 rounded bg-rw-bg border border-rw-border hover:border-rw-accent/60 text-[11px] font-semibold text-rw-accent"
             >
               {tl("Game finder")} →

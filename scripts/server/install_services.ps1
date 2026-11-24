@@ -52,6 +52,7 @@ foreach ($svc in $Services) {
   New-Item -ItemType Directory -Force "C:\Sites\riftwise-$svc" | Out-Null
   Get-ChildItem $build -File | Where-Object { $_.Extension -in '.go', '.mod', '.sum', '.json', '.md', '.cmd' } | Copy-Item -Destination "C:\Sites\riftwise-$svc" -Force
   if ($svc -eq 'push' -and (Test-Path "$build\locales")) { Copy-Item "$build\locales\*.json" "$data\locales" -Force }
+  if ($svc -eq 'pages' -and (Test-Path 'C:\Scripts\riftwise')) { try { & icacls 'C:\Scripts\riftwise' /grant "NT AUTHORITY\LOCAL SERVICE:(OI)(CI)(RX)" | Out-Null } catch { } }
   Stop-Svc $svc
   if (Test-Path $exe) { Copy-Item $exe "$exe.prev" -Force }
   Copy-Item $new $exe -Force

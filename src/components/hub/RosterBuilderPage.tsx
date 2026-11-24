@@ -382,7 +382,7 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
   const prev2Year = String(Number(thisYear) - 2);
   const rawPeriod = q.get("p") || `y${thisYear}`;
   const period = /^y\d{4}$|^all$|^last\d+$/.test(rawPeriod) ? rawPeriod : `y${thisYear}`;
-  const teamSeed = q.get("team") || "";
+  const teamSeed = q.get("team") || q.get("club") || "";
   const rawVs = q.get("vs") || "";
   const vsSlug = rawVs ? resolveTeamAlias(rawVs) || rawVs : "";
   const defaultVp = period === `y${thisYear}` ? `y${prevYear}` : period;
@@ -393,7 +393,7 @@ export const RosterBuilderPage: React.FC<{ query?: string }> = ({ query }) => {
     () =>
       Object.fromEntries(
         ROSTER_ROLES.map((r) => {
-          const val = q.get(ROLE_PARAM[r]) || "";
+          const val = q.get(ROLE_PARAM[r]) || (r === "Jungle" ? q.get("jgl") || "" : "");
           return [r, val ? resolvePlayerSlug(val) : ""];
         }),
       ) as Record<RosterRole, string>,

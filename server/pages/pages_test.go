@@ -706,8 +706,8 @@ func TestEdgeCacheHeaders(t *testing.T) {
 	if got := okResp.Header().Get("Cache-Control"); got != "no-cache" {
 		t.Errorf("200 Cache-Control = %q, want no-cache", got)
 	}
-	if got := okResp.Header().Get("CDN-Cache-Control"); got != "public, max-age=3600, stale-while-revalidate=86400" {
-		t.Errorf("200 CDN-Cache-Control = %q, want public, max-age=3600, stale-while-revalidate=86400", got)
+	if got := okResp.Header().Get("CDN-Cache-Control"); got != "public, max-age=3600, stale-while-revalidate=7200" {
+		t.Errorf("200 CDN-Cache-Control = %q, want public, max-age=3600, stale-while-revalidate=7200", got)
 	}
 	notFound := get(s, "/riftwise/player/nobody-here-999")
 	if notFound.Code != http.StatusNotFound {

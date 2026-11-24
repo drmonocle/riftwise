@@ -424,39 +424,17 @@ const ChampView: React.FC<{ c: HubChamp; query?: string }> = ({ c, query }) => {
     `flex items-center gap-2 min-w-0 w-full text-left rounded px-1 -mx-1 hover:bg-rw-raised ${on ? "ring-1 ring-rw-accent bg-rw-accent/10" : ""}`;
   const maxPatch = Math.max(1, ...(c.patches || []).map((p) => (p.pr ?? p.pk + p.b) / Math.max(p.g, 1)));
   const heroRole = qRole || c.roles[0]?.r || "";
-  const vsHeroSlug = qVs ? resolveChampSlug(qVs) : muRows[0]?.[0] ? resolveChampSlug(muRows[0][0]) : "";
+  const vsHeroSlug = qVs ? resolveChampSlug(qVs) : "";
   const heroChamps = [c.u, vsHeroSlug].filter((x, i, a) => x && a.indexOf(x) === i).join(",");
   const qPlayerSlug = qParams.get("player") ? resolvePlayerSlug(prettySlug(qParams.get("player")!)) : "";
   const qVsPlayerSlug = qParams.get("vsplayer") ? resolvePlayerSlug(prettySlug(qParams.get("vsplayer")!)) : "";
   const qTeamSlug = qParams.get("team") ? teamSlug(qParams.get("team")!) : "";
   const qVsTeamSlug = qVsTeam ? teamSlug(qVsTeam) : "";
-  const topPlayerSlugs = [
-    ...new Set(
-      [
-        qPlayerSlug,
-        qVsPlayerSlug,
-        ...[...c.players, ...c.recent].map((p) => p.u || (p.n ? resolvePlayerSlug(p.n) : "")),
-      ].filter(Boolean),
-    ),
-  ].slice(0, 2);
+  const topPlayerSlugs = [qPlayerSlug, qVsPlayerSlug].filter((x, i, a) => Boolean(x) && a.indexOf(x) === i).slice(0, 2);
   const topPlayerSlug = topPlayerSlugs[0] || "";
   const vsPlayerSlug = topPlayerSlugs[1] || "";
   const topPlayersQuery = topPlayerSlugs.join(",");
-  const heroTeamSlugs = [
-    ...new Set(
-      [
-        qTeamSlug,
-        qVsTeamSlug,
-        c.recent[0]?.team ? teamSlug(c.recent[0].team) : "",
-        c.recent[0]?.opp ? teamSlug(c.recent[0].opp) : "",
-        ...c.recent.slice(1, 5).flatMap((r) => [r.team ? teamSlug(r.team) : "", r.opp ? teamSlug(r.opp) : ""]),
-        ...c.players.slice(0, 4).map((p) => {
-          const t = teamByPlayer.get(p.u || p.n);
-          return t ? teamSlug(t) : "";
-        }),
-      ].filter(Boolean),
-    ),
-  ].slice(0, 2);
+  const heroTeamSlugs = [qTeamSlug, qVsTeamSlug].filter((x, i, a) => Boolean(x) && a.indexOf(x) === i).slice(0, 2);
   const heroTeam0 = heroTeamSlugs[0] || "";
   const heroTeam1 = heroTeamSlugs[1] || "";
   const heroTeamsQuery = heroTeamSlugs.join(",");

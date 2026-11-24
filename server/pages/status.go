@@ -80,7 +80,7 @@ type statusDoc struct {
 	Problems []problem       `json:"problems"`
 }
 
-var reBuildStart = regexp.MustCompile(`^==== \S+ (\d{1,2})/(\d{1,2})/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})`)
+var reBuildStart = regexp.MustCompile(`^(?:\^C|\x03)*==== \S+ (\d{1,2})/(\d{1,2})/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})`)
 var reBuildDone = regexp.MustCompile(`^done: \S+ in (\d+)s`)
 var reBuildExit = regexp.MustCompile(`^exit (-?\d+)`)
 
@@ -301,6 +301,7 @@ func (s *store) status() statusDoc {
 		Counts  map[string]int `json:"counts"`
 	}
 	if b, err := os.ReadFile(filepath.Join(statusScripts, "audit_latest.json")); err == nil {
+		b = []byte(strings.TrimPrefix(string(b), string(rune(0xFEFF))))
 		json.Unmarshal(b, &audit)
 	}
 	d.Audit.Version, d.Audit.Counts = audit.Version, audit.Counts

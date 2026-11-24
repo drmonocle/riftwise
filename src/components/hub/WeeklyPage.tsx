@@ -850,27 +850,20 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                 return (
                   <ol className="text-xs space-y-1.5">
                     {w.movers.map((m) => {
-                      const rivalMover = w.movers.find((x) => x.u !== m.u && x.lg === m.lg) || w.movers.find((x) => x.u !== m.u);
-                      const rivalMoverSlug = rivalMover?.u || "";
-                      const moverTeamQ = new URLSearchParams({
-                        ...(wy ? { p: `y${wy}` } : {}),
-                        ...(rivalMoverSlug ? { vs: rivalMoverSlug, q: rivalMoverSlug } : {}),
-                      }).toString();
-                      const moverPairQ = [m.u, rivalMoverSlug].filter(Boolean).join(",");
+                      const moverTabQ = wy ? `p=y${encodeURIComponent(wy)}` : "";
                       return (
                       <li key={m.u} className="space-y-0.5 min-w-0">
                         <div className="flex items-baseline justify-between gap-2 min-w-0">
                           <span className="inline-flex items-center gap-1.5 truncate min-w-0">
-                            <HubLink to={{ kind: "team", slug: m.u, ...(moverTeamQ ? { query: moverTeamQ } : {}) }} title={m.n} className="shrink-0">
+                            <HubLink to={{ kind: "team", slug: m.u }} title={m.n} className="shrink-0">
                               <TeamLogo name={m.n} size={15} />
                             </HubLink>
-                            <TeamLink name={m.n} u={m.u} query={moverTeamQ || undefined} />{" "}
+                            <TeamLink name={m.n} u={m.u} />{" "}
                             <HubLink
                               to={{
                                 kind: "league",
                                 slug: resolveLeagueSlug(m.lg),
                                 ...(wy ? { year: wy } : {}),
-                                query: `q=${encodeURIComponent(moverPairQ)}`,
                               }}
                               className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
                             >
@@ -879,7 +872,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           </span>
                           <span className="font-num tabular-nums shrink-0">
                             <HubLink
-                              to={{ kind: "team", slug: m.u, tab: "matches", ...(moverTeamQ ? { query: moverTeamQ } : {}) }}
+                              to={{ kind: "team", slug: m.u, tab: "matches", ...(moverTabQ ? { query: moverTabQ } : {}) }}
                               className={m.chg > 0 ? "text-rw-teal font-bold hover:underline" : "text-rw-red font-bold hover:underline"}
                             >
                               {m.chg > 0 ? "▲" : "▼"}
@@ -888,10 +881,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             <HubLink
                               to={{
                                 kind: "rankings",
-                                query: new URLSearchParams({
-                                  ...(m.lg ? { league: resolveLeagueSlug(m.lg) } : {}),
-                                  q: moverPairQ,
-                                }).toString(),
+                                ...(m.lg ? { query: `league=${encodeURIComponent(resolveLeagueSlug(m.lg))}` } : {}),
                               }}
                               className="text-rw-muted hover:text-rw-accent hover:underline"
                             >
@@ -1612,39 +1602,19 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
               <ol className="text-xs space-y-1.5">
                 {w.players.map((p, i) => {
                   const pSlug = p.u || playerSlug(p.n);
-                  const peerPlayer = w.players?.find((x) => (x.u || playerSlug(x.n)) !== pSlug);
-                  const peerPSlug = peerPlayer ? peerPlayer.u || playerSlug(peerPlayer.n) : "";
                   const tSlug = p.t ? teamSlug(p.t) : "";
-                  const oppSlug = p.best?.opp ? teamSlug(p.best.opp) : "";
-                  const cSlug = p.best?.c ? resolveChampSlug(p.best.c) : "";
-                  const peerCSlug = peerPlayer?.best?.c && resolveChampSlug(peerPlayer.best.c) !== cSlug ? resolveChampSlug(peerPlayer.best.c) : "";
-                  const pQ =
-                    new URLSearchParams({
-                      ...(wy ? { p: `y${wy}` } : {}),
-                      ...(tSlug ? { team: tSlug } : {}),
-                      ...(oppSlug ? { vs: oppSlug, q: oppSlug } : {}),
-                      ...(peerPSlug ? { vsplayer: peerPSlug } : {}),
-                      ...(p.r ? { role: p.r } : {}),
-                      ...(cSlug ? { champ: cSlug } : {}),
-                      ...(peerCSlug ? { vschamp: peerCSlug } : {}),
-                    }).toString() || undefined;
-                  const tQ =
-                    new URLSearchParams({
-                      ...(wy ? { p: `y${wy}` } : {}),
-                      ...(oppSlug && oppSlug !== tSlug ? { vs: oppSlug } : {}),
-                      q: [pSlug, oppSlug].filter(Boolean).join(","),
-                    }).toString() || undefined;
+                  const pTabQ = wy ? `p=y${encodeURIComponent(wy)}` : undefined;
                   return (
                   <li key={p.u || p.n} className="space-y-0.5 min-w-0">
                     <div className="flex items-center justify-between gap-2 min-w-0">
                       <span className="inline-flex items-center gap-1.5 truncate min-w-0">
                         <span className="text-rw-muted tabular-nums">{i + 1}.</span>
-                        <HubLink to={{ kind: "player", slug: pSlug, ...(pQ ? { query: pQ } : {}) }} title={p.n} className="shrink-0">
+                        <HubLink to={{ kind: "player", slug: pSlug }} title={p.n} className="shrink-0">
                           <PlayerPhoto name={p.n} team={p.t} slug={p.u ?? undefined} size={18} />
                         </HubLink>
-                        <PlayerLink name={p.n} u={p.u} query={pQ} />
+                        <PlayerLink name={p.n} u={p.u} />
                         {p.t && (
-                          <HubLink to={{ kind: "team", slug: tSlug, ...(tQ ? { query: tQ } : {}) }} title={p.t} className="shrink-0">
+                          <HubLink to={{ kind: "team", slug: tSlug }} title={p.t} className="shrink-0">
                             <TeamLogo name={p.t} size={13} />
                           </HubLink>
                         )}
@@ -1652,7 +1622,7 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           {p.r ? (
                             <>
                               {"· "}
-                              <HubLink to={{ kind: "player", slug: pSlug, tab: "stats", ...(pQ ? { query: pQ } : {}) }} className="hover:text-rw-accent hover:underline">
+                              <HubLink to={{ kind: "player", slug: pSlug, tab: "stats", ...(pTabQ ? { query: pTabQ } : {}) }} className="hover:text-rw-accent hover:underline">
                                 {roleName(p.r)}
                               </HubLink>
                             </>
@@ -1662,13 +1632,13 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                           {p.t ? (
                             <>
                               {" · "}
-                              <TeamLink name={p.t} query={tQ} className="text-rw-muted hover:text-rw-accent hover:underline" />
+                              <TeamLink name={p.t} className="text-rw-muted hover:text-rw-accent hover:underline" />
                             </>
                           ) : null}
                         </span>
                       </span>
                       <HubLink
-                        to={{ kind: "player", slug: pSlug, tab: "matches", ...(pQ ? { query: pQ } : {}) }}
+                        to={{ kind: "player", slug: pSlug, tab: "matches", ...(pTabQ ? { query: pTabQ } : {}) }}
                         className="shrink-0 hover:opacity-85"
                         title={tl("Recent games")}
                       >
@@ -1684,7 +1654,6 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                             query: new URLSearchParams({
                               player: pSlug,
                               ...(tSlug ? { team: tSlug } : {}),
-                              ...(oppSlug ? { vs: oppSlug } : {}),
                               ...(p.r ? { role: p.r } : {}),
                               ...(wy ? { p: `y${wy}`, year: wy } : {}),
                             }).toString(),
@@ -1975,16 +1944,10 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     const banW = Math.min(100 - pickW, Math.round((bn / cg) * 100));
                     const wrPct = pk ? Math.round((wn / pk) * 100) : null;
                     const wrTone = pk >= 3 && wrPct != null ? (wrPct >= 53 ? "text-rw-teal font-semibold" : wrPct <= 47 ? "text-rw-red" : "text-rw-text") : "text-rw-sub";
-                    const otherWeekChamp = w.champs?.find(([oc]) => oc !== c)?.[0];
-                    const otherWeekCSlug = otherWeekChamp ? resolveChampSlug(otherWeekChamp) : "";
-                    const wChampQ = new URLSearchParams({
-                      ...(wy ? { p: `y${wy}`, year: wy } : {}),
-                      ...(otherWeekCSlug ? { vschamp: otherWeekCSlug } : {}),
-                    }).toString();
                     return (
                       <tr key={c} className="border-t border-rw-border">
                         <td className={`${td} max-w-[9rem]`} data-sort={champName(c)}>
-                          <ChampLink name={c} size={18} query={wChampQ || undefined} />
+                          <ChampLink name={c} size={18} />
                         </td>
                         <td className={`${td} tabular-nums`} data-sort={presPct ?? -1}>
                           {presPct != null ? (
@@ -2238,14 +2201,6 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       : wy
                         ? `y${wy}`
                         : undefined;
-                  const resQA = new URLSearchParams({
-                    ...(resPeriod ? { p: resPeriod } : {}),
-                    ...(slugB ? { vs: slugB, q: slugB } : {}),
-                  }).toString() || undefined;
-                  const resQB = new URLSearchParams({
-                    ...(resPeriod ? { p: resPeriod } : {}),
-                    ...(slugA ? { vs: slugA, q: slugA } : {}),
-                  }).toString() || undefined;
                   return (
                   <li key={r.g} className="flex items-center gap-2 py-1 min-w-0">
                     <HubLink to={{ kind: "match", slug: r.g }} className="w-14 shrink-0 text-[10px] text-rw-muted hover:text-rw-accent hover:underline">
@@ -2253,9 +2208,9 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                     </HubLink>
                     <span className={`flex-1 min-w-0 flex items-center justify-end gap-1.5 text-right ${r.sa > r.sb ? "font-bold text-rw-text" : "text-rw-sub"}`}>
                       <span className="truncate">
-                        <TeamLink name={r.a} u={r.au} query={resQA} />
+                        <TeamLink name={r.a} u={r.au} />
                       </span>
-                      <HubLink to={{ kind: "team", slug: slugA, ...(resQA ? { query: resQA } : {}) }} title={r.a} className="shrink-0">
+                      <HubLink to={{ kind: "team", slug: slugA }} title={r.a} className="shrink-0">
                         <TeamLogo name={r.a} size={15} />
                       </HubLink>
                     </span>
@@ -2277,18 +2232,17 @@ const Week: React.FC<{ w: HubWeekly; hidden: boolean; reveal: () => void }> = ({
                       )}
                     </HubLink>
                     <span className={`flex-1 min-w-0 flex items-center gap-1.5 ${r.sb > r.sa ? "font-bold text-rw-text" : "text-rw-sub"}`}>
-                      <HubLink to={{ kind: "team", slug: slugB, ...(resQB ? { query: resQB } : {}) }} title={r.b} className="shrink-0">
+                      <HubLink to={{ kind: "team", slug: slugB }} title={r.b} className="shrink-0">
                         <TeamLogo name={r.b} size={15} />
                       </HubLink>
                       <span className="truncate">
-                        <TeamLink name={r.b} u={r.bu} query={resQB} />
+                        <TeamLink name={r.b} u={r.bu} />
                       </span>
                     </span>
                     <span className="hidden sm:block w-48 shrink-0 truncate text-[10px] text-rw-muted">
                       <EventLink
                         name={r.t}
                         u={r.e}
-                        query={slugA || slugB ? `q=${encodeURIComponent([slugA, slugB].filter(Boolean).join(","))}` : undefined}
                         className="text-rw-muted hover:text-rw-accent hover:underline"
                       />
                     </span>

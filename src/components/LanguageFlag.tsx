@@ -60,6 +60,7 @@ export const LanguageFlag: React.FC<{ onUpdateSettings: (s: Partial<AppSettings>
             <li key={l.code} role="option" aria-selected={l.code === lang}>
               <a
                 href={IS_WEB ? langAddress(l.code) : "#"}
+                rel={IS_WEB && langAddress(l.code).includes("?") ? "nofollow" : undefined}
                 onClick={(e) => {
                   if (IS_WEB && (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0)) return;
                   e.preventDefault();

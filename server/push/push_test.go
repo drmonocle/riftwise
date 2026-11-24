@@ -354,3 +354,22 @@ func TestDiscord(t *testing.T) {
 		t.Errorf("hooks after: %+v", hs)
 	}
 }
+
+func TestFetchStreamURLFallback(t *testing.T) {
+	pub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"ok":true}`))
+	}))
+	defer pub.Close()
+	old := streamLoopbackBase
+	streamLoopbackBase = "http://127.0.0.1:1"
+	defer func() { streamLoopbackBase = old }()
+	a := &App{client: pub.Client()}
+	resp, err := a.fetchStreamURL("/api.ashx?type=schedule-json", pub.URL)
+	if err != nil {
+		t.Fatalf("fallback failed: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status %d", resp.StatusCode)
+	}
+}

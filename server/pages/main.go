@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.6.35" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "1.6.36" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -1011,8 +1011,8 @@ func (s *store) serve(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
 	if status == http.StatusOK {
-		// Browsers always revalidate HTML while Cloudflare caches clean 200 SSR shells for 1 hour.
-		w.Header().Set("CDN-Cache-Control", "public, max-age=3600, stale-while-revalidate=86400")
+		// Browsers always revalidate HTML while Cloudflare caches clean 200 SSR shells for 1h fresh + 2h SWR.
+		w.Header().Set("CDN-Cache-Control", "public, max-age=3600, stale-while-revalidate=7200")
 	}
 	w.WriteHeader(status)
 	if r.Method != http.MethodHead {

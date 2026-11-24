@@ -51,10 +51,10 @@ func TestParseBuildLog(t *testing.T) {
 	if m := medianSecs(runs); m != 610 {
 		t.Errorf("median %d", m)
 	}
-	// a run cut short by a restart (no exit line) isn't "running" once a newer one started
-	cut := parseBuildLog(strings.NewReader("==== Tue 10/27/2026  5:14:18.39 \ngames: 1\n==== Tue 10/27/2026  9:14:19.84 \ndone: x in 5s\nexit 0\n"), now)
-	if cut[1].Exit == nil || *cut[1].Exit != -1 {
-		t.Errorf("cut-short run: %+v", cut[1])
+	// a run cut short by a restart (no exit line) isn't "running" once a newer one started; a ^C before ==== still parses
+	cut := parseBuildLog(strings.NewReader("==== Tue 10/27/2026  5:14:18.39 \ngames: 1\n^C==== Tue 10/27/2026  9:14:19.84 \ndone: x in 5s\nexit 0\n"), now)
+	if len(cut) != 2 || cut[1].Exit == nil || *cut[1].Exit != -1 || cut[0].Secs != 5 {
+		t.Errorf("cut-short / ctrl-c run: %+v", cut)
 	}
 }
 
@@ -117,7 +117,7 @@ func TestStatusPage(t *testing.T) {
 	dir := t.TempDir()
 	statusScripts, statusRelease = dir, dir
 	os.WriteFile(filepath.Join(dir, "build_stats.log"), []byte(buildLog), 0o644)
-	os.WriteFile(filepath.Join(dir, "audit_latest.json"), []byte(`{"version": "20261015000000", "counts": {"same champion twice in one game": 3}}`), 0o644)
+	os.WriteFile(filepath.Join(dir, "audit_latest.json"), []byte(string(rune(0xFEFF))+`{"version": "20261015000000", "counts": {"same champion twice in one game": 3}}`), 0o644)
 	// as Windows PowerShell 5.1 wrote it on the server: with a byte-order mark
 	os.WriteFile(filepath.Join(dir, "status.json"), []byte(string(rune(0xFEFF))+`{"version": "0.7.49", "result": "installed", "at": "2026-10-27T15:00:00Z"}`), 0o644)
 	healthy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

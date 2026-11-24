@@ -2394,5 +2394,6 @@
   "Balanced": "均衡配置",
   "Greedy": "高吃资源",
   "Low-econ": "低吃资源",
-  "Incomplete": "未完整"
+  "Incomplete": "未完整",
+  "Signed": "已签约"
 }

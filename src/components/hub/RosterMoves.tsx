@@ -71,34 +71,12 @@ const isTopLeague = (lu: string | null | undefined, top: Set<string>): boolean =
   return top.has(lu) || top.has(resolveLeagueSlug(lu));
 };
 
-const MoveListItem: React.FC<{ m: MoveRow; idx: number; list: MoveRow[]; leagueNames: Map<string, string> }> = ({ m, idx, list, leagueNames }) => {
+const MoveListItem: React.FC<{ m: MoveRow; idx: number; list: MoveRow[]; leagueNames: Map<string, string> }> = ({ m, leagueNames }) => {
   const myr = m.d && /^\d{4}/.test(m.d) ? m.d.slice(0, 4) : "";
-  const pQ = myr ? `p=y${encodeURIComponent(myr)}` : undefined;
   const pSlug = resolvePlayerSlug(m.u || m.n) || m.u;
   const fromSlug = resolveTeamAlias(m.from.u || m.from.n) || m.from.u;
   const toSlug = resolveTeamAlias(m.to.u || m.to.n) || m.to.u;
-  const rivalMove = list.find((x, j) => j !== idx && (resolvePlayerSlug(x.u || x.n) || x.u) !== pSlug);
-  const vsPlayerSlug = rivalMove ? resolvePlayerSlug(rivalMove.u || rivalMove.n) || rivalMove.u : "";
   const mRole = m.r ? normalizeRole(m.r) || m.r : "";
-  const playerQ =
-    new URLSearchParams({
-      ...(myr ? { p: `y${myr}` } : {}),
-      ...(toSlug ? { team: toSlug } : {}),
-      ...(fromSlug && fromSlug !== toSlug ? { q: fromSlug } : {}),
-      ...(mRole ? { role: mRole } : {}),
-    }).toString() || undefined;
-  const fromTeamQList = [toSlug && toSlug !== fromSlug ? toSlug : "", pSlug, vsPlayerSlug].filter(Boolean).join(",");
-  const toTeamQList = [fromSlug && fromSlug !== toSlug ? fromSlug : "", pSlug, vsPlayerSlug].filter(Boolean).join(",");
-  const fromTeamQ =
-    new URLSearchParams({
-      ...(myr ? { p: `y${myr}` } : {}),
-      ...(fromTeamQList ? { q: fromTeamQList } : {}),
-    }).toString() || undefined;
-  const toTeamQ =
-    new URLSearchParams({
-      ...(myr ? { p: `y${myr}` } : {}),
-      ...(toTeamQList ? { q: toTeamQList } : {}),
-    }).toString() || undefined;
 
   return (
     <li className="py-1.5 border-b border-rw-border break-inside-avoid flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
@@ -107,9 +85,7 @@ const MoveListItem: React.FC<{ m: MoveRow; idx: number; list: MoveRow[]; leagueN
           kind: "finder",
           query: new URLSearchParams({
             player: pSlug,
-            ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
             team: toSlug,
-            ...(fromSlug && fromSlug !== toSlug ? { vs: fromSlug } : {}),
             ...(mRole ? { role: mRole } : {}),
             ...(myr ? { year: myr } : {}),
             ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
@@ -122,10 +98,10 @@ const MoveListItem: React.FC<{ m: MoveRow; idx: number; list: MoveRow[]; leagueN
       </HubLink>
       <span className="inline-flex items-center gap-1.5 min-w-0">
         <PlayerPhoto name={m.n} team={m.to.n} slug={pSlug} size={18} />
-        <PlayerLink name={m.n} u={pSlug} query={playerQ} className="font-semibold text-rw-text hover:text-rw-accent" />
+        <PlayerLink name={m.n} u={pSlug} className="font-semibold text-rw-text hover:text-rw-accent" />
         {m.r && (
           <HubLink
-            to={{ kind: "player", slug: pSlug, tab: "stats", ...(playerQ ? { query: playerQ } : {}) }}
+            to={{ kind: "player", slug: pSlug, tab: "stats", ...(myr ? { query: `p=y${encodeURIComponent(myr)}` } : {}) }}
             className="text-rw-muted hover:text-rw-accent hover:underline"
           >
             · {roleName(m.r)}
@@ -135,10 +111,10 @@ const MoveListItem: React.FC<{ m: MoveRow; idx: number; list: MoveRow[]; leagueN
       </span>
       <span className="flex items-center gap-1.5 min-w-0 text-rw-sub">
         <span className="inline-flex items-center gap-1 min-w-0">
-          <HubLink to={{ kind: "team", slug: fromSlug, ...(fromTeamQ ? { query: fromTeamQ } : {}) }} className="shrink-0">
+          <HubLink to={{ kind: "team", slug: fromSlug }} className="shrink-0">
             <TeamLogo name={m.from.n} sizeClass="w-3.5 h-3.5" />
           </HubLink>
-          <TeamLink name={m.from.n} u={fromSlug} query={fromTeamQ} className="hover:text-rw-accent truncate" />
+          <TeamLink name={m.from.n} u={fromSlug} className="hover:text-rw-accent truncate" />
         </span>
         <HubLink
           to={{ kind: "compare", mode: "team", a: fromSlug, b: toSlug, ...(myr ? { period: `y${myr}` } : {}) }}
@@ -148,19 +124,23 @@ const MoveListItem: React.FC<{ m: MoveRow; idx: number; list: MoveRow[]; leagueN
           <ArrowRight className="w-3 h-3" />
         </HubLink>
         <span className="inline-flex items-center gap-1 min-w-0">
-          <HubLink to={{ kind: "team", slug: toSlug, ...(toTeamQ ? { query: toTeamQ } : {}) }} className="shrink-0">
+          <HubLink to={{ kind: "team", slug: toSlug }} className="shrink-0">
             <TeamLogo name={m.to.n} sizeClass="w-3.5 h-3.5" />
           </HubLink>
-          <TeamLink name={m.to.n} u={toSlug} query={toTeamQ} className="text-rw-text hover:text-rw-accent truncate" />
+          <TeamLink name={m.to.n} u={toSlug} className="text-rw-text hover:text-rw-accent truncate" />
         </span>
       </span>
+      {m.to.g === 0 && (
+        <span className="px-1.5 py-0.5 rounded border border-rw-teal/40 bg-rw-teal/10 text-[10px] font-semibold text-rw-teal shrink-0">
+          {tl("Signed")}
+        </span>
+      )}
       {m.lu && leagueNames.get(m.lu) && (
         <HubLink
           to={{
             kind: "league",
             slug: resolveLeagueSlug(m.lu),
             ...(myr ? { year: myr } : {}),
-            query: `q=${encodeURIComponent([toSlug, fromSlug, pSlug].filter((s, i, a): s is string => Boolean(s) && a.indexOf(s) === i).join(","))}`,
           }}
           className="text-[10px] text-rw-muted hover:text-rw-accent hover:underline"
         >
@@ -168,51 +148,25 @@ const MoveListItem: React.FC<{ m: MoveRow; idx: number; list: MoveRow[]; leagueN
         </HubLink>
       )}
       <span className="ml-auto hidden sm:inline-flex items-center gap-1.5 text-[10px]">
+        <HubLink to={{ kind: "gm", query: `team=${encodeURIComponent(toSlug)}${myr ? `&p=y${encodeURIComponent(myr)}` : ""}` }} className="text-rw-muted hover:text-rw-accent hover:underline">
+          {tl("Roster builder")}
+        </HubLink>
         <HubLink to={{ kind: "prep", a: toSlug, b: fromSlug, ...(myr ? { period: `y${myr}` } : {}) }} className="text-rw-muted hover:text-rw-accent hover:underline">
           {tl("Match prep")}
         </HubLink>
         <HubLink
           to={{
-            kind: "draft",
-            query: `teams=${encodeURIComponent(toSlug)},${encodeURIComponent(fromSlug)}${pQ ? `&${pQ}` : ""}${mRole ? `&role=${encodeURIComponent(mRole)}` : ""}`,
-          }}
-          className="text-rw-muted hover:text-rw-accent hover:underline"
-        >
-          {tl("Draft board")}
-        </HubLink>
-        <HubLink
-          to={{
-            kind: "counters",
+            kind: "finder",
             query: new URLSearchParams({
               player: pSlug,
-              ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
               team: toSlug,
-              ...(fromSlug && fromSlug !== toSlug ? { vsteam: fromSlug } : {}),
               ...(mRole ? { role: mRole } : {}),
-              ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
-              ...(myr ? { patch: `y${myr}`, year: myr } : {}),
-            }).toString(),
-          }}
-          className="text-rw-muted hover:text-rw-accent hover:underline"
-        >
-          {tl("Counters")}
-        </HubLink>
-        <HubLink
-          to={{
-            kind: "items",
-            query: new URLSearchParams({
-              player: pSlug,
-              ...(vsPlayerSlug ? { vsplayer: vsPlayerSlug } : {}),
-              team: toSlug,
-              ...(fromSlug && fromSlug !== toSlug ? { vs: fromSlug } : {}),
-              ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
               ...(myr ? { year: myr } : {}),
-              ...(mRole ? { role: mRole } : {}),
             }).toString(),
           }}
           className="text-rw-muted hover:text-rw-accent hover:underline"
         >
-          {tl("Item history")}
+          {tl("Game finder")}
         </HubLink>
         <HubLink
           to={{
@@ -221,7 +175,7 @@ const MoveListItem: React.FC<{ m: MoveRow; idx: number; list: MoveRow[]; leagueN
               ...(m.lu ? { league: resolveLeagueSlug(m.lu) } : {}),
               ...(myr ? { year: myr } : {}),
               ...(mRole ? { role: mRole } : {}),
-              q: [pSlug, vsPlayerSlug, toSlug, fromSlug].filter((s, i, a): s is string => Boolean(s) && a.indexOf(s) === i).join(","),
+              q: pSlug,
             }).toString(),
           }}
           className="text-rw-muted hover:text-rw-accent hover:underline"
@@ -737,6 +691,11 @@ export const MovesPage: React.FC<{ query?: string }> = ({ query }) => {
                               </td>
                               <td className={td}>
                                 <span className="inline-flex items-center gap-2 text-[11px] text-rw-muted">
+                                  {tSlug && (
+                                    <HubLink to={{ kind: "gm", query: `team=${encodeURIComponent(tSlug)}` }} className="hover:text-rw-accent hover:underline">
+                                      {tl("Roster builder")}
+                                    </HubLink>
+                                  )}
                                   <HubLink to={{ kind: "compare", mode: "player", a: pSlug }} className="hover:text-rw-accent hover:underline">
                                     {tl("Compare")}
                                   </HubLink>

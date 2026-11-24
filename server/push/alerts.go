@@ -437,9 +437,29 @@ type streamEvent struct {
 	UtcIso   string `json:"utcIso"`
 }
 
+var streamLoopbackBase = "http://127.0.0.1"
+
+// fetchStreamURL tries HomeServer's local IIS directly first (with Host: lolworlds.com) to avoid Cloudflare hairpin
+// timeouts, falling back to publicURL when not running next to IIS.
+func (a *App) fetchStreamURL(localPath, publicURL string) (*http.Response, error) {
+	if streamLoopbackBase != "" && strings.HasPrefix(publicURL, "https://lolworlds.com/") {
+		if req, err := http.NewRequest(http.MethodGet, streamLoopbackBase+localPath, nil); err == nil {
+			req.Host = "lolworlds.com"
+			c := &http.Client{Timeout: 5 * time.Second}
+			if resp, err := c.Do(req); err == nil {
+				if resp.StatusCode == http.StatusOK {
+					return resp, nil
+				}
+				resp.Body.Close()
+			}
+		}
+	}
+	return a.client.Get(publicURL)
+}
+
 // pollStream alerts banger followers when an S-tier game starts on the 24/7 stream (unless on break).
 func (a *App) pollStream() {
-	if resp, err := a.client.Get(streamStatusURL); err == nil {
+	if resp, err := a.fetchStreamURL("/riftwise/stream-status.json", streamStatusURL); err == nil {
 		var st struct {
 			OnBreak *bool `json:"onBreak"`
 		}
@@ -449,7 +469,7 @@ func (a *App) pollStream() {
 			return
 		}
 	}
-	resp, err := a.client.Get(streamScheduleURL)
+	resp, err := a.fetchStreamURL("/api.ashx?type=schedule-json", streamScheduleURL)
 	if err != nil {
 		log.Printf("stream schedule: %v", err)
 		return

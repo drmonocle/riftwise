@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { hubPath, parseHubPath } from "../hub/route";
+import { prefetchHubFile } from "../hub/slugs";
 import { matchesChampSearch, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchHub } from "../hub/data";
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
 import { filterBuiltSeasons } from "../components/hub/Ranks";
@@ -452,5 +453,13 @@ describe("search shortcuts", () => {
     expect(inPeriod(rows, "e:worlds-2025", (r) => r)).toHaveLength(2);
     const opts = withRequestedPeriod(periodOptions(rows), "e:worlds-2025", rows);
     expect(opts.find((o) => o.key === "e:worlds-2025")?.label).toBe("Worlds 2025");
+  });
+  it("resolves rebranded LCK club aliases cleanly for client prefetching", () => {
+    expect(prefetchHubFile({ kind: "team", slug: "afreeca-freecs" })).toBe("hub/team/dn-soopers.json");
+    expect(prefetchHubFile({ kind: "team", slug: "kwangdong-freecs" })).toBe("hub/team/dn-soopers.json");
+    expect(prefetchHubFile({ kind: "team", slug: "dn-freecs" })).toBe("hub/team/dn-soopers.json");
+    expect(prefetchHubFile({ kind: "team", slug: "liiv-sandbox" })).toBe("hub/team/bnk-fearx.json");
+    expect(prefetchHubFile({ kind: "team", slug: "fearx" })).toBe("hub/team/bnk-fearx.json");
+    expect(prefetchHubFile({ kind: "team", slug: "fredit-brion" })).toBe("hub/team/okbrion.json");
   });
 });

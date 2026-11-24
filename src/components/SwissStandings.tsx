@@ -189,11 +189,9 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
           <button
             type="button"
             onClick={() => {
-              const pairQ = d.rows.length >= 2 ? `${d.rows[0].u},${d.rows[1].u}` : "";
               navigateHub({
                 kind: "worlds",
                 ...(wy ? { year: wy } : {}),
-                ...(pairQ ? { query: `q=${encodeURIComponent(pairQ)}` } : {}),
               });
               onOpen();
             }}
@@ -205,14 +203,7 @@ export const SwissStandings: React.FC<{ schedule: Match[]; onOpen: () => void; n
       </div>
       <div className={`grid grid-cols-2 ${narrow ? "" : "sm:grid-cols-4"} gap-x-4 px-3 py-2`}>
         {d.rows.map((r) => {
-          const rivalU =
-            d.rows.find((x) => x.u && x.u !== r.u && x.w === r.w && x.l === r.l)?.u ||
-            d.rows.find((x) => x.u && x.u !== r.u)?.u ||
-            "";
-          const rowQ = new URLSearchParams({
-            ...(wy ? { p: `y${wy}` } : {}),
-            ...(rivalU ? { q: rivalU } : {}),
-          }).toString();
+          const rowQ = wy ? `p=y${encodeURIComponent(wy)}` : "";
           return (
             <button
               key={r.u}
