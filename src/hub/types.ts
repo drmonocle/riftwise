@@ -1,5 +1,5 @@
 /** Shapes of the stats hub files (built by scripts/stats/hub.py whenever the database changes, into stats/<version>/hub/). */
-import type { Title } from "../stats";
+import type { NextPro, Title } from "../stats";
 
 export interface HubMeta {
   version: string;
@@ -63,6 +63,8 @@ export interface HubHome {
   /** recent club transfers and expiring contracts in top leagues (v1.6.26+) */
   moves?: RosterMovesFile["list"];
   expiring?: ExpiringContractRow[];
+  /** earliest scheduled official pro match or upcoming Primary tournament kickoff (v1.6.38+) */
+  nextPro?: NextPro | null;
 }
 
 /** A player's average rating over some games, with their best one (hub.py best_rated) */

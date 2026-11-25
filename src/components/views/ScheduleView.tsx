@@ -23,6 +23,7 @@ import { navigateHub, scheduleOfPath, setScheduleAddress } from "../../hub/route
 import { riotImg } from "../../riotImage";
 import { TeamLogo } from "../hub/ui";
 import { SectionCard } from "../hub/BroadcastCard";
+import { NextProBanner } from "../NextProCountdown";
 import { countSecondPage } from "../../usage";
 
 interface ScheduleViewProps {
@@ -931,11 +932,42 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
           {/* Match Rows */}
           {filtered.length === 0 ? (
-            <div className="text-center py-16 text-rw-sub text-xs" role="status">
-              {isLoading && schedule.length === 0
-                ? tl("Loading the schedule…")
-                : tl('No scheduled matches match your active filters. Try switching tabs or turning off "Followed only".')}
-            </div>
+            isLoading && schedule.length === 0 ? (
+              <div className="text-center py-16 text-rw-sub text-xs" role="status">
+                {tl("Loading the schedule…")}
+              </div>
+            ) : followedOnly || searchQuery.trim() !== "" || league !== null || filterRange === "results" ? (
+              <div className="text-center py-16 text-rw-sub text-xs" role="status">
+                {tl('No scheduled matches match your active filters. Try switching tabs or turning off "Followed only".')}
+              </div>
+            ) : (
+              <div className="py-8 max-w-2xl mx-auto space-y-4">
+                <NextProBanner
+                  schedule={schedule}
+                  actions={
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setFilterRange("results")}
+                        className="px-2.5 py-1 rounded-lg bg-rw-accent text-rw-bg font-bold hover:bg-rw-text transition-colors"
+                      >
+                        {tl("Results")} →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateHub({ kind: "moves" })}
+                        className="px-2.5 py-1 rounded-lg border border-rw-border hover:border-rw-accent/60 text-rw-text font-semibold transition-colors"
+                      >
+                        {tl("Roster moves")} →
+                      </button>
+                    </>
+                  }
+                />
+                <p className="text-center text-xs text-rw-muted" role="status">
+                  {tl("No upcoming matches scheduled in this window.")}
+                </p>
+              </div>
+            )
           ) : (
             <div className="space-y-2 rw-tiles">
               {filtered.map((m, idx) => {

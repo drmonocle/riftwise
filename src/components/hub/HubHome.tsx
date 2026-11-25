@@ -39,6 +39,7 @@ import { bare, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolve
 import { matchesPeriodEvent } from "../../hub/period";
 import { normalizeRole } from "../../hub/champAgg";
 import { BroadcastCardButton, SectionCard, rankingsCard } from "./BroadcastCard";
+import { NextProBanner, formatCountdownText } from "../NextProCountdown";
 import type { TabKey } from "../Navigation";
 
 const teamSlug = (name?: string | null, code?: string | null, u?: string | null) =>
@@ -137,7 +138,7 @@ export const HubHome: React.FC<{
       </section>
 
       {schedule && settings && onOpenUrl && (
-        <TodayMatches schedule={schedule} liveMatches={liveMatches || []} settings={settings} onOpenUrl={onOpenUrl} onSelectTab={onSelectTab} onSelectTeam={onSelectTeam} />
+        <TodayMatches schedule={schedule} liveMatches={liveMatches || []} settings={settings} homeData={home.data} onOpenUrl={onOpenUrl} onSelectTab={onSelectTab} onSelectTeam={onSelectTeam} />
       )}
 
       {/* the event that is on (Worlds, MSI, First Stand) or the tournaments running now, and the month's best players */}
@@ -362,10 +363,11 @@ const TodayMatches: React.FC<{
   schedule: Match[];
   liveMatches: Match[];
   settings: AppSettings;
+  homeData?: HubHomeData | null;
   onOpenUrl: (url: string) => void;
   onSelectTab?: (tab: TabKey) => void;
   onSelectTeam?: (code: string, name?: string) => void;
-}> = ({ schedule, liveMatches, settings, onOpenUrl, onSelectTab, onSelectTeam }) => {
+}> = ({ schedule, liveMatches, settings, homeData, onOpenUrl, onSelectTab, onSelectTeam }) => {
   const live = useMemo(() => liveMatches.filter((m) => m.state === "inProgress" && m.team1Code && m.team2Code), [liveMatches]);
   const next = useMemo(() => {
     const now = Date.now();
@@ -383,7 +385,28 @@ const TodayMatches: React.FC<{
       .sort((a, b) => a.startTimeUtc.localeCompare(b.startTimeUtc));
   }, [schedule]);
   const featured = live[0] || next[0];
-  if (!featured) return null;
+  if (!featured) {
+    return (
+      <NextProBanner
+        schedule={schedule}
+        liveMatches={liveMatches}
+        fallback={homeData?.nextPro}
+        onSelectTab={onSelectTab}
+        actions={
+          <>
+            <HubLink to={{ kind: "moves" }} className="font-semibold text-rw-accent hover:underline">
+              {tl("Roster moves")} →
+            </HubLink>
+            {onSelectTab && (
+              <button type="button" onClick={() => onSelectTab("schedule")} className="font-semibold text-rw-sub hover:text-rw-accent hover:underline">
+                {tl("Schedule and results")} →
+              </button>
+            )}
+          </>
+        }
+      />
+    );
+  }
   const rest = (live.length > 1 ? live.slice(1) : []).concat(next.filter((m) => m.matchId !== featured.matchId)).slice(0, 3);
   return (
     <section className="space-y-3">
@@ -454,7 +477,18 @@ const FeaturedMatch: React.FC<{
               {tl("Live now")}
             </span>
           ) : (
-            <span className="font-head font-semibold uppercase tracking-wider text-rw-accent">{formatMatchTime(m.startTimeUtc)}</span>
+            <span className="inline-flex flex-wrap items-center gap-1.5 font-head font-semibold uppercase tracking-wider text-rw-accent">
+              <span>{formatMatchTime(m.startTimeUtc)}</span>
+              {Date.parse(m.startTimeUtc) > Date.now() && (
+                <span className="font-num tabular-nums px-1.5 py-0.5 rounded bg-rw-accent/10 border border-rw-accent/30 text-[10px]">
+                  {formatCountdownText(
+                    { source: "schedule", exactTime: true, atMs: Date.parse(m.startTimeUtc), dateStr: m.startTimeUtc.slice(0, 10), label: m.leagueName, shortLabel: m.leagueName },
+                    Date.now(),
+                    true,
+                  )}
+                </span>
+              )}
+            </span>
           )}
           <span className="text-rw-muted">
             {m.leagueSlug || m.leagueName ? (

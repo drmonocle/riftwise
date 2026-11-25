@@ -925,6 +925,7 @@ export default function App() {
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
         liveMatches={liveMatches}
+        schedule={schedule}
         streamEvents={streamEvents}
         streamStatus={streamStatus}
         onRefresh={() => refreshData(true)}

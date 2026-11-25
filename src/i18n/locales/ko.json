@@ -2395,5 +2395,10 @@
   "Greedy": "고투자형",
   "Low-econ": "저투자형",
   "Incomplete": "미완성",
-  "Signed": "영입"
+  "Signed": "영입",
+  "Next official pro game": "다음 공식 프로 경기",
+  "Starts in {d}d": "{d}일 후 시작",
+  "{d}d": "{d}일",
+  "{d}d {h}h": "{d}일 {h}시간",
+  "{m}m {s}s": "{m}분 {s}초"
 }

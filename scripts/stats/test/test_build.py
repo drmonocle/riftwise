@@ -187,6 +187,49 @@ def data_fixes_check() -> str:
     return ""
 
 
+def next_pro_check() -> str:
+    """Verify pick_next_pro prefers scheduled Primary matches, falls back to Primary start dates, and skips qualifiers/showmatches."""
+    sys.path.insert(0, STATS)
+    import build_stats
+    import hub
+
+    top_leagues = {"LoL EMEA Championship", "LoL Champions Korea"}
+    league_slug = {"LoL EMEA Championship": "lol-emea-championship", "LoL Champions Korea": "lol-champions-korea", "Asia Esports": "asia-esports"}
+    short_map = {"G2 Esports": "G2", "Fnatic": "FNC"}
+    team_slug = {"id_g2": "g2-esports", "id_fnc": "fnatic"}
+    team_slugs_all = {"g2-esports", "fnatic"}
+    team_of = lambda n, _y="2027": {"G2 Esports": "id_g2", "Fnatic": "id_fnc"}.get(n, n)
+    short_of = lambda n: short_map.get(n)
+    is_show_fn = lambda op, tn: build_stats.SHOWMATCH_NAME.search((op or "") + " " + (tn or "")) is not None
+
+    lp_tourn = {
+        "Qualifier/2027": {"Name": "EMEA Qualifier", "DateStart": "2026-12-01", "League": "LoL EMEA Championship", "Region": "EMEA", "TournamentLevel": "Primary", "IsQualifier": 1},
+        "Show/2026": {"Name": "Red Bull Showmatch 2026", "DateStart": "2026-12-05", "League": "Showmatch", "Region": "International", "TournamentLevel": "Showmatch", "IsQualifier": 0},
+        "Secondary/2026": {"Name": "Regional Cup", "DateStart": "2026-11-29", "League": "Asia Esports", "Region": "Asia", "TournamentLevel": "Secondary", "IsQualifier": 0},
+        "LEC/2027": {"Name": "LEC 2027 Winter", "DateStart": "2027-01-15", "League": "LoL EMEA Championship", "Region": "EMEA", "TournamentLevel": "Primary", "IsQualifier": 0},
+    }
+    # Date-only Primary tournament fallback (unwritten event page -> u=None, lu='lol-emea-championship')
+    got_tourn = hub.pick_next_pro(
+        {}, lp_tourn, top_leagues, league_slug, {"LEC/2027": "lec-2027-winter"}, set(),
+        team_slug, team_slugs_all, team_of, short_of, is_show_fn, "2026-11-25", "2026-11-25 23:00",
+    )
+    if not got_tourn or got_tourn.get("d") != "2027-01-15" or got_tourn.get("n") != "LEC 2027 Winter" or got_tourn.get("u") is not None or got_tourn.get("lu") != "lol-emea-championship":
+        return f"unexpected date-only nextPro: {got_tourn}"
+
+    # Scheduled Primary match overrides/specifies exact kickoff time & teams
+    sched = {
+        "m_sec": {"op": "Secondary/2026", "date": "2026-11-29 05:30", "a": "Team A", "b": "Team B", "w": "", "ff": 0, "n": 1},
+        "m_lec": {"op": "LEC/2027", "date": "2027-01-15 17:00", "a": "G2 Esports", "b": "Fnatic", "w": "", "ff": 0, "n": 1},
+    }
+    got_match = hub.pick_next_pro(
+        sched, lp_tourn, top_leagues, league_slug, {"LEC/2027": "lec-2027-winter"}, set(),
+        team_slug, team_slugs_all, team_of, short_of, is_show_fn, "2026-11-25", "2026-11-25 23:00",
+    )
+    if not got_match or got_match.get("at") != "2027-01-15T17:00:00Z" or got_match.get("a") != "G2" or got_match.get("b") != "FNC" or got_match.get("au") != "g2-esports":
+        return f"unexpected scheduled nextPro: {got_match}"
+    return ""
+
+
 def main() -> int:
     bad = rating_check()
     if bad:
@@ -199,6 +242,10 @@ def main() -> int:
     bad = data_fixes_check()
     if bad:
         print(f"FAIL: data fixes: {bad}")
+        return 1
+    bad = next_pro_check()
+    if bad:
+        print(f"FAIL: nextPro check: {bad}")
         return 1
     keep = "--keep" in sys.argv
     out_dir = sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else None

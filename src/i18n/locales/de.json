@@ -2395,5 +2395,10 @@
   "Greedy": "Ressourcenintensiv",
   "Low-econ": "Ressourcenarm",
   "Incomplete": "Unvollständig",
-  "Signed": "Verpflichtet"
+  "Signed": "Verpflichtet",
+  "Next official pro game": "Nächstes offizielles Profispiel",
+  "Starts in {d}d": "Startet in {d} T",
+  "{d}d": "{d} T",
+  "{d}d {h}h": "{d} T {h} Std.",
+  "{m}m {s}s": "{m} Min. {s} Sek."
 }

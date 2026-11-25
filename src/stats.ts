@@ -90,16 +90,49 @@ export interface Reigning {
   t: string;
   c: string;
 }
-let reigning: Promise<Reigning[]> | null = null;
+/** Earliest scheduled official pro match or upcoming Primary tournament kickoff from latest.json / home.json. */
+export interface NextPro {
+  /** Exact UTC kickoff ISO timestamp when match time is known. */
+  at?: string;
+  /** Start date (YYYY-MM-DD). */
+  d: string;
+  /** Tournament name. */
+  n: string;
+  /** Tournament hub slug when the event page exists in this build. */
+  u?: string | null;
+  /** League full name. */
+  l?: string;
+  /** League hub slug. */
+  lu?: string | null;
+  /** Matchup short codes / names when known. */
+  a?: string;
+  b?: string;
+  au?: string | null;
+  bu?: string | null;
+}
+
+let latestMeta: Promise<{ reigning: Reigning[]; nextPro: NextPro | null }> | null = null;
+
+function fetchLatestMeta(): Promise<{ reigning: Reigning[]; nextPro: NextPro | null }> {
+  if (!latestMeta)
+    latestMeta = fetch(`${STATS_BASE}/latest.json`, { cache: "no-store", signal: AbortSignal.timeout(15000) })
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((j: { reigning?: Reigning[]; nextPro?: NextPro | null }) => ({
+        reigning: Array.isArray(j.reigning) ? j.reigning : [],
+        nextPro: j.nextPro && typeof j.nextPro === "object" && j.nextPro.d ? j.nextPro : null,
+      }))
+      .catch(() => ({ reigning: [], nextPro: null }));
+  return latestMeta;
+}
 
 /** The reigning Worlds, MSI and First Stand champions (the floating team logos); [] when they can't be read. */
 export function statsReigning(): Promise<Reigning[]> {
-  if (!reigning)
-    reigning = fetch(`${STATS_BASE}/latest.json`, { cache: "no-store", signal: AbortSignal.timeout(15000) })
-      .then((r) => (r.ok ? r.json() : {}))
-      .then((j: { reigning?: Reigning[] }) => (Array.isArray(j.reigning) ? j.reigning : []))
-      .catch(() => []);
-  return reigning;
+  return fetchLatestMeta().then((m) => m.reigning);
+}
+
+/** Earliest scheduled official pro match or upcoming Primary tournament start; null if unavailable. */
+export function statsNextPro(): Promise<NextPro | null> {
+  return fetchLatestMeta().then((m) => m.nextPro);
 }
 
 /** When the stats database was last rebuilt from new games (ISO time), or null if it can't be read. */

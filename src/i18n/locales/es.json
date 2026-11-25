@@ -2395,5 +2395,10 @@
   "Greedy": "Exigente en oro",
   "Low-econ": "Bajo en oro",
   "Incomplete": "Incompleto",
-  "Signed": "Fichado"
+  "Signed": "Fichado",
+  "Next official pro game": "Próximo partido pro oficial",
+  "Starts in {d}d": "Empieza en {d} d",
+  "{d}d": "{d} d",
+  "{d}d {h}h": "{d} d {h} h",
+  "{m}m {s}s": "{m} min {s} s"
 }

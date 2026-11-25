@@ -2395,5 +2395,10 @@
   "Greedy": "Gourmand en or",
   "Low-econ": "Économe",
   "Incomplete": "Incomplet",
-  "Signed": "Signé"
+  "Signed": "Signé",
+  "Next official pro game": "Prochain match pro officiel",
+  "Starts in {d}d": "Commence dans {d} j",
+  "{d}d": "{d} j",
+  "{d}d {h}h": "{d} j {h} h",
+  "{m}m {s}s": "{m} min {s} s"
 }

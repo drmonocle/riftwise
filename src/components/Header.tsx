@@ -8,6 +8,7 @@ import { tl, tn } from "../i18n";
 import { LanguageFlag } from "./LanguageFlag";
 import { lazyPart } from "../lazyPart";
 import { Navigation, TabKey } from "./Navigation";
+import { HeaderNextProPill } from "./NextProCountdown";
 import { hubPath, navigateHub, useHubRoute } from "../hub/route";
 // the stats search box (loaded with the stats code; a look-alike box stands in until then)
 const HubSearch = lazyPart(() => import("./hub/HubSearch").then((m) => m.HubSearch));
@@ -64,6 +65,7 @@ interface HeaderProps {
   settings: AppSettings;
   onUpdateSettings: (s: Partial<AppSettings>) => void;
   liveMatches: Match[];
+  schedule?: Match[];
   streamEvents: StreamEvent[];
   streamStatus?: StreamStatus | null;
   onRefresh: () => void;
@@ -92,6 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
   settings,
   onUpdateSettings,
   liveMatches,
+  schedule,
   streamEvents,
   streamStatus,
   onRefresh,
@@ -160,6 +163,9 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="w-2 h-2 rounded-full bg-rw-accent animate-pulse shrink-0" />
               <span className="truncate">{tl("{league} on air", { league: onAir.leagueName })}</span>
             </button>
+          )}
+          {!hasLive && !onAir && (
+            <HeaderNextProPill schedule={schedule} liveMatches={liveMatches} onSelectTab={onSelectTab} />
           )}
           {streamInfo && (
             <button

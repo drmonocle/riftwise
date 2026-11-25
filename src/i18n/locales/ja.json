@@ -549,7 +549,7 @@
   "Twitch 24/7: Offline": "Twitch 24/7: オフライン",
   "Twitch 24/7: {details}": "Twitch 24/7: {details}",
   "Watch Live": "ライブで見る",
-  "{h}h {m}m": "{h}時間{m}分",
+  "{h}h {m}m": "{h}時間 {m}分",
   "{m}m": "{m}分",
   "Apple Calendar (.ics)": "Apple カレンダー (.ics)",
   "Active Roster ({n})": "現在のロスター（{n}）",
@@ -2395,5 +2395,10 @@
   "Greedy": "高リソース型",
   "Low-econ": "低リソース型",
   "Incomplete": "未完成",
-  "Signed": "加入"
+  "Signed": "加入",
+  "Next official pro game": "次の公式プロ試合",
+  "Starts in {d}d": "{d}日後に開始",
+  "{d}d": "{d}日",
+  "{d}d {h}h": "{d}日 {h}時間",
+  "{m}m {s}s": "{m}分 {s}秒"
 }

@@ -2395,5 +2395,10 @@
   "Greedy": "Ngốn tài nguyên",
   "Low-econ": "Ít tài nguyên",
   "Incomplete": "Chưa đủ",
-  "Signed": "Ký hợp đồng"
+  "Signed": "Ký hợp đồng",
+  "Next official pro game": "Trận pro chính thức tiếp theo",
+  "Starts in {d}d": "Bắt đầu sau {d} ngày",
+  "{d}d": "{d} ngày",
+  "{d}d {h}h": "{d} ngày {h} giờ",
+  "{m}m {s}s": "{m} phút {s} giây"
 }

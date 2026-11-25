@@ -3356,6 +3356,14 @@ def build(ctx) -> dict:
     expiring_out.sort(key=lambda e: (e["ct"][:4], e.get("lu") not in top_league_slugs, -(e.get("rt") or 0), -e["gy"], -e["g"]))
     out.json("moves.json", {"since": moves_cut, "list": roster_moves[:1000], "expiring": expiring_out[:400]})
 
+    written_event_slugs = {r[0] for r in seo["event"]}
+    now_utc_hm = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M")
+    next_pro = pick_next_pro(
+        sched, lp_tourn, top_leagues, league_slug, event_slug, written_event_slugs,
+        team_slug, team_slugs_all, ctx.team_of, ctx.short_of, ctx.is_show, today, now_utc_hm,
+    )
+    ctx.next_pro = next_pro
+
     busiest = sorted(((x, p) for x, p in ((ctx.players[pg], pg) for pg in ctx.players)
                       if x["years"].get(this_year, {}).get("g", 0) >= 10),
                      key=lambda t: -t[0]["years"][this_year]["g"])[:12]
@@ -3371,6 +3379,7 @@ def build(ctx) -> dict:
         "potmFrom": MONTH_FROM,
         "moves": [m for m in roster_moves if m.get("lu") in top_league_slugs][:6],
         "expiring": [e for e in expiring_out if e.get("lu") in top_league_slugs and e["ct"][:4] == this_year][:6],
+        **({"nextPro": next_pro} if next_pro else {}),
     }
     out.json("home.json", home)
     # Headline counts: games with a recorded result (not slots with only a VOD link), and tournaments counted once
@@ -3435,3 +3444,93 @@ def build(ctx) -> dict:
     for k, v in stats.items():
         checks[f"hub: {k}"] = v
     return stats
+
+
+def pick_next_pro(
+    sched,
+    lp_tourn,
+    top_leagues,
+    league_slug,
+    event_slug,
+    written_event_slugs,
+    team_slug,
+    team_slugs_all,
+    team_of,
+    short_of,
+    is_show,
+    today,
+    now_utc_hm,
+):
+    """Pick the earliest upcoming Primary / top-league pro match (with time) or tournament kickoff (date-only)."""
+    cand_a = None
+    best_a_key = None
+    for s in sched.values():
+        if s.get("w") or s.get("ff"):
+            continue
+        dt_s = (s.get("date") or "")[:16].replace("T", " ")
+        if not re.match(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$", dt_s) or dt_s < now_utc_hm:
+            continue
+        op = s.get("op") or ""
+        t = lp_tourn.get(op)
+        if not t or num(t.get("IsQualifier")):
+            continue
+        t_name = t.get("Name") or op
+        if is_show(op, t_name) or t.get("TournamentLevel") in ("Showmatch", "Show Match"):
+            continue
+        lg = t.get("League") or ""
+        if t.get("TournamentLevel") != "Primary" and lg not in top_leagues:
+            continue
+        k = (dt_s, op, s.get("n") or 0)
+        if best_a_key is None or k < best_a_key:
+            best_a_key = k
+            ev_u = event_slug.get(op)
+            cand_a = {
+                "at": dt_s.replace(" ", "T") + ":00Z",
+                "d": dt_s[:10],
+                "n": t_name,
+                "u": ev_u if ev_u in written_event_slugs else None,
+                "l": lg,
+                "lu": league_slug.get(lg),
+            }
+            ta = (s.get("a") or "").strip()
+            tb = (s.get("b") or "").strip()
+            if ta and tb and ta.upper() != "TBD" and tb.upper() != "TBD":
+                ua = team_slug.get(team_of(ta, dt_s[:4]))
+                ub = team_slug.get(team_of(tb, dt_s[:4]))
+                cand_a.update({
+                    "a": short_of(ta) or ta,
+                    "b": short_of(tb) or tb,
+                    "au": ua if ua in team_slugs_all else None,
+                    "bu": ub if ub in team_slugs_all else None,
+                })
+
+    cand_b = None
+    best_b_key = None
+    for op, t in lp_tourn.items():
+        st_d = (t.get("DateStart") or "")[:10]
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", st_d) or st_d <= today:
+            continue
+        if t.get("TournamentLevel") != "Primary" or num(t.get("IsQualifier")):
+            continue
+        t_name = t.get("Name") or op
+        if is_show(op, t_name) or t.get("TournamentLevel") in ("Showmatch", "Show Match"):
+            continue
+        lg = t.get("League") or ""
+        reg = t.get("Region") or ""
+        if lg not in top_leagues and reg != "International":
+            continue
+        k = (st_d, 0 if reg == "International" else 1, t_name)
+        if best_b_key is None or k < best_b_key:
+            best_b_key = k
+            ev_u = event_slug.get(op)
+            cand_b = {
+                "d": st_d,
+                "n": t_name,
+                "u": ev_u if ev_u in written_event_slugs else None,
+                "l": lg,
+                "lu": league_slug.get(lg),
+            }
+
+    if cand_a and (not cand_b or cand_a["d"] <= cand_b["d"]):
+        return cand_a
+    return cand_b

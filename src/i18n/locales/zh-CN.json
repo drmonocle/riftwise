@@ -549,7 +549,7 @@
   "Twitch 24/7: Offline": "Twitch 24/7：未开播",
   "Twitch 24/7: {details}": "Twitch 24/7：{details}",
   "Watch Live": "看直播",
-  "{h}h {m}m": "{h}小时{m}分",
+  "{h}h {m}m": "{h} 小时 {m} 分钟",
   "{m}m": "{m}分钟",
   "Apple Calendar (.ics)": "Apple 日历 (.ics)",
   "Active Roster ({n})": "当前阵容（{n}）",
@@ -2395,5 +2395,10 @@
   "Greedy": "高吃资源",
   "Low-econ": "低吃资源",
   "Incomplete": "未完整",
-  "Signed": "已签约"
+  "Signed": "已签约",
+  "Next official pro game": "下一场官方职业比赛",
+  "Starts in {d}d": "{d} 天后开始",
+  "{d}d": "{d} 天",
+  "{d}d {h}h": "{d} 天 {h} 小时",
+  "{m}m {s}s": "{m} 分钟 {s} 秒"
 }

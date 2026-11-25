@@ -2395,5 +2395,10 @@
   "Greedy": "Altın odaklı",
   "Low-econ": "Düşük ekonomi",
   "Incomplete": "Eksik",
-  "Signed": "İmzaladı"
+  "Signed": "İmzaladı",
+  "Next official pro game": "Sıradaki resmi pro maç",
+  "Starts in {d}d": "{d} g içinde başlıyor",
+  "{d}d": "{d} g",
+  "{d}d {h}h": "{d} g {h} sa",
+  "{m}m {s}s": "{m} dk {s} sn"
 }

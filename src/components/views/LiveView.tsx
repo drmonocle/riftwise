@@ -10,6 +10,7 @@ import { UpNextTable } from "../UpNextTable";
 import { SwissStandings } from "../SwissStandings";
 import { ShareMatchButton } from "../ShareMatchButton";
 import { IdleHome } from "../IdleHome";
+import { NextProBanner } from "../NextProCountdown";
 import {
   type BroadcastStream,
   getLeagueBroadcastStreams,
@@ -328,6 +329,11 @@ export const LiveView: React.FC<LiveViewProps> = ({
           <Clock className="w-3.5 h-3.5 text-rw-teal" />
           <span>{tl("No pro matches are live right now")}</span>
         </div>
+        {!nextMatch && (
+          <div className="mt-2 flex justify-center">
+            <NextProBanner schedule={schedule} liveMatches={matches} onSelectTab={onSelectTab} compact />
+          </div>
+        )}
         {liveShows.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2" role="status">
             {liveShows.map((s) => (

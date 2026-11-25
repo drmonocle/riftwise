@@ -1238,24 +1238,27 @@ def main() -> None:
         "from": min(g["date"] for g in games.values()), "to": max(g["date"] for g in games.values()),
         "champions": champ_index,
     })
+    next_pro = None
     if not args.no_hub:
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         import hub
+        hub_ctx = types.SimpleNamespace(
+            con=con, lp_db=args.lp_db, vdir=vdir, prev_vdir=prev_vdir, version=version, checks=checks,
+            games=games, tstats=tstats, consistent=consistent, players=players, teams=teams,
+            team_series=team_series, series_list=series_list, titles=titles, titles_by_team=titles_by_team,
+            fr_name=fr_name, fr_eras=fr_eras, fr_games=fr_games, team_of=team_of, pname=pname,
+            team_shorts=team_shorts, team_players=team_players, team_roles=team_roles, player_events=player_events,
+            records=records, records_by_year=records_by_year, out_root=args.out,
+            names=player_names, is_show=is_show, short_of=short_of, current_club=current_club,
+            dupes=dupes,
+        )
         try:
-            hub_stats = hub.build(types.SimpleNamespace(
-                con=con, lp_db=args.lp_db, vdir=vdir, prev_vdir=prev_vdir, version=version, checks=checks,
-                games=games, tstats=tstats, consistent=consistent, players=players, teams=teams,
-                team_series=team_series, series_list=series_list, titles=titles, titles_by_team=titles_by_team,
-                fr_name=fr_name, fr_eras=fr_eras, fr_games=fr_games, team_of=team_of, pname=pname,
-                team_shorts=team_shorts, team_players=team_players, team_roles=team_roles, player_events=player_events,
-                records=records, records_by_year=records_by_year, out_root=args.out,
-                names=player_names, is_show=is_show, short_of=short_of, current_club=current_club,
-                dupes=dupes,
-            ))
+            hub_stats = hub.build(hub_ctx)
         except Exception:
             # Leave the last good build in place rather than publish one without its hub
             shutil.rmtree(vdir, ignore_errors=True)
             raise
+        next_pro = getattr(hub_ctx, "next_pro", None)
         print(f"hub: {hub_stats}")
 
     write(os.path.join(vdir, "checks.json"), dict(checks))
@@ -1286,7 +1289,10 @@ def main() -> None:
             reigning.append({"k": kind, "y": last["date"][:4], "t": last["w"], "c": short_of(last["w"]) or short_of(last["as"])})
     tmp = os.path.join(args.out, "latest.json.tmp")
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump({"version": version, "built": datetime.datetime.now(datetime.timezone.utc).isoformat(), "reigning": reigning}, f)
+        latest_doc = {"version": version, "built": datetime.datetime.now(datetime.timezone.utc).isoformat(), "reigning": reigning}
+        if next_pro:
+            latest_doc["nextPro"] = next_pro
+        json.dump(latest_doc, f)
     os.replace(tmp, os.path.join(args.out, "latest.json"))
     builds = sorted(d for d in os.listdir(args.out) if d.isdigit() and os.path.isdir(os.path.join(args.out, d)))
     for old in builds[:-6]:

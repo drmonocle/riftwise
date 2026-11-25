@@ -2395,5 +2395,10 @@
   "Greedy": "Pesado em ouro",
   "Low-econ": "Baixo recurso",
   "Incomplete": "Incompleto",
-  "Signed": "Contratado"
+  "Signed": "Contratado",
+  "Next official pro game": "Próxima partida pro oficial",
+  "Starts in {d}d": "Começa em {d} d",
+  "{d}d": "{d} d",
+  "{d}d {h}h": "{d} d {h} h",
+  "{m}m {s}s": "{m} min {s} s"
 }
