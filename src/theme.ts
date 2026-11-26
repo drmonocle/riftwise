@@ -19,6 +19,16 @@ export const THEMES: { id: ThemeName; swatch: [string, string, string] }[] = [
 
 export const DEFAULT_THEME: ThemeName = "rift";
 
+/** Custom team colour themes mapped by canonical team page slug. */
+export const TEAM_THEME_BY_SLUG: Record<string, ThemeName> = {
+  t1: "t1",
+  geng: "geng",
+  fnatic: "fnatic",
+  cloud9: "cloud9",
+  flyquest: "flyquest",
+  tsm: "tsm",
+};
+
 /** Page background per theme, for the browser / phone status bar. */
 const BAR: Record<ThemeName, string> = {
   rift: "#0c0a1d",

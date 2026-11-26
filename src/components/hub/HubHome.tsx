@@ -60,12 +60,15 @@ const more = "inline-block mt-auto pt-3 text-xs font-semibold text-rw-accent hov
 const tileHead = "font-head text-lg font-bold text-rw-text flex items-center gap-2 mb-2";
 
 /** Searches to try, one of each kind the box understands, each going straight to its page. */
-const TRY: { label: string; to: HubRoute; icon: React.ReactNode }[] = [
-  { label: "T1 vs Gen.G", to: { kind: "prep", a: "t1", b: "gen-g" }, icon: <Swords className="w-3 h-3" /> },
+const TRY: { label: string; translate?: boolean; to: HubRoute; icon: React.ReactNode }[] = [
+  { label: "T1 vs Gen.G", to: { kind: "prep", a: "t1", b: "geng" }, icon: <Swords className="w-3 h-3" /> },
   { label: "Faker Azir", to: { kind: "player", slug: "faker", tab: "champions", query: "champ=azir" }, icon: <User className="w-3 h-3" /> },
+  { label: "Los Ratones", to: { kind: "team", slug: "los-ratones" }, icon: <Users className="w-3 h-3" /> },
+  { label: "Baus", to: { kind: "player", slug: "baus" }, icon: <User className="w-3 h-3" /> },
   { label: "Heartsteel", to: { kind: "items", query: "item=heartsteel" }, icon: <Package className="w-3 h-3" /> },
   { label: `Worlds ${new Date().getFullYear()}`, to: { kind: "worlds" }, icon: <Trophy className="w-3 h-3" /> },
   { label: `LCK ${new Date().getFullYear()}`, to: { kind: "league", slug: "lol-champions-korea" }, icon: <Flag className="w-3 h-3" /> },
+  { label: tk("CSV Data"), translate: true, to: { kind: "data" }, icon: <Database className="w-3 h-3" /> },
 ];
 
 export const HubHome: React.FC<{
@@ -103,7 +106,7 @@ export const HubHome: React.FC<{
             {TRY.map((t) => (
               <HubLink key={t.label} to={t.to} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rw-border bg-rw-bg/60 text-rw-text hover:border-rw-accent hover:text-rw-accent">
                 <span className="text-rw-accent">{t.icon}</span>
-                {t.label}
+                {t.translate ? tl(t.label) : t.label}
               </HubLink>
             ))}
           </div>

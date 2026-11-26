@@ -4,8 +4,11 @@
  * placements, roster by year) and Champions.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Trophy } from "lucide-react";
+import { Palette, RotateCcw, Trophy } from "lucide-react";
 import { tl, tk, roleName, regionName, eventTitle, tc, tn, fmtDec } from "../../i18n";
+import type { AppSettings } from "../../types";
+import { loadSettings, saveSettings } from "../../api";
+import { applyTheme, DEFAULT_THEME, TEAM_THEME_BY_SLUG, type ThemeName } from "../../theme";
 import { winRate } from "../../stats";
 import { bare, loadHubTeam, loadPlayerGames, loadTeamGames, loadTeamGames2y, matchesChampSearch, normText, prettySlug, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchAlias } from "../../hub/data";
 import { currentHubRoute, hubShareUrl, navigateHub, type HubRoute } from "../../hub/route";
@@ -39,7 +42,12 @@ const TAB_LABEL: Record<string, string> = {
   champions: tk("Champions"),
 };
 
-export const TeamPage: React.FC<{ slug: string; tab?: string }> = ({ slug, tab }) => {
+export const TeamPage: React.FC<{
+  slug: string;
+  tab?: string;
+  settings?: AppSettings;
+  onUpdateSettings?: (s: Partial<AppSettings>) => void;
+}> = ({ slug, tab, settings, onUpdateSettings }) => {
   const resolvedTab = tab === "series" ? "matches" : tab === "tournaments" ? "history" : tab && TAB_LABEL[tab] ? tab : "";
   // reached by an old or short address (/team/hle): show the team's own address, once this team's file is in and
   // only while its page is still the one open (moving to another team mustn't bounce back)
@@ -59,14 +67,41 @@ export const TeamPage: React.FC<{ slug: string; tab?: string }> = ({ slug, tab }
     <Page state={state}>
       {(t) => (
         <CaptureContext.Provider value={t.name}>
-          <TeamView t={t} tab={resolvedTab} />
+          <TeamView t={t} tab={resolvedTab} settings={settings} onUpdateSettings={onUpdateSettings} />
         </CaptureContext.Provider>
       )}
     </Page>
   );
 };
 
-const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
+const TeamView: React.FC<{
+  t: HubTeam;
+  tab: string;
+  settings?: AppSettings;
+  onUpdateSettings?: (s: Partial<AppSettings>) => void;
+}> = ({ t, tab, settings, onUpdateSettings }) => {
+  const matchingTheme = TEAM_THEME_BY_SLUG[t.u];
+  const [localTheme, setLocalTheme] = useState<ThemeName>(() => settings?.theme || loadSettings().theme || DEFAULT_THEME);
+  useEffect(() => {
+    setLocalTheme(settings?.theme || loadSettings().theme || DEFAULT_THEME);
+  }, [settings?.theme]);
+  const setAppTheme = (next: ThemeName) => {
+    setLocalTheme(next);
+    if (onUpdateSettings) {
+      onUpdateSettings({ theme: next });
+    } else {
+      saveSettings({ ...loadSettings(), theme: next });
+      applyTheme(next);
+    }
+  };
+  const isPreviewed = useMemo(() => {
+    if (!matchingTheme) return false;
+    try {
+      return typeof sessionStorage !== "undefined" && sessionStorage.getItem("rw_theme_preview") === matchingTheme;
+    } catch {
+      return false;
+    }
+  }, [matchingTheme, localTheme]);
   const worlds = t.titles.filter((x) => x.kind === "Worlds").length;
   const msi = t.titles.filter((x) => x.kind === "MSI").length;
   const firstStand = t.titles.filter((x) => x.kind === "First Stand").length;
@@ -718,6 +753,36 @@ const TeamView: React.FC<{ t: HubTeam; tab: string }> = ({ t, tab }) => {
                     <PhotosLink q={t.name} className={heroLink} />
                     {/* its own calendar and results feed, while it still plays (the schedule only has current teams) */}
                     {!t.disbanded && Date.now() - Date.parse(t.to) < 180 * 86_400_000 && <FollowFeeds teams={[t.name]} />}
+                    {matchingTheme && localTheme === DEFAULT_THEME && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          try {
+                            sessionStorage.setItem("rw_theme_preview", matchingTheme);
+                          } catch {}
+                          setAppTheme(matchingTheme);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-full border border-rw-accent/35 bg-rw-accent/10 px-2.5 py-0.5 text-[11px] font-medium text-rw-accent hover:bg-rw-accent/20 hover:border-rw-accent transition-colors"
+                      >
+                        <Palette className="w-3 h-3" />
+                        {tl("Preview {team} theme", { team: t.name })}
+                      </button>
+                    )}
+                    {matchingTheme && localTheme === matchingTheme && isPreviewed && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          try {
+                            sessionStorage.removeItem("rw_theme_preview");
+                          } catch {}
+                          setAppTheme(DEFAULT_THEME);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-full border border-rw-border bg-rw-surface px-2.5 py-0.5 text-[11px] font-medium text-rw-sub hover:text-rw-text hover:border-rw-accent/50 transition-colors"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        {tl("{team} theme · Reset", { team: t.name })}
+                      </button>
+                    )}
                   </div>
                 </>
               );

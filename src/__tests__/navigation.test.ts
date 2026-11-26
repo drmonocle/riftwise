@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { hubPath, parseHubPath } from "../hub/route";
-import { prefetchHubFile } from "../hub/slugs";
+import { prefetchHubFile, resolveTeamSlugAlias } from "../hub/slugs";
 import { matchesChampSearch, resolveChampSlug, resolveEventSlug, resolveLeagueSlug, resolvePlayerSlug, resolveTeamAlias, sameChamp, searchHub } from "../hub/data";
 import { rateLine, profile, type RatingFile } from "../hub/playerRating";
 import { filterBuiltSeasons } from "../components/hub/Ranks";
@@ -110,6 +110,8 @@ describe("page tabs in the address", () => {
     expect(resolvePlayerSlug("the-shy")).toBe("theshy");
     expect(resolvePlayerSlug("thebausffs")).toBe("baus");
     expect(resolvePlayerSlug("The Baus")).toBe("baus");
+    expect(resolveTeamSlugAlias("lr")).toBe("los-ratones");
+    expect(resolveTeamSlugAlias("ratones")).toBe("los-ratones");
   });
 });
 

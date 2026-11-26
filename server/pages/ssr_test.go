@@ -271,6 +271,62 @@ func TestSSREntityEncyclopediaAndJSONLD(t *testing.T) {
 	}
 }
 
+func TestCrawlBudgetSitemapFocus(t *testing.T) {
+	s := richTestSite(t)
+	hub := filepath.Join(s.site, "stats", "20261015000000", "hub")
+
+	// Build a >50 team/player/game catalog to trigger production crawl-budget focusing.
+	var teams strings.Builder
+	teams.WriteString("aces-calm-mind\tAces Calm Mind | RiftWise\tAces Calm Mind: 10 pro games.\t1\n")
+	teams.WriteString("los-ratones\tLos Ratones | RiftWise\tLos Ratones: 135 pro games.\t1\tLos Ratones summary.\n")
+	teams.WriteString("karmine-corp\tKarmine Corp | RiftWise\tKarmine Corp: 572 pro games.\t1\tKC summary.\n")
+	teams.WriteString("movistar-koi\tMovistar KOI | RiftWise\tMovistar KOI: 927 pro games.\t1\tMKOI summary.\n")
+	for i := 0; i < 60; i++ {
+		teams.WriteString("filler-team-" + string(rune('a'+i%26)) + string(rune('a'+i/26)) + "\tFiller | RiftWise\tFiller: 12 pro games.\t1\n")
+	}
+	if err := os.WriteFile(filepath.Join(hub, "seo", "team.tsv"), []byte(teams.String()), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var games strings.Builder
+	games.WriteString("ahugamannadeildin-2025-round-1-1\tObscure Match | RiftWise\tObscure.\t1\n")
+	games.WriteString("worlds-2025-main-event-finals-1\tT1 vs KT | RiftWise\tT1 3-2 KT.\t1\n")
+	for i := 0; i < 60; i++ {
+		games.WriteString("hitpoint-2025-week-" + string(rune('a'+i%26)) + string(rune('a'+i/26)) + "\tMinor | RiftWise\tMinor.\t1\n")
+	}
+	if err := os.WriteFile(filepath.Join(hub, "seo", "game.tsv"), []byte(games.String()), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	s.mu.Lock()
+	s.version = ""
+	s.checked = time.Time{}
+	s.mu.Unlock()
+	s.refresh()
+
+	teamMap := get(s, "/riftwise/sitemap-team-1.xml").Body.String()
+	for _, want := range []string{"/team/los-ratones", "/team/karmine-corp", "/team/movistar-koi"} {
+		if !strings.Contains(teamMap, want) {
+			t.Errorf("sitemap-team missing featured org %q", want)
+		}
+	}
+	if strings.Contains(teamMap, "aces-calm-mind") || strings.Contains(teamMap, "filler-team-aa") {
+		t.Errorf("sitemap-team leaked low-game filler team")
+	}
+
+	gameMap := get(s, "/riftwise/sitemap-game-1.xml").Body.String()
+	if !strings.Contains(gameMap, "/match/worlds-2025-main-event-finals-1") {
+		t.Error("sitemap-game missing worlds-2025-main-event-finals-1")
+	}
+	if strings.Contains(gameMap, "ahugamannadeildin") || strings.Contains(gameMap, "hitpoint") {
+		t.Error("sitemap-game leaked obscure regional match")
+	}
+	// Direct requests to non-sitemap match pages still return 200 OK.
+	if w := get(s, "/riftwise/match/ahugamannadeildin-2025-round-1-1"); w.Code != http.StatusOK {
+		t.Errorf("obscure match direct request returned %d, want 200", w.Code)
+	}
+}
+
 func (s *store) serveOpenSearchHTTPForTest(w http.ResponseWriter) {
 	serveOpenSearch(w)
 }

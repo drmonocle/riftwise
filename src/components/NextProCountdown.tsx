@@ -236,7 +236,7 @@ export const NextProBanner: React.FC<{
       <button
         type="button"
         onClick={() => openTarget(target, onSelectTab)}
-        className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-1 rounded-full bg-rw-panel border border-rw-border hover:border-rw-accent/60 text-xs transition-colors"
+        className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-1 rounded-full bg-rw-panel border border-rw-border hover:border-rw-accent/60 text-xs transition-colors max-w-full"
       >
         <Clock className="w-3.5 h-3.5 text-rw-accent shrink-0" />
         <span className="text-rw-muted font-semibold uppercase tracking-wider text-[10px]">{tl("Next official pro game")}</span>
@@ -249,7 +249,7 @@ export const NextProBanner: React.FC<{
 
   return (
     <div className="bg-rw-panel border border-rw-border rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0 text-xs">
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0 max-w-full text-xs">
         <span className="inline-flex items-center gap-1.5 font-head text-[11px] font-semibold uppercase tracking-[0.12em] text-rw-accent">
           <Clock className="w-3.5 h-3.5 shrink-0" />
           {tl("Next official pro game")}
@@ -257,17 +257,17 @@ export const NextProBanner: React.FC<{
         <button
           type="button"
           onClick={() => openTarget(target, onSelectTab)}
-          className="font-head text-sm font-bold text-rw-text hover:text-rw-accent hover:underline truncate text-left"
+          className="font-head text-sm font-bold text-rw-text hover:text-rw-accent hover:underline max-w-full break-words text-left"
         >
           {target.label}
         </button>
-        {target.subLabel && <span className="text-rw-muted truncate">{target.subLabel}</span>}
+        {target.subLabel && <span className="text-rw-muted max-w-full break-words">{target.subLabel}</span>}
         <span className="text-rw-muted">· {dateLabel}</span>
         <span className="font-num tabular-nums px-2 py-0.5 rounded-full bg-rw-accent/10 border border-rw-accent/40 text-rw-accent font-bold text-[11px]">
           {cd}
         </span>
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2.5 text-xs shrink-0">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2.5 text-xs max-w-full">{actions}</div>}
     </div>
   );
 };

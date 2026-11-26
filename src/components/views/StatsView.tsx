@@ -59,6 +59,7 @@ const ChangelogPage = lazyPart(() => pageCode.changelog().then((m) => m.Changelo
 
 interface StatsViewProps {
   settings: AppSettings;
+  onUpdateSettings?: (s: Partial<AppSettings>) => void;
   onOpenUrl: (url: string) => void;
   /** upcoming matches (today's matches and "On the line today" on the front page) */
   schedule?: Match[];
@@ -401,7 +402,7 @@ export function siblingSectionRoute(current: HubRoute, targetKind: HubRoute["kin
 
 // ── The stats pages ───────────────────────────────────────────────────────
 
-export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, schedule, liveMatches, catalog, onSelectTab, onSelectTeam }) => {
+export const StatsView: React.FC<StatsViewProps> = ({ settings, onUpdateSettings, onOpenUrl, schedule, liveMatches, catalog, onSelectTab, onSelectTeam }) => {
   useChampionNames();
   useDDragon();
   const route = useHubRoute();
@@ -565,7 +566,14 @@ export const StatsView: React.FC<StatsViewProps> = ({ settings, onOpenUrl, sched
         {route.kind === "titles" && <TitlesPanel />}
         {route.kind === "weekly" && <WeeklyPage />}
         {route.kind === "compare" && <ComparePage route={route as CompareRoute} />}
-        {route.kind === "team" && <TeamPage slug={route.slug} tab={"tab" in route ? route.tab : undefined} />}
+        {route.kind === "team" && (
+          <TeamPage
+            slug={route.slug}
+            tab={"tab" in route ? route.tab : undefined}
+            settings={settings}
+            onUpdateSettings={onUpdateSettings}
+          />
+        )}
         {route.kind === "player" && (
           <PlayerPage slug={route.slug} tab={"tab" in route ? route.tab : undefined} onOpenUrl={onOpenUrl} />
         )}

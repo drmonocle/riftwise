@@ -179,6 +179,8 @@ export const TEAM_SLUG_ALIASES: Record<string, string> = {
   "mad-lions": "movistar-koi",
   splyce: "movistar-koi",
   "movistar-koi-2018-2024": "movistar-koi-2017-2024",
+  lr: "los-ratones",
+  ratones: "los-ratones",
   kc: "karmine-corp",
   kcorp: "karmine-corp",
   bds: "shifters",

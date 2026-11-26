@@ -828,9 +828,9 @@ export default function App() {
     }
   }, [pendingMatchId, liveMatches, schedule, lastSync, showToast, selectTab]);
 
-  // Refresh from Riot in the background if the saved copy is older than 24 hours; skip on web Stats tabs until needed.
+  // Refresh from Riot in the background if the saved copy is older than 24 hours; deferred 1.5s on web entry via extrasWanted.
   useEffect(() => {
-    if (!extrasWanted || (IS_WEB && activeTab === "stats")) return;
+    if (!extrasWanted) return;
     const cached = loadCachedCatalog();
     const age = Date.now() - (cached?.updatedAt || 0);
     if (age > 24 * 60 * 60 * 1000) {
@@ -844,7 +844,7 @@ export default function App() {
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [extrasWanted, activeTab]);
+  }, [extrasWanted]);
 
   const handleRefreshCatalog = async () => {
     setIsRefreshing(true);
@@ -1107,6 +1107,7 @@ export default function App() {
             <React.Suspense fallback={lazyFallback}>
               <StatsView
                 settings={settings}
+                onUpdateSettings={handleUpdateSettings}
                 onOpenUrl={handleOpenUrl}
                 schedule={schedule}
                 liveMatches={liveMatches}

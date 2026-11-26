@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	version  = "1.6.38" // the app's version (package.json; npm run set-version), reported by the health check
+	version  = "1.6.39" // the app's version (package.json; npm run set-version), reported by the health check
 	basePath = "/riftwise/" // what IIS forwards here
 	perMap   = 45000        // URLs per sitemap file (the limit is 50,000)
 )
@@ -74,6 +74,8 @@ var teamSlugAliases = map[string]string{
 	"lz":                     "kiwoom-drx",
 	"longzhu":                "kiwoom-drx",
 	"longzhu-gaming":         "kiwoom-drx",
+	"lr":                     "los-ratones",
+	"ratones":                "los-ratones",
 }
 
 var leagueSlugAliases = map[string]string{
@@ -83,8 +85,10 @@ var leagueSlugAliases = map[string]string{
 
 var playerSlugAliases = map[string]string{
 	"thebausffs":         "baus",
+	"the-bausffs":        "baus",
 	"bausffs":            "baus",
 	"thebaus":            "baus",
+	"the-baus":           "baus",
 	"rekky":              "rekkles",
 	"reven-antonio-pino": "reven",
 }
@@ -1067,12 +1071,7 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "<sitemap><loc>%ssitemap-sections-1.xml</loc></sitemap>\n", publicURL)
 		}
 		for _, kind := range []string{"team", "player", "event", "league", "champ", "game"} {
-			n := 0
-			for _, slug := range s.order[kind] {
-				if s.pages[kind][slug].index {
-					n++
-				}
-			}
+			n := len(s.sitemapKindSlugs(kind))
 			for i := 1; i <= (n+perMap-1)/perMap; i++ {
 				fmt.Fprintf(w, "<sitemap><loc>%ssitemap-%s-%d.xml</loc><lastmod>%s</lastmod></sitemap>\n", publicURL, kind, i, lastmod)
 			}
@@ -1149,19 +1148,15 @@ func (s *store) sitemap(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else if _, ok := s.pages[p[0]]; ok {
-		i := 0
-		for _, slug := range s.order[p[0]] {
-			if !s.pages[p[0]][slug].index {
-				continue
+		list := s.sitemapKindSlugs(p[0])
+		start, end := (part-1)*perMap, part*perMap
+		if start < len(list) {
+			if end > len(list) {
+				end = len(list)
 			}
-			i++
-			if i <= (part-1)*perMap {
-				continue
+			for _, slug := range list[start:end] {
+				fmt.Fprintf(w, "<url><loc>%s%s/%s</loc><lastmod>%s</lastmod></url>\n", publicURL, kindPath[p[0]], html.EscapeString(slug), lastmod)
 			}
-			if i > part*perMap {
-				break
-			}
-			fmt.Fprintf(w, "<url><loc>%s%s/%s</loc><lastmod>%s</lastmod></url>\n", publicURL, kindPath[p[0]], html.EscapeString(slug), lastmod)
 		}
 	} else {
 		http.NotFound(w, r)

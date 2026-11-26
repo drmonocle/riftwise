@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { pickCurrentTournament, loadSettings, saveSettings, DEFAULT_SETTINGS } from "../api";
+import { TEAM_THEME_BY_SLUG } from "../theme";
 import { regionIsFollowed, isMatchFollowed } from "../helpers";
 
 describe("pickCurrentTournament", () => {
@@ -111,6 +112,14 @@ describe("loadSettings", () => {
     expect(loadSettings().theme).toBe("fnatic");
     localStorage.setItem("riftwatch_settings", JSON.stringify({ theme: "no-such-theme" }));
     expect(loadSettings().theme).toBe("rift");
+    expect(TEAM_THEME_BY_SLUG).toEqual({
+      t1: "t1",
+      geng: "geng",
+      fnatic: "fnatic",
+      cloud9: "cloud9",
+      flyquest: "flyquest",
+      tsm: "tsm",
+    });
   });
 });
 

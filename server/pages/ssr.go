@@ -2552,26 +2552,269 @@ func (s *store) buildGameSSR(ver, seg, slug, canonical string) ssrResult {
 
 // ---------- Extended Sitemaps & Priority IndexNow ----------
 
-func (s *store) entityTabURLs() []string {
-	var out []string
-	addTabs := func(kind, prefix string, tabs []string, minGames int) {
-		for _, slug := range s.order[kind] {
-			e := s.pages[kind][slug]
-			if !e.index {
-				continue
-			}
-			if e.summary == "" && (minGames <= 0 || e.games < minGames) {
-				continue
-			}
-			for _, tb := range tabs {
-				out = append(out, prefix+"/"+slug+"/"+tb)
-			}
+// High-interest orgs and players prioritized at the top of Google sitemaps (including EMEA/streamer favorites).
+var featuredTeamSlugs = map[string]bool{
+	"t1": true, "geng": true, "bilibili-gaming": true, "g2-esports": true, "fnatic": true,
+	"hanwha-life-esports": true, "kt-rolster": true, "dplus-kia": true, "top-esports": true,
+	"jd-gaming": true, "weibo-gaming": true, "cloud9": true, "team-liquid": true, "flyquest": true,
+	"100-thieves": true, "tsm": true, "karmine-corp": true, "karmine-corp-blue": true,
+	"movistar-koi": true, "los-ratones": true,
+}
+
+var featuredPlayerSlugs = map[string]bool{
+	"faker": true, "chovy": true, "caps": true, "keria": true, "ruler": true, "uzi": true,
+	"baus": true, "rekkles": true, "nemesis": true, "crownie": true, "velja": true, "caedrel": true,
+	"doublelift": true, "bjergsen": true, "theshy": true, "rookie": true, "knight": true,
+	"bin": true, "elk": true, "zeus": true, "oner": true, "gumayusi": true, "canyon": true,
+	"kiin": true, "viper": true, "showmaker": true, "bdd": true, "peanut": true, "deft": true, "jackeylove": true,
+}
+
+var priorityLeagueSlugs = map[string]bool{
+	"world-championship": true, "mid-season-invitational": true, "first-stand": true, "esports-world-cup": true,
+	"lol-champions-korea": true, "tencent-lol-pro-league": true, "lol-emea-championship": true,
+	"league-of-legends-championship-series": true, "league-of-legends-championship-of-the-americas": true,
+	"league-of-legends-championship-pacific": true, "circuit-brazilian-league-of-legends": true,
+	"emea-masters": true, "la-ligue-francaise": true, "northern-league-of-legends-championship": true,
+	"prime-league-pro-division": true, "liga-espanola-de-league-of-legends": true,
+	"lck-challengers-league": true, "demacia-cup": true, "kespa-cup": true,
+}
+
+var reSlugYear = regexp.MustCompile(`-(20[0-9]{2})(?:-|$)`)
+
+func slugYear(slug string) int {
+	if m := reSlugYear.FindStringSubmatch(slug); len(m) == 2 {
+		y, _ := strconv.Atoi(m[1])
+		return y
+	}
+	return 0
+}
+
+func eventPriorityTier(slug string) int {
+	for _, p := range []string{"worlds-", "msi-", "first-stand-", "ewc-", "esports-world-cup-"} {
+		if strings.HasPrefix(slug, p) {
+			return 0
 		}
 	}
-	addTabs("team", "team", []string{"stats", "matches", "history", "champions"}, 50)
-	addTabs("player", "player", []string{"stats", "champions", "matches", "career"}, 150)
-	// High-importance tournaments with rich summaries
-	addTabs("event", "tournament", []string{"matches", "stats", "champions", "teams"}, 0)
+	for _, p := range []string{
+		"lck-", "lpl-", "lec-", "lcs-", "lta-", "lcp-", "cblol-",
+		"emea-masters-", "em-", "demacia-cup-", "kespa-cup-",
+		"nlc-2025-", "nlc-2026-", "nno-cup-",
+	} {
+		if strings.HasPrefix(slug, p) {
+			return 1
+		}
+	}
+	return 2
+}
+
+func (s *store) ratingTierMap() map[string]int {
+	tiers := map[string]int{}
+	if s.ratings == nil {
+		return tiers
+	}
+	for _, r := range s.ratings.teams {
+		if r.slug == "" {
+			continue
+		}
+		if r.top {
+			tiers[r.slug] = 1
+		} else {
+			tiers[r.slug] = 2
+		}
+	}
+	return tiers
+}
+
+func (s *store) indexedCount(kind string) int {
+	n := 0
+	for _, slug := range s.order[kind] {
+		if s.pages[kind][slug].index {
+			n++
+		}
+	}
+	return n
+}
+
+// sitemapKindSlugs orders and focuses each entity sitemap so Google crawls Tier-1, high-interest orgs,
+// and major tournaments first rather than diluting crawl budget on obscure historical match permutations.
+func (s *store) sitemapKindSlugs(kind string) []string {
+	totalIndexed := s.indexedCount(kind)
+	if totalIndexed == 0 {
+		return nil
+	}
+	smallSite := totalIndexed <= 50
+	if kind == "champ" {
+		out := make([]string, 0, totalIndexed)
+		for _, slug := range s.order[kind] {
+			if s.pages[kind][slug].index {
+				out = append(out, slug)
+			}
+		}
+		return out
+	}
+	tiers := s.ratingTierMap()
+	type item struct {
+		slug  string
+		tier  int
+		year  int
+		summ  bool
+		games int
+	}
+	var items []item
+	for _, slug := range s.order[kind] {
+		e := s.pages[kind][slug]
+		if !e.index {
+			continue
+		}
+		switch kind {
+		case "team":
+			rt := tiers[slug]
+			feat := featuredTeamSlugs[slug]
+			if !smallSite && !feat && rt != 1 && e.summary == "" && e.games < 50 {
+				continue
+			}
+			t := 3
+			if feat {
+				t = 0
+			} else if rt == 1 {
+				t = 1
+			} else if rt == 2 || e.summary != "" {
+				t = 2
+			}
+			items = append(items, item{slug: slug, tier: t, summ: e.summary != "", games: e.games})
+		case "player":
+			feat := featuredPlayerSlugs[slug]
+			if !smallSite && !feat && e.summary == "" && e.games < 100 {
+				continue
+			}
+			t := 2
+			if feat {
+				t = 0
+			} else if e.summary != "" {
+				t = 1
+			}
+			items = append(items, item{slug: slug, tier: t, summ: e.summary != "", games: e.games})
+		case "event":
+			et := eventPriorityTier(slug)
+			if !smallSite && et > 1 && e.summary == "" && e.games < 20 {
+				continue
+			}
+			items = append(items, item{slug: slug, tier: et, year: slugYear(slug), summ: e.summary != "", games: e.games})
+		case "league":
+			t := 1
+			if priorityLeagueSlugs[slug] {
+				t = 0
+			}
+			items = append(items, item{slug: slug, tier: t})
+		case "game":
+			et := eventPriorityTier(slug)
+			if !smallSite && et > 1 {
+				continue
+			}
+			items = append(items, item{slug: slug, tier: et, year: slugYear(slug)})
+		}
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].tier != items[j].tier {
+			return items[i].tier < items[j].tier
+		}
+		if items[i].year != items[j].year {
+			return items[i].year > items[j].year
+		}
+		if items[i].summ != items[j].summ {
+			return items[i].summ
+		}
+		if items[i].games != items[j].games {
+			return items[i].games > items[j].games
+		}
+		return items[i].slug < items[j].slug
+	})
+	limit := 0
+	switch kind {
+	case "player":
+		limit = 4000
+	case "event":
+		limit = 2500
+	case "game":
+		limit = 3000
+	}
+	if limit > 0 && len(items) > limit {
+		items = items[:limit]
+	}
+	out := make([]string, len(items))
+	for i, it := range items {
+		out[i] = it.slug
+	}
+	return out
+}
+
+func (s *store) entityTabURLs() []string {
+	var out []string
+	tiers := s.ratingTierMap()
+
+	teamSlugs := s.sitemapKindSlugs("team")
+	smallTeams := s.indexedCount("team") <= 50
+	teamCount := 0
+	for _, slug := range teamSlugs {
+		e := s.pages["team"][slug]
+		if smallTeams {
+			if e.summary == "" && e.games < 50 {
+				continue
+			}
+		} else {
+			if !featuredTeamSlugs[slug] && tiers[slug] != 1 && e.games < 150 {
+				continue
+			}
+			if teamCount >= 300 && !featuredTeamSlugs[slug] && tiers[slug] != 1 {
+				continue
+			}
+		}
+		teamCount++
+		for _, tb := range []string{"stats", "matches", "history", "champions"} {
+			out = append(out, "team/"+slug+"/"+tb)
+		}
+	}
+
+	playerSlugs := s.sitemapKindSlugs("player")
+	smallPlayers := s.indexedCount("player") <= 50
+	playerCount := 0
+	for _, slug := range playerSlugs {
+		e := s.pages["player"][slug]
+		if smallPlayers {
+			if e.summary == "" && e.games < 150 {
+				continue
+			}
+		} else {
+			if !featuredPlayerSlugs[slug] && (e.games < 400 || playerCount >= 250) {
+				continue
+			}
+		}
+		playerCount++
+		for _, tb := range []string{"stats", "champions", "matches", "career"} {
+			out = append(out, "player/"+slug+"/"+tb)
+		}
+	}
+
+	eventSlugs := s.sitemapKindSlugs("event")
+	smallEvents := s.indexedCount("event") <= 50
+	eventCount := 0
+	for _, slug := range eventSlugs {
+		e := s.pages["event"][slug]
+		if e.summary == "" {
+			continue
+		}
+		if !smallEvents {
+			et := eventPriorityTier(slug)
+			yr := slugYear(slug)
+			if et > 1 || (et == 1 && yr > 0 && yr < 2023) || eventCount >= 200 {
+				continue
+			}
+		}
+		eventCount++
+		for _, tb := range []string{"matches", "stats", "champions", "teams"} {
+			out = append(out, "tournament/"+slug+"/"+tb)
+		}
+	}
 	return out
 }
 
@@ -2593,40 +2836,38 @@ func (s *store) intlBasePaths() []string {
 			base = append(base, "champion/"+slug)
 		}
 	}
-	for _, slug := range s.order["league"] {
-		if s.pages["league"][slug].index {
-			base = append(base, "league/"+slug)
+	smallLeagues := s.indexedCount("league") <= 50
+	leagueCount := 0
+	for _, slug := range s.sitemapKindSlugs("league") {
+		if !smallLeagues && !priorityLeagueSlugs[slug] && leagueCount >= 40 {
+			continue
 		}
+		leagueCount++
+		base = append(base, "league/"+slug)
 	}
-	for _, slug := range s.order["team"] {
+	smallTeams := s.indexedCount("team") <= 50
+	tiers := s.ratingTierMap()
+	teamCount := 0
+	for _, slug := range s.sitemapKindSlugs("team") {
 		e := s.pages["team"][slug]
-		if e.index && (e.summary != "" || e.games >= 50) {
-			base = append(base, "team/"+slug)
+		if smallTeams {
+			if e.summary == "" && e.games < 50 {
+				continue
+			}
+		} else if !featuredTeamSlugs[slug] && tiers[slug] != 1 && teamCount >= 150 {
+			continue
 		}
+		teamCount++
+		base = append(base, "team/"+slug)
 	}
-	// Top 2,000 indexed players by game count
-	type pl struct {
-		slug  string
-		games int
-	}
-	var pls []pl
-	for _, slug := range s.order["player"] {
-		e := s.pages["player"][slug]
-		if e.index {
-			pls = append(pls, pl{slug: slug, games: e.games})
+	smallPlayers := s.indexedCount("player") <= 50
+	playerCount := 0
+	for _, slug := range s.sitemapKindSlugs("player") {
+		if !smallPlayers && !featuredPlayerSlugs[slug] && playerCount >= 200 {
+			continue
 		}
-	}
-	sort.Slice(pls, func(i, j int) bool {
-		if pls[i].games != pls[j].games {
-			return pls[i].games > pls[j].games
-		}
-		return pls[i].slug < pls[j].slug
-	})
-	if len(pls) > 2000 {
-		pls = pls[:2000]
-	}
-	for _, p := range pls {
-		base = append(base, "player/"+p.slug)
+		playerCount++
+		base = append(base, "player/"+slug)
 	}
 	return base
 }
